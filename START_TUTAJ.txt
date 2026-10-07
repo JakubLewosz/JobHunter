@@ -1,0 +1,9 @@
+JOBHUNTER — PAKIET DO ROZPOCZĘCIA BUDOWY
+
+1. Utwórz na Windowsie nowy folder JobHunter i otwórz go jako projekt w aplikacji Codex.
+2. Skopiuj JobHunter_SPEC.md do głównego katalogu tego projektu.
+3. Otwórz JobHunter_PROMPT_CODEX.txt i wklej całą jego treść do nowego czatu Codexa pracującego w tym folderze.
+4. Codex ma zacząć od E0–E2: diagnoza, aplikacja lokalna i pełny proces demonstracyjny.
+5. CV, Gmail i zgody na prawdziwą wysyłkę skonfigurujesz dopiero w późniejszym etapie. Nie wpisuj do prompta haseł ani tokenów.
+
+Pliki są specyfikacją i promptem, nie gotową aplikacją. Pakiet nie tworzy żadnych harmonogramów i nie wysyła żadnych wiadomości.
