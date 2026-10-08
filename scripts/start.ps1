@@ -2,7 +2,10 @@ $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'dist\apps\server\src\main.js'))) { throw 'Najpierw uruchom scripts\setup.ps1.' }
 $taskDataRoot = if ($env:JOBHUNTER_DATA_DIR) { $env:JOBHUNTER_DATA_DIR } else { Join-Path $env:LOCALAPPDATA 'JobHunter' }
-$taskDemo = Join-Path $taskDataRoot 'demo'
+$taskMode = if ($env:JOBHUNTER_MODE) { $env:JOBHUNTER_MODE } else { 'DEMO' }
+if ($taskMode -notin @('DEMO','RESEARCH_ONLY','APPROVAL_REQUIRED')) { throw 'Nieprawidlowy JOBHUNTER_MODE.' }
+$taskSubdir = if ($taskMode -eq 'DEMO') { 'demo' } else { 'research-only' }
+$taskDemo = Join-Path $taskDataRoot $taskSubdir
 New-Item -ItemType Directory -Force -Path $taskDemo | Out-Null
 $taskLaunch = Join-Path $taskDemo 'launch.json'
 if (Test-Path -LiteralPath $taskLaunch) {

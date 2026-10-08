@@ -19,10 +19,18 @@ export class Store {
       .filter((n) => n.endsWith('.sql'))
       .sort()) {
       if (!this.one('SELECT name FROM migrations WHERE name=?', name)) {
-        this.atomic(() => {
-          this.db.exec(readFileSync(resolve('migrations', name), 'utf8'));
-          this.exec('INSERT INTO migrations VALUES (?,?)', name, new Date().toISOString());
-        });
+        // Table rebuilds must not cascade-delete children. Check integrity before committing.
+        this.db.pragma('foreign_keys = OFF');
+        try {
+          this.atomic(() => {
+            this.db.exec(readFileSync(resolve('migrations', name), 'utf8'));
+            if ((this.db.pragma('foreign_key_check') as unknown[]).length)
+              throw new Error('MIGRATION_FOREIGN_KEY');
+            this.exec('INSERT INTO migrations VALUES (?,?)', name, new Date().toISOString());
+          });
+        } finally {
+          this.db.pragma('foreign_keys = ON');
+        }
       }
     }
   }

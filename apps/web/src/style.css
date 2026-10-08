@@ -2116,3 +2116,222 @@ blockquote {
     gap: 7px;
   }
 }
+
+.research-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 18px 0;
+}
+.research-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+}
+.research-metrics strong {
+  font-size: 24px;
+}
+.research-metrics span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.research-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+.research-source {
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+}
+.research-source summary {
+  cursor: pointer;
+}
+.research-panel > .research-metrics,
+.research-panel > .research-row,
+.research-panel > .research-source,
+.research-panel > button {
+  margin-left: 22px;
+  margin-right: 22px;
+}
+.research-panel > button {
+  margin-bottom: 22px;
+}
+@media (max-width: 600px) {
+  .research-row {
+    flex-direction: column;
+  }
+  .research-panel .panel-head {
+    flex-wrap: wrap;
+  }
+}
+.personal-details {
+  padding: 20px 22px;
+}
+.gmail-command {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 12px;
+  background: var(--surface-soft, #f4f6f8);
+  border-radius: 8px;
+}
+.gmail-preparation {
+  padding: 22px 24px;
+}
+.gmail-preparation > p {
+  padding: 0;
+  margin: 12px 0;
+  line-height: 1.55;
+}
+.gmail-preparation > ol {
+  padding-left: 22px;
+  margin: 16px 0;
+  line-height: 1.55;
+}
+.personal-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.personal-details > label {
+  margin: 18px 0;
+}
+.personal-details > p {
+  margin: 16px 0;
+}
+.personal-materials textarea {
+  width: 100%;
+}
+.gmail-delivery {
+  margin-bottom: 24px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 22px;
+}
+.panel.gmail-delivery > p,
+.panel.gmail-delivery > label,
+.panel.gmail-delivery > .button-row {
+  margin-left: 0;
+  margin-right: 0;
+}
+.gmail-delivery > h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+.gmail-delivery .button-row {
+  gap: 10px;
+}
+.gmail-delivery > .button-row:last-child {
+  margin-bottom: 0;
+}
+.draft-grid > .panel {
+  min-width: 0;
+}
+.draft-item input[type='checkbox'] {
+  width: 16px;
+  flex: 0 0 16px;
+  margin: 0;
+}
+.draft-editor .button-row > button,
+.draft-editor .button-row > select {
+  max-width: 100%;
+  white-space: normal;
+}
+.mail-meta > div {
+  align-items: flex-start;
+}
+.mail-meta span {
+  flex: 0 0 28px;
+}
+.mail-meta strong {
+  min-width: 0;
+}
+.mail-body {
+  font-weight: 400;
+  min-height: 360px;
+  line-height: 1.7;
+}
+.draft-notes {
+  margin: 0 22px 20px;
+  padding: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.draft-notes summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.draft-notes p {
+  margin: 12px 0 0;
+}
+.candidate > div:not(.avatar) {
+  min-width: 0;
+}
+.toast {
+  pointer-events: none;
+  left: auto;
+  right: 24px;
+  transform: none;
+  max-width: min(440px, calc(100vw - 96px));
+}
+@media (max-width: 600px) {
+  .gmail-delivery {
+    padding: 18px;
+  }
+  .gmail-delivery .button-row > button {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+  }
+  .gmail-delivery .gmail-preview {
+    padding: 14px;
+  }
+  .toast {
+    right: 15px;
+    bottom: 15px;
+  }
+}
+.gmail-delivery label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0;
+}
+.gmail-delivery select {
+  max-width: 100%;
+}
+.gmail-preview,
+.gmail-attempts article {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: 18px;
+  margin: 16px 0;
+}
+.gmail-preview article + article {
+  border-top: 1px solid var(--border, #ddd);
+  padding-top: 18px;
+  margin-top: 18px;
+}
+.gmail-preview-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.7;
+}
+.gmail-delivery .gmail-confirm {
+  flex-direction: row;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+.gmail-confirm input {
+  flex: 0 0 auto;
+  margin-top: 5px;
+}
+.gmail-attempts article p {
+  overflow-wrap: anywhere;
+}

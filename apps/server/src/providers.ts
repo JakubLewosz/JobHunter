@@ -242,3 +242,12 @@ export const mockReply = (
     body: 'SYMULACJA: Rekrutacja jest obecnie wstrzymana. Prosimy nie przesyłać kolejnych zgłoszeń.',
   };
 };
+
+export class DisabledMailProvider implements MailProvider {
+  async sendFrozenMessage(_input: FrozenMessage): Promise<SendResult> {
+    throw new Error('SEND_DISABLED');
+  }
+  async lookupSendResult(_id: string): Promise<SendResult | null> {
+    throw new Error('SEND_DISABLED');
+  }
+}

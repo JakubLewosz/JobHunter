@@ -1,3 +1,15 @@
+> Aktualizacja sposobu pracy: aplikacja jest osobistym narzędziem Jakuba, nie produktem dla wielu kandydatów. Główny przepływ to jedna wiadomość bazowa, CV, krótkie opisy projektów i Start/Pauza/Stop. Techniczne identyfikatory pozostają wewnętrzne. Próba obejmuje pracę researchu przez dzień i przygotowanie szkiców; podłączenie Gmaila i rzeczywiste wysyłki pozostają osobnym krokiem.
+
+> Stan z 8 października 2026: APPROVAL_REQUIRED ma dokładny podgląd maila z CV, test do siebie, celowaną historię i zatwierdzanie do trzech wiadomości. DEMO i RESEARCH_ONLY zachowują własne ograniczenia. Dziewięć osobno zleconych prób Gmaila ma SENT_CONFIRMED; odbiorcy zgłaszali Spam i Odebrane. Uwierzytelnienie i MIME sprawdzonych EML poprawne, dokładna przyczyna spamu nieustalona; API nadawcy nie potwierdza folderu u odbiorcy. Projekt używa wyłącznie konta przeznaczonego do JobHuntera; tymczasowe konto osobiste odłączono, cofnięto jego zgodę Google i usunięto lokalne dane adresu, zachowując anonimowe stany oraz wykorzystane limity. AUTO_POLICY pozostaje zablokowany. Szczegóły: [GMAIL_SETUP.md](docs/GMAIL_SETUP.md) i [TEST_REPORT.md](docs/TEST_REPORT.md).
+
+> Aktualizacja preferencji użytkownika (7 października 2026): w rzeczywistym profilu dostępność to około 20 godzin tygodniowo po lekcjach, bez deklarowania maksimum ani sztywnego przedziału. Wiadomości mają korzystać z jednego edytowalnego wzoru; nawiązanie i krótki opis jednego najbardziej dopasowanego projektu są dostosowywane do firmy. Ta aktualizacja zastępuje wcześniejszy przedział i dobór dwóch projektów w szkicu. Profil nadal zatwierdza użytkownik.
+
+> Aktualizacja strategii (7 października 2026): szerokie szukanie firm we wszystkich dziedzinach pasujących do zatwierdzonych projektów, również bez ogłoszonej rekrutacji. Nie ograniczać pierwszej tury do PHP/Laravel. Firma PROSPECT może otrzymać szkic zapytania o współpracę na potwierdzony publiczny kontakt ogólny; brak naboru i nieznane warunki muszą pozostać jawne. Nie oznaczać tego jako aktywnej oferty ani potwierdzonego dopasowania. Nadal zero rzeczywistych wysyłek w RESEARCH_ONLY.
+
+> Docelowy sposób pracy, główny przekaz o programowaniu z AI i późniejsze źródła ogłoszeń: [Wizja projektu](docs/WIZJA_PROJEKTU.md). Dokument zawiera najnowsze ustalenia z użytkownikiem oraz rozróżnia planowane funkcje od obecnej implementacji.
+
+> Aktualizacja stylu zgłoszeń (7 października 2026): [MESSAGE_STYLE.md](docs/MESSAGE_STYLE.md) zastępuje wcześniejsze obowiązkowe AI na początku. Naturalna kandydatura, opcjonalny Codex, personalizacja według typu kontaktu i bez prezentacji portfolio. Dostępność pozostaje zgodna z zatwierdzonym profilem: około 20 h.
+
 # JobHunter — pełna specyfikacja implementacyjna
 
 Wersja 1.0 • 7 października 2026 • Windows • aplikacja lokalna dla jednego kandydata

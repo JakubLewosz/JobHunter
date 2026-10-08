@@ -1,24 +1,33 @@
-# Granice bezpieczeństwa E2
+# Granice bezpieczeństwa E0–E4
 
-## Obecnie egzekwowane
+## Egzekwowane w aplikacji
 
-- Backend tylko na 127.0.0.1, pojedyncza instancja z blokadą katalogową i identyfikatorem właściciela. Po żywej blokadzie nie zabija cudzego procesu.
-- Dokładny Host i Origin; odrzucanie cross-site. Sesja z losowym tokenem uruchomienia, HttpOnly/SameSite=Strict, 12 godzin; CSRF dla mutacji. Brak CORS i tunelu. Link uruchomienia i plik launch.json pozostają lokalne, poza repo.
-- Dane SQLite/CV poza repo. Katalogi i pliki mają ograniczone prawa na macOS; Windows ACL/DPAPI nie zostały przetestowane. E2 nie przechowuje żadnych tokenów dostawców.
-- Transport poczty jest lokalnym mockiem. Compose MIME używa nodemailer streamTransport, bez SMTP. Odbiorca i nadawca muszą być poprawnymi adresami example.invalid. Nie ma endpointu dowolnej wysyłki ani trybu live.
-- Adapter researchu nie pobiera żadnej strony, a MockCodexRunner nie uruchamia modelu/shella. Dostęp do Gmaila nie istnieje. Konta w otwartej przeglądarce nie są używane.
-- Walidacja Zod strict, limit długości/tablic, istniejące i zatwierdzone fact IDs, evidence IDs bieżącej firmy; odrzucanie nieznanych pól, CRLF i określonych niepopartych deklaracji. Propozycja nie może zatwierdzić sama siebie.
-- Zgoda jest ograniczona do konkretnego hasha i wersji profilu, CV, konta, odbiorcy, treści i polityki. Dispatcher ponownie sprawdza stan w transakcji przed rezerwacją. Żadne operacje HTTP nie zachodzą w transakcji.
-- Jedna rezerwacja na outbox, jeden Message-ID/próba, niezmienny MIME, unikalność pierwszego kontaktu. Timeout i porzucone SENDING nie są ponownie kolejkowane.
-- React renderuje tekst; brak aktywnego HTML, śledzących obrazków i wykonywania źródeł. Nie pobiera się załączników. Eksport CSV zabezpiecza formuły i cytuje pola.
-- Stop/pauza/kill switch i blokady w bazie. Odmowa, wstrzymanie rekrutacji i zwrot blokują kolejne kontakty.
+- Backend wyłącznie 127.0.0.1, lokalna sesja HttpOnly/SameSite, dokładny Host/Origin, CSRF, bez CORS/tunelu. Runtime poza repo; jeden backend z blokadą bazowego katalogu danych. Tryb wybierany przy starcie, bez zmiany kontekstu działającego workera.
+- DEMO ma osobną bazę i fikcyjną pocztę. RESEARCH_ONLY inicjalizuje DisabledMailProvider; approve-batch, dispatch, reconcile, symulowane odpowiedzi/scenariusze i resume-sender odrzucane w backendzie. Przegląd szkicu zapisuje reviewed_at, nigdy draft_approval/outbox. Brak Gmaila, SMTP, odczytu prywatnej skrzynki ani wysyłania formularzy.
+- Osobny helper Gmail OAuth uruchamia wyłącznie użytkownik poleceniem gmail:connect. Tokeny i klient OAuth są w magazynie systemowym; status API czyta tylko metadane poza repo i nie otwiera magazynu. PKCE/state, loopback 127.0.0.1, stałe endpointy Google, kontrola granted scopes i potwierdzonego emaila. Żaden endpoint RESEARCH_ONLY nie wykonuje connect/send. Podgląd EML z zatwierdzonym PDF nie zatwierdza wysyłki.
+- Istniejące zgody E2 są związane z wersją i hashami profilu/CV/treści/odbiorcy/polityki; rezerwacje i niepewne próby zachowane. Restart SENDING → SEND_UNKNOWN, bez ślepego retry. Reconcile potwierdza tę samą próbę.
+- APPROVAL_REQUIRED dzieli wyłącznie osobiste materiały RESEARCH_ONLY; nie importuje DEMO. Gmail inicjalizuje się leniwie przy konkretnej operacji, nie przy otwarciu panelu. Zgoda Google na readonly/send nie tworzy zgody na żaden mail. Podgląd zawiera dokładny MIME z zatwierdzonym PDF i jest związany z kontem Google, wersją, profilem, CV, odbiorcą i polityką. Podgląd i zgoda: 15 minut; test do siebie ma osobny rodzaj i nie ustawia historii firmy.
+- Historia: jawna zgoda na wybrane adresy i zweryfikowane domeny firmy na godzinę. Pełny celowany scan, wszystkie strony, nagłówki zamiast całej skrzynki; cursor dopiero po zapisie kompletnej strony. Zmiana historyId, błąd, niepełny odczyt, limit 1000 wiadomości/45 sekund blokują wysyłkę. Bez inkrementalnego History API: każde ponowienie odczytu zaczyna pełny celowany scan. Historia ponownie sprawdzana przed wysłaniem. Szerszy readonly jest uprawnieniem Google; ograniczenie zakresu jest w aplikacji.
+- Sender zapisuje niezmienny MIME i rezerwację przed jednym HTTP POST. Po uzyskaniu tokenu ponownie sprawdza zgodę, pauzę, blokady i bajty. Retry dotyczy wyłącznie odczytów, nigdy send. SEND_UNKNOWN zachowany po timeoutach/restartach i zużywa limit. Kolejka po restarcie wymaga nowego podglądu i akceptacji. Maks. 3/paczka, 10/dzień, 50/kampania.
+- Reconcile: znane provider ID lub RFC Message-ID, dokładne konto, jeden odbiorca, temat, etykieta SENT i czas. Niejednoznaczność pozostaje nierozstrzygnięta; nie wyzwala send. Odpowiedzi wyłącznie z wybranego własnego wątku, bez pobierania załączników i bez AI. HTML zamieniany na tekst; kategorie wymagają przeglądu użytkownika. Semantyczne false/null blokuje kontakt do firmy; ręczna edycja wymaga odtworzenia odwołań oraz nowego przeglądu.
+- Fetcher tylko HTTP/HTTPS na 80/443, bez userinfo, cookies, autoryzacji/proxy. Każdy URL i przekierowanie sprawdzane. Wszystkie odpowiedzi DNS muszą być publiczne; połączenie używa przypiętego adresu, także przy kontrakcie lookup all:true. IPv4 specjalne/prywatne i IPv6 poza native global unicast oraz zakresy specjalne zablokowane.
+- Odczyt: 15 sekund, 4 przekierowania, 1 MiB sieci i po dekompresji, maks. 2 równoczesne operacje. 429 ustawia czasową blokadę hosta. Nie wykonujemy skryptów. CAPTCHA/logowanie/403/404/nieobsługiwane formaty mają jawny status; nie obchodzimy zabezpieczeń. Jeden ograniczony retry błędu strony/timeoutu.
+- Modelowe URL-e i wyniki wyszukiwania są kandydatami. Dowód ma pierwotny/końcowy URL, tytuł, czas, metodę, stan, rzeczywisty fragment i hash. Cytat sprawdzany przez normalizację spacji i wyszukanie w odczytanej treści. Email musi dosłownie wystąpić w zweryfikowanym cytacie; brak zgadywania adresu. Model może pomylić interpretację źródła — przegląd nadal konieczny.
+- Schematy strict nie przyjmują recipient/approval/policy/shell. Model dostaje aktualny zatwierdzony profil i związane dowody, bez bazy, CV, prywatnej poczty i tokenów. Każdy szkic ma odwołania i mapę deklaracji; osobna kontrola modelu porównuje znaczenie całej treści z faktami. Kontrole reguł i semantyczne są pomocnicze, nie dowodzą prawdziwości każdego zdania.
+- Edycja tworzy wersję i unieważnia poprzednią kontrolę semantyczną/przegląd. React renderuje tekst; źródła bez aktywnego HTML. CSV zabezpiecza formuły.
 
-## Ograniczenia i bramki kolejnych etapów
+## Runtime Codexa
 
-- Lokalna sesja nie chroni przed procesem z pełnym dostępem do konta użytkownika. E2 nie wykazuje izolacji agenta runtime ani produkcyjnego bezpieczeństwa.
-- Reguły prawdziwości tekstu są ograniczone; nie rozpoznają każdego możliwego zmyślenia. Wymagany przegląd użytkownika. AUTO_POLICY pozostaje zablokowany.
-- Brak fetchera w E2. Ochrona SSRF/DNS rebinding i sanitizacja publicznych źródeł muszą zostać zaimplementowane oraz przetestowane przed E3. Nie udaje się ich działających na podstawie braku dostępu do sieci w mocku.
-- Gmail/OAuth, Credential Manager/DPAPI, ograniczony import historii i zewnętrzna klasyfikacja korespondencji niezaimplementowane. Gmail readonly to szeroki zakres konta, który trzeba wyjaśnić użytkownikowi w E4.
-- E2 nie oferuje backupu/retencji. Nie kopiuj pojedynczego pliku aktywnego SQLite/WAL; przyszły backup powinien używać API SQLite. Raporty nie są pełną kopią bazy.
-- Windows i ograniczenia uprawnień runtime pozostają niezweryfikowane. Testy na macOS tego nie zastępują.
-- Kwoty są konserwatywne: także jednoznacznie nieudane próby pozostają w ledgerze. Sam restart, zmiana konfiguracji ani daty nie usuwa historii rezerwacji.
+Proces uruchamiany bez shellowej komendy, z kontrolowanymi argumentami, stdin i osobnym katalogiem tymczasowym. `--no-daemon`, `--ephemeral`, `--ignore-user-config`, `--ignore-rules`, read-only, approval never, strict config. Brak resume --last. Shell/unified exec, apps, pluginy, hooks, browser, computer use, obrazki, pamięć, host skill discovery i multi-agent wyłączone. Wyłączono również zarządzanie worktree, cele, automatyzacje aplikacji i inne zbędne funkcje lokalne. `code_mode_host` potrzebny natywnemu web search; sam jego host nie jest sandboxem całego systemu.
+
+Środowisko procesu ma małą allowlistę zmiennych systemowych i lokalizacji oficjalnego uwierzytelniania; bez OPENAI_API_KEY, tokenu JobHunter i proxy. Nie odczytujemy ani nie kopiujemy auth.json. Przed każdym wywołaniem sprawdzamy oficjalny login status: wymagane ChatGPT. Nie logujemy strumienia/stderr/promptów: utrwalane są tylko klasy błędów, czas i udostępnione tokeny. Limit wyjścia 2 MiB i timeout 120 s. Brak automatycznych retry modelu; jawne ponowienia etapu mają limit.
+
+Pauza/stop kończą wyłącznie własną grupę procesu (macOS) lub własny PID i jego dzieci przez taskkill (Windows — niezweryfikowany). Zapisane etapy pozostają; przerwany cykl nie jest COMPLETED.
+
+Test z syntetycznym plikiem wykazał brak odczytu/zapisu przy tej wersji CLI i wyłączonych narzędziach. Nie daje gwarancji ograniczenia wszystkich odczytów hosta przez sam proces CLI, konfigurację zarządzaną lub przyszłe wersje. Nie badano Windows ani prywatnych plików. Brak pełnej, niezależnej izolacji OS oznacza trwałą blokadę AUTO_POLICY. Nie używamy full access jako naprawy.
+
+## Prywatność i dalsze ograniczenia
+
+.gitignore obejmuje runtime, bazy/WAL, backupy, CV/PDF, eksporty, OAuth/klucze/tokeny i konfiguracje lokalne. Przed zleconą publikacją kodu 8 października sprawdzono nazwy i treść wszystkich 86 plików przeznaczonych do repozytorium; nie znaleziono prywatnych plików ani dopasowań sprawdzanych wzorców sekretów. Nie wypisywano sekretów ani prywatnych materiałów. Skan wzorców jest kontrolą pomocniczą, nie gwarancją wykrycia każdego rodzaju danych. Ignore nie usuwa już śledzonych danych. Nie zmieniano historii ani widoczności repozytorium. GitHub otrzymuje kod, testy i dokumentację; prywatny stan runtime pozostaje poza repo.
+
+Sesja lokalna nie chroni przed innym procesem z pełnym dostępem do tego konta. Windows ACL/DPAPI, backup i retencja niezaimplementowane. Git przenosi kod; prywatny stan pozostaje lokalny. Nie kopiuj samego pliku aktywnego SQLite/WAL jako backupu.

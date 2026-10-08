@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import {
   ArrowUpRight,
@@ -29,6 +29,10 @@ import {
   CircleCheck,
   Info,
 } from 'lucide-react';
+import { PersonalMaterials } from './PersonalMaterials';
+import { GmailPreparation } from './GmailPreparation';
+import { GmailDelivery } from './GmailDelivery';
+import { ResearchPanel, ResearchProof } from './ResearchPanel';
 import { api, initialize } from './api';
 import type { Dashboard, Row } from '../../../packages/shared/types';
 
@@ -94,8 +98,8 @@ const labels: Record<string, string> = {
   RECRUITMENT_ON_HOLD: 'Rekrutacja wstrzymana',
   ON_HOLD: 'Rekrutacja wstrzymana',
   APPROVED: 'Zatwierdzona',
-  SENT: 'Wysłana w demo',
-  SENT_PROVIDER: 'Przyjęta przez mock',
+  SENT: 'Wysłana',
+  SENT_PROVIDER: 'Przyjęta przez dostawcę',
   SENT_CONFIRMED: 'Potwierdzona w Wysłanych',
   SEND_UNKNOWN: 'Niepewny wynik',
   QUEUED: 'W kolejce',
@@ -124,6 +128,7 @@ const labels: Record<string, string> = {
   UNCLEAR: 'Niejasna',
   ACTIVE: 'Aktywna oferta',
   OPEN: 'Otwarty nabór',
+  PROSPECT: 'Zapytanie o współpracę',
   ARCHIVED: 'Archiwalna oferta',
   NORMAL: 'Normalny przebieg',
   TIMEOUT_AFTER_SEND: 'Timeout po przyjęciu',
@@ -281,7 +286,7 @@ export function App() {
           J<span>•</span>
         </div>
         <h1>JobHunter</h1>
-        <p>{error || 'Przygotowuję Twój panel…'}</p>
+        <p>{error || 'Uruchamiam JobHunter…'}</p>
         {error && (
           <p className="muted">
             Uruchom backend, a potem otwórz panel poleceniem <code>npm run open</code>.
@@ -290,6 +295,14 @@ export function App() {
       </div>
     );
   const d = data.dashboard;
+  const research = d.mode !== 'DEMO';
+  const delivery = d.mode === 'APPROVAL_REQUIRED';
+  const currentName =
+    research && screen === 'profile'
+      ? 'Moje materiały'
+      : research && screen === 'integrations'
+        ? 'Połączenia'
+        : nav.find((n) => n[0] === screen)?.[1];
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -310,22 +323,48 @@ export function App() {
         </a>
         <div className="nav-label">TWOJA PRZESTRZEŃ</div>
         <nav>
-          {nav.map(([key, name, Icon]) => (
-            <button
-              key={key}
-              className={`nav-item ${screen === key ? 'active' : ''}`}
-              aria-label={name}
-              title={name}
-              onClick={() => setScreen(key)}
-            >
-              <Icon size={18} />
-              <span>{name}</span>
-              {key === 'drafts' && d.pending > 0 && <b>{d.pending}</b>}
-              {key === 'replies' && data.replies.some((r) => !r.reviewed_at) && (
-                <i className="nav-dot" />
-              )}
-            </button>
-          ))}
+          {nav
+            .filter(
+              ([key]) =>
+                !research ||
+                !(delivery ? ['campaign', 'reports'] : ['replies', 'campaign', 'reports']).includes(
+                  key,
+                ),
+            )
+            .map(([key, name, Icon]) => (
+              <button
+                key={key}
+                className={`nav-item ${screen === key ? 'active' : ''}`}
+                aria-label={
+                  research && key === 'profile'
+                    ? 'Moje materiały'
+                    : research && key === 'integrations'
+                      ? 'Połączenia'
+                      : name
+                }
+                title={
+                  research && key === 'profile'
+                    ? 'Moje materiały'
+                    : research && key === 'integrations'
+                      ? 'Połączenia'
+                      : name
+                }
+                onClick={() => setScreen(key)}
+              >
+                <Icon size={18} />
+                <span>
+                  {research && key === 'profile'
+                    ? 'Moje materiały'
+                    : research && key === 'integrations'
+                      ? 'Połączenia'
+                      : name}
+                </span>
+                {key === 'drafts' && d.pending > 0 && <b>{d.pending}</b>}
+                {key === 'replies' && data.replies.some((r) => !r.reviewed_at) && (
+                  <i className="nav-dot" />
+                )}
+              </button>
+            ))}
         </nav>
         <div className="sidebar-bottom">
           <div className="local-note">
@@ -339,9 +378,11 @@ export function App() {
             <div className="avatar">JL</div>
             <div>
               <strong>{data.profile.name}</strong>
-              <span>Przestrzeń kandydata</span>
+              <span>Moje poszukiwania pracy</span>
             </div>
-            <Badge value="DEMO">DEMO</Badge>
+            <Badge value={data.dashboard.mode}>
+              {delivery ? 'Gmail' : research ? 'Research' : 'DEMO'}
+            </Badge>
           </div>
         </div>
       </aside>
@@ -349,7 +390,7 @@ export function App() {
         <header className="topbar">
           <div className="breadcrumb">
             Twoja przestrzeń <ChevronRight size={13} />
-            <strong>{nav.find((n) => n[0] === screen)?.[1]}</strong>
+            <strong>{currentName}</strong>
           </div>
           <div className="topbar-right">
             <span className="local-indicator">
@@ -370,12 +411,28 @@ export function App() {
           <div className="demo-banner">
             <span>
               <Info size={16} />
-              <strong>Tryb demonstracyjny</strong>
+              <strong>
+                {delivery
+                  ? 'Gmail — zatwierdzane wiadomości'
+                  : research
+                    ? 'RESEARCH_ONLY'
+                    : 'Tryb demonstracyjny'}
+              </strong>
               <span className="banner-detail">
-                Fikcyjne firmy, lokalne szkice i symulowane wiadomości.
+                {delivery
+                  ? 'Research i wysyłka konkretnych wiadomości po Twojej akceptacji.'
+                  : research
+                    ? 'Publiczne źródła i szkice Codexa do ręcznego przeglądu.'
+                    : 'Fikcyjne firmy, lokalne szkice i symulowane wiadomości.'}
               </span>
             </span>
-            <span className="simulation-label">SYMULACJA · ZERO PRAWDZIWYCH WYSYŁEK</span>
+            <span className="simulation-label">
+              {delivery
+                ? 'WYSYŁKA PO ZATWIERDZENIU'
+                : research
+                  ? 'WYSYŁKA NIEDOSTĘPNA'
+                  : 'SYMULACJA · ZERO PRAWDZIWYCH WYSYŁEK'}
+            </span>
           </div>
           {error && (
             <div className="error" role="alert">
@@ -389,43 +446,91 @@ export function App() {
           <div className="page-heading">
             <div>
               <div className="eyebrow">
-                {screen === 'dashboard'
-                  ? 'DOBRZE CIĘ WIDZIEĆ, JAKUB'
-                  : nav.find((n) => n[0] === screen)?.[1].toUpperCase()}
+                {screen === 'dashboard' ? 'DOBRZE CIĘ WIDZIEĆ, JAKUB' : currentName?.toUpperCase()}
               </div>
-              <h1>{titles[screen][0]}</h1>
-              <p>{titles[screen][1]}</p>
+              <h1>
+                {research && screen === 'dashboard'
+                  ? 'Moje poszukiwania pracy'
+                  : research && screen === 'profile'
+                    ? 'Moja wiadomość i CV'
+                    : titles[screen][0]}
+              </h1>
+              <p>
+                {research && screen === 'dashboard'
+                  ? 'Uruchom Codexa i wróć później do firm oraz przygotowanych wiadomości.'
+                  : research && screen === 'profile'
+                    ? 'Jedna wiadomość bazowa, CV i moje projekty.'
+                    : research && ['drafts', 'campaign'].includes(screen)
+                      ? delivery
+                        ? 'Przejrzyj konkretne wiadomości, odbiorców i CV przed wysłaniem.'
+                        : 'Trwały research i szkice do ręcznego przeglądu. Wysyłka niedostępna.'
+                      : titles[screen][1]}
+              </p>
             </div>
-            {screen === 'dashboard' && (
+            {screen === 'dashboard' && !research && (
               <button
                 className="primary"
                 disabled={busy}
                 onClick={() =>
                   d.profileApproved
-                    ? void act(() => api('campaign/start', {}), 'Cykl demo uruchomiony.')
+                    ? void act(
+                        () => api(research ? 'research/day' : 'campaign/start', {}),
+                        'Cykl zapisany w kolejce.',
+                      )
                     : setScreen('profile')
                 }
               >
                 <Play size={16} />
-                {d.profileApproved ? 'Uruchom cykl demo' : 'Sprawdź profil'}
+                {d.profileApproved
+                  ? research
+                    ? 'Szukaj firm'
+                    : 'Uruchom cykl demo'
+                  : 'Sprawdź profil'}
               </button>
             )}
           </div>
-          {screen === 'dashboard' && (
-            <DashboardView data={data} go={setScreen} act={act} busy={busy} />
-          )}
+          {screen === 'dashboard' &&
+            (research ? (
+              <ResearchPanel dashboard={d} act={act} busy={busy} />
+            ) : (
+              <DashboardView data={data} go={setScreen} act={act} busy={busy} />
+            ))}
           {screen === 'companies' && <CompaniesView data={data} act={act} />}
           {screen === 'drafts' && <DraftsView data={data} act={act} busy={busy} />}
           {screen === 'replies' && <RepliesView data={data} act={act} />}
-          {screen === 'profile' && <ProfileView data={data} act={act} busy={busy} />}
-          {screen === 'campaign' && <CampaignView data={data} act={act} busy={busy} />}
-          {screen === 'integrations' && <IntegrationsView data={data} />}
-          {screen === 'reports' && <ReportsView data={data} act={act} />}
+          {screen === 'profile' &&
+            (research ? (
+              <PersonalMaterials profile={data.profile} act={act} busy={busy} />
+            ) : (
+              <ProfileView data={data} act={act} busy={busy} />
+            ))}
+          {screen === 'campaign' &&
+            (research ? (
+              <ResearchPanel dashboard={d} act={act} busy={busy} />
+            ) : (
+              <CampaignView data={data} act={act} busy={busy} />
+            ))}
+          {screen === 'integrations' && <IntegrationsView data={data} act={act} busy={busy} />}
+          {screen === 'reports' &&
+            (research ? (
+              <>
+                <div className="button-row">
+                  <a className="secondary" href="/api/reports/export">
+                    Pobierz raport researchu
+                  </a>
+                </div>
+                <ResearchPanel dashboard={d} act={act} busy={busy} />
+              </>
+            ) : (
+              <ReportsView data={data} act={act} />
+            ))}
           <footer>
             <span>
               JobHunter <span className="muted">/</span> krok po kroku do dobrej współpracy
             </span>
-            <span>DEMO · E0–E2 · Dane z SQLite</span>
+            <span>
+              {d.mode} · {delivery ? 'E4' : research ? 'E3' : 'E0–E2'} · Dane z SQLite
+            </span>
           </footer>
         </main>
       </div>
@@ -760,6 +865,7 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
   const [csv, setCsv] = useState('');
   const [preview, setPreview] = useState<Row>();
   const [importOpen, setImportOpen] = useState(false);
+  const research = data.dashboard.mode !== 'DEMO';
   const rows = data.companies.filter(
     (c) =>
       (filter === 'history'
@@ -826,7 +932,7 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
               </thead>
               <tbody>
                 {rows.map((c) => (
-                  <tr key={c.id} onClick={() => setSelected(c)}>
+                  <tr key={c.opportunity_id ?? c.id} onClick={() => setSelected(c)}>
                     <td>
                       <div className="table-company">
                         <div className="company-logo">
@@ -850,7 +956,7 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
                     <td>
                       {c.canonical_url ? (
                         <span className="source-tag">
-                          <FileText size={13} /> Źródło demo
+                          <FileText size={13} /> {research ? 'Publiczne źródło' : 'Źródło demo'}
                         </span>
                       ) : (
                         <span className="muted">Do weryfikacji</span>
@@ -869,7 +975,11 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
         ) : (
           <Empty
             title="Jeszcze nie ma wyników"
-            text="Uruchom cykl demo na ekranie Dzisiaj, aby zobaczyć firmy i oferty."
+            text={
+              research
+                ? 'Użyj Szukaj firm lub Dodaj URL na ekranie Dzisiaj.'
+                : 'Uruchom cykl demo na ekranie Dzisiaj, aby zobaczyć firmy i oferty.'
+            }
           />
         )}
       </Section>
@@ -913,41 +1023,47 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
                 </p>
               </>
             )}
+            {selected.researchDetails && <ResearchProof details={selected.researchDetails} />}
             {selected.suppression_reason && (
               <div className="inline-warning">
                 <ShieldCheck size={16} />
                 Blokada: {label(selected.suppression_reason)}
               </div>
             )}
-            {!selected.opportunity_id && !selected.suppression_reason && (
-              <div className="form-row">
-                <label>
-                  Rozstrzygnięcie historii
-                  <select
-                    defaultValue={selected.history_status}
-                    onChange={(e) =>
-                      void act(
-                        () =>
-                          api('history/review', { companyId: selected.id, status: e.target.value }),
-                        'Historia zapisana.',
-                      ).then(() => setSelected(undefined))
-                    }
-                  >
-                    {[
-                      'HISTORY_TO_VERIFY',
-                      'NEW',
-                      'CONTACTED',
-                      'ACTIVE_CONVERSATION',
-                      'REJECTED',
-                    ].map((v) => (
-                      <option key={v} value={v}>
-                        {label(v)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
+            {(!selected.opportunity_id ||
+              (research && selected.history_status === 'HISTORY_TO_VERIFY')) &&
+              !selected.suppression_reason && (
+                <div className="form-row">
+                  <label>
+                    Rozstrzygnięcie historii
+                    <select
+                      defaultValue={selected.history_status}
+                      onChange={(e) =>
+                        void act(
+                          () =>
+                            api('history/review', {
+                              companyId: selected.id,
+                              status: e.target.value,
+                            }),
+                          'Historia zapisana.',
+                        ).then(() => setSelected(undefined))
+                      }
+                    >
+                      {[
+                        'HISTORY_TO_VERIFY',
+                        'NEW',
+                        'CONTACTED',
+                        'ACTIVE_CONVERSATION',
+                        'REJECTED',
+                      ].map((v) => (
+                        <option key={v} value={v}>
+                          {label(v)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
             <p className="muted">
               Nazwy z wcześniejszych rozważań nie stanowią potwierdzenia wysyłki. Firmy z historii
               nie są kandydatami do nowego kontaktu.
@@ -957,7 +1073,7 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
       )}
       {importOpen && (
         <Section
-          title="Import historii DEMO"
+          title={research ? 'Import rzeczywistej historii' : 'Import historii DEMO'}
           subtitle="Kolumny: company,status,domain,email,date. Status SUGGESTED oznacza sugestię, nie wysyłkę."
         >
           <p className="muted">W tej bazie używaj fikcyjnych adresów i domen .example.invalid.</p>
@@ -1036,7 +1152,35 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
   const [version, setVersion] = useState(0);
   const [versions, setVersions] = useState<Row[]>([]);
   const [editing, setEditing] = useState(false);
+  const [sender, setSender] = useState('');
+  const [cvId, setCvId] = useState('');
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const research = data.dashboard.mode !== 'DEMO';
+  const delivery = data.dashboard.mode === 'APPROVAL_REQUIRED';
+  useEffect(() => {
+    if (research)
+      void api('research/gmail-preparation').then((r) => setSender(r.account?.email ?? ''));
+  }, [research]);
   const d = data.drafts.find((d) => d.id === active) ?? data.drafts[0];
+  useEffect(() => {
+    const element = bodyRef.current;
+    if (!element) return;
+    const fit = () => {
+      element.style.height = 'auto';
+      element.style.height = `${Math.max(360, element.scrollHeight + 2)}px`;
+    };
+    fit();
+    let width = element.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const next = element.getBoundingClientRect().width;
+      if (next !== width) {
+        width = next;
+        fit();
+      }
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [body, editing, d?.id]);
   useEffect(() => {
     if (!d) return;
     setBody(d.body);
@@ -1051,7 +1195,11 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
         <Empty
           icon={Mail}
           title="Każda wiadomość ma swój powód"
-          text="Szkice pojawią się po zatwierdzeniu profilu i wykonaniu pierwszego cyklu demo."
+          text={
+            research
+              ? 'Zatwierdź materiały i wykonaj research. Szkice wymagają sprawdzonego kontaktu firmowego lub rekrutacyjnego.'
+              : 'Szkice pojawią się po zatwierdzeniu profilu i wykonaniu pierwszego cyklu demo.'
+          }
         />
       </Section>
     );
@@ -1061,41 +1209,47 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
         <span className="muted">
           {data.drafts.length} szkiców · {data.dashboard.pending} do sprawdzenia
         </span>
-        <button
-          className="primary"
-          disabled={!selected.length || busy}
-          onClick={() =>
-            void act(
-              () =>
-                api('drafts/approve-batch', {
-                  drafts: data.drafts
-                    .filter((d) => selected.includes(d.id))
-                    .map((d) => ({ id: d.id, version: d.version })),
-                }),
-              'Wybrane wersje zatwierdzone do symulacji.',
-            ).then(() => setSelected([]))
-          }
-        >
-          <CheckCheck size={16} />
-          Zatwierdź i symuluj wysyłkę ({selected.length})
-        </button>
+        {!research && (
+          <button
+            className="primary"
+            disabled={!selected.length || busy}
+            onClick={() =>
+              void act(
+                () =>
+                  api('drafts/approve-batch', {
+                    drafts: data.drafts
+                      .filter((d) => selected.includes(d.id))
+                      .map((d) => ({ id: d.id, version: d.version })),
+                  }),
+                'Wybrane wersje zatwierdzone do symulacji.',
+              ).then(() => setSelected([]))
+            }
+          >
+            <CheckCheck size={16} />
+            Zatwierdź i symuluj wysyłkę ({selected.length})
+          </button>
+        )}
       </div>
       <div className="draft-grid">
         <Section title="Twoje szkice" className="draft-list">
           <div>
             {data.drafts.map((x) => (
               <div className={`draft-item ${x.id === d.id ? 'current' : ''}`} key={x.id}>
-                <input
-                  type="checkbox"
-                  aria-label={`Wybierz ${x.canonical_name}`}
-                  checked={selected.includes(x.id)}
-                  disabled={x.status !== 'NEEDS_REVIEW'}
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked ? [...selected, x.id] : selected.filter((id) => id !== x.id),
-                    )
-                  }
-                />
+                {(!research || delivery) && (
+                  <input
+                    type="checkbox"
+                    aria-label={`Wybierz ${x.canonical_name}`}
+                    checked={selected.includes(x.id)}
+                    disabled={delivery ? x.status === 'SENT' : x.status !== 'NEEDS_REVIEW'}
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? [...selected, x.id]
+                          : selected.filter((id) => id !== x.id),
+                      )
+                    }
+                  />
+                )}
                 <button onClick={() => setActive(x.id)}>
                   <strong>{x.canonical_name}</strong>
                   <span>{x.subject}</span>
@@ -1106,6 +1260,7 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
           </div>
         </Section>
         <Section
+          className="draft-editor"
           title={d.canonical_name}
           subtitle={`Wersja ${version} · przygotowano ${date(d.created_at)}`}
           action={<Badge value={d.status} />}
@@ -1113,7 +1268,11 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
           <div className="mail-meta">
             <div>
               <span>OD</span>
-              <strong>{data.campaign.account_email}</strong>
+              <strong>
+                {research
+                  ? sender || 'Nadawca do uzupełnienia w podglądzie'
+                  : data.campaign.account_email}
+              </strong>
             </div>
             <div>
               <span>DO</span>
@@ -1124,7 +1283,9 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
               <strong>
                 {data.campaign.cv_id
                   ? data.profile.cvs.find((c: Row) => c.id === data.campaign.cv_id)?.file_name
-                  : 'Bez załącznika — dozwolone w DEMO'}
+                  : research
+                    ? 'Nie przekazano CV do modelu'
+                    : 'Bez załącznika — dozwolone w DEMO'}
               </strong>
             </div>
           </div>
@@ -1141,9 +1302,10 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
             Treść
             <textarea
               aria-label="Treść wiadomości"
+              ref={bodyRef}
               className="mail-body"
               disabled={!editing}
-              rows={18}
+              rows={16}
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
@@ -1203,6 +1365,145 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
               ))}
             </select>
           </div>
+          {research && (
+            <>
+              <div className="button-row">
+                {delivery && (
+                  <button
+                    className="secondary"
+                    disabled={editing || busy}
+                    onClick={() =>
+                      void act(
+                        () => api(`gmail/drafts/${d.id}/verify`, { version: d.version }),
+                        'Sprawdzono zgodność treści z materiałami i źródłami.',
+                      )
+                    }
+                  >
+                    Sprawdź zgodność treści
+                  </button>
+                )}
+                <button
+                  className="secondary"
+                  disabled={editing || busy || !data.dashboard.profileApproved}
+                  onClick={() =>
+                    void act(
+                      () => api(`research/drafts/${d.id}/regenerate`, { version: d.version }),
+                      'Zlecono nową wersję. Dotychczasowe wersje pozostają w historii.',
+                    )
+                  }
+                >
+                  Wygeneruj nową wersję
+                </button>
+                <button
+                  className="secondary"
+                  onClick={() =>
+                    void act(
+                      async () => navigator.clipboard.writeText(subject),
+                      'Skopiowano temat.',
+                    )
+                  }
+                >
+                  Kopiuj temat
+                </button>
+                <button
+                  className="secondary"
+                  onClick={() =>
+                    void act(async () => navigator.clipboard.writeText(body), 'Skopiowano treść.')
+                  }
+                >
+                  Kopiuj treść
+                </button>
+                <button
+                  className="secondary"
+                  disabled={editing || busy}
+                  onClick={() =>
+                    void act(
+                      () => api(`drafts/${d.id}/review`, { version: d.version }),
+                      'Zapisano przegląd; bez zgody na wysyłkę.',
+                    )
+                  }
+                >
+                  Oznacz jako przejrzany
+                </button>
+              </div>
+              <details className="personal-details">
+                <summary>Podgląd maila z CV</summary>
+                <label>
+                  Twój adres nadawcy
+                  <input
+                    aria-label="Adres nadawcy do podglądu"
+                    type="email"
+                    value={sender}
+                    onChange={(e) => setSender(e.target.value)}
+                  />
+                </label>
+                <label>
+                  CV do załączenia
+                  <select
+                    aria-label="CV do podglądu"
+                    value={cvId}
+                    onChange={(e) => setCvId(e.target.value)}
+                  >
+                    <option value="">Wybierz zatwierdzone CV</option>
+                    {data.profile.cvs
+                      .filter((cv: Row) => cv.approved_at)
+                      .map((cv: Row) => (
+                        <option key={cv.id} value={cv.id}>
+                          {cv.file_name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <button
+                  className="secondary"
+                  disabled={busy || editing || !sender || !cvId}
+                  onClick={() =>
+                    void act(async () => {
+                      const preview = await api(`research/drafts/${d.id}/preview`, {
+                        sender,
+                        cvId,
+                        version: d.version,
+                      });
+                      const bytes = Uint8Array.from(atob(preview.base64), (c) => c.charCodeAt(0));
+                      const url = URL.createObjectURL(
+                        new Blob([bytes], { type: 'message/rfc822' }),
+                      );
+                      const anchor = document.createElement('a');
+                      anchor.href = url;
+                      anchor.download = preview.fileName;
+                      anchor.click();
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    }, 'Pobrano lokalny podgląd z CV. Nie wysłano wiadomości.')
+                  }
+                >
+                  Pobierz podgląd EML z CV
+                </button>
+                <p className="muted">
+                  To lokalny plik do przeglądu. Otwarcie go w programie pocztowym nie oznacza
+                  wysyłki przez JobHunter.
+                </p>
+              </details>
+              <p className="muted">
+                {d.reviewed_at ? 'Przejrzany przez użytkownika' : 'Wymagany przegląd'} · Brak zgody
+                na przyszłą wysyłkę.
+              </p>
+              {d.profile_hash !== data.profile.profile_hash && (
+                <p className="inline-warning">
+                  Profil zmienił się po przygotowaniu szkicu. Treść wymaga aktualizacji.
+                </p>
+              )}
+              {!!JSON.parse(d.warnings ?? '[]').length && (
+                <details className="draft-notes">
+                  <summary>Uwagi do szkicu ({JSON.parse(d.warnings).length})</summary>
+                  {JSON.parse(d.warnings).map((w: string, i: number) => (
+                    <p className="muted" key={i}>
+                      {w}
+                    </p>
+                  ))}
+                </details>
+              )}
+            </>
+          )}
           <div className="proof-box">
             <ShieldCheck size={17} />
             <div>
@@ -1216,7 +1517,7 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
                 {data.companies
                   .filter((c) => c.id === d.company_id)
                   .map((c) => (
-                    <p key={c.id}>
+                    <p key={c.opportunity_id ?? c.id}>
                       {c.canonical_url}
                       <br />
                       {c.fragment}
@@ -1225,15 +1526,23 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
                 {data.profile.facts
                   .filter((f: Row) => JSON.parse(d.fact_ids).includes(f.id))
                   .map((f: Row) => (
-                    <p key={f.id}>
-                      <code>{f.id}</code> · {f.content}
-                    </p>
+                    <p key={f.id}>{f.content}</p>
                   ))}
               </details>
             </div>
           </div>
         </Section>
       </div>
+      {delivery && (
+        <GmailDelivery
+          drafts={data.drafts.filter((x) => selected.includes(x.id))}
+          cvs={data.profile.cvs}
+          current={d}
+          editing={editing}
+          act={act}
+          busy={busy}
+        />
+      )}
     </>
   );
 }
@@ -1316,6 +1625,7 @@ function RepliesView({ data, act }: { data: Data; act: Act }) {
 }
 
 function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean }) {
+  const research = data.dashboard.mode !== 'DEMO';
   const [form, setForm] = useState<Row>(data.profile);
   const [dirty, setDirty] = useState(false);
   useEffect(() => {
@@ -1331,10 +1641,10 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
       <div className="stack">
         <Section
           title="Profil kandydata"
-          subtitle="Zatwierdzenie dotyczy wyłącznie tej bazy DEMO."
+          subtitle={`Zatwierdzenie dotyczy wyłącznie bazy ${data.dashboard.mode}.`}
           action={
             <Badge value={data.profile.approved_at ? 'APPROVED' : 'NEEDS_REVIEW'}>
-              {data.profile.approved_at ? 'Zatwierdzony w demo' : 'Do zatwierdzenia'}
+              {data.profile.approved_at ? 'Zatwierdzony profil' : 'Do zatwierdzenia'}
             </Badge>
           }
         >
@@ -1351,28 +1661,61 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
                 onChange={(e) => change('goal', e.target.value)}
               />
             </label>
-            <div className="two-col">
+            {research ? (
               <label>
-                Godziny tygodniowo — minimum
+                Orientacyjnie godzin tygodniowo
                 <input
+                  aria-label="Orientacyjnie godzin tygodniowo"
                   type="number"
                   min={1}
-                  max={40}
-                  value={form.hours_min}
-                  onChange={(e) => change('hours_min', +e.target.value)}
+                  max={80}
+                  value={form.hours_approx}
+                  onChange={(e) => {
+                    const hours = Number(e.target.value);
+                    setForm({
+                      ...form,
+                      hours_approx: hours,
+                      facts: form.facts.map((f: Row) =>
+                        f.fact_key === 'availability'
+                          ? {
+                              ...f,
+                              content: `Płatna praca w pełni zdalna, około ${hours} godzin tygodniowo, przede wszystkim po lekcjach.`,
+                            }
+                          : f,
+                      ),
+                    });
+                    setDirty(true);
+                  }}
                 />
+                <small>
+                  Około {form.hours_approx} godzin po lekcjach — orientacyjna dostępność, bez
+                  deklarowania maksimum.
+                </small>
               </label>
-              <label>
-                Maksimum
-                <input
-                  type="number"
-                  min={1}
-                  max={40}
-                  value={form.hours_max}
-                  onChange={(e) => change('hours_max', +e.target.value)}
-                />
-              </label>
-            </div>
+            ) : (
+              <div className="two-col">
+                <label>
+                  Godziny tygodniowo — minimum
+                  <input
+                    type="number"
+                    min={1}
+                    max={40}
+                    value={form.hours_min}
+                    onChange={(e) => change('hours_min', +e.target.value)}
+                  />
+                </label>
+                <label>
+                  Maksimum
+                  <input
+                    type="number"
+                    min={1}
+                    max={40}
+                    value={form.hours_max}
+                    onChange={(e) => change('hours_max', +e.target.value)}
+                  />
+                </label>
+              </div>
+            )}
           </div>
           <h3 className="subheading">Fakty używane w wiadomościach</h3>
           <div className="fact-list">
@@ -1386,6 +1729,7 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
                 </span>
                 <textarea
                   rows={2}
+                  disabled={research && f.fact_key === 'availability'}
                   value={f.content}
                   onChange={(e) => {
                     const facts = [...form.facts];
@@ -1397,6 +1741,22 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
               </label>
             ))}
           </div>
+          {research && (
+            <label>
+              Wspólny wzór wiadomości
+              <textarea
+                aria-label="Wspólny wzór wiadomości"
+                rows={14}
+                value={form.message_template}
+                onChange={(e) => change('message_template', e.target.value)}
+              />
+              <small>
+                Codex zachowa układ, dopasuje nawiązanie do firmy i krótko opisze jeden najbardziej
+                trafny projekt. Nawiasy oznaczają miejsca do uzupełnienia zatwierdzonymi faktami.
+                Zmiana wzoru wymaga ponownego zatwierdzenia profilu.
+              </small>
+            </label>
+          )}
           <div className="button-row">
             <button
               className="secondary"
@@ -1409,8 +1769,12 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
                       {
                         name: form.name,
                         goal: form.goal,
-                        hours_min: form.hours_min,
-                        hours_max: form.hours_max,
+                        ...(research
+                          ? {
+                              hours_approx: Number(form.hours_approx),
+                              message_template: form.message_template,
+                            }
+                          : { hours_min: form.hours_min, hours_max: form.hours_max }),
                         version: form.version,
                         facts: form.facts.map((f: Row) => ({ id: f.id, content: f.content })),
                       },
@@ -1428,17 +1792,18 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
               onClick={() =>
                 void act(
                   () => api('profile/approve', {}),
-                  'Profil demo zatwierdzony. Możesz uruchomić cykl.',
+                  'Profil zatwierdzony. Możesz uruchomić cykl.',
                 )
               }
             >
               <CheckCheck size={16} />
-              Zatwierdź profil demo
+              {data.dashboard.mode === 'DEMO' ? 'Zatwierdź profil demo' : 'Zatwierdź profil'}
             </button>
           </div>
           <p className="muted">
             Opisy projektów pochodzą ze specyfikacji i nie są audytem kompetencji. Zmienione fakty
-            wymagają ponownej akceptacji; szablon mock używa tylko zgodnej propozycji początkowej.
+            wymagają ponownej akceptacji. Codex w RESEARCH_ONLY otrzymuje aktualne zatwierdzone
+            fakty.
           </p>
         </Section>
       </div>
@@ -1510,7 +1875,10 @@ function ProfileView({ data, act, busy }: { data: Data; act: Act; busy: boolean 
                   {p.name}
                   <ExternalLink size={13} />
                 </strong>
-                <p>{p.description}</p>
+                <p>
+                  {data.profile.facts.find((f: Row) => f.fact_key === p.id)?.content ??
+                    p.description}
+                </p>
                 <small>{p.limitations}</small>
               </div>
             ))}
@@ -1552,7 +1920,7 @@ function CampaignView({ data, act, busy }: { data: Data; act: Act; busy: boolean
           subtitle="Limity zmienia użytkownik. Model nie może ich zwiększać."
         >
           <div className="mode-card">
-            <Badge value="DEMO">DEMO</Badge>
+            <Badge value={data.dashboard.mode}>{data.dashboard.mode}</Badge>
             <strong>Symulacja lokalna</strong>
             <span>RESEARCH_ONLY, APPROVAL_REQUIRED i AUTO_POLICY czekają na kolejne etapy.</span>
           </div>
@@ -1725,9 +2093,34 @@ function CampaignView({ data, act, busy }: { data: Data; act: Act; busy: boolean
     </div>
   );
 }
-function IntegrationsView({ data }: { data: Data }) {
+function IntegrationsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }) {
   return (
     <>
+      {data.dashboard.mode !== 'DEMO' && (
+        <GmailPreparation delivery={data.dashboard.mode === 'APPROVAL_REQUIRED'} />
+      )}
+      {data.dashboard.mode !== 'DEMO' && (
+        <div className="button-row">
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={() =>
+              void act(() => api('integrations/codex/probe', {}), 'Test Codexa wykonany.')
+            }
+          >
+            Sprawdź połączenie z Codexem
+          </button>
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() =>
+              void act(() => api('integrations/search/probe', {}), 'Test wyszukiwania wykonany.')
+            }
+          >
+            Sprawdź wyszukiwanie
+          </button>
+        </div>
+      )}
       <div className="integration-grid">
         {data.capabilities.items.map((c: Row) => (
           <Section title={c.name} key={c.name} action={<Badge value={c.status} />}>
@@ -1767,8 +2160,11 @@ function IntegrationsView({ data }: { data: Data }) {
       <div className="hint-card">
         <ShieldCheck size={20} />
         <p>
-          DEMO nie czyta tokenów ani skrzynki i nie uruchamia modelu. Dane przekazane do
-          zewnętrznego modelu w kolejnych etapach nie pozostaną wyłącznie na komputerze.
+          {data.dashboard.mode === 'DEMO'
+            ? 'DEMO nie czyta tokenów ani skrzynki i nie uruchamia modelu.'
+            : data.dashboard.mode === 'APPROVAL_REQUIRED'
+              ? 'Codex dostaje zatwierdzone fakty i publiczne źródła. Gmail odczytuje wybrane kontakty i wysłane wątki po Twojej zgodzie; prywatna korespondencja nie trafia do modelu.'
+              : 'RESEARCH_ONLY korzysta z oficjalnego logowania CLI. Zatwierdzone fakty i publiczne fragmenty są przekazywane do zewnętrznego modelu. Brak odczytu poczty i wysyłki.'}
         </p>
       </div>
     </>

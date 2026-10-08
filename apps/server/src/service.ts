@@ -20,13 +20,14 @@ import {
   fixtures,
   MockCodexRunner,
   MockMailProvider,
+  DisabledMailProvider,
   MockResearchProvider,
   modelDraftSchema,
   mockReply,
   qualify,
 } from './providers.js';
 import type { MailProvider, ResearchResult } from './providers.js';
-import type { Dashboard, Row } from '../../../packages/shared/types.js';
+import type { Dashboard, Row, Mode } from '../../../packages/shared/types.js';
 
 export const campaignSchema = z
   .object({
@@ -83,6 +84,7 @@ const initialFacts = [
     'availability',
     'Płatna praca w pełni zdalna, około 15–20 godzin tygodniowo, przede wszystkim po lekcjach.',
   ],
+  ['contract', 'Preferowana umowa zlecenie; płatna, regularna współpraca.'],
   ['ai', 'Korzysta z programowania wspomaganego AI, szczególnie Codex.'],
   ['portfolio', 'Portfolio: https://github.com/JakubLewosz'],
   [
@@ -111,20 +113,39 @@ export class JobHunter {
   private busy = false;
   private timer?: ReturnType<typeof setInterval>;
   readonly clock: () => Date;
+  readonly mode: Mode;
+  readonly campaignId: string;
   constructor(
     readonly store: Store,
-    options: { clock?: () => Date; mail?: MailProvider } = {},
+    options: { clock?: () => Date; mail?: MailProvider; mode?: Mode } = {},
   ) {
+    this.mode = options.mode ?? 'DEMO';
+    this.campaignId = this.mode === 'DEMO' ? 'demo' : 'research';
     this.clock = options.clock ?? (() => new Date());
-    this.mail = options.mail ?? new MockMailProvider(store);
+    this.mail =
+      this.mode === 'DEMO'
+        ? (options.mail ?? new MockMailProvider(store))
+        : new DisabledMailProvider();
+    const existing = store.get<string>('mode', this.mode);
+    if (existing !== this.mode && (existing === 'DEMO' || this.mode === 'DEMO'))
+      throw new DomainError('MODE_MISMATCH', 'Ten katalog zawiera dane innego trybu.');
+    store.set('mode', this.mode);
     this.seed();
     this.recover();
+    if (existing !== this.mode) {
+      this.revokeApprovals('Zmiana trybu aplikacji');
+      store.exec(
+        'UPDATE campaigns SET mode=?,policy_version=policy_version+1 WHERE id=?',
+        this.mode,
+        this.campaignId,
+      );
+    }
   }
   now() {
     return iso(this.clock());
   }
   campaign() {
-    return this.store.one('SELECT * FROM campaigns WHERE id=?', 'demo')!;
+    return this.store.one('SELECT * FROM campaigns WHERE id=?', this.campaignId)!;
   }
   profile(): Row & { facts: Row[]; projects: Row[]; cvs: Row[] } {
     const p = this.store.one('SELECT * FROM candidate_profiles WHERE id=?', 'candidate')!;
@@ -163,7 +184,7 @@ export class JobHunter {
     const at = this.now();
     this.store.atomic(() => {
       this.store.exec(
-        'INSERT INTO candidate_profiles VALUES (?,?,?,?,?,1,?,NULL,?,?)',
+        'INSERT INTO candidate_profiles (id,name,goal,hours_min,hours_max,version,profile_hash,approved_at,created_at,updated_at) VALUES (?,?,?,?,?,1,?,NULL,?,?)',
         'candidate',
         'Jakub Lewosz',
         'Płatna, regularna współpraca programistyczna lub techniczna, całkowicie zdalna, przede wszystkim po lekcjach.',
@@ -203,8 +224,9 @@ export class JobHunter {
         );
       }
       this.store.exec(
-        "INSERT INTO campaigns VALUES (?,'DEMO',?,NULL,1,10,3,50,60,20,20,?,?,?,0,0,?,?,?)",
-        'demo',
+        'INSERT INTO campaigns VALUES (?,?,?,NULL,1,10,3,50,60,20,20,?,?,?,0,0,?,?,?)',
+        this.campaignId,
+        this.mode,
         'kandydat@demo.example.invalid',
         '08:00',
         '16:00',
@@ -225,7 +247,7 @@ export class JobHunter {
       this.store.set('stopped', true);
       this.store.set('killSwitch', false);
       this.store.set('workerStatus', 'STOPPED');
-      this.event('SETUP', 'Utworzono osobną bazę DEMO. Profil oczekuje na zatwierdzenie.');
+      this.event('SETUP', `Utworzono osobną bazę ${this.mode}. Profil oczekuje na zatwierdzenie.`);
     });
   }
   recover() {
@@ -349,7 +371,11 @@ export class JobHunter {
         JSON.stringify({
           name: p.name,
           goal: p.goal,
-          hours: [p.hours_min, p.hours_max],
+          hours:
+            p.availability_mode === 'APPROX'
+              ? { approximately: p.hours_approx }
+              : [p.hours_min, p.hours_max],
+          messageTemplate: p.message_template,
           facts: p.facts.map((f: Row) => [f.id, f.content]),
         }),
       );
@@ -366,7 +392,7 @@ export class JobHunter {
       );
       this.event(
         'PROFILE_APPROVED',
-        'Użytkownik zatwierdził profil w bazie DEMO.',
+        `Użytkownik zatwierdził profil w bazie ${this.mode}.`,
         'candidate',
         'user',
       );
@@ -433,9 +459,10 @@ export class JobHunter {
     const cv = this.store.one('SELECT * FROM cv_assets WHERE sha256=?', h)!;
     this.store.atomic(() => {
       this.store.exec(
-        "UPDATE campaigns SET cv_id=?,updated_at=? WHERE id='demo'",
+        'UPDATE campaigns SET cv_id=?,updated_at=? WHERE id=?',
         cv.id,
         this.now(),
+        this.campaignId,
       );
       this.revokeApprovals('Zmiana CV');
       this.event(
@@ -463,7 +490,7 @@ export class JobHunter {
       this.now(),
       cvId,
     );
-    this.event('CV_APPROVED', 'Użytkownik zatwierdził CV w DEMO.', cvId, 'user');
+    this.event('CV_APPROVED', 'Użytkownik zatwierdził CV.', cvId, 'user');
   }
   revokeApprovals(reason: string, draftId?: string) {
     const filter = draftId ? ' AND draft_id=?' : '';
@@ -835,6 +862,7 @@ export class JobHunter {
   }
   policy(draft: Row, approval?: Row, ignoreQuota = false, runId?: string): string[] {
     const problems: string[] = [];
+    if (this.mode !== 'DEMO') return ['SEND_DISABLED'];
     const c = this.campaign();
     const p = this.profile();
     const state = this.state();
@@ -941,7 +969,7 @@ export class JobHunter {
       throw new DomainError('VERSION_CONFLICT', 'Szkic zmieniono w innym oknie.');
     if (
       this.store.one(
-        "SELECT id FROM outbox WHERE draft_id=? AND status IN ('SENDING','SEND_UNKNOWN','SENT_PROVIDER','SENT_CONFIRMED')",
+        "SELECT id FROM outbox WHERE draft_id=? AND kind='FIRST_CONTACT' AND status IN ('SENDING','SEND_UNKNOWN','SENT_PROVIDER','SENT_CONFIRMED')",
         draftId,
       )
     )
@@ -985,6 +1013,7 @@ export class JobHunter {
     });
   }
   approveBatch(input: { id: string; version: number }[]) {
+    this.requireDemo();
     if (!input.length || input.length > 20 || new Set(input.map((d) => d.id)).size !== input.length)
       throw new DomainError('INVALID_BATCH', 'Wybierz od 1 do 20 różnych szkiców.');
     const run = this.store.one('SELECT * FROM runs ORDER BY started_at DESC LIMIT 1');
@@ -1024,7 +1053,7 @@ export class JobHunter {
           d.id,
         );
         this.store.exec(
-          'INSERT INTO outbox VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,?)',
+          'INSERT INTO outbox (id,submission_id,draft_id,draft_version,company_id,run_id,approval_id,status,lease_until,reason,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,?)',
           id(),
           id(),
           d.id,
@@ -1054,7 +1083,15 @@ export class JobHunter {
       outboxId,
     );
   }
+  requireDemo() {
+    if (this.mode !== 'DEMO')
+      throw new DomainError(
+        'SEND_DISABLED',
+        'RESEARCH_ONLY: wysyłka, zgody na wysyłkę i symulowana poczta są niedostępne.',
+      );
+  }
   async dispatchOne() {
+    this.requireDemo();
     const o = this.store.one(
       "SELECT * FROM outbox WHERE status='QUEUED' ORDER BY created_at LIMIT 1",
     );
@@ -1233,6 +1270,7 @@ export class JobHunter {
     }
   }
   createReply(o: Row, threadId: string) {
+    this.requireDemo();
     if (this.store.one('SELECT id FROM mail_messages WHERE outbox_id=?', o.id)) return;
     const company = this.store.one('SELECT * FROM companies WHERE id=?', o.company_id)!;
     const r = mockReply(company.canonical_name, this.store.get('scenario', 'NORMAL'));
@@ -1268,6 +1306,7 @@ export class JobHunter {
     }
   }
   async reconcile(outboxId: string) {
+    this.requireDemo();
     const o = this.store.one('SELECT * FROM outbox WHERE id=?', outboxId);
     if (!o || !['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(o.status))
       throw new DomainError('INVALID_STATE', 'Ten rekord nie wymaga rozstrzygnięcia.');
@@ -1383,15 +1422,24 @@ export class JobHunter {
       if (v.date && Number.isNaN(Date.parse(v.date)))
         return { ...v, index: index + 2, valid: false, reason: 'Nieprawidłowa data.' };
       if (
-        (v.domain && !v.domain.endsWith('.example.invalid')) ||
+        (v.domain &&
+          (this.mode === 'DEMO'
+            ? !v.domain.endsWith('.example.invalid')
+            : !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v.domain) || v.domain.endsWith('.invalid'))) ||
         (v.email &&
-          (!z.email().safeParse(v.email).success || !v.email.endsWith('.example.invalid')))
+          (!z.email().safeParse(v.email).success ||
+            (this.mode === 'DEMO'
+              ? !v.email.endsWith('.example.invalid')
+              : v.email.endsWith('.invalid'))))
       )
         return {
           ...v,
           index: index + 2,
           valid: false,
-          reason: 'Import DEMO przyjmuje wyłącznie fikcyjne domeny i adresy .example.invalid.',
+          reason:
+            this.mode === 'DEMO'
+              ? 'Import DEMO przyjmuje wyłącznie fikcyjne domeny i adresy .example.invalid.'
+              : 'Wymagany rzeczywisty adres i domena; dane demo nie należą do historii researchu.',
         };
       const key = normalizeName(v.company);
       const d = companyDomain(v.domain);
@@ -1458,7 +1506,7 @@ export class JobHunter {
       this.store.set(`import-${preview.hash}`, true);
       this.event(
         'HISTORY_IMPORTED',
-        `Zaimportowano ${preview.rows.length} wierszy historii DEMO. Sugestie nie oznaczają wysyłek.`,
+        `Zaimportowano ${preview.rows.length} wierszy historii ${this.mode}. Sugestie nie oznaczają wysyłek.`,
         null,
         'user',
       );
@@ -1509,12 +1557,15 @@ export class JobHunter {
         day(new Date(r.created_at)) === today,
     ).length;
     return {
-      mode: 'DEMO',
+      mode: this.mode,
       day: today,
       stats,
       daily: this.store
         .all(
-          "SELECT day,sum(action='DISCOVERED') companies,sum(action='DRAFTED') drafts,sum(action='SENT') sent FROM audit_events GROUP BY day ORDER BY day DESC LIMIT 7",
+          `SELECT e.day,sum(e.action='DISCOVERED') companies,sum(e.action='DRAFTED') drafts,
+           (SELECT count(*) FROM send_attempts a JOIN usage_ledger u ON u.outbox_id=a.outbox_id
+            WHERE u.day=e.day AND a.state IN ('SENT_PROVIDER','SENT_CONFIRMED')) sent
+           FROM audit_events e GROUP BY e.day ORDER BY e.day DESC LIMIT 7`,
         )
         .reverse(),
       state: this.state(),

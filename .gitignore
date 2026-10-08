@@ -8,3 +8,27 @@ playwright-report/
 .DS_Store
 coverage/
 releases/
+
+# Private runtime and credentials; ignore rules do not remove already tracked files.
+runtime/
+data/
+backups/
+exports/
+private/
+cv/
+CV/
+*.pdf
+*.sqlite*
+*.db
+*.db-*
+*.backup
+*.pem
+*.key
+auth.json
+credentials*.json
+client_secret*.json
+token*.json
+.env.*
+!.env.example
+*.local.json
+*.local.toml

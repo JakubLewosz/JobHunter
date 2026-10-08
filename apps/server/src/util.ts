@@ -44,6 +44,12 @@ export function companyDomain(domain?: string | null) {
     'greenhouse.io',
     'lever.co',
     'workable.com',
+    'smartrecruiters.com',
+    'pracuj.pl',
+    'justjoin.it',
+    'nofluffjobs.com',
+    'rocketjobs.pl',
+    'linkedin.com',
   ].some((d) => result === d || result.endsWith(`.${d}`))
     ? null
     : result;

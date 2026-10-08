@@ -11,20 +11,28 @@ if (process.versions.node.split('.')[0] !== '24') {
 const db = new Database(':memory:');
 console.log('SQLite:', db.prepare('SELECT sqlite_version() version').get().version);
 db.close();
-console.log('Dane DEMO:', dir);
+console.log('Dane', process.env.JOBHUNTER_MODE ?? 'DEMO', ':', dir);
 console.log('Build:', existsSync('dist/web/index.html') ? 'gotowy' : 'wykonaj npm run build');
 try {
-  const output = execFileSync(process.env.JOBHUNTER_CODEX_BIN ?? 'codex', ['--version'], {
-    encoding: 'utf8',
-    timeout: 5000,
-    shell: false,
-  });
+  const output = execFileSync(
+    process.env.JOBHUNTER_CODEX_PATH ??
+      process.env.JOBHUNTER_CODEX_BIN ??
+      (process.platform === 'win32' ? 'codex.exe' : 'codex'),
+    ['--version'],
+    {
+      encoding: 'utf8',
+      timeout: 5000,
+      shell: false,
+    },
+  );
   console.log('CLI:', output.trim());
 } catch {
-  console.log('Codex CLI: niewykryty w PATH. Nie blokuje DEMO; wymaga sprawdzenia w E3.');
+  console.log(
+    'Codex CLI: niewykryty w PATH. Nie blokuje DEMO/importu URL. Ustaw JOBHUNTER_CODEX_PATH do natywnej binarki.',
+  );
 }
 console.log(
-  'Model/research runtime: NIE TESTOWANO. Gmail: NIE SKONFIGUROWANO. AUTO_POLICY: ZABLOKOWANY.',
+  'Stan modelu i wyszukiwarki: sprawdź testy w panelu RESEARCH_ONLY / Integracje. Doctor odczytuje tylko wersję CLI. Gmail: BRAK TRANSPORTU. AUTO_POLICY: ZABLOKOWANY.',
 );
 console.log(
   'Windows smoke test:',

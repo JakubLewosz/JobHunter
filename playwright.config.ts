@@ -17,11 +17,31 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  webServer: {
-    command: 'npm start',
-    url: 'http://127.0.0.1:4328/api/health',
-    reuseExistingServer: false,
-    timeout: 20000,
-    env: { JOBHUNTER_PORT: '4328', JOBHUNTER_DATA_DIR: process.env.JOBHUNTER_E2E_DIR! },
-  },
+  webServer: [
+    {
+      command: 'npm start',
+      url: 'http://127.0.0.1:4328/api/health',
+      reuseExistingServer: false,
+      timeout: 20000,
+      env: {
+        JOBHUNTER_PORT: '4328',
+        JOBHUNTER_DATA_DIR: process.env.JOBHUNTER_E2E_DIR!,
+        JOBHUNTER_MODE: 'DEMO',
+      },
+    },
+    {
+      command: 'node --import tsx tests/research-server.ts',
+      url: 'http://127.0.0.1:4329/api/health',
+      reuseExistingServer: false,
+      timeout: 20000,
+      env: { JOBHUNTER_E2E_DIR: process.env.JOBHUNTER_E2E_DIR! },
+    },
+    {
+      command: 'node --import tsx tests/gmail-server.ts',
+      url: 'http://127.0.0.1:4330/api/health',
+      reuseExistingServer: false,
+      timeout: 20000,
+      env: { JOBHUNTER_E2E_DIR: process.env.JOBHUNTER_E2E_DIR! },
+    },
+  ],
 });

@@ -1,4 +1,5 @@
 export type Row = Record<string, any>;
+export type Mode = 'DEMO' | 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED';
 export type TriState = 'yes' | 'no' | 'unknown' | 'conflicting';
 export type Decision = 'READY_APPLICATION' | 'READY_OPEN_INQUIRY' | 'NEEDS_REVIEW' | 'REJECTED';
 export type SendState =
@@ -21,7 +22,7 @@ export type ReplyCategory =
   | 'BOUNCE'
   | 'UNCLEAR';
 export interface Dashboard {
-  mode: 'DEMO';
+  mode: Mode;
   day: string;
   stats: Record<string, number>;
   daily: Row[];

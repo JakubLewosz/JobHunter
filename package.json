@@ -16,11 +16,18 @@
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm test && npm run build && npm run test:e2e",
-    "format": "prettier --write apps packages tests scripts/*.mjs *.ts *.json README.md AGENTS.md docs"
+    "format": "prettier --write apps packages tests scripts/*.mjs *.ts *.json README.md AGENTS.md docs",
+    "smoke:research": "node scripts/research-smoke.mjs",
+    "gmail:connect": "node scripts/gmail.mjs connect",
+    "gmail:status": "node scripts/gmail.mjs status",
+    "gmail:enable-read": "node scripts/gmail.mjs enable-read",
+    "start:approval": "node scripts/start-approval.mjs",
+    "gmail:disconnect": "node scripts/gmail.mjs disconnect"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",
     "@fastify/static": "10.1.5",
+    "@napi-rs/keyring": "2.1.0",
     "better-sqlite3": "13.0.3",
     "csv-parse": "7.0.3",
     "fastify": "5.12.5",
