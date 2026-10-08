@@ -32,6 +32,16 @@ WP dodało `X-WP-DKIM-Status: good (id: gmail.com)` i `X-WP-SPAM: YES (U9)`. To 
 
 Wynik i odcisk źródła zapisano tylko w prywatnym runtime. Zatwierdzone materiały, generator, format wysyłki, limity i stany outbox bez zmian; nadal dziewięć prób i dziewięć rezerwacji, sender paused. Nie wysłano kolejnego maila. Przed wyborem następnej próby potrzebne sprawdzenie listy Zablokowani i reguł odbiorcy, bez zmiany ustawień. WP opisuje możliwość kierowania poczty do Spamu przez te ustawienia. [Reguły WP](https://pomoc.wp.pl/jak-skonfigurowac-reguly). W razie braku reguły dalsza diagnoza może obejmować kontrolowaną ręczną wysyłkę z tego samego konta lub zgłoszenie z oryginalnym EML do pomocy technicznej WP; żadnego zgłoszenia nie wysłano. [Pomoc w odbiorze i kontakt techniczny WP](https://pomoc.wp.pl/dlaczego-nie-otrzymuje-wiadomosci).
 
+## Weryfikacja zewnętrznego audytu EML
+
+Użytkownik dostarczył skrypt audytu i JSON wyników dla pierwszego maila z CV odebranego przez Gmail oraz drugiego krótkiego testu WP. Po przeczytaniu skryptu odtworzono audyt lokalnie na tych plikach, bez sieci, zapisywania kopii raportu lub wysyłki. Oba wyniki są dokładnie zgodne z dostarczonym JSON. Skrypt i pełny raport pozostają poza repo, ponieważ raport zawiera prywatne adresy z wcześniejszych prób.
+
+Nowa obserwacja: w odebranym pierwszym EML pojedynczy encoded-word w Subject ma 84 znaki, drugi 32. Pierwszy przekracza limit 75 znaków z [RFC 2047 §2](https://www.rfc-editor.org/rfc/rfc2047.html#section-2). Wcześniejszy brak błędów zgłoszonych przez parser nie oznaczał pełnej walidacji RFC. Nie ustalono, na którym etapie powstał taki nagłówek; zamrożony MIME pierwszej próby został wcześniej usunięty na prośbę użytkownika i nie może służyć do porównania przed/po.
+
+Sprawdzono zachowany zamrożony MIME późniejszej próby z tym samym tematem oraz wykonano nową próbę offline przez obecny prepareMime na fikcyjnych adresach, bez CV i bez transportu Gmail. Oba mają encoded-words długości 48, 52 i 29, mieszczące się w limicie. Temat odebranego krótkiego maila WP ma encoded-word długości 39 i mimo tego X-WP-SPAM YES (U9). Przekroczenie w pierwszym EML nie wyjaśnia więc wszystkich wyników Spamu ani nie wykazuje aktualnego błędu generatora.
+
+Audyt potwierdza brak samotnych LF/CR i zgodność hashy kanonizowanego body z bh= DKIM w obu plikach. To porównanie body, nie pełna kryptograficzna weryfikacja podpisu i DNS; sam skrypt zaznacza to ograniczenie. Znaczenie U9, przyczyna klasyfikacji oraz wpływ konta/API pozostają nieustalone. Kod aplikacji i kontrola wysyłek bez zmian; nie wysłano nowego maila i nie uruchamiano ponownie pełnego npm run check po samej analizie dokumentacji. Ostatni pełny wynik pozostaje 157 backend / 6 UI PASS.
+
 ## Usunięcie konta osobistego z projektu
 
 Na wyraźną prośbę użytkownika usunięto tymczasowe konto osobiste z Test users istniejącego projektu Google Cloud. UI potwierdziło jednego aktywnego testera: konto projektu. Na koncie osobistym cofnięto wszystkie połączenia z JobHunterem; wyszukanie nazwy aplikacji w połączonych aplikacjach Google zwróciło brak wyników. Pomoc techniczna i kontakt dewelopera OAuth korzystają wyłącznie z konta projektu. Systemowy magazyn haseł zawiera wyłącznie właściwe konto projektu z send/readonly; sekretów nie wypisywano.
