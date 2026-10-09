@@ -345,7 +345,7 @@ Kolejne wiadomości na ten sam adres nie są niezależnym pierwszym kontaktem. *
 
 ### Minimalny protokół do uzgodnienia
 
-Użytkownik wskazał dwie skrzynki **WP** jako kandydatów do pary. Prywatne adresy pozostają poza repo; poniżej oznaczenia mail1/mail2 odpowiadają kolejności podanej przez użytkownika. Celowany odczyt SQLite readonly nie znalazł prób aplikacji do żadnej z nich. Użytkownik następnie potwierdził, że żadna z tych skrzynek nie wymieniała wcześniej wiadomości z `jakub.lewosz.it@gmail.com`. **Brak ręcznej historii jest deklaracją użytkownika**, bez zdalnego odczytu Gmaila lub WP.
+Użytkownik wskazał dwie skrzynki **WP** jako kandydatów do pary. Prywatne adresy pozostają poza repo; poniżej oznaczenia mail1/mail2 odpowiadają kolejności podanej przez użytkownika. Celowany odczyt SQLite readonly nie znalazł prób aplikacji do żadnej z nich. Użytkownik następnie potwierdził, że żadna z tych skrzynek nie wymieniała wcześniej wiadomości z kontem projektu. **Brak ręcznej historii jest deklaracją użytkownika**, bez zdalnego odczytu Gmaila lub WP.
 
 Obie skrzynki muszą nie mieć historii wymiany wiadomości z kontem projektu ani reguł kierujących wiadomości tego nadawcy do folderu. Nie zmieniać reguł w ramach próby; wybrać skrzynki spełniające warunki. Mogą to być istniejące konta. **Para na WP pozwoli porównać wyniki klasyfikacji WP; nie ustali bezpośrednio zachowania filtra odbiorcy Gmail.** Ewentualne porównanie u odbiorców Gmail wymaga osobnej pary takich skrzynek.
 

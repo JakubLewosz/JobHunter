@@ -514,6 +514,203 @@ test('E4: historia jest ponownie sprawdzana tuż przed wysłaniem i blokuje kont
   assert.equal(f.gateway.posts.length, 1);
   assert.equal(f.service.outboxRows()[0].status, 'BLOCKED');
 });
+test('E4: zmiana nadawcy i restart nie usuwają znanej historii kontaktu z firmą', async (t) => {
+  for (const direction of ['OUTGOING', 'INCOMING']) {
+    const f = await ready(t);
+    f.gateway.previous = [
+      {
+        id: 'earlier-contact',
+        threadId: 'earlier-thread',
+        labels: direction === 'OUTGOING' ? ['SENT'] : [],
+        from: [direction === 'OUTGOING' ? 'owner@example.test' : 'hr@fixture.example.test'],
+        to: [direction === 'OUTGOING' ? 'hr@fixture.example.test' : 'owner@example.test'],
+        subject: 'Earlier correspondence',
+        messageId: '<earlier@example.test>',
+        at: new Date().toISOString(),
+        body: '',
+        category: 'UNCLEAR',
+      },
+    ];
+    await f.service.checkHistory({ drafts: f.drafts, consent: true });
+    const history = f.store.all('SELECT * FROM gmail_messages');
+    f.gateway.info = { ...f.gateway.info, subject: 'second-account', email: 'second@example.test' };
+    f.gateway.previous = [];
+    await selfTest(f);
+    await f.service.checkHistory({ drafts: f.drafts, consent: true });
+    const reopened = new GmailJobHunter(f.store, f.options);
+    const attempts = f.store.all('SELECT * FROM send_attempts');
+    await assert.rejects(
+      () => reopened.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'FIRST_CONTACT' }),
+      (e: any) => e.code === 'GMAIL_CONTACT_HISTORY',
+    );
+    assert.deepEqual(f.store.all('SELECT * FROM gmail_messages'), history);
+    assert.deepEqual(f.store.all('SELECT * FROM send_attempts'), attempts);
+    assert.equal(f.gateway.posts.length, 2); // Only the two fictional self tests.
+    assert.equal(reopened.deliveryState().paused, true);
+  }
+});
+test('E4: odpowiedź w SELF_TEST starszego nadawcy nie jest kontaktem z firmą', async (t) => {
+  const f = await ready(t);
+  const o = f.service.outboxRows()[0];
+  f.gateway.incoming = [
+    {
+      id: 'self-test-reply',
+      threadId: 'thread-1',
+      labels: [],
+      from: ['test-recipient@example.test'],
+      to: ['owner@example.test'],
+      subject: 'Test reply',
+      messageId: '<test-reply@example.test>',
+      at: new Date().toISOString(),
+      body: 'Fictional reply to the test.',
+      category: 'UNCLEAR',
+    },
+  ];
+  await f.service.syncReplies(o.id);
+  f.gateway.info = { ...f.gateway.info, subject: 'second-account', email: 'second@example.test' };
+  await selfTest(f);
+  await f.service.checkHistory({ drafts: f.drafts, consent: true });
+  const p = await f.service.prepareDelivery({
+    drafts: f.drafts,
+    cvId: f.cv.id,
+    kind: 'FIRST_CONTACT',
+  });
+  assert.equal(p.kind, 'FIRST_CONTACT');
+  assert.equal(f.gateway.posts.length, 2);
+  assert.equal(
+    f.store.one('SELECT * FROM companies WHERE id=?', f.d.company_id)!.history_status,
+    'NEW',
+  );
+});
+test('E4: wcześniejszy kontakt innego konta blokuje zgodę i bramkę bezpośrednio przed POST', async (t) => {
+  for (const stage of ['approval', 'post']) {
+    const f = await ready(t);
+    const p = await f.service.prepareDelivery({
+      drafts: f.drafts,
+      cvId: f.cv.id,
+      kind: 'FIRST_CONTACT',
+    });
+    const addEarlierContact = () => {
+      f.store.exec(
+        `INSERT INTO gmail_messages (id,account_subject,provider_id,provider_thread_id,company_id,direction,sender,recipients,subject,message_id,sent_at,created_at)
+         VALUES ('earlier','different-account','earlier-provider','earlier-thread',?,'OUTGOING','different@example.test','["hr@fixture.example.test"]','Earlier contact','<earlier@example.test>',?,?)`,
+        f.d.company_id,
+        new Date().toISOString(),
+        new Date().toISOString(),
+      );
+    };
+    if (stage === 'approval') {
+      addEarlierContact();
+      await assert.rejects(
+        () =>
+          f.service.approveDelivery({
+            previewId: p.id,
+            previewHash: p.previewHash,
+            confirmed: true,
+          }),
+        (e: any) => e.code === 'GMAIL_CONTACT_HISTORY',
+      );
+      assert.equal(
+        f.store.one('SELECT approved_at FROM gmail_previews WHERE id=?', p.id)!.approved_at,
+        null,
+      );
+    } else {
+      await f.service.approveDelivery({
+        previewId: p.id,
+        previewHash: p.previewHash,
+        confirmed: true,
+      });
+      f.gateway.beforePost = async () => addEarlierContact();
+      await f.service.dispatchOne();
+      const firstContact = f.service.outboxRows().find((o) => o.kind === 'FIRST_CONTACT')!;
+      assert.equal(firstContact.status, 'FAILED_NOT_SENT');
+      await f.service.dispatchOne();
+    }
+    assert.equal(f.gateway.posts.length, 1);
+    assert.equal(
+      f.store.one('SELECT history_status FROM companies WHERE id=?', f.d.company_id)!
+        .history_status,
+      'NEW',
+    );
+    assert.equal(f.store.one('SELECT count(*) n FROM gmail_messages')!.n, 1);
+  }
+});
+test('E4: historia obejmuje alias i subdomenę w Cc/Bcc, ale odrzuca podobną obcą domenę', async (t) => {
+  for (const recipient of [
+    'jobs@alias.example.test',
+    'jobs@team.alias.example.test',
+    'jobs@alias.example.test.other.test',
+  ]) {
+    const f = await ready(t);
+    f.store.exec(
+      "INSERT INTO company_aliases VALUES ('alias-domain',?,'DOMAIN','alias.example.test',?,?)",
+      f.d.company_id,
+      new Date().toISOString(),
+      new Date().toISOString(),
+    );
+    f.gateway.previous = [
+      parseGmailMessage({
+        id: 'copied-contact',
+        threadId: 'copied-thread',
+        labelIds: ['SENT'],
+        internalDate: String(Date.now()),
+        payload: {
+          headers: [
+            { name: 'From', value: 'owner@example.test' },
+            { name: 'To', value: 'unrelated@example.test' },
+            { name: recipient.includes('team.') ? 'Bcc' : 'Cc', value: recipient },
+            { name: 'Subject', value: 'Earlier correspondence' },
+            { name: 'Message-ID', value: '<copied@example.test>' },
+          ],
+        },
+      }),
+    ];
+    await f.service.checkHistory({ drafts: f.drafts, consent: true });
+    assert.match(
+      f.gateway.historyQueries.at(-1)!,
+      /from:alias\.example\.test to:alias\.example\.test/,
+    );
+    const prepare = () =>
+      f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'FIRST_CONTACT' });
+    if (recipient.endsWith('.other.test')) {
+      await prepare();
+      assert.equal(f.store.one('SELECT count(*) n FROM gmail_messages')!.n, 0);
+    } else {
+      await assert.rejects(prepare, (e: any) => e.code === 'GMAIL_CONTACT_HISTORY');
+      assert.equal(f.store.one('SELECT count(*) n FROM gmail_messages')!.n, 1);
+    }
+    assert.equal(f.gateway.posts.length, 1);
+  }
+});
+test('E4: brak zgody, wygasła zgoda i zmiana zakresu firmy blokują odczyt lub podgląd', async (t) => {
+  const f = await setup(t);
+  await selfTest(f);
+  await assert.rejects(
+    () => f.service.checkHistory({ drafts: f.drafts, consent: false }),
+    (e: any) => e.code === 'READ_CONSENT_REQUIRED',
+  );
+  assert.equal(f.gateway.historyQueries.length, 0);
+  await f.service.checkHistory({ drafts: f.drafts, consent: true });
+  const saved = f.store.all('SELECT * FROM gmail_history_checks');
+  f.store.exec("UPDATE gmail_history_checks SET consent_expires_at='2000-01-01T00:00:00.000Z'");
+  await assert.rejects(
+    () => f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'FIRST_CONTACT' }),
+    (e: any) => e.code === 'HISTORY_REQUIRED',
+  );
+  f.store.exec('UPDATE gmail_history_checks SET consent_expires_at=?', saved[0].consent_expires_at);
+  f.store.exec(
+    "INSERT INTO company_aliases VALUES ('new-scope',?,'DOMAIN','new-domain.example.test',?,?)",
+    f.d.company_id,
+    new Date().toISOString(),
+    new Date().toISOString(),
+  );
+  await assert.rejects(
+    () => f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'FIRST_CONTACT' }),
+    (e: any) => e.code === 'HISTORY_REQUIRED',
+  );
+  assert.equal(f.gateway.historyQueries.length, 1);
+  assert.equal(f.gateway.posts.length, 1);
+});
 test('E4: brak uprawnienia, niepewna kontrola faktów i stary dowód blokują wysyłkę do firmy', async (t) => {
   const f = await ready(t);
   f.gateway.info.scopes = f.gateway.info.scopes.filter((s) => s !== gmailReadScope);

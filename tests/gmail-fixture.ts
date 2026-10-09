@@ -20,6 +20,7 @@ export class FixtureGmail implements GmailGateway {
   posts: FrozenMessage[] = [];
   sentMessages: GmailMessage[] = [];
   previous: GmailMessage[] = [];
+  historyQueries: string[] = [];
   incoming: GmailMessage[] = [];
   errorHistory = false;
   changeMarker = false;
@@ -29,7 +30,8 @@ export class FixtureGmail implements GmailGateway {
   beforePost?: () => Promise<void>;
   account = async () => this.info;
   marker = async () => String(this.changeMarker ? ++this.markerCalls : 1);
-  async scan(_query: string, onPage: (m: GmailMessage[], next: string | null) => void) {
+  async scan(query: string, onPage: (m: GmailMessage[], next: string | null) => void) {
+    this.historyQueries.push(query);
     onPage(this.previous, this.errorHistory ? 'fictional-next' : null);
     if (this.errorHistory) throw new DomainError('GMAIL_READ', 'Fikcyjny błąd drugiej strony.');
   }

@@ -1,5 +1,7 @@
 # Możliwości — 8–9 października 2026
 
+9 października, po publikacji `db12c29`: naprawiona odtworzona utrata blokady znanego kontaktu Gmail po zmianie nadawcy. Historia firmy działa między kontami, z wyłączeniem odpowiedzi przypisanych do SELF_TEST; pięć nowych regresji offline PASS. Pełny `npm run check`: **206 backend / 6 UI PASS**, typecheck/build/diff check PASS. Bez migracji lub zmian runtime; nowe zmiany lokalne. Diagnoza dwóch dawnych SEMANTIC_REVIEW_FAILED potwierdza poprawne strukturalnie odpowiedzi modelu, lecz brak zachowanych szkiców/issues uniemożliwia ocenę konkretnych zdań. Obecne false/null już zachowywane w NEEDS_REVIEW i blokowane przy send, istniejący test PASS. Prywatny roboczy przegląd dwóch szkiców i dwóch świeżych publicznych źródeł gotowy; kontakty GENERAL nadal NEEDS_REVIEW, historia Gmail firm nieodczytana. Jawny przegląd ogólnego kontaktu pozostaje brakującym krokiem produktu. Zero operacji Gmail i automatycznego researchu; szczegóły w TEST_REPORT.
+
 Kontrola przed zleconą publikacją aktualnych zmian: **201 backend / 6 UI PASS**, typecheck/build/diff check PASS. Audytor prywatnych raportów blokuje również dowiązania kierujące do repo, z nową syntetyczną regresją; EML dodano do ignorowanych plików. Prywatny runtime/tokeny/CV pozostają lokalnie. Windows nadal nieprzetestowany. Szczegóły: [TEST_REPORT](TEST_REPORT.md).
 
 ## Bieżący nadawca — nowa decyzja 9 października

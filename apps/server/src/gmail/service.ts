@@ -444,9 +444,10 @@ export class GmailJobHunter extends ResearchJobHunter {
         issues.push('HISTORY_REQUIRED');
       if (
         this.store.one(
-          'SELECT id FROM gmail_messages WHERE company_id=? AND account_subject=? LIMIT 1',
+          // Known company correspondence survives switching senders. Replies to an
+          // application self test belong to its test recipient, not this company.
+          "SELECT m.id FROM gmail_messages m LEFT JOIN outbox o ON o.id=m.outbox_id WHERE m.company_id=? AND (m.outbox_id IS NULL OR o.kind='FIRST_CONTACT') LIMIT 1",
           d.company_id,
-          account.subject,
         )
       )
         issues.push('GMAIL_CONTACT_HISTORY');

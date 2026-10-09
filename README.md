@@ -10,6 +10,8 @@ Historia zawiera 19 prób potwierdzonych w Wysłanych. W ostatniej serii użytko
 
 **Docelowy sposób pracy i ustalenia do dalszej rozmowy z ChatGPT:** [Wizja projektu](docs/WIZJA_PROJEKTU.md). Bieżący stan i zadania: [TASKS](docs/TASKS.md).
 
+**Do niezależnej weryfikacji i planowania:** [aktualny materiał przeglądu](docs/REVIEW_HANDOFF.md) — kolejność czytania, ostatnie wyniki, brakujące elementy i granice uprawnień.
+
 **Aktualny schemat wiadomości:** [naturalne zgłoszenie do zespołu](docs/MESSAGE_STYLE.md), opcjonalny Codex i wersjonowana ponowna generacja.
 
 **Gmail z CV:** [konfiguracja i pierwszy test do siebie](docs/GMAIL_SETUP.md). Przegląd dokładnej treści, nadawcy, odbiorców i CV; do trzech wiadomości w jednej paczce. W RESEARCH_ONLY wysyłka pozostaje niedostępna.
@@ -27,6 +29,8 @@ Zatrzymaj dotychczasowy backend, następnie uruchom `npm run build` i `npm run s
 Jeżeli konto jest już podłączone, `npm run gmail:enable-read` otwiera dodatkową zgodę Google, korzystając z klienta zapisanego w systemowym magazynie haseł. Nagłówki historii odczytujemy wyłącznie dla wybranych adresów i domen firm; treść odpowiedzi tylko z własnych wysłanych wątków. Poczta nie trafia do AI. Google udziela szerszego uprawnienia `gmail.readonly`, a filtrowanie jest ograniczeniem aplikacji.
 
 W „Wiadomościach” wybierz zatwierdzone CV i przygotuj **podgląd testu do siebie**. Po sprawdzeniu i zaznaczeniu zgody kliknij wysyłkę. Test nie oznacza firmy jako skontaktowanej. Dla firm: aktualne źródła i kontakt, pozytywna kontrola treści, przegląd aktualnej wersji, sprawdzenie historii oraz osobna akceptacja dokładnej paczki. Ręczna edycja wymaga ponownej kontroli; odtworzenie odwołań do faktów zapisuje nową wersję bez zmiany tekstu.
+
+Kontakt z firmą wcześniej zapisany z innego konta nadal blokuje pierwszą wiadomość po zmianie nadawcy. Odpowiedź przypisana do SELF_TEST nie jest kontaktem z firmą. Nowe konto wymaga własnej, aktualnej kontroli historii; brak zgody lub niepełny odczyt nie oznacza pustej historii. Kontakty ogólne w stanie NEEDS_REVIEW wymagają odrębnego przeglądu — sam publiczny email nie potwierdza przyjmowania kandydatur.
 
 Limit to maksymalnie 3 wiadomości w paczce, 10 prób dziennie i 50 w kampanii, również testy do siebie i próby niepewne. Podgląd i zgoda wygasają po 15 minutach. Timeout zachowuje SEND_UNKNOWN i zatrzymuje wysyłkę. „Sprawdź tę próbę w Wysłanych” rozstrzyga istniejącą próbę; nie wysyła ponownie.
 

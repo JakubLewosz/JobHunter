@@ -2,6 +2,13 @@
 
 Kierunek dalszego rozwoju: [Wizja projektu](WIZJA_PROJEKTU.md).
 
+- [x] Na nowe polecenie przygotować cały aktualny projekt do publikacji i niezależnego przeglądu ChatGPT: diff kodu/testów sprawdzony, dokumentacja stanu i braków w REVIEW_HANDOFF. Prywatne materiały poza repo, bez zmian runtime/Gmail; ostatni pełny check 206 backend / 6 UI PASS, bez ponowienia testów po samych zmianach dokumentacji.
+
+- [x] 9 października odtworzyć i naprawić utratę blokady znanego kontaktu Gmail po zmianie nadawcy: historia firmy działa między kontami, odpowiedzi SELF_TEST wykluczone. Pięć nowych testów: restart/zmiana konta, SELF_TEST, zgoda i ostatnia bramka przed POST, aliasy/subdomeny/Cc/Bcc, zgody i zmiana zakresu. Pełny check: 206 backend / 6 UI PASS, typecheck/build/diff check PASS. Bez migracji i zmian prywatnego runtime; zmiany lokalne.
+- [x] Przygotować prywatny materiał przeglądu dwóch istniejących szkiców: dokładne niezmienione treści, świeże dwa publiczne źródła READ, literalny kontakt i dawne cytaty nadal obecne. Bez automatycznego researchu, modelu, zgody/send lub zmian źródeł w SQLite. Materiał pozostaje poza repo; nie jest zatwierdzoną paczką MIME.
+- [ ] Domknąć jawny przegląd ogólnego kontaktu: obecne szkice PROSPECT mają kontakt NEEDS_REVIEW, brak operacji użytkownika do jego rozstrzygnięcia. Zachować GENERAL, źródło, aktualność i odrębną akceptację dokładnego MIME; nie oznaczać automatycznie jako rekrutacyjnego lub gotowego do wysyłki.
+- [ ] Przed małą paczką sprawdzić celowaną historię wybranych firm na bieżącym nadawcy z ważną zgodą użytkownika. W runtime dotąd zero gmail_history_checks; nie odczytywać całej skrzynki ani zakładać braku wcześniejszych kontaktów starszego konta.
+
 - [x] 9 października przygotować wszystkie aktualne zmiany do zleconego push: przegląd diffu i prywatnych danych/sekretów, blokada zapisu prywatnego raportu przez symlink do repo i ignorowanie EML. Regresja FAIL→PASS, końcowy check 201 backend / 6 UI PASS, typecheck/build/diff check PASS. Runtime/OAuth/CV/EML poza repo; zero nowych operacji Gmail.
 - [x] Na nową decyzję użytkownika przełączyć bieżącego nadawcę na wskazane starsze konto po serii 5/5 Odebrane: zakończony OAuth, kampania i nowy niezatwierdzony podgląd zgodne, test do siebie na wybrane konto. Bez automatycznego powrotu do projektu. Nadal APPROVAL_REQUIRED i zatrzymany sender/research; 19 prób/rezerwacji, zero nowych wysyłek. Dawne bajty/historia/materiały zachowane, kod bez zmian, diff check PASS.
 - [x] 9 października wykonać dokładnie zleconą serię: pięć SELF_TEST starszego nadawcy na mail1–mail5 oraz trzy konta projektu na mail2/mail4/mail5 bez znanej historii (lokalne próby + deklaracja użytkownika). 8/8 SENT_CONFIRMED, jeden send/próbę, dokładne frozen MIME i to samo CV. Projekt mail1/mail3 pominięte. Konto projektu przywrócone, sender/research zatrzymane; 19 historycznych prób/rezerwacji, dziś 8/10, bez resetu. Prywatne źródła poza repo, kod bez nowych zmian, CLI MIME/diff check PASS.
@@ -62,7 +69,7 @@ Kierunek dalszego rozwoju: [Wizja projektu](WIZJA_PROJEKTU.md).
 - [x] Użytkownik zatwierdza profil w RESEARCH_ONLY — potwierdzone stanem działającej aplikacji.
 - [x] Ograniczona rzeczywista próba: 10 kandydatów, 3 szkice, zero wysyłek; automatyczny stop po limitach. Zachowane 2 błędy kontroli zgodności; szczegóły w TEST_REPORT.md.
 - [x] Skrócić 3 istniejące szkice do nowych wersji, AI na początku i warunki raz; zachować stare wersje i wymagać nowego przeglądu.
-- [ ] Zdiagnozować dwie nieudane próby SEMANTIC_REVIEW_FAILED z zachowaniem źródeł i historii; bez ślepego ponowienia.
+- [x] Zdiagnozować dwie nieudane próby SEMANTIC_REVIEW_FAILED: oba model_calls SEMANTIC_REVIEW zakończone OK, lecz szkic/odpowiedź/issues nie zostały zachowane; nie da się ustalić konkretnego zdania ani false/null. Obecny kod już zapisuje false/null jako NEEDS_REVIEW, istniejąca regresja PASS i wysyłka nadal blokowana. Dawne ERROR oraz źródła zachowane; bez ponowienia lub odtwarzania szkiców.
 - [ ] Zbieranie CV, projektów i osiągnięć z GitHuba do przeglądu i zatwierdzenia przez Jakuba.
 - [x] Programowanie z AI jako główny przekaz; projekt opcjonalny, tylko gdy pasuje do działalności lub technologii firmy. Krótszy wzór do wyboru w Moje materiały.
 - [ ] Windows smoke na prawdziwym Windowsie i natywnym CLI.
