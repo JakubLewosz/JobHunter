@@ -270,6 +270,18 @@ export async function createApp(options: {
     .min(1)
     .max(3);
   app.get('/api/gmail/state', async () => gmailService().deliveryState());
+  app.post('/api/gmail/quota/reset', async (request) =>
+    gmailService().resetDailyQuota(
+      z
+        .object({
+          confirmed: z.literal(true),
+          day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          expectedTotalUsed: z.number().int().nonnegative(),
+        })
+        .strict()
+        .parse(request.body),
+    ),
+  );
   app.post('/api/gmail/test-recipient', async (request) => {
     const input = z
       .object({ email: z.email(), confirmed: z.literal(true) })

@@ -18,6 +18,7 @@ private/
 cv/
 CV/
 *.pdf
+*.eml
 *.sqlite*
 *.db
 *.db-*

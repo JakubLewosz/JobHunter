@@ -1,6 +1,12 @@
 # JobHunter
 
-Lokalny panel Jakuba do prowadzenia poszukiwań pracy. Zachowane **DEMO**, rzeczywisty research **RESEARCH_ONLY** oraz **APPROVAL_REQUIRED** z Gmailem i akceptacją konkretnych wiadomości. Dziewięć rzeczywistych testów wysyłki jest potwierdzonych w Wysłanych. Świeże konto miało problemy ze Spamem; pierwszy test z innym wybranym kontem, przy tej samej aplikacji, treści i CV, trafił do Odebranych według użytkownika. Wpływ historii konta jest mocnym tropem, bez ustalonej dokładnej przyczyny lub gwarancji kolejnych dostaw. Szczegóły i ograniczenia: [Raport testów](docs/TEST_REPORT.md). Interfejs po polsku. Używane jest wyłącznie konto projektu; tymczasowe połączenie konta osobistego i jego lokalne dane usunięto.
+Lokalny panel Jakuba do prowadzenia poszukiwań pracy. Zachowane **DEMO**, rzeczywisty research **RESEARCH_ONLY** oraz **APPROVAL_REQUIRED** z Gmailem i akceptacją konkretnych wiadomości. Interfejs po polsku.
+
+**Bieżący nadawca:** na decyzję użytkownika z 9 października wybrane starsze konto. Połączenie OAuth i kampania zostały przełączone; adres pozostaje w prywatnej konfiguracji poza repo. Sender/research zatrzymane. Każda kolejna wiadomość wymaga świeżego podglądu i osobnej zgody; nie przywracać automatycznie poprzedniego nadawcy projektu.
+
+Historia zawiera 19 prób potwierdzonych w Wysłanych. W ostatniej serii użytkownik zgłosił 5/5 Odebrane starszego konta i 3/3 Spam projektu, z tą samą aplikacją, treścią i CV. Wynik wspiera czynnik związany z nadawcą, bez wyizolowania samego wieku. Poprzednie wyniki były mieszane; nie deklarujemy naprawy Spamu. Nie odtwarzano usuniętej historii ani nie zmieniano zatwierdzonych materiałów.
+
+[Raport audytu i późniejszych prób](docs/GMAIL_DELIVERABILITY_AUDIT.md) zawiera źródła, wyniki MIME, konserwatywny reconcile oraz chronologię zleconych połączeń/wysyłek.
 
 **Docelowy sposób pracy i ustalenia do dalszej rozmowy z ChatGPT:** [Wizja projektu](docs/WIZJA_PROJEKTU.md). Bieżący stan i zadania: [TASKS](docs/TASKS.md).
 
@@ -8,9 +14,11 @@ Lokalny panel Jakuba do prowadzenia poszukiwań pracy. Zachowane **DEMO**, rzecz
 
 **Gmail z CV:** [konfiguracja i pierwszy test do siebie](docs/GMAIL_SETUP.md). Przegląd dokładnej treści, nadawcy, odbiorców i CV; do trzech wiadomości w jednej paczce. W RESEARCH_ONLY wysyłka pozostaje niedostępna.
 
+**Lokalny audyt EML:** `npm run --silent audit:eml -- /lokalnie/A.eml /lokalnie/B.eml` porównuje pełne części i załączniki, bez sieci lub wysyłki. Domyślnie raportuje hashe; dokładne treści wymagają `--private --output /poza-repo/raport.json`. Sama identyczna treść kandydata z Wysłanych nie rozstrzyga SEND_UNKNOWN, ponieważ mogła być wysłana ręcznie. Szczegóły i aktualne wyniki: [audyt](docs/GMAIL_DELIVERABILITY_AUDIT.md).
+
 **Krótki test dostarczalności:** SELF_TEST bez linków i CV, z normalnym podglądem, zgodą i limitami. Użytkownik zgłosił Spam obu testów WP, również drugiego wysłanego jako sam tekst. EML drugiej próby potwierdza zgodną treść, poprawny DKIM według WP i oznaczenie Spam; dokładna przyczyna pozostaje nieustalona. Następny krok to sprawdzenie reguł odbiorcy. 157 backend / 6 UI PASS. [Szczegóły prób](docs/TEST_REPORT.md).
 
-**Domyślny DEMO nadal używa fikcyjnych firm i lokalnej poczty. RESEARCH_ONLY nie wysyła i nie odczytuje Gmaila.** APPROVAL_REQUIRED korzysta z tych samych osobistych materiałów i historii researchu, a DEMO pozostaje w osobnej bazie. Rzeczywista próba researchu dała 10 kandydatów i 3 szkice; wykonano dziewięć testów poczty na wskazane adresy, bez kontaktowania firm. Szczegóły: [Raport testów](docs/TEST_REPORT.md). AUTO_POLICY pozostaje zablokowany.
+**Domyślny DEMO nadal używa fikcyjnych firm i lokalnej poczty. RESEARCH_ONLY nie wysyła i nie odczytuje Gmaila.** APPROVAL_REQUIRED korzysta z tych samych osobistych materiałów i historii researchu, a DEMO pozostaje w osobnej bazie. Rzeczywista próba researchu dała 10 kandydatów i 3 szkice; lokalna historia ma dziewiętnaście wyraźnie zleconych testów poczty, bez kontaktowania firm. Sender po ostatniej pojedynczej próbie ponownie zatrzymany. Ręczny reset dziennego wykorzystania wymaga osobnego potwierdzenia, nie usuwa historii i nie resetuje limitu kampanii. Szczegóły: [Raport testów](docs/TEST_REPORT.md). AUTO_POLICY pozostaje zablokowany.
 
 ## Gmail po moim zatwierdzeniu
 

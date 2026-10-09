@@ -22,7 +22,8 @@
     "gmail:status": "node scripts/gmail.mjs status",
     "gmail:enable-read": "node scripts/gmail.mjs enable-read",
     "start:approval": "node scripts/start-approval.mjs",
-    "gmail:disconnect": "node scripts/gmail.mjs disconnect"
+    "gmail:disconnect": "node scripts/gmail.mjs disconnect",
+    "audit:eml": "tsx scripts/audit-eml.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",

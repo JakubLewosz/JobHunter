@@ -14,11 +14,11 @@ Helper używa klienta zapisanego w systemowym magazynie haseł i otwiera Google 
 
 Status bez odczytu tokenów: `npm run gmail:status`. Odłączenie i cofnięcie zgody: `npm run gmail:disconnect`. Żadne z tych poleceń nie wysyła maila.
 
-Projekt korzysta wyłącznie z konta przeznaczonego do JobHuntera. Tymczasowe konto osobiste po zakończonym teście odłączono, usunięto z testerów i cofnięto jego zgodę Google. Jego adres i lokalne kopie MIME usunięto; zachowano anonimowe terminalne stany i wykorzystane limity. Nie należy ponownie podłączać tego konta ani używać go jako odbiorcy prób.
+Bieżącym nadawcą jest wskazane starsze konto: użytkownik 9 października zdecydował, aby na razie z niego korzystać. Zweryfikowano OAuth, nadawcę kampanii i nowy niezatwierdzony podgląd; sender/research pozostają zatrzymane. Nie przywracać automatycznie poprzedniego nadawcy projektu. Adres przechowywany wyłącznie w prywatnej konfiguracji poza repo. Tymczasowe konto osobiste po wcześniejszym teście odłączono, usunięto z testerów i cofnięto jego zgodę Google. Jego adres i lokalne kopie MIME usunięto; zachowano anonimowe terminalne stany i wykorzystane limity. Następnie 8 października użytkownik wyraźnie zlecił ponowne połączenie starszego konta do nowego porównania, zastępując wcześniejszy zakaz. Wymaga to nowego OAuth i wskazania dokładnych odbiorców, z nowymi podglądami/zgodami; nie odtwarza usuniętych danych historycznych. Prywatne konto i adresy odbiorców pozostają poza repo. Samo logowanie nie uruchamia wysyłek, researchu ani dostępu do całej skrzynki.
 
 ## Dostarczalność przy świeżym koncie
 
-Użytkownik chce docelowo używać pierwotnego konta utworzonego dla JobHuntera. Udane porównanie z innym kontem jest wskazówką diagnostyczną, nie wymogiem zmiany adresu. Wiek konta jako samodzielna przyczyna Spamu pozostaje hipotezą; SPF/DKIM/DMARC w dotychczas sprawdzonych EML były poprawne.
+Wcześniej użytkownik chciał używać wyłącznie pierwotnego konta projektu. Po serii 5/5 Odebrane starszego konta i 3/3 Spam projektu wybrał starsze konto jako bieżącego nadawcę. To decyzja operacyjna; porównanie nie gwarantuje skuteczności na każdej skrzynce. Wiek konta jako samodzielna przyczyna Spamu pozostaje hipotezą; SPF/DKIM/DMARC w dotychczas sprawdzonych EML były poprawne.
 
 Zalecane jest korzystanie z konta do rzeczywistej korespondencji, mała liczba trafnych kandydatur na wskazane kontakty rekrutacyjne oraz stopniowe zwiększanie liczby wiadomości po ocenie wyników. Google zaleca mały, równomierny wolumen i unikanie nagłych skoków, ale nie podaje gwarantowanego okresu ani liczby wiadomości, które naprawią dostarczalność tego konta. [Zalecenia Google](https://support.google.com/mail/answer/81126?hl=en).
 
@@ -27,6 +27,8 @@ Odbiorca oczekiwanej, prawidłowej wiadomości może użyć „To nie jest spam�
 Research i przygotowywanie szkiców mogą działać niezależnie od liczby zatwierdzonych wysyłek. Nie zmieniono generatora ani limitów aplikacji; nowe wiadomości nadal wymagają własnego zlecenia i dokładnego podglądu.
 
 ## 403 access_denied przy zmianie konta
+
+9 października, na osobne polecenie użytkownika, ponownie dodano wskazane starsze konto do Test users istniejącego projektu JobHunter. Zapis potwierdzono w konsoli Google: dwa konta testowe, dotychczasowe konto projektu zachowane. Nie nadano ról administracyjnych, nie zmieniono zakresów, klienta OAuth ani stanu publikacji. Uruchomiono świeże logowanie dotychczasowym helperem i użytkownik zakończył je poprawnie; połączone wskazane starsze konto ma te same zakresy send/readonly. Zgoda na konkretną wysyłkę pozostaje odrębnym krokiem. Prywatnego adresu nie zapisano w repo. W samym kroku dodania testera zero wysyłek. Następnie na dokładną listę odbiorców zlecono i wykonano pięć prób starszego konta i trzy konta projektu; konto projektu przywrócono, sender/research zatrzymane. Użytkownik zgłosił 5/5 Odebrane starszego konta oraz 3/3 Spam projektu; to wsparcie hipotezy czynnika nadawcy, bez ustalenia minimalnego wieku konta. Szczegóły: GMAIL_DELIVERABILITY_AUDIT.md.
 
 Jeśli Google pokazuje, że JobHunter jest testowany i dostępny tylko dla zatwierdzonych testerów, wybierz projekt JobHunter w Google Cloud, a następnie Google Auth Platform → Audience/Odbiorcy → Test users/Użytkownicy testowi → Add users/Dodaj użytkowników. Dodaj konto, które ma podłączyć Gmail jako nadawca, i zapisz. To konfiguracja kont logujących się do aplikacji, nie lista odbiorców maili. [Instrukcja Google](https://developers.google.com/workspace/guides/configure-oauth-consent).
 

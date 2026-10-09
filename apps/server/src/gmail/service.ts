@@ -8,6 +8,7 @@ import { semanticReviewPrompt } from '../research/message-policy.js';
 import { reviewSchema, realDraftSchema } from '../research/contracts.js';
 import { companyDomain, day, DomainError, hash, id, iso, normalizeEmail } from '../util.js';
 import { prepareMime } from './mime.js';
+import { compareMime } from './inspection.js';
 import { gmailReadScope, gmailSendScope, setupInfo, type AccountInfo } from './oauth.js';
 import { nativeGmail, type GmailGateway, type GmailMessage } from './reader.js';
 
@@ -71,6 +72,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       readReady: !!account?.scopes.includes(gmailReadScope),
       sendReady: !!account?.scopes.includes(gmailSendScope),
       paused: this.store.get('gmailSenderPaused', true),
+      dailyQuota: this.dailyQuota(),
       selfTestConfirmed: !!this.store.one(
         "SELECT o.id FROM outbox o JOIN gmail_outbox g ON g.outbox_id=o.id JOIN gmail_preview_items i ON i.id=g.item_id JOIN gmail_previews p ON p.id=i.preview_id WHERE o.kind='SELF_TEST' AND p.diagnostic=0 AND o.status='SENT_CONFIRMED' AND g.account_subject=?",
         account?.subject ?? '',
@@ -89,6 +91,74 @@ export class GmailJobHunter extends ResearchJobHunter {
         })),
       outbox: this.outboxRows(),
     };
+  }
+  dailyQuota() {
+    const c = this.campaign(),
+      today = day(this.clock(), c.timezone);
+    const totalUsed = this.store.one(
+      'SELECT count(*) n FROM usage_ledger WHERE campaign_id=? AND day=?',
+      this.campaignId,
+      today,
+    )!.n as number;
+    const reset = this.store.get<Row | null>('gmailDailyQuotaReset', null);
+    const valid =
+      reset?.campaignId === this.campaignId &&
+      reset.day === today &&
+      Number.isSafeInteger(reset.baseline) &&
+      reset.baseline >= 0 &&
+      reset.baseline <= totalUsed;
+    return {
+      day: today,
+      totalUsed,
+      used: totalUsed - (valid ? reset!.baseline : 0),
+      limit: Math.min(c.daily_limit, 10),
+      resetAt: valid ? reset!.at : null,
+    };
+  }
+  resetDailyQuota(input: { confirmed: boolean; day: string; expectedTotalUsed: number }) {
+    if (!input.confirmed)
+      throw new DomainError(
+        'QUOTA_CONFIRMATION_REQUIRED',
+        'Potwierdź ręczny reset licznika dziennego.',
+      );
+    return this.store.atomic(() => {
+      if (
+        this.sending ||
+        this.historyBusy ||
+        !this.store.get('gmailSenderPaused', true) ||
+        this.store.one(
+          "SELECT o.id FROM outbox o JOIN gmail_outbox g ON g.outbox_id=o.id WHERE o.status IN ('QUEUED','SENDING','SEND_UNKNOWN','SENT_PROVIDER')",
+        )
+      )
+        throw new DomainError(
+          'QUOTA_BUSY',
+          'Zatrzymaj sender i rozstrzygnij oczekujące próby przed resetem.',
+        );
+      const quota = this.dailyQuota();
+      if (quota.day !== input.day || quota.totalUsed !== input.expectedTotalUsed)
+        throw new DomainError(
+          'QUOTA_CHANGED',
+          'Dzień lub licznik zmienił się; sprawdź stan ponownie.',
+        );
+      this.store.set('gmailDailyQuotaReset', {
+        campaignId: this.campaignId,
+        day: quota.day,
+        baseline: quota.totalUsed,
+        at: this.now(),
+      });
+      this.event(
+        'GMAIL_DAILY_QUOTA_RESET',
+        `Ręczny reset dziennego wykorzystania (${quota.used} → 0); zachowano ${quota.totalUsed} historycznych rezerwacji i limit kampanii.`,
+        this.campaignId,
+        'user',
+      );
+      return this.dailyQuota();
+    });
+  }
+  override dashboard() {
+    const result = super.dashboard();
+    result.stats.reserved = this.dailyQuota().used;
+    return result;
   }
   private sameAccount(account: AccountInfo, subject?: string, email?: string) {
     const configured = this.accountInfo();
@@ -777,11 +847,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       const c = this.campaign(),
         count = (where: string, ...args: any[]) =>
           this.store.one(`SELECT count(*) n FROM usage_ledger WHERE ${where}`, ...args)!.n;
-      if (
-        count('campaign_id=? AND day=?', this.campaignId, day(this.clock(), c.timezone)) >=
-        Math.min(c.daily_limit, 10)
-      )
-        problems.push('DAILY_LIMIT');
+      if (this.dailyQuota().used >= Math.min(c.daily_limit, 10)) problems.push('DAILY_LIMIT');
       if (count('campaign_id=?', this.campaignId) >= Math.min(c.campaign_limit, 50))
         problems.push('CAMPAIGN_LIMIT');
       if (count('run_id=?', o.run_id) >= Math.min(c.cycle_limit, 3)) problems.push('CYCLE_LIMIT');
@@ -945,7 +1011,10 @@ export class GmailJobHunter extends ResearchJobHunter {
     const o = this.packet(outboxId);
     if (!o || !['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(o.status))
       throw new DomainError('INVALID_STATE', 'Ta próba nie wymaga rozstrzygnięcia.');
-    if (o.read_consent_expires_at <= this.now())
+    if (
+      !Number.isFinite(Date.parse(o.read_consent_expires_at)) ||
+      o.read_consent_expires_at <= this.now()
+    )
       throw new DomainError(
         'READ_CONSENT_REQUIRED',
         'Potwierdź odczyt tej próby wysyłki ponownie.',
@@ -953,16 +1022,51 @@ export class GmailJobHunter extends ResearchJobHunter {
     const account = await this.gateway.account();
     this.sameAccount(account, o.account_subject, o.account_email);
     const attempt = this.store.one('SELECT * FROM send_attempts WHERE outbox_id=?', o.id)!;
+    // Deleted historical MIME is a diagnostic limitation, never reconstructed from a draft.
+    if (
+      !attempt ||
+      !o.mime?.length ||
+      hash(o.mime) !== o.mime_hash ||
+      !attempt.mime?.length ||
+      hash(attempt.mime) !== attempt.mime_hash ||
+      !o.mime.equals(attempt.mime) ||
+      attempt.message_id !== o.message_id ||
+      attempt.account_email !== o.account_email ||
+      attempt.recipient !== o.recipient
+    ) {
+      this.event(
+        'GMAIL_RECONCILE_PENDING',
+        'Brak zachowanego, zgodnego MIME tej próby; wymagana ręczna kontrola.',
+        o.id,
+        'user',
+      );
+      return { confirmed: false };
+    }
+    if (!attempt.provider_id)
+      this.store.set(`gmailReconcileCandidates:${o.id}`, {
+        at: this.now(),
+        complete: false,
+        manualReviewRequired: true,
+        candidates: [],
+      });
     const results = await this.gateway.sent({
       messageId: o.message_id,
       providerId: attempt.provider_id,
+      scope: {
+        accountSubject: o.account_subject,
+        accountEmail: o.account_email,
+        recipient: o.recipient,
+        after: Date.parse(attempt.created_at) - 120000,
+        before: Date.parse(attempt.created_at) + 600000,
+      },
     });
-    const matching = results.filter(
+    // Account/consent can change while reading. Never consume partial or stale evidence.
+    this.sameAccount(await this.gateway.account(), o.account_subject, o.account_email);
+    const consent = this.packet(o.id).read_consent_expires_at;
+    if (!Number.isFinite(Date.parse(consent)) || consent <= this.now())
+      throw new DomainError('READ_CONSENT_REQUIRED', 'Zgoda wygasła podczas odczytu tej próby.');
+    const eligible = results.filter(
       (m) =>
-        (attempt.provider_id
-          ? m.id === attempt.provider_id &&
-            (!attempt.provider_thread_id || m.threadId === attempt.provider_thread_id)
-          : m.messageId === o.message_id) &&
         m.labels.includes('SENT') &&
         m.from.length === 1 &&
         m.from[0] === normalizeEmail(o.account_email) &&
@@ -970,10 +1074,38 @@ export class GmailJobHunter extends ResearchJobHunter {
         m.to[0] === normalizeEmail(o.recipient) &&
         m.subject === o.subject &&
         Date.parse(m.at) >= Date.parse(attempt.created_at) - 120000 &&
-        Date.parse(m.at) <= Date.parse(attempt.created_at) + 600000 &&
-        (!attempt.provider_id || m.id === attempt.provider_id),
+        Date.parse(m.at) <= Date.parse(attempt.created_at) + 600000,
+    );
+    const candidates = !attempt.provider_id
+      ? eligible.map((m) => ({
+          providerId: m.id,
+          providerThreadId: m.threadId,
+          observedMessageId: m.messageId,
+          comparison: m.raw ? compareMime(o.mime, m.raw) : null,
+        }))
+      : [];
+    if (!attempt.provider_id)
+      this.store.set(`gmailReconcileCandidates:${o.id}`, {
+        at: this.now(),
+        complete: true,
+        manualReviewRequired: true,
+        candidates,
+      });
+    const matching = eligible.filter((m) =>
+      attempt.provider_id
+        ? m.id === attempt.provider_id &&
+          (!attempt.provider_thread_id || m.threadId === attempt.provider_thread_id)
+        : m.messageId === o.message_id &&
+          !!candidates.find((c) => c.providerId === m.id)?.comparison?.decodedPartsLF,
     );
     if (matching.length !== 1) {
+      const similar = candidates.filter((c) => c.comparison?.decodedPartsLF).length;
+      if (similar)
+        this.store.exec(
+          'UPDATE outbox SET reason=? WHERE id=?',
+          `Znaleziono ${similar} zgodnych kandydatów w Wysłanych. Ręczna identyczna wiadomość jest możliwa; sprawdź konkretną próbę. Bez ponowienia.`,
+          o.id,
+        );
       this.event(
         'GMAIL_RECONCILE_PENDING',
         'Brak jednoznacznego potwierdzenia; bez ponownej wysyłki.',
@@ -984,6 +1116,20 @@ export class GmailJobHunter extends ResearchJobHunter {
     }
     const m = matching[0];
     this.store.atomic(() => {
+      if (!['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(this.packet(o.id).status))
+        throw new DomainError('INVALID_STATE', 'Stan próby zmienił się podczas odczytu.');
+      if (
+        this.store.one(
+          'SELECT a.id FROM send_attempts a JOIN gmail_outbox g ON g.outbox_id=a.outbox_id WHERE g.account_subject=? AND a.provider_id=? AND a.outbox_id<>?',
+          o.account_subject,
+          m.id,
+          o.id,
+        )
+      )
+        throw new DomainError(
+          'GMAIL_MESSAGE_ASSIGNED',
+          'Ta wiadomość Gmaila jest już przypisana do innej próby.',
+        );
       this.store.set(`gmailProviderMessageId:${o.id}`, m.messageId);
       this.setOutbox(o.id, 'SENT_CONFIRMED');
       this.store.exec(

@@ -12,6 +12,7 @@ import { FixtureRunner, FixtureReader } from './research-fixture.js';
 import { FixtureGmail } from './gmail-fixture.js';
 import { createApp } from '../apps/server/src/app.js';
 import { ResearchJobHunter } from '../apps/server/src/research/service.js';
+import { prepareMime } from '../apps/server/src/gmail/mime.js';
 
 async function setup(t: TestContext) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-e4-')),
@@ -52,6 +53,120 @@ async function ready(t: TestContext) {
   await f.service.checkHistory({ drafts: f.drafts, consent: true });
   return f;
 }
+test('E4: jawny reset dzienny zachowuje historię i pozwala na nową zatwierdzoną próbę', async (t) => {
+  const f = await setup(t);
+  for (let i = 0; i < 10; i++) await selfTest(f);
+  f.service.control('pause');
+  const history = ['send_attempts', 'usage_ledger', 'outbox', 'drafts', 'cv_assets'].map((table) =>
+    f.store.all(`SELECT * FROM ${table} ORDER BY rowid`),
+  );
+  const quota = f.service.dailyQuota();
+  assert.equal(quota.used, 10);
+  assert.throws(
+    () =>
+      f.service.resetDailyQuota({
+        confirmed: false,
+        day: quota.day,
+        expectedTotalUsed: 10,
+      }),
+    (e: any) => e.code === 'QUOTA_CONFIRMATION_REQUIRED',
+  );
+  f.store.set('killSwitch', true);
+  const reset = f.service.resetDailyQuota({
+    confirmed: true,
+    day: quota.day,
+    expectedTotalUsed: 10,
+  });
+  assert.equal(reset.used, 0);
+  assert.equal(reset.totalUsed, 10);
+  assert.equal(reset.limit, 10);
+  assert.equal(f.service.dashboard().stats.reserved, 0);
+  assert.equal(f.service.dashboard().stats.sent, 10);
+  assert.equal(f.store.get('gmailSenderPaused', false), true);
+  assert.equal(f.store.get('killSwitch', false), true);
+  assert.equal(f.gateway.posts.length, 10);
+  assert.deepEqual(
+    ['send_attempts', 'usage_ledger', 'outbox', 'drafts', 'cv_assets'].map((table) =>
+      f.store.all(`SELECT * FROM ${table} ORDER BY rowid`),
+    ),
+    history,
+  );
+  assert.equal(
+    f.store.one("SELECT count(*) n FROM audit_events WHERE action='GMAIL_DAILY_QUOTA_RESET'")!.n,
+    1,
+  );
+  f.store.set('killSwitch', false);
+  await selfTest(f);
+  assert.equal(f.gateway.posts.length, 11);
+  assert.equal(f.service.dailyQuota().used, 1);
+  assert.equal(f.service.dailyQuota().totalUsed, 11);
+});
+test('E4: reset odrzuca nieaktualny licznik/dzień i niepewne lub oczekujące próby', async (t) => {
+  const f = await setup(t);
+  await selfTest(f);
+  f.service.control('pause');
+  const quota = f.service.dailyQuota();
+  for (const input of [
+    { confirmed: true, day: '1900-01-01', expectedTotalUsed: 1 },
+    { confirmed: true, day: quota.day, expectedTotalUsed: 0 },
+  ])
+    assert.throws(
+      () => f.service.resetDailyQuota(input),
+      (e: any) => e.code === 'QUOTA_CHANGED',
+    );
+  for (const status of ['QUEUED', 'SENDING', 'SEND_UNKNOWN', 'SENT_PROVIDER']) {
+    f.store.exec('UPDATE outbox SET status=?', status);
+    assert.throws(
+      () =>
+        f.service.resetDailyQuota({
+          confirmed: true,
+          day: quota.day,
+          expectedTotalUsed: 1,
+        }),
+      (e: any) => e.code === 'QUOTA_BUSY',
+    );
+  }
+  f.store.exec("UPDATE outbox SET status='SENT_CONFIRMED'");
+  f.store.set('gmailSenderPaused', false);
+  assert.throws(
+    () =>
+      f.service.resetDailyQuota({
+        confirmed: true,
+        day: quota.day,
+        expectedTotalUsed: 1,
+      }),
+    (e: any) => e.code === 'QUOTA_BUSY',
+  );
+  assert.equal(f.store.get('gmailDailyQuotaReset', null), null);
+  assert.equal(f.gateway.posts.length, 1);
+});
+test('E4: reset nie obchodzi limitu kampanii; obcy, dawny lub uszkodzony reset nie daje kredytu', async (t) => {
+  const f = await setup(t);
+  f.store.exec('UPDATE campaigns SET daily_limit=1,campaign_limit=2');
+  await selfTest(f);
+  f.service.control('pause');
+  const quota = f.service.dailyQuota();
+  for (const marker of [
+    { campaignId: 'other', day: quota.day, baseline: 1 },
+    { campaignId: 'research', day: '1900-01-01', baseline: 1 },
+    { campaignId: 'research', day: quota.day, baseline: 2 },
+    { campaignId: 'research', day: quota.day, baseline: -1 },
+    { campaignId: 'research', day: quota.day, baseline: 0.5 },
+  ]) {
+    f.store.set('gmailDailyQuotaReset', marker);
+    assert.equal(f.service.dailyQuota().used, 1);
+  }
+  f.service.resetDailyQuota({ confirmed: true, day: quota.day, expectedTotalUsed: 1 });
+  await selfTest(f);
+  f.service.control('pause');
+  f.service.resetDailyQuota({ confirmed: true, day: quota.day, expectedTotalUsed: 2 });
+  const p = await f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'SELF_TEST' });
+  await f.service.approveDelivery({ previewId: p.id, previewHash: p.previewHash, confirmed: true });
+  await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 2);
+  assert.equal(f.service.outboxRows()[0].status, 'BLOCKED');
+  assert.equal(f.store.one('SELECT count(*) n FROM usage_ledger')!.n, 2);
+});
 test('E4: wskazany osobisty adres testu jest zamrożony w podglądzie; wiadomość nie kontaktuje firmy', async (t) => {
   const f = await setup(t);
   f.service.setTestRecipient('personal@example.test');
@@ -276,6 +391,8 @@ test('E4: timeout po przyjęciu blokuje ponowienie, niezgodne Wysłane nie rozst
   assert.deepEqual(await f.service.reconcile(o.id), { confirmed: false });
   sent.to = ['owner@example.test'];
   assert.deepEqual(await f.service.reconcile(o.id), { confirmed: true });
+  assert.equal(f.store.get('gmailSenderPaused', false), true);
+  assert.equal(f.store.get('killSwitch', false), true);
   assert.equal(f.store.all('SELECT * FROM send_attempts').length, 1);
   assert.equal(f.store.all('SELECT * FROM usage_ledger').length, 1);
   assert.equal(f.service.dashboard().stats.sent, 1);
@@ -501,6 +618,14 @@ test('E4: nowe endpointy są odcięte w DEMO i RESEARCH_ONLY, bez uruchamiania n
     });
     assert.equal(response.statusCode, 409);
     assert.equal(response.json().code, 'SEND_DISABLED');
+    const quotaReset = await a.app.inject({
+      method: 'POST',
+      url: '/api/gmail/quota/reset',
+      headers,
+      payload: { confirmed: true, day: '2026-10-08', expectedTotalUsed: 0 },
+    });
+    assert.equal(quotaReset.statusCode, 409);
+    assert.equal(quotaReset.json().code, 'SEND_DISABLED');
   }
 });
 test('E4 reader: strony dopiero po kompletnych metadanych, dokładne ID i brak pobierania załączników', async () => {
@@ -659,4 +784,185 @@ test('E4 reader: HTML odpowiedzi jest tekstem, bez skryptów i bez załącznika 
   );
   assert.equal(m.body, 'Dziękujemy & zapraszamy.');
   assert.doesNotMatch(m.body, /run|attachment/);
+});
+
+for (const scenario of [
+  'rewritten',
+  'none',
+  'many',
+  'manual-identical',
+  'body',
+  'html',
+  'attachment',
+  'recipient',
+  'from',
+  'not-sent',
+  'time',
+] as const)
+  test(`reconcile fallback: ${scenario} pozostaje UNKNOWN bez fałszywego potwierdzenia i ponowienia`, async (t) => {
+    const f = await setup(t);
+    f.gateway.timeout = true;
+    const p = await f.service.prepareDelivery({
+      drafts: f.drafts,
+      cvId: f.cv.id,
+      kind: 'SELF_TEST',
+    });
+    await f.service.approveDelivery({
+      previewId: p.id,
+      previewHash: p.previewHash,
+      confirmed: true,
+    });
+    await f.service.dispatchOne();
+    const o = f.service.outboxRows()[0],
+      m = f.gateway.sentMessages[0];
+    m.raw = Buffer.from(m.raw!.toString().replace(m.messageId, '<rewritten@mail.gmail.com>'));
+    m.messageId = '<rewritten@mail.gmail.com>';
+    if (scenario === 'none') f.gateway.sentMessages = [];
+    if (scenario === 'many')
+      f.gateway.sentMessages.push({
+        ...m,
+        id: 'manual-copy',
+        messageId: '<manual@mail.gmail.com>',
+      });
+    if (scenario === 'manual-identical') {
+      m.id = 'manual-copy';
+      m.messageId = '<manual@mail.gmail.com>';
+    }
+    if (scenario === 'body' || scenario === 'attachment') {
+      const bytes = Buffer.from(
+        '%PDF-1.4\n' + (scenario === 'attachment' ? 'Different' : 'Fictional CV') + '\n%%EOF',
+      );
+      const different = await prepareMime({
+        sender: f.gateway.info.email,
+        senderName: f.service.minimalProfile().name,
+        recipient: m.to[0],
+        subject: m.subject,
+        body: f.d.body + (scenario === 'body' ? '\nDifferent' : ''),
+        cv: { name: 'Fictional_CV.pdf', bytes, sha256: hash(bytes), approved: true },
+      });
+      m.raw = different.mime;
+    }
+    if (scenario === 'html') {
+      const raw = m.raw!.toString();
+      assert.match(raw, /dir=3D"ltr"/);
+      m.raw = Buffer.from(raw.replace('dir=3D"ltr"', 'dir=3D"rtl"'));
+    }
+    if (scenario === 'recipient') m.to = ['other@example.test'];
+    if (scenario === 'from') m.from = ['other@example.test'];
+    if (scenario === 'not-sent') m.labels = ['INBOX'];
+    if (scenario === 'time') m.at = '2000-01-01T00:00:00Z';
+    assert.deepEqual(await f.service.reconcile(o.id), { confirmed: false });
+    assert.equal(f.service.outboxRows()[0].status, 'SEND_UNKNOWN');
+    const details = f.store.get<any>(`gmailReconcileCandidates:${o.id}`, null);
+    assert.equal(details.complete, true);
+    const exact = details.candidates.filter((c: any) => c.comparison?.decodedPartsLF).length;
+    assert.equal(
+      exact,
+      scenario === 'many' ? 2 : ['rewritten', 'manual-identical'].includes(scenario) ? 1 : 0,
+    );
+    if (exact) assert.match(f.service.outboxRows()[0].reason, /Ręczna identyczna/);
+    assert.equal(f.store.get('gmailSenderPaused', false), true);
+    assert.equal(f.store.get('killSwitch', false), true);
+    await f.service.dispatchOne();
+    assert.equal(f.gateway.posts.length, 1);
+    assert.equal(f.store.all('SELECT * FROM usage_ledger').length, 1);
+    assert.equal(f.store.all('SELECT * FROM send_attempts').length, 1);
+    assert.equal(f.store.one('SELECT provider_id FROM send_attempts')!.provider_id, null);
+  });
+
+for (const scenario of [
+  'expired',
+  'no-read-scope',
+  'changed-account',
+  'read-timeout',
+  'read-limit',
+  'incomplete-pages',
+  'deleted-mime',
+] as const)
+  test(`reconcile: ${scenario} zachowuje historię, UNKNOWN i blokady`, async (t) => {
+    const f = await setup(t);
+    f.gateway.timeout = true;
+    const p = await f.service.prepareDelivery({
+      drafts: f.drafts,
+      cvId: f.cv.id,
+      kind: 'SELF_TEST',
+    });
+    await f.service.approveDelivery({
+      previewId: p.id,
+      previewHash: p.previewHash,
+      confirmed: true,
+    });
+    await f.service.dispatchOne();
+    const o = f.service.outboxRows()[0];
+    let reads = 0;
+    const original = f.gateway.sent.bind(f.gateway);
+    f.gateway.sent = async (input) => {
+      reads++;
+      if (['read-timeout', 'read-limit', 'incomplete-pages'].includes(scenario))
+        throw new DomainError('GMAIL_READ', 'Fikcyjny niekompletny odczyt.');
+      return original(input);
+    };
+    if (scenario === 'expired')
+      f.store.exec("UPDATE gmail_outbox SET read_consent_expires_at='2000-01-01T00:00:00Z'");
+    if (scenario === 'no-read-scope')
+      f.gateway.info.scopes = f.gateway.info.scopes.filter((s) => s !== gmailReadScope);
+    if (scenario === 'changed-account') f.gateway.info.subject = 'another-account';
+    if (scenario === 'deleted-mime') f.store.exec("UPDATE send_attempts SET mime=x''");
+    if (scenario === 'deleted-mime')
+      assert.deepEqual(await f.service.reconcile(o.id), { confirmed: false });
+    else await assert.rejects(() => f.service.reconcile(o.id));
+    assert.equal(
+      reads,
+      ['read-timeout', 'read-limit', 'incomplete-pages'].includes(scenario) ? 1 : 0,
+    );
+    assert.equal(f.service.outboxRows()[0].status, 'SEND_UNKNOWN');
+    assert.equal(f.store.get('gmailSenderPaused', false), true);
+    assert.equal(f.store.get('killSwitch', false), true);
+    await f.service.dispatchOne();
+    assert.equal(f.gateway.posts.length, 1);
+    assert.equal(f.store.all('SELECT * FROM usage_ledger').length, 1);
+  });
+
+test('reconcile: tej samej wiadomości Gmaila nie można przypisać dwóm próbom jednego konta', async (t) => {
+  const f = await setup(t);
+  await selfTest(f);
+  const p = await f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'SELF_TEST' });
+  await f.service.approveDelivery({ previewId: p.id, previewHash: p.previewHash, confirmed: true });
+  const original = f.gateway.sent.bind(f.gateway);
+  f.gateway.sent = async () => [];
+  await f.service.dispatchOne();
+  f.gateway.sent = original;
+  const o = f.service.outboxRows().find((o) => o.status === 'SENT_PROVIDER')!;
+  f.store.exec(
+    "UPDATE send_attempts SET provider_id='fixture-1',provider_thread_id='thread-1' WHERE outbox_id=?",
+    o.id,
+  );
+  await assert.rejects(
+    () => f.service.reconcile(o.id),
+    (e: any) => e.code === 'GMAIL_MESSAGE_ASSIGNED',
+  );
+  assert.equal(f.service.outboxRows().find((row) => row.id === o.id)!.status, 'SENT_PROVIDER');
+  assert.equal(f.gateway.posts.length, 2);
+});
+
+test('reconcile: zgoda wygasająca podczas odczytu nie pozwala potwierdzić wyniku', async (t) => {
+  const f = await setup(t);
+  f.gateway.timeout = true;
+  const p = await f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'SELF_TEST' });
+  await f.service.approveDelivery({ previewId: p.id, previewHash: p.previewHash, confirmed: true });
+  await f.service.dispatchOne();
+  const o = f.service.outboxRows()[0];
+  const original = f.gateway.sent.bind(f.gateway);
+  f.gateway.sent = async (input) => {
+    f.store.exec("UPDATE gmail_outbox SET read_consent_expires_at='2000-01-01T00:00:00Z'");
+    return original(input);
+  };
+  await assert.rejects(
+    () => f.service.reconcile(o.id),
+    (e: any) => e.code === 'READ_CONSENT_REQUIRED',
+  );
+  assert.equal(f.service.outboxRows()[0].status, 'SEND_UNKNOWN');
+  assert.equal(f.store.get('killSwitch', false), true);
+  assert.equal(f.store.get('gmailSenderPaused', false), true);
+  assert.equal(f.gateway.posts.length, 1);
 });

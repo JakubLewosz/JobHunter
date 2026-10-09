@@ -2,9 +2,11 @@ import addressparser from 'nodemailer/lib/addressparser/index.js';
 import { z } from 'zod';
 import { DomainError } from '../util.js';
 import { GmailMailProvider } from './client.js';
-import { gmailCredentials, nativeSecretStore, type AccountInfo } from './oauth.js';
+import { gmailCredentials, gmailReadScope, nativeSecretStore, type AccountInfo } from './oauth.js';
 import type { FrozenMessage } from '../providers.js';
 import { textFromHTML } from '../research/fetcher.js';
+import { inspectMime, decodeSubject, maxMimeBytes } from './inspection.js';
+export { decodeSubject } from './inspection.js';
 
 export interface GmailMessage {
   id: string;
@@ -17,13 +19,25 @@ export interface GmailMessage {
   at: string;
   body: string;
   category: string;
+  raw?: Buffer; // Full MIME only for consented reconciliation; never the truncated reply body.
+}
+export interface SentQuery {
+  messageId: string;
+  providerId?: string | null;
+  scope?: {
+    accountSubject: string;
+    accountEmail: string;
+    recipient: string;
+    after: number;
+    before: number;
+  };
 }
 export interface GmailGateway {
   account(): Promise<AccountInfo>;
   marker(): Promise<string>;
   scan(query: string, page: (messages: GmailMessage[], next: string | null) => void): Promise<void>;
   thread(id: string): Promise<GmailMessage[]>;
-  sent(input: { messageId: string; providerId?: string | null }): Promise<GmailMessage[]>;
+  sent(input: SentQuery): Promise<GmailMessage[]>;
   send(
     input: FrozenMessage,
     account: AccountInfo,
@@ -40,29 +54,6 @@ const headersSchema = z
   .max(200);
 function addresses(text: string) {
   return addressparser(text, { flatten: true }).map((a) => a.address.toLowerCase());
-}
-// Gmail may preserve encoded MIME subject headers. Decode UTF-8/base64 and Q words locally.
-export function decodeSubject(text: string) {
-  return text
-    .replace(/(\?=)\s+(=\?)/g, '$1$2')
-    .replace(/=\?([^?]+)\?([bq])\?([^?]*)\?=/gi, (whole, charset, encoding, value) => {
-      try {
-        const bytes =
-          encoding.toLowerCase() === 'b'
-            ? Buffer.from(value, 'base64')
-            : Buffer.from(
-                value
-                  .replace(/_/g, ' ')
-                  .replace(/=([0-9a-f]{2})/gi, (_: string, n: string) =>
-                    String.fromCharCode(parseInt(n, 16)),
-                  ),
-                'latin1',
-              );
-        return new TextDecoder(charset).decode(bytes);
-      } catch {
-        return whole;
-      }
-    });
 }
 export function parseGmailMessage(raw: unknown, full = false): GmailMessage {
   const m = z
@@ -139,8 +130,21 @@ export class GmailApi implements GmailGateway {
   async account() {
     return (await this.credentials()).account;
   }
-  private async read(path: string, query = new URLSearchParams()): Promise<any> {
-    const { bearer } = await this.credentials();
+  private async read(
+    path: string,
+    query = new URLSearchParams(),
+    expected?: AccountInfo,
+    maxBytes = 4 * 1024 * 1024,
+  ): Promise<any> {
+    const { bearer, account } = await this.credentials();
+    if (expected && !account.scopes.includes(gmailReadScope))
+      throw new DomainError('READ_PERMISSION_REQUIRED', 'Brak uprawnienia do odczytu Gmaila.');
+    if (
+      expected &&
+      (account.subject !== expected.subject ||
+        account.email.toLowerCase() !== expected.email.toLowerCase())
+    )
+      throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Konto zmieniło się podczas odczytu.');
     const url = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`);
     url.search = query.toString();
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -167,7 +171,7 @@ export class GmailApi implements GmailGateway {
             const p = await reader.read();
             if (p.done) break;
             bytes += p.value.length;
-            if (bytes > 4 * 1024 * 1024) throw new Error('LIMIT');
+            if (bytes > maxBytes) throw new Error('LIMIT');
             chunks.push(p.value);
           }
         } finally {
@@ -191,22 +195,37 @@ export class GmailApi implements GmailGateway {
       throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Konto poczty zmieniło się.');
     return p.historyId;
   }
-  async scan(query: string, onPage: (messages: GmailMessage[], next: string | null) => void) {
+  async scan(
+    query: string,
+    onPage: (messages: GmailMessage[], next: string | null) => void,
+    expected?: AccountInfo,
+    maxMessages = 1000,
+  ) {
     let cursor: string | null = null;
     const seen = new Set<string>();
     let total = 0;
     const deadline = Date.now() + 45000;
     do {
+      if (Date.now() > deadline)
+        throw new DomainError('GMAIL_HISTORY_LIMIT', 'Nie ukończono odczytu w limicie czasu.');
       const params = new URLSearchParams({ q: query, maxResults: '50', includeSpamTrash: 'true' });
       if (cursor) params.set('pageToken', cursor);
       const page = z
         .object({
-          messages: z.array(z.object({ id: providerId, threadId: providerId })).default([]),
+          messages: z.array(z.object({ id: providerId, threadId: providerId })).optional(),
+          resultSizeEstimate: z.number().int().nonnegative().optional(),
           nextPageToken: z.string().min(1).max(2000).optional(),
         })
-        .parse(await this.read('messages', params));
+        .refine(
+          (p) => p.messages !== undefined || p.resultSizeEstimate === 0,
+          'Incomplete message list',
+        )
+        .transform((p) => ({ ...p, messages: p.messages ?? [] }))
+        .parse(await this.read('messages', params, expected));
+      if (Date.now() > deadline)
+        throw new DomainError('GMAIL_HISTORY_LIMIT', 'Nie ukończono odczytu w limicie czasu.');
       total += page.messages.length;
-      if (total > 1000)
+      if (total > maxMessages)
         throw new DomainError(
           'GMAIL_HISTORY_LIMIT',
           'Historia przekracza limit odczytu; wymaga przeglądu, nie jest pusta.',
@@ -230,7 +249,7 @@ export class GmailApi implements GmailGateway {
           'Precedence',
         ])
           params.append('metadataHeaders', name);
-        const m = parseGmailMessage(await this.read(`messages/${id}`, params));
+        const m = parseGmailMessage(await this.read(`messages/${id}`, params, expected));
         if (m.id !== id)
           throw new DomainError('GMAIL_MESSAGE', 'Niezgodny identyfikator odczytanej wiadomości.');
         messages.push(m);
@@ -256,26 +275,114 @@ export class GmailApi implements GmailGateway {
       throw new DomainError('GMAIL_MESSAGE', 'Wiadomość pochodzi z innego wątku.');
     return messages;
   }
-  async sent(input: { messageId: string; providerId?: string | null }) {
+  async sent(input: SentQuery) {
     if (!/^<[a-zA-Z0-9-]+@jobhunter\.local>$/.test(input.messageId))
       throw new DomainError('GMAIL_MESSAGE', 'Nieprawidłowy identyfikator próby.');
-    const results: GmailMessage[] = [];
+    const expected = await this.account();
+    if (!expected.scopes.includes(gmailReadScope))
+      throw new DomainError('READ_PERMISSION_REQUIRED', 'Brak uprawnienia do odczytu Gmaila.');
+    const scope = input.scope;
+    if (
+      scope &&
+      (expected.subject !== scope.accountSubject ||
+        expected.email.toLowerCase() !== scope.accountEmail.toLowerCase())
+    )
+      throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Konto zmieniło się przed odczytem.');
     if (input.providerId) {
       providerId.parse(input.providerId);
-      try {
-        const params = new URLSearchParams({ format: 'metadata' });
-        for (const name of ['From', 'To', 'Cc', 'Bcc', 'Subject', 'Message-ID'])
-          params.append('metadataHeaders', name);
-        const known = parseGmailMessage(await this.read(`messages/${input.providerId}`, params));
-        if (known.id === input.providerId && known.labels.includes('SENT')) return [known];
-      } catch {
-        /* Read-only fallback by stable RFC Message-ID; never resend. */
-      }
+      const params = new URLSearchParams({ format: 'metadata' });
+      for (const name of ['From', 'To', 'Cc', 'Bcc', 'Subject', 'Message-ID'])
+        params.append('metadataHeaders', name);
+      // Preserve the direct-ID path, including read errors; an error is not an empty result.
+      const known = parseGmailMessage(
+        await this.read(`messages/${input.providerId}`, params, expected),
+      );
+      if (known.id !== input.providerId)
+        throw new DomainError('GMAIL_MESSAGE', 'Niezgodna wiadomość.');
+      return [known];
     }
-    await this.scan(`in:sent rfc822msgid:${input.messageId.slice(1, -1)}`, (page) =>
-      results.push(...page),
+    const results: GmailMessage[] = [];
+    if (!scope) {
+      await this.scan(
+        `in:sent rfc822msgid:${input.messageId.slice(1, -1)}`,
+        (page) => results.push(...page),
+        expected,
+      );
+      return results;
+    }
+    if (
+      ![scope.accountEmail, scope.recipient].every(
+        (email) =>
+          z.email().safeParse(email).success && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$/.test(email),
+      ) ||
+      !Number.isFinite(scope.after) ||
+      !Number.isFinite(scope.before) ||
+      scope.before <= scope.after ||
+      scope.before - scope.after > 720000
+    )
+      throw new DomainError('GMAIL_MESSAGE', 'Brak bezpiecznego zakresu tej próby.');
+    const deadline = Date.now() + 45000;
+    await this.scan(
+      `in:sent from:${scope.accountEmail} to:${scope.recipient} after:${Math.floor(scope.after / 1000)} before:${Math.ceil(scope.before / 1000)}`,
+      (page) => results.push(...page),
+      expected,
+      50,
     );
-    return results;
+    let bytes = 0;
+    const complete: GmailMessage[] = [];
+    for (const m of results) {
+      if (
+        !m.labels.includes('SENT') ||
+        m.from.length !== 1 ||
+        m.from[0] !== scope.accountEmail.toLowerCase() ||
+        m.to.length !== 1 ||
+        m.to[0] !== scope.recipient.toLowerCase() ||
+        Date.parse(m.at) < scope.after ||
+        Date.parse(m.at) > scope.before
+      )
+        continue;
+      if (Date.now() > deadline)
+        throw new DomainError('GMAIL_HISTORY_LIMIT', 'Nie ukończono odczytu kandydatów.');
+      const value = z
+        .object({
+          id: providerId,
+          threadId: providerId,
+          labelIds: z.array(z.string()),
+          internalDate: z.string().regex(/^\d+$/),
+          raw: z
+            .string()
+            .min(1)
+            .max(Math.ceil((maxMimeBytes * 4) / 3))
+            .regex(/^[a-zA-Z0-9_-]+={0,2}$/),
+        })
+        .parse(
+          await this.read(
+            `messages/${m.id}`,
+            new URLSearchParams({ format: 'raw' }),
+            expected,
+            16 * 1024 * 1024,
+          ),
+        );
+      const raw = Buffer.from(value.raw, 'base64url');
+      if (raw.toString('base64url') !== value.raw.replace(/=+$/, ''))
+        throw new DomainError('GMAIL_MESSAGE', 'Niekompletne kodowanie RAW.');
+      bytes += raw.length;
+      if (bytes > 24 * 1024 * 1024)
+        throw new DomainError('GMAIL_HISTORY_LIMIT', 'Kandydaci przekraczają limit odczytu.');
+      const mime = inspectMime(raw);
+      const parsed = parseGmailMessage({
+        ...value,
+        payload: {
+          headers: Object.entries(mime.headers).flatMap(([name, values]) =>
+            values.map((value) => ({ name, value })),
+          ),
+        },
+      });
+      if (parsed.id !== m.id || parsed.threadId !== m.threadId || parsed.at !== m.at)
+        throw new DomainError('GMAIL_MESSAGE', 'Metadane i RAW nie dotyczą tej samej wiadomości.');
+      complete.push({ ...parsed, raw });
+    }
+    return complete;
   }
   async send(input: FrozenMessage, expected: AccountInfo, beforeSend: () => void) {
     const provider = new GmailMailProvider(

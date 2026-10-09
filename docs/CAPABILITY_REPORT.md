@@ -1,4 +1,26 @@
-# Możliwości — 8 października 2026
+# Możliwości — 8–9 października 2026
+
+Kontrola przed zleconą publikacją aktualnych zmian: **201 backend / 6 UI PASS**, typecheck/build/diff check PASS. Audytor prywatnych raportów blokuje również dowiązania kierujące do repo, z nową syntetyczną regresją; EML dodano do ignorowanych plików. Prywatny runtime/tokeny/CV pozostają lokalnie. Windows nadal nieprzetestowany. Szczegóły: [TEST_REPORT](TEST_REPORT.md).
+
+## Bieżący nadawca — nowa decyzja 9 października
+
+Użytkownik zdecydował, aby na razie korzystać ze wskazanego starszego konta. OAuth, konfiguracja kampanii i From nowego niezatwierdzonego podglądu zweryfikowane; test do siebie na wybrane konto. Bez nowej wysyłki lub odczytu wiadomości, sender/research zatrzymane, APPROVAL_REQUIRED i limity zachowane. Wciąż 19 prób/rezerwacji; wcześniejsze bufory, historia, szkice/fakty/CV bez zmian. Decyzja operacyjna po 5/5 Odebrane starszego konta, bez dowodu wyizolowanego wpływu wieku. Nie przywracać automatycznie nadawcy projektu. Kod bez zmian, dokumentacja/diff check PASS. [Szczegóły](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Zlecone porównanie dwóch nadawców — 9 października
+
+Po wskazaniu dokładnych odbiorców wykonano pięć pojedynczych SELF_TEST starszego konta (mail1–mail5) oraz trzy konta projektu (mail2/mail4/mail5); projekt mail1/mail3 pominięto z powodu dawnych prób. Użytkownik potwierdził brak historii ręcznej projektu z pozostałą trójką. **8/8 SENT_CONFIRMED**, dokładnie zatwierdzone bufory, ta sama treść/CV, bez ponowienia send. Pełne MIME części porównane CLI, bez nowej zmiany kodu lub generatora. Po przełączeniu OAuth konto projektu ponownie aktywne; sender/research zatrzymane, kolejka pusta, limity 10/3/50 bez zmian/resetu. Aktualnie 19 historycznych prób/rezerwacji, dziś 8/10, kampania 19/50. Użytkownik zgłosił 5/5 Odebrane starszego konta i 3/3 Spam projektu; na mail2/mail4/mail5 zgodna różnica we wszystkich parach. Wzmacnia hipotezę czynnika związanego z kontem lub relacją nadawca–odbiorca, bez wyizolowania samego wieku/historii/reputacji i wpływu kolejności. Nie zmieniono kodu MIME; przy zapisie wyniku zero nowych operacji Gmail/send. [Raport](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Nowo zlecony reset dzienny i pojedyncza próba Gmail — 21:50
+
+Na wyraźne polecenie użytkownika dostępny ręczny reset dziennego wykorzystania przez app_state i lokalny uwierzytelniony endpoint. Bez kasowania prób/rezerwacji, ze zgodą, audytem, kontrolą bieżącego dnia/licznika i braku aktywnych/niepewnych prób; bez samoczynnej pauzy off, kasowania kill switcha lub resetu limitu kampanii. Pełny `npm run check`: **200 backend / 6 UI PASS**, typecheck/build PASS. Po resecie i nowym podglądzie tej samej treści/CV wykonano wcześniej zleconą **jedną wysyłkę Gmail o 21:50**, SENT_CONFIRMED, dokładnie zatwierdzony bufor, bez retry. Sender zatrzymany; 11 historycznych prób/rezerwacji, bieżące wykorzystanie po resecie 1/10 i kampania 11/50. Dawna historia i materiały bez zmian, brak nowych migracji lub zmian konta/OAuth. Użytkownik następnie zgłosił Spam i dostarczył oba EML: A/B body identyczne, C auth PASS i pełne zdekodowane części zgodne z pozytywnym WP. Brak wykazanej przyczyny lub koniecznego wieku konta. Sender/research zatrzymane; dalsze próby wstrzymane na prośbę użytkownika. Analiza plików miała zero nowych operacji Gmail. [Szczegóły](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Osobno zlecona próba WP — 20:41
+
+Po audycie offline wykonano jedną nową wyraźnie zleconą wiadomość aplikacji na mail2, przez istniejący podgląd/zgodę SELF_TEST z niezmienionym CV. SENT_CONFIRMED, jedna próba, wysłany dokładnie zatwierdzony bufor; w tym etapie 10 prób/rezerwacji przy niezmienionym limicie dziennym 10. Potwierdzono konkretną wiadomość w Wysłanych i zachowano jej RAW poza repo. Użytkownik następnie wysłał wariant ręczny na mail1 i dostarczył cztery EML: **obie wiadomości od razu Odebrane**, oba odbiorcze X-WP-SPAM NO, pełne zdekodowane plain/HTML/PDF wraz z nazwą identyczne. Aplikacja A/B Subject 48/52/29, oba C i ręczne B 84/32; lokalnego generatora nie zmieniono. Kod (U9) występuje także przy NO. Wynik potwierdza udany pierwszy kontakt aplikacji na WP bez poprzedzającego ręcznego maila na ten sam adres, lecz nie wyjaśnia wcześniejszego Spamu ani zachowania odbiorców Gmail. Trzy lokalne audyty CLI i diff check PASS; analiza wyników miała zero nowych operacji Gmail. Sender pozostaje zatrzymany, research wyłączony. Kod bez nowych zmian, pełnych testów po operacjach runtime/dokumentacji nie powtarzano. Szczegóły: [raport](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Audyt Gmail offline — 8 października 2026
+
+Aktualny generator MIME przechodzi regresje RFC 2047 i pełnych części/PDF. Ograniczony reconcile wskazuje kandydatów przy utracie odpowiedzi i przepisanym RFC ID, lecz identyczna treść nie daje automatycznego SENT_CONFIRMED. Znany Gmail id, zgody, pojedynczy send, limity i blokady zachowane. 197 backend / 6 UI PASS. Dodano lokalny audytor EML bez sieci. Zero rzeczywistych operacji Gmail; brak dowodu naprawy folderu Spam. Konkretne ograniczenia oraz źródła: [audyt](GMAIL_DELIVERABILITY_AUDIT.md). Poniżej zachowano historię wcześniejszych kontroli.
 
 Host: macOS arm64, Node 24.11.0. Punkt wyjścia: `main`, `109effa`, brak lokalnych zmian. Windows nieprzetestowany.
 

@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import type { GmailGateway, GmailMessage } from '../apps/server/src/gmail/reader.js';
+import type { GmailGateway, GmailMessage, SentQuery } from '../apps/server/src/gmail/reader.js';
 import { decodeSubject } from '../apps/server/src/gmail/reader.js';
 import {
   gmailReadScope,
@@ -36,9 +36,13 @@ export class FixtureGmail implements GmailGateway {
   async thread(id: string) {
     return [...this.sentMessages, ...this.incoming].filter((m) => m.threadId === id);
   }
-  async sent(input: { messageId: string; providerId?: string | null }) {
+  async sent(input: SentQuery) {
     return this.sentMessages.filter((m) =>
-      input.providerId ? m.id === input.providerId : m.messageId === input.messageId,
+      input.providerId
+        ? m.id === input.providerId
+        : input.scope
+          ? true
+          : m.messageId === input.messageId,
     );
   }
   async send(input: FrozenMessage, account: AccountInfo, beforeSend: () => void) {
@@ -67,6 +71,7 @@ export class FixtureGmail implements GmailGateway {
       at: new Date().toISOString(),
       body: '',
       category: 'UNCLEAR',
+      raw: input.mime,
     };
     this.sentMessages.push(m);
     if (this.timeout) throw new DomainError('SEND_UNKNOWN', 'Fikcyjny timeout po przyjęciu.');
