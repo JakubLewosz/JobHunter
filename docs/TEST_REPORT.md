@@ -8,8 +8,8 @@ Bazowy `npm run check`: **237/237 backend, 7/7 UI**, typecheck/build PASS.
 Nie wykazano błędu bazowych kontroli. Późniejszy pełny etap P0:
 **253/253 backend, 7/7 UI**, typecheck/build PASS.
 
-**Końcowy `npm run check`: 280/280 backend, 7/7 UI, typecheck/build PASS**,
-Windows win32/x64, Node v24.19.0. Backend 648,1 s; Playwright 56,2 s.
+**Końcowy `npm run check` po poprawce CI: 282/282 backend, 7/7 UI, typecheck/build PASS**,
+Windows win32/x64, Node v24.19.0. Backend 623,7 s; Playwright około 1 minuty.
 `git diff --check` PASS. Dodatkowy ostatni review obejmował całość diffu i pliki nowe.
 
 Odtworzone FAIL → PASS: wcześniejsza korespondencja A (przed podglądem i przy ostatnim
@@ -89,6 +89,17 @@ Skan 31 wychodzących blobów obu commitów i plików: bez prywatnych artefaktó
 Osobny końcowy commit zapisuje ten stan publikacji w dokumentacji. Main nie scalono.
 Git nie miał autora: użyto wyłącznie per-command `Codex <codex@localhost>`, bez zmiany
 globalnej konfiguracji lub kont aplikacji. Wynik CI konkretnego finalnego SHA w raporcie czatu.
+
+CI `45c3a318ff2cac3a93365e7f5265e154accfc491`: macOS **PASS**, Windows **240/280**, 40
+błędów tej samej kontroli ścieżki. Log pobrano istniejącym uwierzytelnieniem GitHub
+wyłącznie dla tego repo, bez przekazania sekretu do modelu/logów i bez zmian uprawnień.
+Odtworzono lokalnie FAIL: Git zwracał inną wielkość litery dysku niż konfiguracja
+realpath. Poprawka porównuje tożsamość fizycznego katalogu (dev/ino BigInt), zamiast
+uznawać różnicę litery dysku za inne repo. Negatywny test innego katalogu nadal blokuje.
+Nie wyłączono kontroli origin, HEAD, gałęzi lub dowiązań. Obie nowe regresje PASS;
+ponowny pełny lokalny check **282/282 + 7/7**. Poprawka i ten raport będą wypchnięte
+na tę samą gałąź. Wynik obu zadań CI nowego SHA wymaga rzeczywistego zakończenia;
+końcowy raport czatu podaje dokładny ref oraz link przebiegu.
 
 **Zero** prawdziwych send/SELF_TEST, odczytów skrzynki, zmian nadawcy, OAuth/CV,
 zatwierdzonych materiałów, prywatnych liczników i historii. Nie uruchamiano prywatnej

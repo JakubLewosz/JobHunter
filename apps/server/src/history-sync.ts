@@ -3,6 +3,7 @@ import {
   existsSync,
   realpathSync,
   lstatSync,
+  statSync,
   readdirSync,
   readFileSync,
   openSync,
@@ -452,8 +453,10 @@ export class HistorySync {
     this.files(config.directory);
     if (
       realpathSync(config.directory) !== config.directory ||
-      realpathSync(this.git(config.directory, ['rev-parse', '--show-toplevel'])) !==
-        config.directory
+      !this.sameDirectory(
+        realpathSync(this.git(config.directory, ['rev-parse', '--show-toplevel'])),
+        config.directory,
+      )
     )
       throw new DomainError(
         'HISTORY_PATH_CHANGED',
@@ -494,6 +497,18 @@ export class HistorySync {
         'Repozytorium historii zawiera inne pliki. Użyj osobnego repozytorium minimalnej historii.',
       );
     return config.directory as string;
+  }
+  private sameDirectory(a: string, b: string) {
+    if (a === b) return true;
+    const left = statSync(a, { bigint: true }),
+      right = statSync(b, { bigint: true });
+    return (
+      left.isDirectory() &&
+      right.isDirectory() &&
+      left.ino !== 0n &&
+      left.dev === right.dev &&
+      left.ino === right.ino
+    );
   }
   private files(directory: string) {
     const gitDir = join(directory, '.git');

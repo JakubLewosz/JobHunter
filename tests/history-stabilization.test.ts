@@ -68,6 +68,30 @@ test('history regression: changing branch after configuration blocks checkpoint'
     (e: any) => e.code === 'HISTORY_BRANCH',
   );
 });
+test('history: canonical Windows drive casing does not change the physical repository', async (t) => {
+  const f = fixture(t),
+    inner = f.sync as any,
+    original = inner.git.bind(f.sync);
+  inner.git = (directory: string, args: string[]) => {
+    const value = original(directory, args);
+    return args.includes('--show-toplevel') && process.platform === 'win32'
+      ? value[0].toLowerCase() + value.slice(1)
+      : value;
+  };
+  await f.sync.claim();
+  f.sync.assertOwner();
+});
+test('history: another physical worktree remains blocked even with a valid public path', async (t) => {
+  const f = fixture(t),
+    inner = f.sync as any,
+    original = inner.git.bind(f.sync);
+  inner.git = (directory: string, args: string[]) =>
+    args.includes('--show-toplevel') ? f.root : original(directory, args);
+  await assert.rejects(
+    () => f.sync.claim(),
+    (e: any) => e.code === 'HISTORY_PATH_CHANGED',
+  );
+});
 test('history: final owner gate revalidates Git and blocks interrupted staging', async (t) => {
   const f = fixture(t);
   await f.sync.claim();

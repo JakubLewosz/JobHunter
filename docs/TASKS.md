@@ -24,7 +24,7 @@
       kontaktu i powód konkretnej wersji. Pobieranie danych aktywnego widoku;
       naprawiona wykryta regresja DEMO raportów. UI 7/7 po poprawce.
 - [x] Instrukcja URUCHOMIENIE_RANO i CI offline Windows/macOS z minimalnymi uprawnieniami.
-- [x] Końcowy pełny check/przegląd: 280/280 backend + 7/7 UI, typecheck/build/diff check PASS.
+- [x] Końcowy pełny check/przegląd: 282/282 backend + 7/7 UI, typecheck/build/diff check PASS.
 - [x] Dwa logiczne commity kodu/UI/dokumentacji wypchnięte do `codex/overnight-stabilization`;
       zdalny ref zweryfikowany dla `d10e42f7989a2d3af5cc8bba0d1caf12fa6e67a6`.
       Skan 31 blobów obu commitów: bez prywatnych plików/sekretów. Main bez scalenia.
@@ -167,3 +167,7 @@ Kierunek dalszego rozwoju: [Wizja projektu](WIZJA_PROJEKTU.md).
 - [ ] Po rzeczywistej małej próbie: prosty wybór limitów/odnawianie okresu kampanii, sprawdzenie aliasów wcześniejszych kontaktów i rozstrzygnięcia niejednoznacznych historii.
 
 `git pull` przenosi kod, nie lokalną historię aplikowania. Nie synchronizujemy baz/CV/eksportów przez Git.
+
+Poprawka CI Windows: różnica wielkości litery dysku odtworzona FAIL→PASS;
+tożsamość katalogu sprawdzana przez dev/ino, inne repo nadal blokowane.
+Końcowy check po poprawce: 282/282 backend + 7/7 UI. Nowy push/CI w raporcie czatu.
