@@ -82,6 +82,14 @@ retencja fikcyjnych PNG/raportu po porażce 3 dni. Stan CI konkretnego SHA publi
 przebiegi są dostępne w [Actions](https://github.com/JakubLewosz/JobHunter/actions).
 Nie uznawać przygotowania workflow za zakończony wynik macOS.
 
+Publikacja kodu/UI: `d10e42f7989a2d3af5cc8bba0d1caf12fa6e67a6`, gałąź
+[`codex/overnight-stabilization`](https://github.com/JakubLewosz/JobHunter/tree/codex/overnight-stabilization).
+Dwa logiczne commity, rzeczywisty push i odczyt ref zgodny z lokalnym SHA.
+Skan 31 wychodzących blobów obu commitów i plików: bez prywatnych artefaktów/sekretów.
+Osobny końcowy commit zapisuje ten stan publikacji w dokumentacji. Main nie scalono.
+Git nie miał autora: użyto wyłącznie per-command `Codex <codex@localhost>`, bez zmiany
+globalnej konfiguracji lub kont aplikacji. Wynik CI konkretnego finalnego SHA w raporcie czatu.
+
 **Zero** prawdziwych send/SELF_TEST, odczytów skrzynki, zmian nadawcy, OAuth/CV,
 zatwierdzonych materiałów, prywatnych liczników i historii. Nie uruchamiano prywatnej
 bazy do migracji i nie zatrzymano backendu użytkownika. Migracje tylko na tymczasowych

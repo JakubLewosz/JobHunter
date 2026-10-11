@@ -25,6 +25,7 @@ Log poza repo: %TEMP%/jobhunter-publish-check.log. Kod zamrożony po sprawdzonym
 Zachowano dotychczasową deduplikację godzinnego RESEARCH_ONLY; cache nowych źródeł
 ograniczono do AUTO_POLICY. Próba skrócenia kontroli historii przez fingerprint
 wycofana po przeglądzie; pełny Git i konserwatywne blokady pozostają.
-Następne kroki publikacji: jawne listy plików i logiczne commity, skan wszystkich
-wychodzących blobów, push origin codex/overnight-stabilization, weryfikacja ref i CI.
+Kod/UI opublikowane: d10e42f7989a2d3af5cc8bba0d1caf12fa6e67a6.
+Zdalny ref zgodny; main bez scalenia. Skan 31 blobów dwóch commitów PASS.
+Dodatkowy commit dokumentacji zapisuje wynik publikacji; jego ref i CI będą odczytane.
 Wynik publikacji/CI konkretnego SHA w końcowym raporcie czatu.

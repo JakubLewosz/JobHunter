@@ -25,7 +25,11 @@
       naprawiona wykryta regresja DEMO raportów. UI 7/7 po poprawce.
 - [x] Instrukcja URUCHOMIENIE_RANO i CI offline Windows/macOS z minimalnymi uprawnieniami.
 - [x] Końcowy pełny check/przegląd: 280/280 backend + 7/7 UI, typecheck/build/diff check PASS.
-- [ ] Commity/push i odczyt ref/CI: publikacja w toku; końcowy wynik w raporcie czatu.
+- [x] Dwa logiczne commity kodu/UI/dokumentacji wypchnięte do `codex/overnight-stabilization`;
+      zdalny ref zweryfikowany dla `d10e42f7989a2d3af5cc8bba0d1caf12fa6e67a6`.
+      Skan 31 blobów obu commitów: bez prywatnych plików/sekretów. Main bez scalenia.
+- CI uruchomione; rzeczywisty wynik finalnego SHA dokumentacji w raporcie końcowym
+  czatu i [Actions](https://github.com/JakubLewosz/JobHunter/actions).
 
 Następny etap implementacji (nie oznaczony jako gotowy): pełna macierz awarii
 przekazania przed/po rename, commit i utraconym wyniku push; scenariusz rozstrzygnięcia
