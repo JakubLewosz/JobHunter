@@ -1,5 +1,13 @@
 # Możliwości — 8–9 października 2026
 
+## Aktualizacja — 11 października 2026
+
+Na Windows win32/x64: Node 24.19.0, npm 11.17.0, SQLite 3.53.4, Codex CLI 0.162.0-alpha.17.2. Faktyczne version/exec help/features potwierdzają użyte flagi i ograniczenia; nie uruchamiano rzeczywistego researchu lub Gmaila. `npm ci` działa dzięki dołączonym bibliotekom i wyłączeniu zależnościowych lifecycle scripts w .npmrc. Doctor ładuje SQLite. Start/health/stop PowerShell PASS w osobnym DEMO ze ścieżką zawierającą spacje i polskie znaki.
+
+Zaimplementowano AUTO_POLICY, ciągłą sesję, osobny sender, aktualne dowody/GENERAL, minimalny prywatny Git z właścicielem, inicjalizacją i przekazaniem, uproszczony panel. Najnowsze wyniki check: TEST_REPORT. Testy fixture i lokalny Git potwierdzają kod, nie dostarczalność, działanie natywnego modelu lub niezależną izolację całego procesu OS. Nowy kod nie był uruchamiany na macOS. Nie ma skonfigurowanego rzeczywistego repo historii w tym checkout.
+
+Poniższe sekcje są historyczne; ich wcześniejsza blokada AUTO_POLICY i stan Windows nie zastępują aktualizacji powyżej.
+
 9 października, po publikacji `db12c29`: naprawiona odtworzona utrata blokady znanego kontaktu Gmail po zmianie nadawcy. Historia firmy działa między kontami, z wyłączeniem odpowiedzi przypisanych do SELF_TEST; pięć nowych regresji offline PASS. Pełny `npm run check`: **206 backend / 6 UI PASS**, typecheck/build/diff check PASS. Bez migracji lub zmian runtime; nowe zmiany lokalne. Diagnoza dwóch dawnych SEMANTIC_REVIEW_FAILED potwierdza poprawne strukturalnie odpowiedzi modelu, lecz brak zachowanych szkiców/issues uniemożliwia ocenę konkretnych zdań. Obecne false/null już zachowywane w NEEDS_REVIEW i blokowane przy send, istniejący test PASS. Prywatny roboczy przegląd dwóch szkiców i dwóch świeżych publicznych źródeł gotowy; kontakty GENERAL nadal NEEDS_REVIEW, historia Gmail firm nieodczytana. Jawny przegląd ogólnego kontaktu pozostaje brakującym krokiem produktu. Zero operacji Gmail i automatycznego researchu; szczegóły w TEST_REPORT.
 
 Kontrola przed zleconą publikacją aktualnych zmian: **201 backend / 6 UI PASS**, typecheck/build/diff check PASS. Audytor prywatnych raportów blokuje również dowiązania kierujące do repo, z nową syntetyczną regresją; EML dodano do ignorowanych plików. Prywatny runtime/tokeny/CV pozostają lokalnie. Windows nadal nieprzetestowany. Szczegóły: [TEST_REPORT](TEST_REPORT.md).

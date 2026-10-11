@@ -1,5 +1,13 @@
 # Windows smoke — do wykonania przez użytkownika
 
+## Rzeczywiste próby z 11 października 2026
+
+Windows win32 x64 / Node 24.19.0: npm ci, doctor (SQLite 3.53.4), typecheck/build, backend fixture tests i Playwright Chromium uruchomiono rzeczywiście na Windowsie. Panel sprawdzony przy 1440 i 390 px. `scripts/start.ps1 -NoBrowser` → rzeczywisty backend DEMO/health → `scripts/stop.ps1` i zwolnienie blokady PASS, w nowym tymczasowym katalogu „JobHunter smoke Łódź …”. Bez otwarcia zwykłej przeglądarki użytkownika i bez Gmaila. Dokładne liczby końcowego zestawu są w TEST_REPORT.
+
+Native Codex CLI 0.162.0-alpha.17.2: version/exec help/features PASS. Nie wykonano natywnego researchu modelu, próby logowania/izolacji na prywatnych plikach, Gmaila ani pełnego dnia pracy. Testy adaptera CLI używają fikcyjnego procesu. Nie zaliczamy całej poniższej listy ani macOS na podstawie testów Windows.
+
+## Pozostała instrukcja pełnego smoke
+
 Nie zaliczono na macOS. Wymagany Node 24 LTS i natywny Codex CLI z obsługą użytych flag. Uruchamiaj na jednym komputerze naraz. Git przenosi kod, nie dane aplikacji.
 
 1. Pobierz kod do ścieżki ze spacjami i polskimi znakami. W PowerShell:

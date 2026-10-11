@@ -1,5 +1,5 @@
 export type Row = Record<string, any>;
-export type Mode = 'DEMO' | 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED';
+export type Mode = 'DEMO' | 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED' | 'AUTO_POLICY';
 export type TriState = 'yes' | 'no' | 'unknown' | 'conflicting';
 export type Decision = 'READY_APPLICATION' | 'READY_OPEN_INQUIRY' | 'NEEDS_REVIEW' | 'REJECTED';
 export type SendState =

@@ -198,6 +198,24 @@ export function checkMessageRules(draft: Row, profile: Row, analysis?: Analysis)
       'UNSUPPORTED_VACANCY',
       'Brak potwierdzonej aktywnej oferty dla tej deklaracji.',
     );
+  if (analysis) {
+    for (const [key, pattern] of [
+      [
+        'hours',
+        /(?:państwa|ofert[ay]).{0,30}(?:godziny|grafik|wymiar).{0,30}(?:pasują|odpowiadają|zgodne)|(?:godziny|grafik|wymiar).{0,30}(?:państwa|ofert[ay]).{0,30}(?:pasują|odpowiadają|zgodne)/iu,
+      ],
+      [
+        'remote',
+        /(?:firma|państwo).{0,30}(?:oferuje|oferują|umożliwia|umożliwiają).{0,20}(?:pracę zdalną|zdalną współpracę)/iu,
+      ],
+    ] as const) {
+      if (analysis.conditions[key].value !== 'yes' && hasPositiveClaim(pattern, text))
+        throw new DomainError(
+          'UNSUPPORTED_CONDITIONS',
+          'Nieznane warunki firmy nie potwierdzają dopasowania dostępności. Zadaj pytanie.',
+        );
+    }
+  }
   return [...issues, ...messageStyleIssues(draft, analysis)];
 }
 export function messageStyleIssues(draft: Row, analysis?: Analysis): string[] {

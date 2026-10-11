@@ -17,6 +17,7 @@ import { GmailJobHunter } from './gmail/service.js';
 import type { GmailGateway } from './gmail/reader.js';
 import type { AccountInfo } from './gmail/oauth.js';
 import type { Mode } from '../../../packages/shared/types.js';
+import { AutoPolicyJobHunter } from './auto-policy.js';
 
 export async function createApp(options: {
   dir: string;
@@ -25,17 +26,19 @@ export async function createApp(options: {
   worker?: boolean;
   mode?: Mode;
   gmailOptions?: { gateway?: GmailGateway; accountInfo?: () => AccountInfo | null };
-  researchOptions?: { runner?: StructuredRunner; reader?: SourceReader };
+  researchOptions?: { runner?: StructuredRunner; reader?: SourceReader; clock?: () => Date };
   shutdown?: () => Promise<void>;
 }) {
   const app = Fastify({ logger: false, bodyLimit: 7 * 1024 * 1024, requestTimeout: 30000 });
   const store = new Store(options.dir);
   const service =
-    options.mode === 'APPROVAL_REQUIRED'
-      ? new GmailJobHunter(store, { ...options.researchOptions, ...options.gmailOptions })
-      : options.mode === 'RESEARCH_ONLY'
-        ? new ResearchJobHunter(store, options.researchOptions)
-        : new JobHunter(store);
+    options.mode === 'AUTO_POLICY'
+      ? new AutoPolicyJobHunter(store, { ...options.researchOptions, ...options.gmailOptions })
+      : options.mode === 'APPROVAL_REQUIRED'
+        ? new GmailJobHunter(store, { ...options.researchOptions, ...options.gmailOptions })
+        : options.mode === 'RESEARCH_ONLY'
+          ? new ResearchJobHunter(store, options.researchOptions)
+          : new JobHunter(store);
   const token = options.launchToken ?? randomBytes(32).toString('hex');
   const sessions = new Map<string, { csrf: string; expires: number }>();
   const allowedHost = `127.0.0.1:${options.port}`;
@@ -253,8 +256,11 @@ export async function createApp(options: {
     if (service.mode === 'DEMO')
       throw new DomainError('RESEARCH_MODE_REQUIRED', 'Przygotowanie dotyczy RESEARCH_ONLY.');
     return {
-      account: setupInfo(join(store.dir, '..', 'gmail-preparation')),
-      sendingEnabled: false,
+      account:
+        service instanceof GmailJobHunter
+          ? service.deliveryState().account
+          : setupInfo(join(store.dir, '..', 'gmail-preparation')),
+      sendingEnabled: service instanceof GmailJobHunter,
     };
   });
   const gmailService = () => {
@@ -554,6 +560,42 @@ export async function createApp(options: {
       throw new DomainError('RESEARCH_MODE_REQUIRED', 'Uruchom aplikację jawnie w RESEARCH_ONLY.');
     return service;
   };
+  const autoService = () => {
+    if (!(service instanceof AutoPolicyJobHunter))
+      throw new DomainError('AUTO_MODE_REQUIRED', 'Uruchom osobny tryb AUTO_POLICY.');
+    return service;
+  };
+  app.get('/api/auto/state', async () => autoService().dashboard().state.auto);
+  app.post('/api/auto/policy', async (request) => autoService().configurePolicy(request.body));
+  app.post('/api/auto/start', async () => {
+    await autoService().startAuto();
+    return { ok: true };
+  });
+  app.post('/api/auto/handoff', async () => autoService().handoff());
+  app.post('/api/auto/history/prepare', async () => autoService().prepareHistory());
+  app.post('/api/auto/history/configure', async (request) => {
+    const input = z
+      .object({
+        directory: z.string().min(1).max(2000),
+        expectedRemote: z.string().min(1).max(2000),
+        confirmedPrivate: z.literal(true),
+        confirmedInitialHistory: z.boolean().optional(),
+      })
+      .strict()
+      .parse(request.body);
+    const auto = autoService();
+    if (!auto.state().stopped)
+      throw new DomainError(
+        'SESSION_ACTIVE',
+        'Zatrzymaj sesję przed zmianą repozytorium historii.',
+      );
+    return auto.historySync.configure(input);
+  });
+  app.post<{ Params: { id: string } }>('/api/research/contacts/:id/review', async (request) => {
+    const input = z.object({ confirmed: z.boolean() }).strict().parse(request.body);
+    researchService().reviewContact(request.params.id, input.confirmed);
+    return { ok: true };
+  });
   app.post('/api/integrations/codex/probe', async () => researchService().probe('codex'));
   app.post('/api/integrations/search/probe', async () => researchService().probe('search'));
   app.post('/api/research/search', async (request) => {

@@ -21,8 +21,8 @@ if (
 )
   throw new Error('Dane runtime muszą znajdować się poza repozytorium.');
 const mode = process.env.JOBHUNTER_MODE ?? 'DEMO';
-if (!['DEMO', 'RESEARCH_ONLY', 'APPROVAL_REQUIRED'].includes(mode))
-  throw new Error('JOBHUNTER_MODE: wybierz DEMO, RESEARCH_ONLY lub APPROVAL_REQUIRED.');
+if (!['DEMO', 'RESEARCH_ONLY', 'APPROVAL_REQUIRED', 'AUTO_POLICY'].includes(mode))
+  throw new Error('JOBHUNTER_MODE: wybierz DEMO, RESEARCH_ONLY, APPROVAL_REQUIRED lub AUTO_POLICY.');
 const dir = join(base, mode === 'DEMO' ? 'demo' : 'research-only');
 mkdirSync(dir, { recursive: true, mode: 0o700 });
 
@@ -76,7 +76,7 @@ try {
   const result = await createApp({
     dir,
     port,
-    mode: mode as 'DEMO' | 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED',
+    mode: mode as 'DEMO' | 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED' | 'AUTO_POLICY',
     shutdown: async () => shutdown(),
   });
   async function shutdown() {

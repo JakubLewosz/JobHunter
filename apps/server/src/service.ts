@@ -285,7 +285,7 @@ export class JobHunter {
     const byAlias =
       d &&
       this.store.one(
-        "SELECT c.* FROM company_aliases a JOIN companies c ON c.id=a.company_id WHERE a.kind='DOMAIN' AND a.value=?",
+        "SELECT c.* FROM company_aliases a JOIN companies c ON c.id=a.company_id WHERE a.kind='DOMAIN' AND a.value=? AND a.verified_at IS NOT NULL",
         d,
       );
     const found =
@@ -296,6 +296,11 @@ export class JobHunter {
         d,
       );
     if (found) {
+      if (d && found.primary_domain && companyDomain(found.primary_domain) !== d && !byAlias)
+        throw new DomainError(
+          'COMPANY_IDENTITY_CONFLICT',
+          'Podobna nazwa ma inną potwierdzoną domenę. Nie scalono firm; wymagany przegląd tożsamości.',
+        );
       this.store.exec(
         "INSERT OR IGNORE INTO company_aliases VALUES (?,?,'NAME',?,?,?)",
         id(),
@@ -304,7 +309,26 @@ export class JobHunter {
         this.now(),
         this.now(),
       );
-      return { company: found, duplicate: true };
+      if (d && !found.primary_domain) {
+        this.store.exec(
+          'UPDATE companies SET primary_domain=?,version=version+1,updated_at=? WHERE id=?',
+          d,
+          this.now(),
+          found.id,
+        );
+        this.store.exec(
+          "INSERT OR IGNORE INTO company_aliases VALUES (?,?,'DOMAIN',?,?,?)",
+          id(),
+          found.id,
+          d,
+          this.now(),
+          this.now(),
+        );
+      }
+      return {
+        company: this.store.one('SELECT * FROM companies WHERE id=?', found.id)!,
+        duplicate: true,
+      };
     }
     const companyId = id();
     const at = this.now();
@@ -707,7 +731,7 @@ export class JobHunter {
         at,
       );
       this.store.exec(
-        'INSERT INTO contacts VALUES (?,?,?,?,?,?,?,?,?)',
+        'INSERT INTO contacts (id,company_id,email,kind,evidence_id,verification_status,verified_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)',
         contactId,
         company.id,
         normalizeEmail(r.email),

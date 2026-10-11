@@ -139,11 +139,28 @@ export function validateAnalysis(raw: unknown, sources: Source[]): Analysis {
       !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) ||
       /[\r\n]/.test(email) ||
       !verifyQuote(v.contact.proof, sources) ||
-      !compact(v.contact.proof.quote!).includes(email)
+      !(
+        v.contact.proof.quote?.match(
+          /[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}/giu,
+        ) ?? []
+      ).some((found) => found.toLowerCase() === email)
     ) {
       v.contact.email = null;
       v.contact.kind = 'UNKNOWN';
       v.warnings.push('Adres kontaktu niepotwierdzony; szkic z odbiorcą zablokowany.');
+    }
+    if (v.contact.email && v.contact.kind === 'RECRUITMENT') {
+      const purpose = compact(v.contact.proof.quote!).replace(email, '');
+      if (
+        !/rekrut|kandydatur|aplikuj|aplikować|recruit|career|human resources|dział hr|hr department|(?:wyślij|prześlij|send|submit).{0,40}\bcv\b/iu.test(
+          purpose,
+        )
+      ) {
+        v.contact.kind = 'UNKNOWN';
+        v.warnings.push(
+          'Literalny adres jest potwierdzony, ale cytat nie potwierdza przeznaczenia rekrutacyjnego.',
+        );
+      }
     }
   }
   if (v.type === 'OPEN' && v.conditions.openInquiry.value !== 'yes') v.type = 'UNKNOWN';

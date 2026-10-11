@@ -40,6 +40,26 @@ function setup(t: TestContext) {
   });
   return { dir, store, service, runner, reader };
 }
+test('contact purpose: model cannot promote a literal GENERAL address to RECRUITMENT', async (t) => {
+  const f = setup(t);
+  f.runner.prospect = f.reader.prospect = true;
+  f.service.approveProfile();
+  await f.service.importURL('https://fixture.example.test/careers');
+  await f.service.tick();
+  const analysis = JSON.parse(f.store.one('SELECT details FROM research_qualifications')!.details);
+  analysis.contact.kind = 'RECRUITMENT';
+  const verified = validateAnalysis(analysis, f.store.all('SELECT * FROM research_sources') as any);
+  assert.equal(verified.contact.email, 'biuro@fixture.example.test');
+  assert.equal(verified.contact.kind, 'UNKNOWN');
+});
+test('literal contact: a suffix of a published mailbox is not a published address', async (t) => {
+  const f = await prepare(t),
+    analysis = JSON.parse(f.store.one('SELECT details FROM research_qualifications')!.details),
+    source = f.store.one('SELECT * FROM research_sources')!;
+  source.text = source.text.replaceAll('hr@fixture', 'not-hr@fixture');
+  analysis.contact.proof.quote = 'Rekrutacja: not-hr@fixture.example.test.';
+  assert.equal(validateAnalysis(analysis, [source as any]).contact.email, null);
+});
 async function prepare(t: TestContext) {
   const f = setup(t);
   f.service.approveProfile();
@@ -70,11 +90,11 @@ test('E3: oddzielne bazy, profil i historia; bezwzględna blokada wysyłki i sym
   service.reviewDraft(d.id, 1);
   assert.equal(store.all('SELECT * FROM draft_approvals').length, 0);
   const demo = new Store(join(dir, 'demo'));
-  t.after(() => demo.close());
   const demoService = new JobHunter(demo);
   assert.equal(demoService.profile().approved_at, null);
   assert.equal(demoService.draftRows().length, 0);
   assert.throws(() => new JobHunter(store), /innego trybu/);
+  demo.close();
 });
 test('E3: migruje rzeczywistą bazę E2 z zależnymi rekordami bez utraty danych', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'jh-migration-'));
@@ -122,7 +142,13 @@ test('E3: migruje rzeczywistą bazę E2 z zależnymi rekordami bez utraty danych
         s.rows,
         s.name,
       );
-    } else assert.deepEqual(rows, s.rows, s.name);
+    } else if (s.name === 'contacts')
+      assert.deepEqual(
+        rows.map(({ literal_verified, ...row }) => row),
+        s.rows,
+        s.name,
+      );
+    else assert.deepEqual(rows, s.rows, s.name);
   }
   assert.deepEqual(upgraded.db.pragma('foreign_key_check'), []);
   assert.equal(upgraded.db.pragma('foreign_keys', { simple: true }), 1);

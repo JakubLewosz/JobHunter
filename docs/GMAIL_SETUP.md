@@ -1,5 +1,7 @@
 # Gmail z CV w JobHunter
 
+> Aktualizacja 11 października 2026: instrukcje podłączenia OAuth pozostają; niżej opisany ręczny przepływ dotyczy APPROVAL_REQUIRED i wcześniejszych prób. AUTO_POLICY korzysta z tego samego lokalnego konta, jawnej konfiguracji/polityki i Start, bez przeglądu każdego maila. Odpowiedzi obsługuje użytkownik w Gmailu. Aktualna instrukcja: README i HISTORY_SYNC. Rozwój nadal nie upoważnia do wysyłek ani rozszerzania scopes.
+
 Tryb `APPROVAL_REQUIRED` ma przegląd konkretnych wiadomości, test do siebie, sprawdzanie historii i wysyłkę paczki do trzech firm. RESEARCH_ONLY nadal nie czyta Gmaila i nie wysyła. Dodanie tej możliwości nie upoważnia do rzeczywistych wysyłek podczas kodowania.
 
 ## Konto już podłączone

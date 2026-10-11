@@ -60,7 +60,7 @@ export class CodexSearchProvider implements SearchProvider {
     };
   }
 }
-const dayQueries = [
+export const dayQueries = [
   'Polska: software house’y, agencje internetowe, SaaS, aplikacje webowe, automatyzacje, API, integracje, narzędzia AI i przetwarzanie dokumentów. Szukaj szeroko we wszystkich tych dziedzinach; bez ograniczenia do PHP/Laravel. Mogą to być firmy bez ogłoszonego wakatu, do zapytania o współpracę.',
   'Małe i średnie zespoły produktowe oraz SaaS: aplikacje, narzędzia wewnętrzne, backend, integracje, automatyzacje i AI. Nowe firmy z publicznym kontaktem, także bez rekrutacji.',
   'Agencje cyfrowe i firmy tworzące aplikacje dla klientów: web, e-commerce, backend, API, automatyzacje i narzędzia AI. Szukaj różnych technologii i możliwości zapytania o współpracę.',
@@ -75,7 +75,7 @@ export class ResearchJobHunter extends JobHunter {
   readonly runner: StructuredRunner;
   readonly reader: SourceReader;
   readonly search: SearchProvider;
-  private researching = false;
+  protected researching = false;
   private controller?: AbortController;
   private probing = false;
   private activeRunId: string | null = null;
@@ -85,10 +85,11 @@ export class ResearchJobHunter extends JobHunter {
       runner?: StructuredRunner;
       reader?: SourceReader;
       search?: SearchProvider;
-      mode?: 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED';
+      clock?: () => Date;
+      mode?: 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED' | 'AUTO_POLICY';
     } = {},
   ) {
-    super(store, { mode: options.mode ?? 'RESEARCH_ONLY' });
+    super(store, { mode: options.mode ?? 'RESEARCH_ONLY', clock: options.clock });
     this.runner = options.runner ?? new ExecCodexRunner();
     this.reader = options.reader ?? new PublicSourceReader();
     this.search =
@@ -332,7 +333,42 @@ export class ResearchJobHunter extends JobHunter {
       source.original_url,
       source.content_hash,
     );
-    if (existing) return existing as Source;
+    if (existing) {
+      this.store.atomic(() => {
+        this.store.exec(
+          'INSERT INTO source_verifications VALUES (?,?,?,?,?,?)',
+          id(),
+          existing.id,
+          source.fetched_at,
+          source.status,
+          source.final_url,
+          source.content_hash,
+        );
+        if (source.status === 'READ' && existing.status === 'READ') {
+          this.store.exec(
+            'UPDATE research_sources SET fetched_at=?,final_url=?,title=?,method=?,http_status=? WHERE id=?',
+            source.fetched_at,
+            source.final_url,
+            source.title,
+            source.method,
+            source.http_status,
+            existing.id,
+          );
+          this.store.exec(
+            'UPDATE evidence SET fetched_at=?,updated_at=? WHERE id IN (SELECT evidence_id FROM research_evidence WHERE source_id=?)',
+            source.fetched_at,
+            this.now(),
+            existing.id,
+          );
+          if (source.final_url !== existing.final_url)
+            this.store.exec(
+              "UPDATE contacts SET literal_verified=0,verification_status='INVALIDATED' WHERE evidence_id IN (SELECT evidence_id FROM research_evidence WHERE source_id=?)",
+              existing.id,
+            );
+        }
+      });
+      return this.store.one('SELECT * FROM research_sources WHERE id=?', existing.id) as Source;
+    }
     this.store.exec(
       'INSERT INTO research_sources VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
       source.id,
@@ -349,6 +385,22 @@ export class ResearchJobHunter extends JobHunter {
       source.error,
     );
     this.event('SOURCE_READ', `${source.status}: ${source.original_url}`, source.id);
+    this.store.exec(
+      'INSERT INTO source_verifications VALUES (?,?,?,?,?,?)',
+      id(),
+      source.id,
+      source.fetched_at,
+      source.status,
+      source.final_url,
+      source.content_hash,
+    );
+    // A changed or unavailable page cannot keep older contact proofs eligible.
+    this.store.exec(
+      "UPDATE contacts SET literal_verified=0,verification_status='INVALIDATED',updated_at=? WHERE evidence_id IN (SELECT r.evidence_id FROM research_evidence r JOIN research_sources s ON s.id=r.source_id WHERE s.original_url=? AND s.id<>?)",
+      this.now(),
+      source.original_url,
+      source.id,
+    );
     return source;
   }
   async readSource(url: string, signal?: AbortSignal) {
@@ -398,7 +450,110 @@ export class ResearchJobHunter extends JobHunter {
     );
     return { sources, queued: true, runId };
   }
-  private enqueue(key: string, query: string | null, maxDrafts: number) {
+  sourcesForDraft(d: Row): Source[] {
+    const item = this.store.one(
+      'SELECT * FROM research_items WHERE opportunity_id=? AND analysis IS NOT NULL ORDER BY updated_at DESC LIMIT 1',
+      d.opportunity_id,
+    );
+    if (item) return this.sourcesFor(item);
+    return this.store.all(
+      'SELECT s.* FROM research_sources s JOIN research_evidence r ON r.source_id=s.id WHERE r.evidence_id IN (SELECT value FROM json_each(?)) OR r.evidence_id=(SELECT evidence_id FROM contacts WHERE id=?)',
+      d.evidence_ids,
+      d.contact_id,
+    ) as Source[];
+  }
+  async refreshDraftSources(draftId: string, signal?: AbortSignal) {
+    const d = this.draftRows().find((d) => d.id === draftId);
+    if (!d) throw new DomainError('NOT_FOUND', 'Brak szkicu.', 404);
+    const sources = this.sourcesForDraft(d),
+      rechecked = new Set<string>();
+    for (const source of sources) {
+      const checked = this.store.one(
+        'SELECT id FROM source_verifications WHERE source_id=?',
+        source.id,
+      );
+      if (checked && this.clock().getTime() - Date.parse(source.fetched_at) <= 86400000) continue;
+      signal?.throwIfAborted();
+      const fresh = this.saveSource(await this.reader.read(source.original_url, signal));
+      if (fresh.status !== 'READ' || fresh.id !== source.id)
+        throw new DomainError(
+          'STALE_EVIDENCE',
+          'Źródło zmieniło się lub jest niedostępne. Szkic wymaga nowej analizy.',
+        );
+      rechecked.add(fresh.id);
+      sources[sources.indexOf(source)] = fresh;
+    }
+    signal?.throwIfAborted();
+    const analysis = validateAnalysis(
+      JSON.parse(
+        this.store.one(
+          'SELECT details FROM research_qualifications WHERE opportunity_id=?',
+          d.opportunity_id,
+        )!.details,
+      ),
+      sources,
+    );
+    const t = this.store.one('SELECT * FROM contacts WHERE id=?', d.contact_id)!;
+    const source = sources.find((s) => s.id === analysis.contact.proof.sourceId);
+    if (
+      source?.status === 'READ' &&
+      (t.verification_status !== 'INVALIDATED' || rechecked.has(source.id)) &&
+      analysis.contact.email?.toLowerCase() === t.email &&
+      analysis.contact.kind === t.kind
+    )
+      this.store.exec(
+        "UPDATE contacts SET verified_at=?,literal_verified=1,verification_status=CASE WHEN verification_status='INVALIDATED' THEN CASE WHEN kind='RECRUITMENT' THEN 'VERIFIED_PUBLIC' ELSE 'NEEDS_REVIEW' END ELSE verification_status END,updated_at=? WHERE id=?",
+        source.fetched_at,
+        this.now(),
+        t.id,
+      );
+  }
+  reviewContact(contactId: string, confirmed: boolean) {
+    if (!confirmed)
+      throw new DomainError(
+        'CONTACT_CONFIRMATION_REQUIRED',
+        'Potwierdź przeznaczenie wybranego kontaktu.',
+      );
+    const t = this.store.one('SELECT * FROM contacts WHERE id=?', contactId);
+    if (
+      !t ||
+      !['GENERAL', 'RECRUITMENT'].includes(t.kind) ||
+      !t.literal_verified ||
+      t.verification_status === 'INVALIDATED'
+    )
+      throw new DomainError(
+        'CONTACT_UNVERIFIED',
+        'Brak aktualnego literalnego dowodu właściwego kontaktu.',
+      );
+    const evidence = this.store.one('SELECT * FROM evidence WHERE id=?', t.evidence_id)!;
+    if (
+      !Number.isFinite(Date.parse(t.verified_at)) ||
+      this.clock().getTime() - Date.parse(t.verified_at) > 86400000 ||
+      !compact(evidence.fragment).includes(t.email)
+    )
+      throw new DomainError('STALE_CONTACT', 'Odśwież źródło kontaktu przed przeglądem.');
+    this.store.atomic(() => {
+      this.store.exec(
+        'INSERT INTO contact_reviews VALUES (?,?,?,?) ON CONFLICT(contact_id) DO UPDATE SET evidence_id=excluded.evidence_id,kind=excluded.kind,reviewed_at=excluded.reviewed_at',
+        t.id,
+        t.evidence_id,
+        t.kind,
+        this.now(),
+      );
+      this.store.exec(
+        "UPDATE contacts SET verification_status='VERIFIED_PUBLIC',updated_at=? WHERE id=?",
+        this.now(),
+        t.id,
+      );
+      this.event(
+        'CONTACT_REVIEWED',
+        'Użytkownik sprawdził przeznaczenie adresu. Rodzaj GENERAL pozostaje GENERAL.',
+        t.id,
+        'user',
+      );
+    });
+  }
+  protected enqueue(key: string, query: string | null, maxDrafts: number) {
     const p = this.minimalProfile();
     if (this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')"))
       throw new DomainError(
@@ -431,10 +586,16 @@ export class ResearchJobHunter extends JobHunter {
         maxDrafts,
         query,
       );
+      this.store.set(`draftedInRun:${runId}`, 0);
       this.store.set('stopped', false);
       this.store.set('paused', false);
       this.store.set('workerStatus', 'QUEUED');
-      this.event('RUN_STARTED', 'Research publicznych stron. Zero wysyłek.', runId, 'user');
+      this.event(
+        'RUN_STARTED',
+        'Rozpoczęto research publicznych stron.',
+        runId,
+        this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
+      );
     });
     return runId;
   }
@@ -763,19 +924,7 @@ export class ResearchJobHunter extends JobHunter {
   private qualifyItem(item: Row, v: Analysis, sources: Source[]) {
     return this.store.atomic(() => {
       // Identity is proven by the literal company name. Portal domains are never used as company identifiers.
-      const known = this.store
-        .all('SELECT canonical_name FROM companies')
-        .find(
-          (c) =>
-            normalizeName(v.company) === normalizeName(c.canonical_name) ||
-            normalizeName(v.company).replace(
-              /(?:spzoo|spolkazograniczonaodpowiedzialnoscia|sa)$/,
-              '',
-            ) === normalizeName(c.canonical_name),
-        );
-      const name = normalizeName(v.company).startsWith('fingoweb')
-        ? 'Fingoweb'
-        : (known?.canonical_name ?? v.company);
+      const name = normalizeName(v.company).startsWith('fingoweb') ? 'Fingoweb' : v.company;
       let domain: string | null = null;
       if (v.companyURL) {
         try {
@@ -785,7 +934,7 @@ export class ResearchJobHunter extends JobHunter {
             domain = u.hostname;
         } catch {}
       }
-      const found = this.findOrCreateCompany(name, name === 'Fingoweb' || known ? null : domain);
+      const found = this.findOrCreateCompany(name, name === 'Fingoweb' ? null : domain);
       const c = found.company;
       const eids = this.evidenceFor(c.id, sources, v);
       const evidenceId = eids.get(v.titleProof.sourceId!) ?? eids.values().next().value;
@@ -793,25 +942,54 @@ export class ResearchJobHunter extends JobHunter {
       let contactId: string | null = null;
       if (v.contact.email && eids.has(v.contact.proof.sourceId!)) {
         const existing = this.store.one(
-          'SELECT id FROM contacts WHERE company_id=? AND email=?',
+          'SELECT * FROM contacts WHERE company_id=? AND email=?',
           c.id,
           v.contact.email.toLowerCase(),
         );
         contactId = existing?.id ?? id();
         if (!existing)
           this.store.exec(
-            'INSERT INTO contacts VALUES (?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO contacts (id,company_id,email,kind,evidence_id,verification_status,verified_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)',
             contactId,
             c.id,
             v.contact.email.toLowerCase(),
             v.contact.kind,
             eids.get(v.contact.proof.sourceId!),
             v.contact.kind === 'RECRUITMENT' ? 'VERIFIED_PUBLIC' : 'NEEDS_REVIEW',
-            this.now(),
+            sources.find((s) => s.id === v.contact.proof.sourceId)!.fetched_at,
             this.now(),
             this.now(),
           );
+        const contactEvidence = eids.get(v.contact.proof.sourceId!)!;
+        const review = this.store.one(
+          'SELECT * FROM contact_reviews WHERE contact_id=?',
+          contactId,
+        );
+        const status =
+          v.contact.kind === 'RECRUITMENT' ||
+          (v.contact.kind === 'GENERAL' &&
+            review?.evidence_id === contactEvidence &&
+            review.kind === 'GENERAL')
+            ? 'VERIFIED_PUBLIC'
+            : 'NEEDS_REVIEW';
+        this.store.exec(
+          'UPDATE contacts SET kind=?,evidence_id=?,verification_status=?,verified_at=?,literal_verified=1,updated_at=? WHERE id=?',
+          v.contact.kind,
+          contactEvidence,
+          status,
+          sources.find((s) => s.id === v.contact.proof.sourceId)!.fetched_at,
+          this.now(),
+          contactId,
+        );
       }
+      const sourceIds = sources.map((s) => s.id);
+      this.store.exec(
+        "UPDATE contacts SET verification_status='INVALIDATED',literal_verified=0,updated_at=? WHERE company_id=? AND id<>? AND evidence_id IN (SELECT evidence_id FROM research_evidence WHERE source_id IN (SELECT value FROM json_each(?)))",
+        this.now(),
+        c.id,
+        contactId ?? '',
+        JSON.stringify(sourceIds),
+      );
       const hours = v.conditions.hours;
       const range = hours.quote?.match(/(\d+)\s*[–-]\s*(\d+)\s*(?:godzin|h\b)/);
       const profile = this.profile();
@@ -953,10 +1131,13 @@ export class ResearchJobHunter extends JobHunter {
     )
       throw new DomainError('VERSION_CONFLICT', 'Szkic zmienił się przed ponowną generacją.');
     if (existing?.profile_hash === p.hash && !regeneration) return;
-    const count = this.store.one(
-      "SELECT count(*) n FROM audit_events WHERE action='DRAFTED' AND entity_id IN (SELECT id FROM drafts WHERE opportunity_id IN (SELECT opportunity_id FROM research_items WHERE run_id=?))",
-      item.run_id,
-    )!.n;
+    const count = this.store.get<number>(
+      `draftedInRun:${item.run_id}`,
+      this.store.one(
+        "SELECT count(*) n FROM audit_events WHERE action='DRAFTED' AND entity_id IN (SELECT id FROM drafts WHERE opportunity_id IN (SELECT opportunity_id FROM research_items WHERE run_id=?))",
+        item.run_id,
+      )!.n,
+    );
     const config = this.store.one('SELECT * FROM research_run_config WHERE run_id=?', item.run_id)!;
     if (count >= config.max_drafts && !regeneration) return;
     const evidence = this.store.all(
@@ -1090,15 +1271,20 @@ export class ResearchJobHunter extends JobHunter {
                 'Zapytanie o współpracę: rekrutacja i warunki niepotwierdzone; kontakt ogólny może wymagać przekierowania.',
               ]
             : []),
-          'Kontrola semantyczna jest pomocnicza; wymagany przegląd użytkownika.',
+          this.mode === 'AUTO_POLICY'
+            ? 'Kontrola semantyczna jest pomocnicza; decyzję o wysłaniu podejmuje kod polityki.'
+            : 'Kontrola semantyczna jest pomocnicza; wymagany przegląd użytkownika.',
         ]),
         JSON.stringify(review),
       );
       this.event(
         'DRAFTED',
-        'Indywidualny szkic Codexa do ręcznego przeglądu i skopiowania.',
+        this.mode === 'AUTO_POLICY'
+          ? 'Zapisano indywidualny szkic do kontroli polityki sesji.'
+          : 'Indywidualny szkic Codexa do ręcznego przeglądu i skopiowania.',
         draftId,
       );
+      this.store.set(`draftedInRun:${item.run_id}`, count + 1);
     });
   }
   checkDraft(
@@ -1208,7 +1394,7 @@ export class ResearchJobHunter extends JobHunter {
     });
     return { runId, queued: true };
   }
-  override companies() {
+  override companies(): (Row & { researchDetails: any })[] {
     return super.companies().map((c) => ({
       ...c,
       researchDetails: c.opportunity_id
@@ -1264,7 +1450,10 @@ export class ResearchJobHunter extends JobHunter {
         dayWork.active ? new Date(dayWork.expiresAt).getTime() - Date.now() : Infinity,
       ),
     );
-    const timeout = AbortSignal.timeout(remaining);
+    // AUTO_POLICY has no inherited research-trial deadline. Each provider call
+    // retains its own timeout, and the session's controller still implements Stop.
+    const timeout =
+      this.mode === 'AUTO_POLICY' ? new AbortController().signal : AbortSignal.timeout(remaining);
     const signal = AbortSignal.any([this.controller.signal, timeout]);
     try {
       this.minimalProfile();
@@ -1301,7 +1490,10 @@ export class ResearchJobHunter extends JobHunter {
           query = { id: qid };
         }
         const r = await this.search.search(
-          `${config.search_input}\nAktualny zatwierdzony cel i dostępność: ${JSON.stringify({ goal: p.goal, availabilityMode: p.availabilityMode, hoursApprox: p.hoursApprox, hoursMin: p.hoursMin, hoursMax: p.hoursMax, facts: p.facts.filter((f) => ['education', 'availability', 'contract'].includes(f.key)) })}\nJuż wykonane zapytania: ${recent.map((q) => q.query).join('; ')}`,
+          `${config.search_input}\nAktualny zatwierdzony cel, dostępność i projekty: ${JSON.stringify({ goal: p.goal, availabilityMode: p.availabilityMode, hoursApprox: p.hoursApprox, hoursMin: p.hoursMin, hoursMax: p.hoursMax, facts: p.facts.filter((f) => ['education', 'availability', 'contract', ...projectKeys].includes(f.key)) })}\nJuż sprawdzone domeny: ${this.store
+            .all('SELECT primary_domain FROM companies WHERE primary_domain IS NOT NULL')
+            .map((c) => c.primary_domain)
+            .join(', ')}\nJuż wykonane zapytania: ${recent.map((q) => q.query).join('; ')}`,
           signal,
         );
         signal.throwIfAborted();
@@ -1493,7 +1685,9 @@ export class ResearchJobHunter extends JobHunter {
         incomplete ? 'RUN_PARTIAL' : 'RUN_COMPLETED',
         incomplete
           ? 'Część kandydatów wymaga decyzji lub ponowienia.'
-          : 'Zakończono research. Szkice wymagają przeglądu, wysyłka niedostępna.',
+          : this.mode === 'AUTO_POLICY'
+            ? 'Zakończono cykl researchu. Sender sprawdzi szkice według polityki sesji.'
+            : 'Zakończono research. Szkice wymagają przeglądu, wysyłka niedostępna.',
         run.id,
       );
     } catch (e) {
@@ -1586,6 +1780,9 @@ export class ResearchJobHunter extends JobHunter {
   }
   override dashboard() {
     const d = super.dashboard();
+    d.stats.sent = this.store.one(
+      "SELECT count(*) n FROM outbox WHERE kind='FIRST_CONTACT' AND status IN ('SENT_PROVIDER','SENT_CONFIRMED')",
+    )!.n;
     d.stats.sources = this.store.one(
       "SELECT count(*) n FROM research_sources WHERE status='READ'",
     )!.n;

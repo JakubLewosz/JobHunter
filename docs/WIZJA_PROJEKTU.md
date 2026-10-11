@@ -1,60 +1,17 @@
 # JobHunter — docelowy sposób pracy
 
-Ustalenia z rozmowy z Jakubem, 7 października 2026; stan wdrożenia zaktualizowany 8 października. Dokument służy jako kontekst do dalszego omawiania i rozwijania projektu, także po udostępnieniu repozytorium ChatGPT.
+Ustalenia z 11 października 2026 zastępują wcześniejszy model akceptacji każdej wiadomości i obsługi odpowiedzi w aplikacji.
 
-## Cel
+Jakub rano uruchamia program i klika **Start — szukaj i wysyłaj**. JobHunter szuka firm przede wszystkim z Polski, poznaje ich działalność, weryfikuje publiczny kontakt, dobiera zatwierdzony projekt i pisze naturalną polską wiadomość z CV. Kod sprawdza politykę i historię, wysyła zgodny pierwszy kontakt i przechodzi dalej. Nie wymaga potwierdzania każdej firmy/paczki. Pracuje do Stop, jawnego limitu lub problemu wymagającego reakcji. Odpowiedzi Jakub obsługuje sam w Gmailu.
 
-JobHunter ma być prostym, osobistym narzędziem Jakuba do znajdowania płatnej współpracy. Jakub uruchamia program, a Codex szuka firm, poznaje ich działalność, przygotowuje spersonalizowane wiadomości i przechodzi do kolejnych firm. Docelowo aplikacja wysyła wiadomości przez Gmail z CV, zapisuje historię kontaktów i pokazuje odpowiedzi.
+Cel: płatna, regularna współpraca, w pełni zdalnie, około 20 godzin tygodniowo głównie po lekcjach. Brak wakatu/godzin/zdalności nie przekreśla zapytania do firmy o udokumentowanej działalności programistycznej; warunki pozostają unknown. ACTIVE, OPEN i PROSPECT są różnymi sytuacjami. Nie udajemy spełnienia niedopasowanej oferty i nie obchodzimy odmów lub wskazanego kanału aplikacji.
 
-Panel ma pozostać prosty: Start, Pauza, Stop, moje materiały, firmy, wiadomości i odpowiedzi. Projekt jest przeznaczony dla jednej osoby.
+Fakty, projekty i CV zatwierdza się w konfiguracji i po istotnej zmianie. Nie zakładamy pamięci rozmów Codexa. Styl pozostaje w [MESSAGE_STYLE](MESSAGE_STYLE.md): prawdziwe nawiązanie, zwykle jeden projekt, dostępność i jedno pytanie. AI/Codex są naturalną częścią zatwierdzonego sposobu pracy, bez dopisywania eksperckości lub produkcji.
 
-## Materiały o Jakubie
+Polityka określa nadawcę, materiały, kontakty, zakres, tempo i opcjonalne limity. GENERAL może być dopuszczony do zapytania, zachowując rzeczywiste przeznaczenie. Brak limitu oznacza pracę ciągłą w określonym tempie. DEMO, RESEARCH_ONLY i ręczny APPROVAL_REQUIRED pozostają odrębne.
 
-GitHub ma być źródłem materiałów: CV, projektów, osiągnięć i portfolio. Aplikacja ma zebrać te informacje i przechowywać ich aktualną, lokalną wersję do przygotowywania wiadomości. Jakub przegląda i zatwierdza zebrane fakty przed ich użyciem. Aktualizacja materiałów wymaga sprawdzenia zmian; sama obecność technologii w repozytorium nie potwierdza kompetencji ani doświadczenia komercyjnego.
+Windows i MacBook korzystają z osobnej prywatnej historii i jawnego przekazania właściciela. Aktualizacja kodu lub pull nie dowodzi aktualności bazy. Niepewne próby i niedomknięte przekazanie blokują ponowny kontakt. Stop odwołuje zgodę sesji; restart nie wznawia sendera.
 
-Aktualne preferencje pracy: płatna, regularna współpraca, w pełni zdalna, około 20 godzin tygodniowo, przede wszystkim po lekcjach; preferowana umowa zlecenie. Godziny są orientacyjne, bez deklarowania maksimum lub sztywnego przedziału.
+Dwa główne widoki: Praca programu i Historia firm. Materiały, połączenia i polityka w Ustawieniach. Bez CRM, AI do odpowiedzi, follow-upów, kalendarza, LinkedIn, Useme i formularzy. Nowe źródła są późniejszym rozszerzeniem istniejących adapterów.
 
-## Główna treść wiadomości
-
-Aktualny schemat: naturalne zgłoszenie do zespołu przedstawiające Jakuba, cel regularnej współpracy i konkretny związek z firmą. Programowanie z AI jest częścią zatwierdzonego profilu, ale nie jest obowiązkowym początkiem ani elementem każdego maila. Projekty pokazują konkretne efekty pracy. Wzór pozostaje edytowalnym punktem wyjścia, z różnymi tematami i pytaniami zależnymi od sytuacji. Szczegóły: [Styl wiadomości](MESSAGE_STYLE.md).
-
-Jeśli projekt pasuje do technologii firmy albo do problemu, który firma rozwiązuje, Codex krótko opisuje jeden najlepiej dopasowany projekt i jego związek z możliwymi zadaniami. Dopasowanie nie wymaga identycznej technologii.
-
-Jeśli żaden projekt nie pasuje, opis projektu jest pomijany. Wiadomość skupia się wtedy na programowaniu z AI, zainteresowaniu działalnością firmy i gotowości do poznania potrzebnych narzędzi. Sformułowania o szybkim uczeniu się powinny wynikać z zatwierdzonego opisu Jakuba; Codex nie dopisuje umiejętności ani osiągnięć.
-
-Wiadomość pyta o możliwość współpracy w proponowanym modelu. Nie sugeruje istnienia wakatu ani zgody firmy na zdalność lub godziny, jeśli źródła tego nie potwierdzają.
-
-## Obecny kierunek: firmy i zapytania o współpracę
-
-Szukanie ma być szerokie: software house’y, agencje, SaaS, aplikacje webowe, backend, API, integracje, automatyzacje, narzędzia AI, przetwarzanie dokumentów i inne firmy z udokumentowanymi potrzebami pasującymi do tych obszarów.
-
-Firma może być kandydatem do kontaktu bez ogłoszonej rekrutacji. Celem wiadomości jest zapytanie, czy potrzebuje pracownika lub pomocy przy zadaniach. Brak informacji o godzinach czy zdalności pozostaje nieznaną informacją, o którą można zapytać.
-
-Jakub chce kontaktować się z dużą liczbą sensownie dobranych firm, licząc na znalezienie zespołu, który potrzebuje pomocy. Każda wiadomość nadal ma być indywidualna. Aplikacja weryfikuje publiczny kontakt, pamięta historię i pilnuje, żeby nie powtarzać pierwszego kontaktu z tą samą firmą.
-
-## Późniejsze rozszerzenia
-
-Do tego samego procesu mogą zostać dołączone kolejne źródła:
-
-- konkretne oferty pracy i płatnych staży;
-- dostępne ogłoszenia z Facebooka i innych społeczności;
-- wpisy, w których ktoś potrzebuje aplikacji, integracji, automatyzacji albo wykonania konkretnego zadania.
-
-W tych przypadkach wiadomość odpowiada na opisaną potrzebę. Dostęp do poszczególnych źródeł trzeba rozwiązać osobno. Te rozszerzenia są planem na później.
-
-## Stan wdrożenia i najbliższe kroki
-
-Obecna implementacja RESEARCH_ONLY szuka firm, czyta publiczne źródła i przygotowuje szkice z zatwierdzonych materiałów. Obsługuje również firmy PROSPECT bez potwierdzonego naboru. Ograniczona rzeczywista próba zakończyła się po osiągnięciu limitów: 10 kandydatów i 3 szkice, zero wysyłek w researchu. Zachowano dwie próby generowania zablokowane przez kontrolę zgodności. Styl późniejszych wiadomości został dopracowany i zaakceptowany przez Jakuba.
-
-Gmail jest podłączony w osobnym trybie APPROVAL_REQUIRED. Dziewięć wyraźnie zleconych testów potwierdzono w Wysłanych; odbiorcy zgłaszali zarówno Odebrane, jak i Spam. Oba krótkie testy WP trafiły do Spamu, a dokładna przyczyna pozostaje nieustalona. Nie kontaktowano firm. Wysyłka wymaga akceptacji konkretnych wiadomości; automatyczna polityka wysyłania pozostaje niedostępna.
-
-Najbliższe kroki po dotychczasowych próbach:
-
-1. Utrzymywać aktualne zatwierdzone materiały z GitHuba; każdą zmianę faktów i CV przegląda Jakub.
-2. Zachować zaakceptowany naturalny styl, z konkretną wzmianką o Codexie tam, gdzie pasuje do firmy.
-3. Sprawdzać jakość nowych szkiców: zwykle jeden projekt, bez opisu przy braku dopasowania i warunki zgodne z profilem bez powtórzeń.
-4. Zdiagnozować dostarczalność z konta projektu, następnie przetestować małą partię wiadomości wybraną i zatwierdzoną przez Jakuba.
-5. Po sprawdzeniu wyników rozwinąć regularne szukanie i wysyłkę według ustalonych zasad, z historią, limitami i możliwością zatrzymania.
-6. Później dołączyć oferty pracy i ogłoszenia o konkretnych zadaniach.
-
-Szczegóły działającej wersji są w [README](../README.md), a bieżące zadania w [TASKS](TASKS.md). Niniejsza wizja nie stanowi zgody na rzeczywistą wysyłkę; RESEARCH_ONLY zachowuje blokadę wysyłania maili.
+Wdrożenie i granice weryfikacji: [TASKS](TASKS.md), [TEST_REPORT](TEST_REPORT.md), [SECURITY](SECURITY.md). Prośba o rozwój nie zleca rzeczywistych wysyłek ani publikacji prywatnej historii. Sesja wymaga konfiguracji i świadomego Start użytkownika.

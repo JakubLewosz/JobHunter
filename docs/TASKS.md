@@ -1,5 +1,26 @@
 # Zadania
 
+## Aktualny stan — 11 października 2026
+
+Obowiązuje specyfikacja 2.0. Sekcje niżej zachowują historię wcześniejszych prac i nie przywracają akceptacji każdego maila lub blokady implementacji AUTO_POLICY.
+
+- [x] Pobrano istniejące main do pustego lokalnego checkout; praca na `codex/auto-policy`, bez resetów danych użytkownika.
+- [x] Odtworzono błędy odświeżania źródeł/kontaktów testami FAIL; dodano zdarzenia weryfikacji, odświeżenie niezmienionych treści i unieważnianie zmienionego/znikającego kontaktu. Ręczny GENERAL ma operację przeglądu.
+- [x] AUTO_POLICY: zatwierdzony profil/CV/nadawca/zakres/kontakty/tempo, lokalna sesja Start/Pauza/Stop, własne timery sendera/researchu, ograniczona kolejka i opcjonalne limity. Bez ukrytej daty końca i bez indywidualnej zgody na każdy mail.
+- [x] Bramka: tożsamość/domena, literalny kontakt i przeznaczenie, źródła obu stron (firma/kontakt), wersje/hash, semantyka i reguły, historia/aliasy/rezerwacje. GENERAL zachowuje GENERAL; niepewne szkice pomijane. Pojedynczy POST i SEND_UNKNOWN zachowane.
+- [x] Prywatna historia: minimalny wersjonowany JSON, transakcyjny import/eksport, atomowy plik, oddzielny origin, właściciel/przekazanie, liczniki i publiczny kontekst firm, blokady konfliktów/usunięcia/cofnięcia historii. Brak transferu zgody i sekretów. Pierwsza baza wymaga potwierdzenia; przygotowanie historii możliwe bez sesji wysyłkowej.
+- [x] Panel AUTO: Praca programu, Historia firm i Ustawienia. Stare odpowiedzi zachowane, zakładka ukryta. SELF_TEST poza licznikiem kontaktowanych firm; ręczny przegląd kontaktu w APPROVAL_REQUIRED.
+- [x] Windows: npm ci, SQLite, doctor, rzeczywiste testy backendu/UI i start.ps1 -NoBrowser / stop.ps1 w tymczasowym DEMO. Native CLI version/help/features sprawdzone. Szczegóły i granice w TEST_REPORT/WINDOWS_SMOKE.
+- [x] Ostateczny `npm run check` na Windowsie: **237/237 backend, 7/7 UI**, typecheck/build PASS. Regresje obejmują także długą pauzę, usunięcie odziedziczonego deadline, literalny pełny adres, kontrolę przed prywatnym odczytem, snapshot konta i zachowanie domen po imporcie. `git diff --check` PASS; raport w TEST_REPORT.
+
+### Następny konkretny krok użytkownika
+
+- [ ] Wskazać i potwierdzić osobne prywatne repo historii; pierwszy eksport wykonać na komputerze z oryginalną bazą kontaktów, przyciskiem „Przygotuj historię bez uruchamiania sesji”. Nie utworzono zdalnego repo ani nie opublikowano prawdziwej historii w tych pracach.
+- [ ] Lokalnie zatwierdzić fakty/CV, sprawdzić istniejące logowanie Codexa i uprawnienia Gmaila, zatwierdzić politykę. Rzeczywistą sesję uruchamia dopiero użytkownik świadomym Start.
+- [ ] Zweryfikować aktualny kod na macOS oraz rzeczywisty research/izolację CLI i dostarczalność Gmaila w świadomie uruchomionej sesji. Tych prób nie zastępują fixture tests; obecne zlecenie nie autoryzuje prawdziwych maili.
+
+## Historia wcześniejszych etapów
+
 Kierunek dalszego rozwoju: [Wizja projektu](WIZJA_PROJEKTU.md).
 
 - [x] Na nowe polecenie przygotować cały aktualny projekt do publikacji i niezależnego przeglądu ChatGPT: diff kodu/testów sprawdzony, dokumentacja stanu i braków w REVIEW_HANDOFF. Prywatne materiały poza repo, bez zmian runtime/Gmail; ostatni pełny check 206 backend / 6 UI PASS, bez ponowienia testów po samych zmianach dokumentacji.

@@ -9,6 +9,6 @@ export const base = resolve(
         : join(homedir(), '.local', 'share', 'JobHunter')),
 );
 const mode = process.env.JOBHUNTER_MODE ?? 'DEMO';
-if (!['DEMO', 'RESEARCH_ONLY', 'APPROVAL_REQUIRED'].includes(mode))
+if (!['DEMO', 'RESEARCH_ONLY', 'APPROVAL_REQUIRED', 'AUTO_POLICY'].includes(mode))
   throw new Error('Nieprawidłowy JOBHUNTER_MODE.');
 export const dir = join(base, mode === 'DEMO' ? 'demo' : 'research-only');

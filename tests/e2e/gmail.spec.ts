@@ -48,10 +48,11 @@ test('Gmail approval UI → actual controller/SQLite → fictional mailbox, immu
   await preview.getByRole('button', { name: 'Wyślij te wiadomości (1)', exact: true }).click();
   await expect(page.getByText('Potwierdzona w Wysłanych', { exact: true })).toHaveCount(2);
   await page.getByRole('button', { name: 'Odczytaj odpowiedzi w tym wątku', exact: true }).click();
-  await page.getByRole('button', { name: 'Odpowiedzi', exact: true }).click();
-  await expect(
-    page.getByText('Fikcyjna odpowiedź <script>nie uruchamiaj</script>', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Odpowiedzi', exact: true })).toHaveCount(0);
+  const replies = await page.evaluate(async () => await (await fetch('/api/replies')).json());
+  expect(
+    replies.some((r: any) => r.body === 'Fikcyjna odpowiedź <script>nie uruchamiaj</script>'),
+  ).toBe(true);
   expect(await page.locator('script').count()).toBe(1);
   await page.reload();
   await page.getByRole('button', { name: 'Wiadomości', exact: true }).click();

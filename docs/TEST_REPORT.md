@@ -1,4 +1,35 @@
-# Weryfikacja — 8–9 października 2026
+# Weryfikacja — 11 października 2026
+
+## AUTO_POLICY, źródła i prywatna historia
+
+Rzeczywiście wykonany końcowy `npm run check` na Windows win32/x64, Node 24.19.0: **237/237 testów backendu, 7/7 scenariuszy Playwright, typecheck i build PASS**. `git diff --check` PASS. Testy używają tymczasowych SQLite, fikcyjnych źródeł/Gmaila, fikcyjnego procesu CLI oraz lokalnych repozytoriów Git. Nie wysyłano rzeczywistych maili, nie uruchamiano prawdziwej kampanii, nie zmieniano nadawcy, OAuth, prywatnej bazy lub jej liczników. Nie tworzono zdalnego repo historii.
+
+Stan bazowy: 205/206 backend; jedyny błąd Windows dotyczył FIFO hooków cleanup zamykających drugą bazę dopiero po próbie usunięcia katalogu. Poprawiono kolejność zamknięcia. Dwie nowe regresje źródeł/kontaktów najpierw FAIL, potem PASS: niezmienna treść z nowym potwierdzeniem i aktualizacja/unieważnianie kontaktu. Próba ciągła wykryła też liczenie starych szkiców jako budżetu nowego cyklu; poprawiono trwały licznik generacji w konkretnym runie. Rozstrzygnięta lokalnie próba nie pozostaje globalnie zablokowana przez jej starszą przeniesioną kopię SEND_UNKNOWN, a firma nadal pozostaje skontaktowana.
+
+Nowe testy obejmują:
+
+- pełny search/read/extract/qualify/draft/send bez indywidualnej akceptacji, tylko konfiguracja i Start;
+- GENERAL dopuszczony polityką, zachowanie przeznaczenia, niedopuszczony kontakt, brak promocji GENERAL na RECRUITMENT;
+- unknown godzin i pytanie kontra zmyślone dopasowanie; niepewny review pominięty;
+- stronę firmy i osobną stronę kontaktu, recheck niezmienionej treści starszej niż doba, zniknięcie/zmianę przeznaczenia;
+- pełny literalny email, bez akceptacji samego fragmentu opublikowanego adresu;
+- Pauzę/Stop podczas researchu i przed POST, długą pauzę z ponownym przygotowaniem niewysłanego pakietu;
+- pojedynczy POST po możliwym przyjęciu, SEND_UNKNOWN/restart/reconcile bez drugiego send;
+- limit sesji, tempo, pięć pierwszych kontaktów bez limitu i kolejkę maksymalnie trzech szkiców; brak odziedziczonej daty/czasu końca;
+- limity Gmaila/Codexa, brak intensywnego retry, jawne wznowienie; SENDING własnego sendera nie zatrzymuje poprawnie pracującego researchu;
+- zmianę profilu/CV/nadawcy, kontrolę publicznych dowodów przed prywatnym odczytem, snapshot konta przed HTTP odczytu;
+- deduplikację/liczniki po przeniesieniu i zmianie nadawcy, domenę znanej firmy/wariantu prawnego, import domeny do istniejącego rekordu;
+- właściciela, niedomknięte przekazanie, konflikt aliasów, staging przerwanego eksportu, usunięcie historii, pierwszą bazę wymagającą potwierdzenia;
+- eksport bez aktywnej zgody, OAuth/loginu, CV/PDF i całej skrzynki; liczniki SELF_TEST odrębne od aplikowania;
+- panel AUTO przy 1440 i 390 px, Start/Historię/Pauzę/Stop/przekazanie. Zrzuty obejrzano. Zakładka odpowiedzi ukryta, stare dane/API zachowane.
+
+Windows instalacja/diagnostyka: `npm ci`, SQLite 3.53.4, doctor, native `codex --version`, `codex exec --help`, `codex features list` PASS (CLI 0.162.0-alpha.17.2). Pierwsza instalacja próbowała niepotrzebnej kompilacji SQLite i natrafiła na CA/Visual Studio. Pakiet zawiera gotową bibliotekę; .npmrc wyłącza zależnościowe lifecycle scripts, następne zwykłe npm ci i rzeczywiste ładowanie SQLite PASS. Chromium pobrano z systemowym CA, bez wyłączenia TLS.
+
+Rzeczywisty smoke `scripts/start.ps1 -NoBrowser` → backend DEMO/health → `scripts/stop.ps1` → zwolnienie blokady PASS w oddzielnym katalogu tymczasowym ze spacjami i polskimi znakami. To nie jest próba prawdziwej sesji AUTO/Gmaila.
+
+**Nie zweryfikowano:** nowego kodu na macOS, natywnego researchu/limitów rzeczywistego konta Codexa, jakości wszystkich ekstrakcji, niezależnej izolacji całego procesu OS, całego dnia pracy, prawdziwego repo historii, historii prawdziwych kont i dostarczalności Gmaila. Pierwszy rzeczywisty eksport powinien wykonać użytkownik na urządzeniu z oryginalną bazą przez przygotowanie historii bez sesji wysyłkowej. Rzeczywista wysyłka wymaga konfiguracji/polityki i świadomego Start użytkownika.
+
+## Historyczne próby — 8–9 października 2026
 
 ## Publikacja do niezależnego przeglądu — 9 października
 

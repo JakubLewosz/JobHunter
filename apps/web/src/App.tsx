@@ -33,6 +33,7 @@ import { PersonalMaterials } from './PersonalMaterials';
 import { GmailPreparation } from './GmailPreparation';
 import { GmailDelivery } from './GmailDelivery';
 import { ResearchPanel, ResearchProof } from './ResearchPanel';
+import { AutoWorkspace } from './AutoWorkspace';
 import { api, initialize } from './api';
 import type { Dashboard, Row } from '../../../packages/shared/types';
 
@@ -295,6 +296,18 @@ export function App() {
       </div>
     );
   const d = data.dashboard;
+  if (d.mode === 'AUTO_POLICY')
+    return (
+      <>
+        <AutoWorkspace data={data} act={act} busy={busy} />
+        {error && (
+          <div className="auto-error" role="alert">
+            {error}
+          </div>
+        )}
+        {toast && <div className="toast">{toast}</div>}
+      </>
+    );
   const research = d.mode !== 'DEMO';
   const delivery = d.mode === 'APPROVAL_REQUIRED';
   const currentName =
@@ -324,13 +337,7 @@ export function App() {
         <div className="nav-label">TWOJA PRZESTRZEŃ</div>
         <nav>
           {nav
-            .filter(
-              ([key]) =>
-                !research ||
-                !(delivery ? ['campaign', 'reports'] : ['replies', 'campaign', 'reports']).includes(
-                  key,
-                ),
-            )
+            .filter(([key]) => !research || !['replies', 'campaign', 'reports'].includes(key))
             .map(([key, name, Icon]) => (
               <button
                 key={key}
@@ -1368,6 +1375,20 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
           {research && (
             <>
               <div className="button-row">
+                {delivery && (
+                  <button
+                    className="secondary"
+                    disabled={busy}
+                    onClick={() =>
+                      void act(
+                        () => api(`research/contacts/${d.contact_id}/review`, { confirmed: true }),
+                        'Zapisano przegląd przeznaczenia kontaktu. GENERAL pozostaje GENERAL.',
+                      )
+                    }
+                  >
+                    Potwierdź przeznaczenie kontaktu po przeglądzie źródła
+                  </button>
+                )}
                 {delivery && (
                   <button
                     className="secondary"

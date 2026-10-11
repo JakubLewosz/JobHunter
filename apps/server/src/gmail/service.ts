@@ -43,8 +43,9 @@ function explain(codes: string[]) {
   return `Wysyłka zablokowana: ${[...new Set(codes)].map((c) => labels[c] ?? 'przygotuj nowy podgląd').join('; ')}.`;
 }
 export class GmailJobHunter extends ResearchJobHunter {
-  private gateway: GmailGateway;
-  private sending = false;
+  protected gateway: GmailGateway;
+  protected sending = false;
+  protected activeSendingOutbox: string | null = null;
   private historyBusy = false;
   private accountInfo: () => AccountInfo | null;
   constructor(
@@ -54,7 +55,10 @@ export class GmailJobHunter extends ResearchJobHunter {
       accountInfo?: () => AccountInfo | null;
     } = {},
   ) {
-    super(store, { ...options, mode: 'APPROVAL_REQUIRED' });
+    super(store, {
+      ...options,
+      mode: options.mode === 'AUTO_POLICY' ? 'AUTO_POLICY' : 'APPROVAL_REQUIRED',
+    });
     this.gateway = options.gateway ?? nativeGmail();
     this.accountInfo =
       options.accountInfo ?? (() => setupInfo(join(store.dir, '..', 'gmail-preparation')));
@@ -95,11 +99,15 @@ export class GmailJobHunter extends ResearchJobHunter {
   dailyQuota() {
     const c = this.campaign(),
       today = day(this.clock(), c.timezone);
-    const totalUsed = this.store.one(
+    const totalUsed = (this.store.one(
       'SELECT count(*) n FROM usage_ledger WHERE campaign_id=? AND day=?',
       this.campaignId,
       today,
-    )!.n as number;
+    )!.n +
+      this.store.one(
+        'SELECT count(*) n FROM shared_usage s WHERE s.day=? AND NOT EXISTS (SELECT 1 FROM usage_ledger u WHERE u.id=s.id)',
+        today,
+      )!.n) as number;
     const reset = this.store.get<Row | null>('gmailDailyQuotaReset', null);
     const valid =
       reset?.campaignId === this.campaignId &&
@@ -158,6 +166,12 @@ export class GmailJobHunter extends ResearchJobHunter {
   override dashboard() {
     const result = super.dashboard();
     result.stats.reserved = this.dailyQuota().used;
+    result.stats.sent = this.store.one(
+      "SELECT count(*) n FROM outbox WHERE kind='FIRST_CONTACT' AND status IN ('SENT_PROVIDER','SENT_CONFIRMED')",
+    )!.n;
+    result.stats.selfTests = this.store.one(
+      "SELECT count(*) n FROM outbox WHERE kind='SELF_TEST' AND status IN ('SENT_PROVIDER','SENT_CONFIRMED')",
+    )!.n;
     return result;
   }
   private sameAccount(account: AccountInfo, subject?: string, email?: string) {
@@ -197,13 +211,13 @@ export class GmailJobHunter extends ResearchJobHunter {
     });
     return { email: recipient };
   }
-  private draft(id: string, version?: number) {
+  protected draft(id: string, version?: number) {
     const d = this.draftRows().find((d) => d.id === id);
     if (!d || (version !== undefined && d.version !== version))
       throw new DomainError('VERSION_CONFLICT', 'Odśwież wersję wiadomości.');
     return d;
   }
-  private scope(draft: Row) {
+  protected scope(draft: Row) {
     const email = normalizeEmail(draft.email);
     if (!z.email().safeParse(email).success || !/^[a-z0-9._%+-]+@[a-z0-9.-]+$/.test(email))
       throw new DomainError('INVALID_RECIPIENT', 'Nieprawidłowy adres kontaktu.');
@@ -211,7 +225,10 @@ export class GmailJobHunter extends ResearchJobHunter {
     const domains = [
       company.primary_domain,
       ...this.store
-        .all("SELECT value FROM company_aliases WHERE company_id=? AND kind='DOMAIN'", company.id)
+        .all(
+          "SELECT value FROM company_aliases WHERE company_id=? AND kind='DOMAIN' AND verified_at IS NOT NULL",
+          company.id,
+        )
         .map((a) => a.value),
     ]
       .map(companyDomain)
@@ -279,10 +296,12 @@ export class GmailJobHunter extends ResearchJobHunter {
           iso(new Date(this.clock().getTime() + 3600000)),
         );
         this.event(
-          'GMAIL_READ_CONSENT',
-          'Użytkownik dopuścił odczyt nagłówków całej historii dla tego kontaktu i domen firmy na godzinę.',
+          this.mode === 'AUTO_POLICY' ? 'GMAIL_READ_POLICY' : 'GMAIL_READ_CONSENT',
+          this.mode === 'AUTO_POLICY'
+            ? 'Polityka sesji dopuszcza celowany odczyt nagłówków adresu i potwierdzonych domen tej firmy.'
+            : 'Użytkownik dopuścił odczyt nagłówków całej historii dla tego kontaktu i domen firmy na godzinę.',
           d.company_id,
-          'user',
+          this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
         );
         await this.syncCompany(d, account);
       }
@@ -291,7 +310,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       this.historyBusy = false;
     }
   }
-  private async syncCompany(d: Row, account: AccountInfo) {
+  protected async syncCompany(d: Row, account: AccountInfo) {
     const scope = this.scope(d),
       consent = this.store.one(
         'SELECT * FROM gmail_history_checks WHERE company_id=? AND account_subject=?',
@@ -309,20 +328,23 @@ export class GmailJobHunter extends ResearchJobHunter {
       account.subject,
     );
     try {
-      const before = await this.gateway.marker();
-      await this.gateway.scan(scope.query, (messages, next) =>
-        this.store.atomic(() => {
-          for (const m of messages)
-            if (this.matches(m, scope)) this.saveMessage(m, account, d.company_id);
-          this.store.exec(
-            'UPDATE gmail_history_checks SET page_cursor=? WHERE company_id=? AND account_subject=?',
-            next,
-            d.company_id,
-            account.subject,
-          );
-        }),
+      const before = await this.gateway.marker(account);
+      await this.gateway.scan(
+        scope.query,
+        (messages, next) =>
+          this.store.atomic(() => {
+            for (const m of messages)
+              if (this.matches(m, scope)) this.saveMessage(m, account, d.company_id);
+            this.store.exec(
+              'UPDATE gmail_history_checks SET page_cursor=? WHERE company_id=? AND account_subject=?',
+              next,
+              d.company_id,
+              account.subject,
+            );
+          }),
+        account,
       );
-      const after = await this.gateway.marker();
+      const after = await this.gateway.marker(account);
       if (before !== after)
         throw new DomainError(
           'HISTORY_CHANGED',
@@ -351,14 +373,15 @@ export class GmailJobHunter extends ResearchJobHunter {
       throw e;
     }
   }
-  private issues(d: Row, kind: DeliveryKind, account: AccountInfo, requireHistory = true) {
+  protected issues(d: Row, kind: DeliveryKind, account: AccountInfo, requireHistory = true) {
     const issues: string[] = [];
     const p = this.profile();
     if (!p.approved_at || p.facts.some((f) => f.approval_status !== 'APPROVED'))
       issues.push('PROFILE_NOT_APPROVED');
     if (d.profile_hash !== p.profile_hash) issues.push('PROFILE_CHANGED');
     if (this.state().killSwitch) issues.push('KILL_SWITCH');
-    if (this.campaign().expires_at <= this.now()) issues.push('CAMPAIGN_EXPIRED');
+    if (this.mode !== 'AUTO_POLICY' && this.campaign().expires_at <= this.now())
+      issues.push('CAMPAIGN_EXPIRED');
     try {
       const analysis = JSON.parse(
         this.store.one(
@@ -385,7 +408,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       issues.push('INVALID_DRAFT');
     }
     if (kind === 'SELF_TEST') return issues;
-    if (!d.reviewed_at) issues.push('DRAFT_REVIEW_REQUIRED');
+    if (this.mode !== 'AUTO_POLICY' && !d.reviewed_at) issues.push('DRAFT_REVIEW_REQUIRED');
     if (JSON.parse(d.semantic_review).supported !== true) issues.push('SEMANTIC_REVIEW_REQUIRED');
     if (d.status === 'SENT') issues.push('ALREADY_SENT');
     if (
@@ -396,6 +419,14 @@ export class GmailJobHunter extends ResearchJobHunter {
     if (d.history_status !== 'NEW') issues.push('CONTACT_HISTORY');
     if (
       this.store.one(
+        "SELECT id FROM shared_attempts WHERE (company_id=? OR lower(recipient)=?) AND state<>'FAILED_NOT_SENT'",
+        d.company_id,
+        normalizeEmail(d.email),
+      )
+    )
+      issues.push('CONTACT_HISTORY');
+    if (
+      this.store.one(
         "SELECT id FROM history_records WHERE lower(email)=? AND status<>'SUGGESTED'",
         normalizeEmail(d.email),
       )
@@ -403,11 +434,29 @@ export class GmailJobHunter extends ResearchJobHunter {
       issues.push('RECIPIENT_HISTORY');
     const o = this.store.one('SELECT * FROM opportunities WHERE id=?', d.opportunity_id)!,
       contact = this.store.one('SELECT * FROM contacts WHERE id=?', d.contact_id)!;
+    const companyDomains = [
+      this.store.one('SELECT primary_domain FROM companies WHERE id=?', d.company_id)
+        ?.primary_domain,
+      ...this.store
+        .all(
+          "SELECT value FROM company_aliases WHERE company_id=? AND kind='DOMAIN' AND verified_at IS NOT NULL",
+          d.company_id,
+        )
+        .map((a) => a.value),
+    ]
+      .map(companyDomain)
+      .filter(Boolean);
+    if (
+      this.store
+        .all("SELECT domain FROM history_records WHERE status<>'SUGGESTED' AND domain IS NOT NULL")
+        .some((r) => companyDomains.includes(companyDomain(r.domain)))
+    )
+      issues.push('CONTACT_HISTORY');
     if (
       o.decision === 'REJECTED' ||
       !['RECRUITMENT', 'GENERAL'].includes(contact.kind) ||
-      (contact.kind === 'GENERAL' && o.type !== 'PROSPECT') ||
-      contact.verification_status !== 'VERIFIED_PUBLIC'
+      (this.mode !== 'AUTO_POLICY' && contact.kind === 'GENERAL' && o.type !== 'PROSPECT') ||
+      (this.mode !== 'AUTO_POLICY' && contact.verification_status !== 'VERIFIED_PUBLIC')
     )
       issues.push('CONTACT_REVIEW');
     const ev = this.store.all(
@@ -424,9 +473,14 @@ export class GmailJobHunter extends ResearchJobHunter {
       )
     )
       issues.push('STALE_EVIDENCE');
-    if (!contact.verified_at || this.clock().getTime() - Date.parse(contact.verified_at) > 86400000)
+    if (
+      !contact.verified_at ||
+      !Number.isFinite(Date.parse(contact.verified_at)) ||
+      this.clock().getTime() - Date.parse(contact.verified_at) > 86400000
+    )
       issues.push('STALE_CONTACT');
-    if (!this.deliveryState().selfTestConfirmed) issues.push('SELF_TEST_REQUIRED');
+    if (this.mode !== 'AUTO_POLICY' && !this.deliveryState().selfTestConfirmed)
+      issues.push('SELF_TEST_REQUIRED');
     if (requireHistory) {
       const h = this.store.one(
         'SELECT * FROM gmail_history_checks WHERE company_id=? AND account_subject=?',
@@ -666,12 +720,13 @@ export class GmailJobHunter extends ResearchJobHunter {
           approvalId = id(),
           outboxId = id();
         this.store.exec(
-          "INSERT INTO draft_approvals VALUES (?,?,?,?,?,'user',?,NULL,?)",
+          'INSERT INTO draft_approvals VALUES (?,?,?,?,?,?,?,NULL,?)',
           approvalId,
           d.id,
           d.version,
           d.payload_hash,
           item.binding_hash,
+          this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
           current.expires_at,
           this.now(),
         );
@@ -703,10 +758,12 @@ export class GmailJobHunter extends ResearchJobHunter {
             d.id,
           );
         this.event(
-          'GMAIL_APPROVED',
-          'Użytkownik zatwierdził dokładnego odbiorcę, nadawcę, treść i załączniki do jednej wysyłki.',
+          this.mode === 'AUTO_POLICY' ? 'GMAIL_POLICY_ALLOWED' : 'GMAIL_APPROVED',
+          this.mode === 'AUTO_POLICY'
+            ? 'Kod dopuścił zamrożoną wiadomość zgodną z polityką aktywnej sesji.'
+            : 'Użytkownik zatwierdził dokładnego odbiorcę, nadawcę, treść i załączniki do jednej wysyłki.',
           outboxId,
-          'user',
+          this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
         );
       }
       this.store.exec('UPDATE gmail_previews SET approved_at=? WHERE id=?', this.now(), current.id);
@@ -811,13 +868,13 @@ export class GmailJobHunter extends ResearchJobHunter {
     });
     return review.value;
   }
-  private packet(outboxId: string) {
+  protected packet(outboxId: string) {
     return this.store.one(
       'SELECT o.*,g.account_subject,g.read_consent_expires_at,i.binding_hash,i.recipient,i.subject,i.body,i.mime,i.mime_hash,i.message_id,p.cv_id,p.cv_hash,p.profile_hash,p.account_email,p.diagnostic FROM outbox o JOIN gmail_outbox g ON g.outbox_id=o.id JOIN gmail_preview_items i ON i.id=g.item_id JOIN gmail_previews p ON p.id=i.preview_id WHERE o.id=?',
       outboxId,
     )!;
   }
-  private gates(o: Row, account: AccountInfo, reserved = false) {
+  protected gates(o: Row, account: AccountInfo, reserved = false) {
     this.sameAccount(account, o.account_subject, o.account_email);
     const d = this.draft(o.draft_id, o.draft_version),
       a = this.store.one('SELECT * FROM draft_approvals WHERE id=?', o.approval_id)!;
@@ -844,7 +901,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       problems.push('CV_CHANGED');
     }
     if (hash(o.mime) !== o.mime_hash) problems.push('MIME_CHANGED');
-    if (!reserved) {
+    if (!reserved && this.mode !== 'AUTO_POLICY') {
       const c = this.campaign(),
         count = (where: string, ...args: any[]) =>
           this.store.one(`SELECT count(*) n FROM usage_ledger WHERE ${where}`, ...args)!.n;
@@ -862,6 +919,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     );
     if (!first) return;
     this.sending = true;
+    this.activeSendingOutbox = first.id;
     let reserved = false;
     try {
       const o = this.packet(first.id),
@@ -946,6 +1004,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       }
     } catch (e) {
       const code = e instanceof DomainError ? e.code : 'SEND_UNKNOWN';
+      this.store.set('gmailLastError', code);
       const o = this.packet(first.id);
       this.store.atomic(() => {
         if (!reserved) {
@@ -1006,6 +1065,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       });
     } finally {
       this.sending = false;
+      this.activeSendingOutbox = null;
     }
   }
   override async reconcile(outboxId: string) {
@@ -1261,5 +1321,14 @@ export class GmailJobHunter extends ResearchJobHunter {
         .map((o) => `- ${o.canonical_name}: ${o.status} (${o.kind})`)
         .join('\n')
     );
+  }
+  override outboxRows() {
+    return super.outboxRows().map((o) => ({
+      ...o,
+      ...this.store.one(
+        'SELECT i.subject,i.body,a.created_at contact_at FROM gmail_outbox g JOIN gmail_preview_items i ON i.id=g.item_id LEFT JOIN send_attempts a ON a.outbox_id=g.outbox_id WHERE g.outbox_id=?',
+        o.id,
+      ),
+    }));
   }
 }

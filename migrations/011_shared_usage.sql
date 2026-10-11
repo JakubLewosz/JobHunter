@@ -1,0 +1,4 @@
+CREATE TABLE shared_usage (
+ id TEXT PRIMARY KEY, day TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('FIRST_CONTACT','SELF_TEST')),
+ state TEXT NOT NULL, created_at TEXT NOT NULL
+);

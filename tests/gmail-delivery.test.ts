@@ -13,6 +13,44 @@ import { FixtureGmail } from './gmail-fixture.js';
 import { createApp } from '../apps/server/src/app.js';
 import { ResearchJobHunter } from '../apps/server/src/research/service.js';
 import { prepareMime } from '../apps/server/src/gmail/mime.js';
+test('Gmail reader: HTTP 429 returns a provider limit after one request', async () => {
+  const fixture = new FixtureGmail();
+  let calls = 0;
+  const reader = new GmailApi(
+    async () => ({ account: fixture.info, bearer: 'fictional-token' }),
+    async () => {
+      calls++;
+      return new Response('', { status: 429, headers: { 'Retry-After': '3600' } });
+    },
+  );
+  await assert.rejects(
+    () => reader.marker(),
+    (e: any) => e.code === 'GMAIL_RATE_LIMIT',
+  );
+  assert.equal(calls, 1);
+});
+test('Gmail reader: account snapshot blocks a changed account before private HTTP', async () => {
+  const f = new FixtureGmail(),
+    expected = { ...f.info };
+  let calls = 0;
+  f.info = { ...f.info, subject: 'changed', email: 'changed@example.test' };
+  const reader = new GmailApi(
+    async () => ({ account: f.info, bearer: 'fictional-token' }),
+    async () => {
+      calls++;
+      return new Response('{}');
+    },
+  );
+  await assert.rejects(
+    () => reader.marker(expected),
+    (e: any) => e.code === 'GMAIL_ACCOUNT_CHANGED',
+  );
+  await assert.rejects(
+    () => reader.scan('to:hr@fixture.example.test', () => {}, expected),
+    (e: any) => e.code === 'GMAIL_ACCOUNT_CHANGED',
+  );
+  assert.equal(calls, 0);
+});
 
 async function setup(t: TestContext) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-e4-')),
@@ -81,7 +119,8 @@ test('E4: jawny reset dzienny zachowuje historię i pozwala na nową zatwierdzon
   assert.equal(reset.totalUsed, 10);
   assert.equal(reset.limit, 10);
   assert.equal(f.service.dashboard().stats.reserved, 0);
-  assert.equal(f.service.dashboard().stats.sent, 10);
+  assert.equal(f.service.dashboard().stats.sent, 0);
+  assert.equal(f.service.dashboard().stats.selfTests, 10);
   assert.equal(f.store.get('gmailSenderPaused', false), true);
   assert.equal(f.store.get('killSwitch', false), true);
   assert.equal(f.gateway.posts.length, 10);
@@ -326,7 +365,8 @@ test('E4: test do siebie, zamrożony MIME/CV, potem ręcznie zatwierdzony rzeczy
   assert.ok(f.gateway.posts[1].mime.toString().includes('application/pdf'));
   assert.equal(f.service.outboxRows()[0].status, 'SENT_CONFIRMED');
   assert.equal(f.service.draftRows()[0].status, 'SENT');
-  assert.equal(f.service.dashboard().stats.sent, 2);
+  assert.equal(f.service.dashboard().stats.sent, 1);
+  assert.equal(f.service.dashboard().stats.selfTests, 1);
   await assert.rejects(() =>
     f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'FIRST_CONTACT' }),
   );
@@ -395,7 +435,8 @@ test('E4: timeout po przyjęciu blokuje ponowienie, niezgodne Wysłane nie rozst
   assert.equal(f.store.get('killSwitch', false), true);
   assert.equal(f.store.all('SELECT * FROM send_attempts').length, 1);
   assert.equal(f.store.all('SELECT * FROM usage_ledger').length, 1);
-  assert.equal(f.service.dashboard().stats.sent, 1);
+  assert.equal(f.service.dashboard().stats.sent, 0);
+  assert.equal(f.service.dashboard().stats.selfTests, 1);
 });
 test('E4: Gmail zmienia RFC Message-ID, potwierdzenie wymaga znanego ID dostawcy oraz poprawnego wątku i odbiorcy', async (t) => {
   const f = await setup(t),
@@ -907,7 +948,7 @@ test('E4: zmiana trybu zachowuje profil, wersje i próby, a RESEARCH_ONLY nadal 
   assert.deepEqual(f.store.all('SELECT * FROM draft_versions'), versions);
   assert.deepEqual(f.store.all('SELECT * FROM send_attempts'), attempts);
   await assert.rejects(() => research.dispatchOne());
-  assert.equal(research.dashboard().stats.sent, 1);
+  assert.equal(research.dashboard().stats.sent, 0);
   new GmailJobHunter(f.store, f.options);
   assert.equal(f.gateway.posts.length, 1);
 });

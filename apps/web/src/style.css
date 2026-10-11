@@ -2335,3 +2335,125 @@ blockquote {
 .gmail-attempts article p {
   overflow-wrap: anywhere;
 }
+.auto-shell .main-content {
+  min-width: 0;
+  padding: 32px;
+  flex: 1;
+  margin: 0 0 0 226px;
+  width: calc(100% - 226px);
+  max-width: none;
+}
+.auto-shell .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.auto-shell .stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: var(--bg);
+  border-radius: 12px;
+}
+.auto-shell .stat-card strong {
+  font-size: 28px;
+}
+.auto-shell section.panel {
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.auto-shell label {
+  display: block;
+  margin: 16px 0;
+}
+.auto-shell input:not([type='checkbox']),
+.auto-shell select,
+.auto-shell textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+.auto-shell input[type='checkbox'] {
+  width: auto;
+  margin-right: 8px;
+}
+.auto-shell details.panel > summary {
+  padding: 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.auto-company {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border, #dde3eb);
+}
+.auto-company summary {
+  cursor: pointer;
+}
+.auto-shell .message-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.auto-error {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  background: #fff0ed;
+  color: #8d2525;
+  border: 1px solid #b84343;
+  padding: 16px;
+  z-index: 100;
+}
+@media (max-width: 1120px) {
+  .auto-shell .main-content {
+    margin-left: 195px;
+    width: calc(100% - 195px);
+  }
+}
+@media (max-width: 850px) {
+  .auto-shell {
+    flex-direction: column;
+  }
+  .auto-shell .sidebar {
+    position: sticky;
+    inset: auto;
+    top: 0;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .auto-shell .brand {
+    margin: 12px;
+  }
+  .auto-shell .sidebar nav {
+    display: flex;
+    gap: 2px;
+    padding: 0;
+    flex: 1;
+  }
+  .auto-shell .nav-item {
+    padding: 12px 8px;
+    font-size: 12px;
+    flex: 1;
+    justify-content: center;
+  }
+  .auto-shell .nav-item svg {
+    display: none;
+  }
+  .auto-shell .main-content {
+    margin: 0;
+    padding: 16px;
+    width: 100%;
+  }
+  .auto-shell .stats-grid {
+    gap: 6px;
+  }
+  .auto-shell .stat-card {
+    padding: 10px;
+  }
+  .auto-shell section.panel {
+    padding: 16px;
+  }
+}

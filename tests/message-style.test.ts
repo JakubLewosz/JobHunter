@@ -91,6 +91,24 @@ function draft(
     warnings: [],
   };
 }
+test('unknown company hours permit a question, never a claim that the schedule matches', () => {
+  const a = analysis();
+  assert.equal(a.conditions.hours.value, 'unknown');
+  assert.doesNotThrow(() =>
+    checkMessageRules(
+      draft(
+        'Jestem uczniem technikum. Jestem dostępny około 20 godzin tygodniowo po lekcjach. Czy taki wymiar i godziny pracy są dla Państwa odpowiednie?',
+      ),
+      profile,
+      a,
+    ),
+  );
+  assert.throws(
+    () =>
+      checkMessageRules(draft('Państwa godziny pracy pasują do mojej dostępności.'), profile, a),
+    (e: any) => e.code === 'UNSUPPORTED_CONDITIONS',
+  );
+});
 for (const [area, key] of [
   ['PHP Laravel', 'fixdesk'],
   ['API integracje webhooki', 'autorelay'],

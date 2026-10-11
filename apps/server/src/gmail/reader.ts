@@ -34,8 +34,12 @@ export interface SentQuery {
 }
 export interface GmailGateway {
   account(): Promise<AccountInfo>;
-  marker(): Promise<string>;
-  scan(query: string, page: (messages: GmailMessage[], next: string | null) => void): Promise<void>;
+  marker(expected?: AccountInfo): Promise<string>;
+  scan(
+    query: string,
+    page: (messages: GmailMessage[], next: string | null) => void,
+    expected?: AccountInfo,
+  ): Promise<void>;
   thread(id: string): Promise<GmailMessage[]>;
   sent(input: SentQuery): Promise<GmailMessage[]>;
   send(
@@ -154,11 +158,18 @@ export class GmailApi implements GmailGateway {
           redirect: 'error',
           signal: AbortSignal.timeout(15000),
         });
-        if ([429, 500, 502, 503, 504].includes(response.status) && attempt < 2) {
+        if (response.status === 429) {
+          await response.body?.cancel();
+          throw new DomainError(
+            'GMAIL_RATE_LIMIT',
+            'Gmail ograniczył odczyt. Sender wstrzymany; wznów po ustąpieniu ograniczenia.',
+          );
+        }
+        if ([500, 502, 503, 504].includes(response.status) && attempt < 2) {
           const delay = Number(response.headers.get('Retry-After') ?? '0');
           if (delay > 1) throw new Error('READ_LIMIT');
           await response.body?.cancel();
-          await new Promise((r) => setTimeout(r, Math.max(100 * (attempt + 1), delay * 1000)));
+          await new Promise((r) => setTimeout(r, Math.max(1000 * 2 ** attempt, delay * 1000)));
           continue;
         }
         if (!response.ok) throw new Error('READ_FAILED');
@@ -178,7 +189,8 @@ export class GmailApi implements GmailGateway {
           await reader.cancel();
         }
         return JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      } catch {
+      } catch (error) {
+        if (error instanceof DomainError) throw error;
         throw new DomainError(
           'GMAIL_READ',
           'Nie ukończono odczytu Gmaila. Nie uznajemy historii za pustą.',
@@ -187,11 +199,11 @@ export class GmailApi implements GmailGateway {
     }
     throw new DomainError('GMAIL_READ', 'Nie ukończono odczytu Gmaila.');
   }
-  async marker() {
+  async marker(expected?: AccountInfo) {
     const p = z
       .object({ historyId: z.string().regex(/^\d+$/), emailAddress: z.email() })
-      .parse(await this.read('profile'));
-    if (p.emailAddress.toLowerCase() !== (await this.account()).email.toLowerCase())
+      .parse(await this.read('profile', new URLSearchParams(), expected));
+    if (p.emailAddress.toLowerCase() !== (expected ?? (await this.account())).email.toLowerCase())
       throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Konto poczty zmieniło się.');
     return p.historyId;
   }

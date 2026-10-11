@@ -53,6 +53,7 @@ test('HTML w szkicu jest wyświetlany jako tekst; mutacja bez CSRF jest blokowan
     readFileSync(join(process.env.JOBHUNTER_E2E_DIR!, 'demo', 'launch.json'), 'utf8'),
   );
   await page.goto(launch.url);
+  await expect(page.getByRole('button', { name: 'Dzisiaj', exact: true })).toBeVisible();
   const result = await page.evaluate(async () => {
     const session = await fetch('/api/session').then((r) => r.json());
     const response = await fetch('/api/stop', {

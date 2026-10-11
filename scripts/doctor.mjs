@@ -32,7 +32,7 @@ try {
   );
 }
 console.log(
-  'Stan modelu i wyszukiwarki: sprawdź testy w panelu RESEARCH_ONLY / Integracje. Doctor odczytuje tylko wersję CLI. Gmail: BRAK TRANSPORTU. AUTO_POLICY: ZABLOKOWANY.',
+  'Stan modelu i wyszukiwarki: sprawdź testy w panelu / Połączenia. Doctor odczytuje tylko wersję CLI. AUTO_POLICY wymaga zatwierdzonej polityki, prywatnej historii i jawnego Start; Gmail inicjalizuje się przy operacji.',
 );
 console.log(
   'Windows smoke test:',
