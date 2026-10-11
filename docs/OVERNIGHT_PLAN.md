@@ -14,7 +14,7 @@ Testy wyłącznie na fikcyjnych providerach, osobnych bazach i lokalnych repo Gi
 | P1        | Historia A → B → A                                              | CZĘŚCIOWO        | Dwa klony, aliasy i syntetyczne kontakty/liczniki PASS; pełna macierz awarii pozostaje |
 | P1        | Deterministyczna symulacja doby i diagnostyka UI                | CZĘŚCIOWO        | 3×30h PASS, panel/UI; mieszany handoff/OPEN/429 w jednym soak pozostaje                |
 | P2        | Pobieranie danych i CI                                          | CZĘŚCIOWO        | UI 7/7, workflow przygotowany; wynik CI po push, duża historia/Stop pozostają          |
-| koniec    | Przegląd, instrukcja rano, kontrola sekretów, commity/push/CI   | DO ZROBIENIA     | Pełny check, diff check, zdalny ref zgodny z SHA                                       |
+| koniec    | Przegląd, instrukcja rano, kontrola sekretów, commity/push/CI   | KOD OPUBLIKOWANY | Check 280/280 + 7/7, skan blobów i ref PASS; CI w raporcie czatu                       |
 | external  | Prawdziwy Gmail, repo historii, macOS/live research/pełny dzień | BLOCKED_EXTERNAL | Wymagają urządzenia/użytkownika; żadnej prawdziwej wysyłki w tej sesji                 |
 
 Niezależny agent wykonuje tylko przegląd wyścigów i historii, bez edycji plików.
