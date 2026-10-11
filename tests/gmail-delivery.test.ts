@@ -85,6 +85,59 @@ async function selfTest(f: Awaited<ReturnType<typeof setup>>) {
   assert.equal(f.service.outboxRows()[0].status, 'SENT_CONFIRMED');
   return p;
 }
+
+test('Gmail targeted sync: unrelated mailbox activity permits one bounded complete rescan', async (t) => {
+  const f = await setup(t);
+  let calls = 0;
+  f.gateway.marker = async () => String(++calls === 1 ? 1 : 2);
+  await f.service.checkHistory({ drafts: f.drafts, consent: true });
+  assert.equal(f.gateway.historyQueries.length, 2);
+  assert.equal(f.store.one('SELECT status FROM gmail_history_checks')?.status, 'COMPLETE');
+  assert.equal(f.store.all('SELECT * FROM gmail_messages').length, 0);
+});
+test('Gmail targeted sync: new manual correspondence on rescan blocks first contact', async (t) => {
+  const f = await setup(t);
+  let calls = 0;
+  f.gateway.marker = async () => String(++calls === 1 ? 1 : 2);
+  const scan = f.gateway.scan.bind(f.gateway);
+  let scans = 0;
+  f.gateway.scan = async (q, page) => {
+    if (++scans === 2)
+      f.gateway.previous = [
+        {
+          id: 'manual-a',
+          threadId: 'manual',
+          labels: ['SENT'],
+          from: [f.gateway.info.email],
+          to: [f.d.email],
+          subject: 'Ręczny kontakt',
+          messageId: '<manual@example.test>',
+          at: new Date().toISOString(),
+          body: '',
+          category: 'UNCLEAR',
+        },
+      ];
+    await scan(q, page);
+  };
+  await f.service.checkHistory({ drafts: f.drafts, consent: true });
+  assert.equal(f.store.one('SELECT company_id FROM gmail_messages')?.company_id, f.d.company_id);
+  await assert.rejects(
+    () => f.service.prepareDelivery({ drafts: f.drafts, cvId: f.cv.id, kind: 'FIRST_CONTACT' }),
+    (e: any) => e.code === 'GMAIL_CONTACT_HISTORY' || e.code === 'SELF_TEST_REQUIRED',
+  );
+  assert.equal(f.gateway.posts.length, 0);
+});
+test('Gmail targeted sync: continuously moving mailbox never becomes empty after bounded retries', async (t) => {
+  const f = await setup(t);
+  f.gateway.changeMarker = true;
+  await assert.rejects(
+    () => f.service.checkHistory({ drafts: f.drafts, consent: true }),
+    (e: any) => e.code === 'HISTORY_CHANGED',
+  );
+  assert.equal(f.gateway.historyQueries.length, 2);
+  assert.equal(f.store.one('SELECT status FROM gmail_history_checks')?.status, 'ERROR');
+  assert.equal(f.gateway.posts.length, 0);
+});
 async function ready(t: TestContext) {
   const f = await setup(t);
   await selfTest(f);

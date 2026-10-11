@@ -5,6 +5,8 @@ import { projectKeys, relevantProjectFacts } from './drafting.js';
 
 export type ContactType = 'ACTIVE_JOB' | 'OPEN_APPLICATION' | 'GENERAL_RECRUITMENT_CONTACT';
 export function messageContactType(analysis: Analysis): ContactType {
+  if (Object.values(analysis.conditions).some((c) => c.value === 'no' || c.value === 'conflicting'))
+    return 'GENERAL_RECRUITMENT_CONTACT';
   if (analysis.type === 'ACTIVE' && analysis.conditions.active.value === 'yes') return 'ACTIVE_JOB';
   if (analysis.type === 'OPEN' && analysis.conditions.openInquiry.value === 'yes')
     return 'OPEN_APPLICATION';

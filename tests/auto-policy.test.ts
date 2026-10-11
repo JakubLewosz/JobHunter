@@ -11,161 +11,7 @@ import { FixtureGmail } from './gmail-fixture.js';
 import { FixtureRunner, FixtureReader } from './research-fixture.js';
 import { z } from 'zod';
 import { hash, DomainError } from '../apps/server/src/util.js';
-class ManyReader extends FixtureReader {
-  override async read(url: string, signal?: AbortSignal) {
-    const source = await super.read(url, signal),
-      n = new URL(url).hostname.match(/fixture(\d+)/)?.[1];
-    source.text = source.text
-      .replaceAll('Fixture Company', `Fixture Company ${n}`)
-      .replaceAll('fixture.example.test', `fixture${n}.example.test`);
-    source.fragment = source.text;
-    source.content_hash = hash(source.text + url);
-    return source;
-  }
-}
-class ManyRunner extends FixtureRunner {
-  override async run<T>(
-    prompt: string,
-    schema: z.ZodType<T>,
-    options?: { signal?: AbortSignal; search?: boolean },
-  ) {
-    const result = await super.run(prompt, schema, options);
-    if (prompt.includes('Wydobądź firmę')) {
-      const sources = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)),
-        n = new URL(sources[0].url).hostname.match(/fixture(\d+)/)[1];
-      const v = result.value as any;
-      v.company = `Fixture Company ${n}`;
-      v.companyURL = `https://fixture${n}.example.test`;
-      v.companyProof.quote = v.company;
-      v.contact.email = `hr@fixture${n}.example.test`;
-      v.contact.proof.quote = `Rekrutacja: hr@fixture${n}.example.test.`;
-      result.value = schema.parse(v);
-    }
-    return result;
-  }
-}
-class SplitContactRunner extends FixtureRunner {
-  override async run<T>(
-    prompt: string,
-    schema: z.ZodType<T>,
-    options?: { signal?: AbortSignal; search?: boolean },
-  ) {
-    const result = await super.run(prompt, schema, options);
-    if (prompt.includes('Wydobądź firmę')) {
-      const sources = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
-      (result.value as any).contact.proof.sourceId = sources[1].id;
-    }
-    return result;
-  }
-}
-
-function git(dir: string, ...args: string[]) {
-  return execFileSync('git', ['-C', dir, ...args], {
-    encoding: 'utf8',
-    windowsHide: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
-}
-async function setup(t: TestContext, prospect = false, many = false, split = false) {
-  const root = mkdtempSync(join(tmpdir(), 'jh-auto-')),
-    dir = join(root, 'data'),
-    repo = join(root, 'history'),
-    remote = join(root, 'remote.git');
-  execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore', windowsHide: true });
-  execFileSync('git', ['clone', remote, repo], { stdio: 'ignore', windowsHide: true });
-  git(repo, 'symbolic-ref', 'HEAD', 'refs/heads/main');
-  const store = new Store(dir),
-    gateway = new FixtureGmail(),
-    runner = many ? new ManyRunner() : split ? new SplitContactRunner() : new FixtureRunner(),
-    reader = many ? new ManyReader() : new FixtureReader();
-  let time = Date.now();
-  runner.prospect = reader.prospect = prospect;
-  const search = many
-    ? {
-        search: async () => ({
-          urls: Array.from({ length: 5 }, (_, i) => ({
-            url: `https://fixture${i + 1}.example.test/careers`,
-            contactUrl: null,
-          })),
-          queries: ['fictional companies'],
-        }),
-      }
-    : split
-      ? {
-          search: async () => ({
-            urls: [
-              {
-                url: 'https://fixture.example.test/careers',
-                contactUrl: 'https://fixture.example.test/contact',
-              },
-            ],
-            queries: ['fictional split contact'],
-          }),
-        }
-      : undefined;
-  const options = {
-    gateway,
-    accountInfo: () => gateway.info,
-    runner,
-    reader,
-    search,
-    clock: () => new Date(time),
-  };
-  const service = new AutoPolicyJobHunter(store, options);
-  const extraStores: Store[] = [];
-  t.after(async () => {
-    await service.stopWorker();
-    for (const s of extraStores) s.close();
-    store.close();
-    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
-  });
-  service.approveProfile();
-  const cv = service.uploadCV(
-    'Fixture.pdf',
-    Buffer.from('%PDF-1.4\nfictional\n%%EOF').toString('base64'),
-  );
-  service.approveCV(cv.id);
-  const policy = {
-    senderEmail: gateway.info.email,
-    cvId: cv.id,
-    contactKinds: ['RECRUITMENT', 'GENERAL'],
-    contactTypes: ['ACTIVE', 'OPEN', 'PROSPECT'],
-    searchScope: 'Firmy działające w Polsce, web, SaaS, integracje i automatyzacje',
-    sessionLimit: null,
-    dailyLimit: null,
-    sendIntervalSeconds: 60,
-    researchIntervalSeconds: 60,
-    confirmed: true,
-    targetedHistoryConsent: true,
-  };
-  service.configurePolicy(policy);
-  service.historySync.configure({
-    directory: repo,
-    expectedRemote: remote,
-    confirmedPrivate: true,
-    confirmedInitialHistory: true,
-  });
-  await service.probe('codex');
-  await service.probe('search');
-  return {
-    root,
-    dir,
-    repo,
-    remote,
-    store,
-    service,
-    gateway,
-    runner,
-    reader,
-    cv,
-    policy,
-    options,
-    extraStores,
-    advance: (n = 61000) => {
-      time += n;
-    },
-  };
-}
+import { setup, git } from './auto-fixture.js';
 async function send(t: TestContext, prospect = false) {
   const f = await setup(t, prospect);
   await f.service.startAuto();
@@ -618,4 +464,262 @@ test('history: interrupted export and conflicting aliases block without partial 
   });
   assert.throws(() => importHistory(f.store, snapshot));
   assert.equal(JSON.stringify(f.store.all('SELECT * FROM companies')), prior);
+});
+
+for (const late of [false, true])
+  test(`AUTO regression: known Gmail correspondence skips A and sends B (late=${late})`, async (t) => {
+    const f = await setup(t, false, true);
+    await f.service.startAuto();
+    await f.service.tick();
+    const a = f.service.draftRows()[0];
+    const scan = f.gateway.scan.bind(f.gateway);
+    let scans = 0;
+    f.gateway.scan = async (query, onPage) => {
+      if (++scans >= (late ? 2 : 1))
+        f.gateway.previous = [
+          {
+            id: 'prior-a',
+            threadId: 'prior-thread',
+            labels: ['SENT'],
+            from: [f.gateway.info.email],
+            to: [a.email],
+            subject: 'Zwykła korespondencja',
+            messageId: '<prior-a@example.test>',
+            at: '2026-10-01T12:00:00.000Z',
+            body: '',
+            category: 'UNCLEAR',
+          },
+        ];
+      await scan(query, onPage);
+    };
+    f.advance();
+    await f.service.dispatchOne();
+    assert.equal(f.gateway.posts.length, 0);
+    assert.equal(f.service.state().paused, false, 'kontakt jednej firmy nie kończy sesji');
+    assert.equal(f.store.get(`autoSkipped:${a.id}:${a.version}`, false), true);
+    f.advance();
+    await f.service.dispatchOne();
+    assert.equal(f.gateway.posts.length, 1);
+    assert.notEqual(f.gateway.posts[0].recipient, a.email);
+    f.advance();
+    await f.service.dispatchOne();
+    assert.equal(f.gateway.posts.filter((p) => p.recipient === a.email).length, 0);
+    assert.equal(
+      f.store.all("SELECT * FROM audit_events WHERE action='AUTO_SKIPPED' AND entity_id=?", a.id)
+        .length,
+      1,
+    );
+  });
+
+test('AUTO regression: error retains selected A when concurrent work moves B to the front', async (t) => {
+  const f = await setup(t, false, true);
+  await f.service.startAuto();
+  await f.service.tick();
+  const [a, b] = f.service.draftRows();
+  f.store.exec("UPDATE research_sources SET fetched_at='2020-01-01T00:00:00.000Z'");
+  const read = f.reader.read.bind(f.reader);
+  f.reader.read = async (url, signal) => {
+    f.store.exec("UPDATE drafts SET created_at='2099-01-01T00:00:00.000Z' WHERE id=?", b.id);
+    f.store.exec(
+      'UPDATE research_drafts SET semantic_review=? WHERE draft_id=?',
+      JSON.stringify({ supported: null, issues: ['Niepewny A'] }),
+      a.id,
+    );
+    return read(url, signal);
+  };
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.store.get(`autoSkipped:${a.id}:${a.version}`, false), true);
+  assert.equal(f.store.get(`autoSkipped:${b.id}:${b.version}`, false), false);
+  assert.equal(f.gateway.posts.length, 0);
+});
+
+test('AUTO regression: manual approval cannot borrow the internal sender authorization', async (t) => {
+  const f = await setup(t);
+  await f.service.startAuto();
+  await f.service.tick();
+  const account = f.gateway.account;
+  let attempted = false;
+  f.gateway.account = async () => {
+    if (f.store.one('SELECT id FROM gmail_previews') && !attempted) {
+      attempted = true;
+      const preview = f.service.preview(f.store.one('SELECT id FROM gmail_previews')!.id);
+      await assert.rejects(
+        () =>
+          f.service.approveDelivery({
+            previewId: preview.id,
+            previewHash: preview.previewHash,
+            confirmed: true,
+          }),
+        (e: any) => e.code === 'AUTO_POLICY_ONLY',
+      );
+    }
+    return account();
+  };
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(attempted, true);
+  assert.equal(f.gateway.posts.length, 1);
+  assert.equal(f.service.outboxRows().length, 1);
+});
+
+test('AUTO: queue leaves unprocessed candidates pending and completes the original run later', async (t) => {
+  const f = await setup(t, false, true);
+  await f.service.startAuto();
+  await f.service.tick();
+  assert.equal(f.service.draftRows().length, 3);
+  assert.equal(f.store.one("SELECT count(*) n FROM research_items WHERE status='PENDING'")!.n, 2);
+  const run = f.store.one("SELECT id FROM research_items WHERE status='PENDING'")!;
+  for (let i = 0; i < 3; i++) {
+    f.advance();
+    await f.service.dispatchOne();
+  }
+  await f.service.tick();
+  assert.equal(f.service.draftRows().length, 5);
+  assert.equal(f.store.one("SELECT count(*) n FROM research_items WHERE status='PENDING'")!.n, 0);
+  assert.equal(f.store.all('SELECT * FROM auto_query_plan').length, 1);
+});
+
+test('AUTO: editing selected A during history skips only the checked version', async (t) => {
+  const f = await setup(t);
+  await f.service.startAuto();
+  await f.service.tick();
+  const a = f.service.draftRows()[0],
+    scan = f.gateway.scan.bind(f.gateway);
+  f.gateway.scan = async (q, page) => {
+    await scan(q, page);
+    f.gateway.scan = scan;
+    f.service.editDraft(a.id, { version: a.version, subject: a.subject, body: a.body });
+  };
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 0);
+  assert.equal(f.store.get(`autoSkipped:${a.id}:${a.version}`, false), true);
+  assert.equal(f.store.get(`autoSkipped:${a.id}:${a.version + 1}`, false), false);
+  assert.equal(f.store.one('SELECT draft_version FROM auto_skips')?.draft_version, a.version);
+});
+
+test('AUTO: Start remains blocked throughout handoff and history preparation', async (t) => {
+  const f = await setup(t);
+  await f.service.startAuto();
+  let release!: () => void, entered!: () => void;
+  const waiting = new Promise<void>((r) => {
+    entered = r;
+  });
+  const checkpoint = f.service.historySync.checkpoint.bind(f.service.historySync);
+  f.service.historySync.checkpoint = async (releaseOwner = false) => {
+    entered();
+    await new Promise<void>((r) => {
+      release = r;
+    });
+    return checkpoint(releaseOwner);
+  };
+  const handoff = f.service.handoff();
+  await waiting;
+  await assert.rejects(
+    () => f.service.startAuto(),
+    (e: any) => e.code === 'BUSY',
+  );
+  release();
+  await handoff;
+  assert.equal(f.service.state().stopped, true);
+});
+
+test('AUTO: concurrent sender calls reserve one contact and Stop during history preserves STOPPED', async (t) => {
+  const f = await setup(t);
+  await f.service.startAuto();
+  await f.service.tick();
+  f.advance();
+  await Promise.all([f.service.dispatchOne(), f.service.dispatchOne()]);
+  assert.equal(f.gateway.posts.length, 1);
+  assert.equal(f.store.all('SELECT * FROM send_attempts').length, 1);
+  const g = await setup(t);
+  await g.service.startAuto();
+  await g.service.tick();
+  g.advance();
+  g.gateway.scan = async () => {
+    g.service.control('stop');
+    throw new DomainError('GMAIL_READ', 'Cancelled fixture read');
+  };
+  await g.service.dispatchOne();
+  assert.equal(g.gateway.posts.length, 0);
+  assert.equal(g.service.state().status, 'STOPPED');
+});
+test('AUTO: changed scope cancels old paused/backlog runs and prevents old drafts inheriting permission', async (t) => {
+  const f = await setup(t, false, true);
+  await f.service.startAuto();
+  await f.service.tick();
+  const oldRun = f.store.one('SELECT run_id FROM auto_run_scope')!.run_id,
+    oldScope = f.service.policyConfig()!.scopeHash;
+  f.service.control('stop');
+  f.service.configurePolicy({
+    ...f.policy,
+    searchScope: 'Polska, wyłącznie firmy tworzące oprogramowanie dla edukacji',
+  });
+  assert.notEqual(f.service.policyConfig()!.scopeHash, oldScope);
+  await f.service.startAuto();
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 0);
+  await f.service.tick();
+  assert.equal(
+    f.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', oldRun)?.scope_hash,
+    oldScope,
+  );
+  assert.notEqual(
+    f.store.one(
+      'SELECT run_id FROM auto_run_scope WHERE scope_hash=?',
+      f.service.policyConfig()!.scopeHash,
+    )?.run_id,
+    oldRun,
+  );
+  assert.ok(
+    f.store
+      .all('SELECT scope_hash FROM auto_draft_scope')
+      .some((r) => r.scope_hash === f.service.policyConfig()!.scopeHash),
+  );
+});
+test('AUTO: limit/pacing changes retain research progress; legacy policy needs explicit approval', async (t) => {
+  const f = await setup(t);
+  await f.service.startAuto();
+  await f.service.tick();
+  f.service.control('stop');
+  const scope = f.service.policyConfig()!.scopeHash;
+  f.service.configurePolicy({ ...f.policy, dailyLimit: 5, sendIntervalSeconds: 120 });
+  assert.equal(f.service.policyConfig()!.scopeHash, scope);
+  await f.service.startAuto();
+  f.advance(180000);
+  await f.service.tick();
+  assert.notEqual(f.service.state().status, 'QUERY_ALREADY_RUN');
+  assert.equal(f.store.all('SELECT * FROM auto_query_plan').length, 2);
+  f.service.control('stop');
+  const legacy = { ...f.service.policyConfig() };
+  delete legacy.scopeHash;
+  f.store.set('autoPolicy', legacy);
+  await assert.rejects(
+    () => f.service.startAuto(),
+    (e: any) => e.code === 'POLICY_SCOPE_REQUIRED',
+  );
+  assert.equal(f.gateway.posts.length, 0);
+});
+test('AUTO: a new verified source creates a new version after skipping the old draft', async (t) => {
+  const f = await setup(t);
+  await f.service.startAuto();
+  await f.service.tick();
+  const d = f.service.draftRows()[0];
+  f.store.exec(
+    'UPDATE research_drafts SET semantic_review=?',
+    JSON.stringify({ supported: null, issues: ['Fixture uncertain'] }),
+  );
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.store.get(`autoSkipped:${d.id}:${d.version}`, false), true);
+  await f.service.importURL('https://fixture.example.test/current-careers');
+  await f.service.tick();
+  assert.equal(f.service.draftRows()[0].version, d.version + 1);
+  assert.equal(f.store.get(`autoSkipped:${d.id}:${d.version}`, false), true);
+  assert.equal(f.store.get(`autoSkipped:${d.id}:${d.version + 1}`, false), false);
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 1);
 });

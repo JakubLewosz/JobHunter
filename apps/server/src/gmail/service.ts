@@ -328,24 +328,33 @@ export class GmailJobHunter extends ResearchJobHunter {
       account.subject,
     );
     try {
-      const before = await this.gateway.marker(account);
-      await this.gateway.scan(
-        scope.query,
-        (messages, next) =>
-          this.store.atomic(() => {
-            for (const m of messages)
-              if (this.matches(m, scope)) this.saveMessage(m, account, d.company_id);
-            this.store.exec(
-              'UPDATE gmail_history_checks SET page_cursor=? WHERE company_id=? AND account_subject=?',
-              next,
-              d.company_id,
-              account.subject,
-            );
-          }),
-        account,
-      );
-      const after = await this.gateway.marker(account);
-      if (before !== after)
+      let after = '',
+        stable = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const before = await this.gateway.marker(account);
+        await this.gateway.scan(
+          scope.query,
+          (messages, next) =>
+            this.store.atomic(() => {
+              for (const m of messages)
+                if (this.matches(m, scope)) this.saveMessage(m, account, d.company_id);
+              this.store.exec(
+                'UPDATE gmail_history_checks SET page_cursor=? WHERE company_id=? AND account_subject=?',
+                next,
+                d.company_id,
+                account.subject,
+              );
+            }),
+          account,
+        );
+        after = await this.gateway.marker(account);
+        this.sameAccount(await this.gateway.account(), account.subject, account.email);
+        if (before === after) {
+          stable = true;
+          break;
+        }
+      }
+      if (!stable)
         throw new DomainError(
           'HISTORY_CHANGED',
           'Poczta zmieniła się podczas odczytu; sprawdź historię ponownie.',
@@ -912,10 +921,12 @@ export class GmailJobHunter extends ResearchJobHunter {
     }
     if (problems.length) throw new DomainError(problems[0], explain(problems));
   }
-  override async dispatchOne() {
+  override async dispatchOne(expectedOutboxId?: string) {
     if (this.sending || this.historyBusy || this.store.get('gmailSenderPaused', true)) return;
     const first = this.store.one(
-      "SELECT o.id FROM outbox o JOIN gmail_outbox g ON g.outbox_id=o.id WHERE status='QUEUED' ORDER BY o.created_at,o.rowid LIMIT 1",
+      "SELECT o.id FROM outbox o JOIN gmail_outbox g ON g.outbox_id=o.id WHERE status='QUEUED' AND (? IS NULL OR o.id=?) ORDER BY o.created_at,o.rowid LIMIT 1",
+      expectedOutboxId ?? null,
+      expectedOutboxId ?? null,
     );
     if (!first) return;
     this.sending = true;

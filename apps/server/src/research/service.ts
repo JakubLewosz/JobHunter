@@ -12,6 +12,7 @@ import { DomainError, hash, id, iso, csvCell, normalizeName } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import { ExecCodexRunner, configurationFingerprint, type StructuredRunner } from './codex.js';
 import { PublicSourceReader, publicURL, type Source, type SourceReader } from './fetcher.js';
+import { normalizeResearchURL, normalizeQuery } from './query-planner.js';
 import {
   checkAvailability,
   checkMessageRules,
@@ -26,6 +27,7 @@ import {
   reviewSchema,
   validateAnalysis,
   qualifyReal,
+  contactEligibility,
   researchInstructions,
   compact,
   type Analysis,
@@ -408,7 +410,7 @@ export class ResearchJobHunter extends JobHunter {
     const existing = this.store.one(
       "SELECT * FROM research_sources WHERE original_url=? AND status='READ' AND fetched_at>? ORDER BY fetched_at DESC LIMIT 1",
       normalized,
-      iso(new Date(Date.now() - 24 * 3600000)),
+      iso(new Date(this.clock().getTime() - 24 * 3600000)),
     );
     if (existing) return existing as Source;
     let source = await this.reader.read(normalized, signal);
@@ -609,7 +611,7 @@ export class ResearchJobHunter extends JobHunter {
       "INSERT OR IGNORE INTO research_items VALUES (?,?,?,?,'PENDING',?,?,NULL,NULL,NULL,0,?,?)",
       id(),
       runId,
-      url,
+      normalizeResearchURL(url),
       sourceIds.length ? 'EXTRACT' : 'READ',
       JSON.stringify(sourceIds),
       contactUrl ? JSON.stringify({ contactUrl }) : null,
@@ -1004,6 +1006,16 @@ export class ResearchJobHunter extends JobHunter {
           'Podany wymiar godzin nie pokrywa się z aktualnym zatwierdzonym profilem.';
       }
       const q = qualifyReal(v);
+      if (this.mode === 'AUTO_POLICY') {
+        const eligibility = contactEligibility(v, sources);
+        if (eligibility.allowed) {
+          q.decision = `READY_${eligibility.intent}`;
+          q.reasons.unshift(`Intencja kontaktu: ${eligibility.intent}. ${eligibility.reason}`);
+        } else {
+          q.decision = 'REJECTED';
+          q.reasons.unshift(eligibility.reason);
+        }
+      }
       if (c.suppression_reason || c.history_status !== 'NEW') {
         q.decision = 'NEEDS_REVIEW';
         q.reasons.unshift(
@@ -1068,6 +1080,7 @@ export class ResearchJobHunter extends JobHunter {
           item.run_id,
         );
       } else {
+        this.store.exec('UPDATE runs SET duplicates=duplicates+1 WHERE id=?', item.run_id);
         this.store.exec(
           'UPDATE opportunities SET contact_id=?,decision=?,reasons=?,updated_at=? WHERE id=?',
           contactId,
@@ -1106,8 +1119,9 @@ export class ResearchJobHunter extends JobHunter {
     const recruitmentContact =
       o.kind === 'RECRUITMENT' && o.verification_status === 'VERIFIED_PUBLIC';
     const prospectContact =
-      o.type === 'PROSPECT' &&
-      analysis.type === 'PROSPECT' &&
+      (this.mode === 'AUTO_POLICY'
+        ? contactEligibility(analysis, this.sourcesFor(item)).allowed
+        : o.type === 'PROSPECT' && analysis.type === 'PROSPECT') &&
       o.kind === 'GENERAL' &&
       analysis.contact.kind === 'GENERAL' &&
       analysis.contact.email?.toLowerCase() === o.email;
@@ -1130,7 +1144,40 @@ export class ResearchJobHunter extends JobHunter {
       (!existing || existing.id !== regeneration.id || existing.version !== regeneration.version)
     )
       throw new DomainError('VERSION_CONFLICT', 'Szkic zmienił się przed ponowną generacją.');
-    if (existing?.profile_hash === p.hash && !regeneration) return;
+    const sameScope =
+      this.mode !== 'AUTO_POLICY' ||
+      this.store.one('SELECT scope_hash FROM auto_draft_scope WHERE draft_id=?', existing?.id ?? '')
+        ?.scope_hash ===
+        this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', item.run_id)
+          ?.scope_hash;
+    const researchBinding = hash(
+      JSON.stringify({
+        profile: p.hash,
+        scope:
+          this.mode === 'AUTO_POLICY'
+            ? this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', item.run_id)
+                ?.scope_hash
+            : null,
+        opportunity: o.id,
+        contact: o.contact_id,
+        email: o.email,
+        kind: o.kind,
+        sources: this.sourcesFor(item).map((s) => ({
+          id: s.id,
+          hash: s.content_hash,
+          url: s.final_url,
+        })),
+      }),
+    );
+    if (
+      existing &&
+      existing.profile_hash === p.hash &&
+      sameScope &&
+      !regeneration &&
+      (this.mode !== 'AUTO_POLICY' ||
+        this.store.get(`draftResearchBinding:${existing.id}`, null) === researchBinding)
+    )
+      return;
     const count = this.store.get<number>(
       `draftedInRun:${item.run_id}`,
       this.store.one(
@@ -1285,6 +1332,14 @@ export class ResearchJobHunter extends JobHunter {
         draftId,
       );
       this.store.set(`draftedInRun:${item.run_id}`, count + 1);
+      this.store.set(`draftResearchBinding:${draftId}`, researchBinding);
+      if (this.mode === 'AUTO_POLICY')
+        this.store.exec(
+          'INSERT OR REPLACE INTO auto_draft_scope VALUES (?,?)',
+          draftId,
+          this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', item.run_id)!
+            .scope_hash,
+        );
     });
   }
   checkDraft(
@@ -1468,9 +1523,9 @@ export class ResearchJobHunter extends JobHunter {
         const recent = this.store.all(
           "SELECT query,result_json FROM research_queries WHERE profile_hash=? AND status='DONE' AND updated_at>?",
           p.hash,
-          iso(new Date(Date.now() - 86400000)),
+          iso(new Date(this.clock().getTime() - 86400000)),
         );
-        if (recent.some((q) => q.query === config.search_input))
+        if (recent.some((q) => normalizeQuery(q.query) === normalizeQuery(config.search_input)))
           throw new DomainError(
             'QUERY_ALREADY_RUN',
             'To zapytanie wykonano w ostatnich 24 godzinach. Wyniki są zapisane; zmień zapytanie albo wróć później.',
@@ -1491,9 +1546,14 @@ export class ResearchJobHunter extends JobHunter {
         }
         const r = await this.search.search(
           `${config.search_input}\nAktualny zatwierdzony cel, dostępność i projekty: ${JSON.stringify({ goal: p.goal, availabilityMode: p.availabilityMode, hoursApprox: p.hoursApprox, hoursMin: p.hoursMin, hoursMax: p.hoursMax, facts: p.facts.filter((f) => ['education', 'availability', 'contract', ...projectKeys].includes(f.key)) })}\nJuż sprawdzone domeny: ${this.store
-            .all('SELECT primary_domain FROM companies WHERE primary_domain IS NOT NULL')
+            .all(
+              "SELECT primary_domain FROM companies WHERE primary_domain IS NOT NULL AND history_status<>'NEW' ORDER BY updated_at DESC LIMIT 100",
+            )
             .map((c) => c.primary_domain)
-            .join(', ')}\nJuż wykonane zapytania: ${recent.map((q) => q.query).join('; ')}`,
+            .join(', ')}\nOstatnie wykonane zapytania: ${recent
+            .slice(-20)
+            .map((q) => q.query.slice(0, 500))
+            .join('; ')}`,
           signal,
         );
         signal.throwIfAborted();
@@ -1550,6 +1610,22 @@ export class ResearchJobHunter extends JobHunter {
             const contactUrl = item.analysis ? JSON.parse(item.analysis).contactUrl : null;
             if (contactUrl && contactUrl !== item.url)
               sources.push(await this.readSource(contactUrl, signal));
+            if (
+              !contactUrl &&
+              sources[0].status === 'READ' &&
+              !/[^\s@]+@[^\s@]+\.[^\s@]+/.test(sources[0].text)
+            ) {
+              for (const path of ['/kontakt', '/contact']) {
+                sources.push(
+                  await this.readSource(
+                    new URL(path, sources[0].final_url ?? item.url).href,
+                    signal,
+                  ),
+                );
+                signal.throwIfAborted();
+                if (/[^\s@]+@[^\s@]+\.[^\s@]+/.test(sources.at(-1)!.text)) break;
+              }
+            }
             signal.throwIfAborted();
             this.store.exec(
               "UPDATE research_items SET source_ids=?,stage='EXTRACT',updated_at=? WHERE id=?",
@@ -1619,6 +1695,11 @@ export class ResearchJobHunter extends JobHunter {
             item = this.store.one('SELECT * FROM research_items WHERE id=?', item.id)!;
           }
           if (item.stage === 'DRAFT') {
+            if (
+              this.mode === 'AUTO_POLICY' &&
+              this.store.get<number>(`draftedInRun:${run.id}`, 0) >= config.max_drafts
+            )
+              break;
             this.stage(run.id, 'DRAFT');
             await this.generate(item, signal);
           }

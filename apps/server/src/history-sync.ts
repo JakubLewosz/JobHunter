@@ -2,6 +2,8 @@ import { execFileSync, execFile } from 'node:child_process';
 import {
   existsSync,
   realpathSync,
+  lstatSync,
+  readdirSync,
   readFileSync,
   openSync,
   writeFileSync,
@@ -208,17 +210,38 @@ export function importHistory(store: Store, raw: unknown) {
   return store.atomic(() => {
     const map = new Map<string, string>();
     for (const c of snapshot.companies) {
-      const existing = store.one(
-        'SELECT * FROM companies WHERE id=? OR normalized_key=? OR (primary_domain IS NOT NULL AND primary_domain=?)',
+      const domains = [
+        c.primary_domain,
+        ...snapshot.aliases
+          .filter((a) => a.company_id === c.id && a.kind === 'DOMAIN' && a.verified_at)
+          .map((a) => a.value),
+      ]
+        .map(companyDomain)
+        .filter(Boolean);
+      const matches = store.all(
+        "SELECT DISTINCT c.* FROM companies c LEFT JOIN company_aliases a ON a.company_id=c.id AND a.kind='DOMAIN' AND a.verified_at IS NOT NULL WHERE c.id=? OR c.normalized_key=? OR c.primary_domain IN (SELECT value FROM json_each(?)) OR a.value IN (SELECT value FROM json_each(?))",
         c.id,
         c.normalized_key,
-        c.primary_domain,
+        JSON.stringify(domains),
+        JSON.stringify(domains),
       );
+      if (matches.length > 1)
+        throw new DomainError(
+          'HISTORY_CONFLICT',
+          'Potwierdzone tożsamości wskazują różne lokalne firmy.',
+        );
+      const existing = matches[0];
       if (
         existing &&
         existing.primary_domain &&
         c.primary_domain &&
-        existing.primary_domain !== c.primary_domain
+        existing.primary_domain !== c.primary_domain &&
+        !domains.includes(companyDomain(existing.primary_domain)) &&
+        !store.one(
+          "SELECT id FROM company_aliases WHERE company_id=? AND kind='DOMAIN' AND value IN (SELECT value FROM json_each(?)) AND verified_at IS NOT NULL",
+          existing.id,
+          JSON.stringify(domains),
+        )
       )
         throw new DomainError(
           'HISTORY_CONFLICT',
@@ -426,6 +449,26 @@ export class HistorySync {
         'HISTORY_UNCONFIGURED',
         'Skonfiguruj osobne prywatne repozytorium historii w Ustawieniach.',
       );
+    this.files(config.directory);
+    if (
+      realpathSync(config.directory) !== config.directory ||
+      realpathSync(this.git(config.directory, ['rev-parse', '--show-toplevel'])) !==
+        config.directory
+    )
+      throw new DomainError(
+        'HISTORY_PATH_CHANGED',
+        'Katalog historii prowadzi do innego repozytorium.',
+      );
+    if (this.git(config.directory, ['branch', '--show-current']) !== 'main')
+      throw new DomainError('HISTORY_BRANCH', 'Gałąź historii zmieniła się. Wymagana main.');
+    for (const file of ['history.json', 'history.pending']) {
+      const path = join(config.directory, file);
+      if (existsSync(path) && (!lstatSync(path).isFile() || lstatSync(path).isSymbolicLink()))
+        throw new DomainError(
+          'HISTORY_PATH_CHANGED',
+          'Plik historii nie może być dowiązaniem ani katalogiem.',
+        );
+    }
     if (this.git(config.directory, ['remote', 'get-url', 'origin']) !== config.remote)
       throw new DomainError(
         'HISTORY_REMOTE_CHANGED',
@@ -452,6 +495,54 @@ export class HistorySync {
       );
     return config.directory as string;
   }
+  private files(directory: string) {
+    const gitDir = join(directory, '.git');
+    if (existsSync(join(gitDir, 'commondir')) || existsSync(join(gitDir, 'config.worktree')))
+      throw new DomainError(
+        'HISTORY_PATH_CHANGED',
+        'Historia wymaga samodzielnego klonu bez commondir, config.worktree i zewnętrznych include.',
+      );
+    if (!lstatSync(gitDir).isDirectory() || realpathSync(gitDir) !== gitDir)
+      throw new DomainError(
+        'HISTORY_PATH_CHANGED',
+        'Historia wymaga zwykłego klonu z lokalnym katalogiem .git.',
+      );
+    const result: Record<string, string> = {
+      directory: realpathSync(directory),
+      entries: JSON.stringify(readdirSync(directory).sort()),
+    };
+    for (const name of [
+      '.git/config',
+      '.git/HEAD',
+      '.git/index',
+      '.git/packed-refs',
+      '.git/refs/heads/main',
+      'history.json',
+      'README.md',
+      '.gitignore',
+    ]) {
+      const path = join(directory, name);
+      if (!existsSync(path)) {
+        result[name] = 'ABSENT';
+        continue;
+      }
+      const stat = lstatSync(path);
+      if (
+        !stat.isFile() ||
+        stat.isSymbolicLink() ||
+        realpathSync(path) !== path ||
+        stat.size > 32 * 1024 * 1024
+      )
+        throw new DomainError('HISTORY_PATH_CHANGED', 'Nieprawidłowy lub nadmierny plik historii.');
+      result[name] = hash(readFileSync(path));
+    }
+    if (/\[include(?:if)?(?:\s|\])/i.test(readFileSync(join(gitDir, 'config'), 'utf8')))
+      throw new DomainError(
+        'HISTORY_PATH_CHANGED',
+        'Lokalna konfiguracja historii nie może dołączać zewnętrznych plików.',
+      );
+    return result;
+  }
   private current(directory: string): Snapshot {
     const path = join(directory, 'history.json');
     if (
@@ -472,6 +563,7 @@ export class HistorySync {
     try {
       const directory = this.repository();
       await this.gitNetwork(directory, ['fetch', 'origin']);
+      this.repository();
       const refs = this.git(directory, [
         'for-each-ref',
         '--format=%(refname)',
@@ -510,6 +602,7 @@ export class HistorySync {
   assertOwner() {
     const config = this.store.get<Row | null>('historySyncConfig', null);
     if (!config) throw new DomainError('HISTORY_UNCONFIGURED', 'Brak skonfigurowanej historii.');
+    this.repository();
     const snapshot = this.current(config.directory);
     if (
       snapshot.closed ||
@@ -528,8 +621,6 @@ export class HistorySync {
         'HISTORY_CONFLICT',
         'Historia zmieniła się podczas sesji. Zatrzymaj i sprawdź stan.',
       );
-    if (this.git(config.directory, ['status', '--porcelain']))
-      throw new DomainError('HISTORY_DIRTY', 'Niezapisany stan historii.');
   }
   async checkpoint(release = false) {
     if (this.busy) throw new DomainError('HISTORY_BUSY', 'Trwa aktualizacja historii.');
@@ -558,12 +649,19 @@ export class HistorySync {
     }
   }
   private async publish(directory: string, snapshot: Snapshot) {
+    this.repository();
+    const serialized = JSON.stringify(snapshot, null, 2) + '\n';
+    if (Buffer.byteLength(serialized) > 32 * 1024 * 1024)
+      throw new DomainError(
+        'HISTORY_EXPORT_LIMIT',
+        'Minimalna historia przekracza 32 MiB. Wymagana ocena eksportu; bez ucinania danych.',
+      );
     const path = join(directory, 'history.json'),
       pending = join(directory, 'history.pending');
     // Exclusive staging file exposes interrupted exports; fsync before atomic rename.
     const fd = openSync(pending, 'wx', 0o600);
     try {
-      writeFileSync(fd, JSON.stringify(snapshot, null, 2) + '\n');
+      writeFileSync(fd, serialized);
       fsyncSync(fd);
     } finally {
       closeSync(fd);
@@ -583,7 +681,10 @@ export class HistorySync {
       '--',
       'history.json',
     ]);
-    await this.gitNetwork(directory, ['push', 'origin', 'HEAD:refs/heads/main']);
+    const config = this.store.get<Row>('historySyncConfig', {});
+    this.repository();
+    await this.gitNetwork(directory, ['push', '--', config.remote, 'HEAD:refs/heads/main']);
+    this.repository();
     this.store.set('historySyncRevision', this.git(directory, ['rev-parse', 'HEAD']));
     this.store.set('historyLastGeneration', snapshot.generation);
   }

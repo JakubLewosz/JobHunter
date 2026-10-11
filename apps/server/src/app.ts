@@ -263,7 +263,12 @@ export async function createApp(options: {
       sendingEnabled: service instanceof GmailJobHunter,
     };
   });
-  const gmailService = () => {
+  const gmailService = (manual = false) => {
+    if (manual && service.mode === 'AUTO_POLICY')
+      throw new DomainError(
+        'AUTO_POLICY_ONLY',
+        'Ta ręczna operacja wymaga osobnego trybu APPROVAL_REQUIRED.',
+      );
     if (!(service instanceof GmailJobHunter))
       throw new DomainError(
         'SEND_DISABLED',
@@ -277,7 +282,7 @@ export async function createApp(options: {
     .max(3);
   app.get('/api/gmail/state', async () => gmailService().deliveryState());
   app.post('/api/gmail/quota/reset', async (request) =>
-    gmailService().resetDailyQuota(
+    gmailService(true).resetDailyQuota(
       z
         .object({
           confirmed: z.literal(true),
@@ -293,10 +298,10 @@ export async function createApp(options: {
       .object({ email: z.email(), confirmed: z.literal(true) })
       .strict()
       .parse(request.body);
-    return gmailService().setTestRecipient(input.email);
+    return gmailService(true).setTestRecipient(input.email);
   });
   app.post('/api/gmail/history', async (request) =>
-    gmailService().checkHistory(
+    gmailService(true).checkHistory(
       z
         .object({ drafts: selectedDrafts, consent: z.literal(true) })
         .strict()
@@ -304,7 +309,7 @@ export async function createApp(options: {
     ),
   );
   app.post('/api/gmail/preview', async (request) =>
-    gmailService().prepareDelivery(
+    gmailService(true).prepareDelivery(
       z
         .object({
           drafts: selectedDrafts,
@@ -318,7 +323,7 @@ export async function createApp(options: {
     ),
   );
   app.post('/api/gmail/approve', async (request) =>
-    gmailService().approveDelivery(
+    gmailService(true).approveDelivery(
       z
         .object({
           previewId: z.string(),
@@ -331,7 +336,7 @@ export async function createApp(options: {
   );
   app.post<{ Params: { id: string } }>('/api/gmail/drafts/:id/verify', async (request) => {
     const v = z.object({ version: z.number().int().positive() }).strict().parse(request.body);
-    return gmailService().verifyDraft(request.params.id, v.version);
+    return gmailService(true).verifyDraft(request.params.id, v.version);
   });
   app.post<{ Params: { id: string } }>('/api/gmail/outbox/:id/reconcile', async (request) => {
     z.object({ consent: z.literal(true) })
@@ -345,7 +350,7 @@ export async function createApp(options: {
       .strict()
       .parse(request.body);
     gmailService().renewReadConsent(request.params.id);
-    return gmailService().syncReplies(request.params.id);
+    return gmailService(true).syncReplies(request.params.id);
   });
   app.patch<{ Params: { id: string } }>('/api/drafts/:id', async (request) => {
     const v = z
