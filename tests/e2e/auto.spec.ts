@@ -2,11 +2,29 @@ import { test, expect } from '@playwright/test';
 test('AUTO_POLICY: Start, continuous policy send, history, Pause, Stop and handoff', async ({
   page,
 }) => {
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'GET' && request.url().includes('/api/'))
+      requests.push(new URL(request.url()).pathname);
+  });
   await page.goto('http://127.0.0.1:4331/#access=auto-e2e-token');
   await expect(
     page.getByRole('button', { name: 'Start — szukaj i wysyłaj', exact: true }),
   ).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Odpowiedzi', exact: true })).toHaveCount(0);
+  expect(requests).not.toContain('/api/replies');
+  expect(requests).not.toContain('/api/reports');
+  const blocked = await page.evaluate(async () => {
+    const session = await (await fetch('/api/session')).json();
+    const r = await fetch('/api/gmail/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrf },
+      body: '{}',
+    });
+    return { status: r.status, body: await r.json() };
+  });
+  expect(blocked.status).toBe(409);
+  expect(blocked.body.code).toBe('AUTO_POLICY_ONLY');
   await page.getByRole('button', { name: 'Start — szukaj i wysyłaj', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Pracuje', exact: true })).toBeVisible();
   const advance = () =>
@@ -23,6 +41,8 @@ test('AUTO_POLICY: Start, continuous policy send, history, Pause, Stop and hando
   await expect(page.getByText('Pierwsze wiadomości', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/auto-desktop.png', fullPage: true });
   await page.getByRole('button', { name: 'Historia firm', exact: true }).click();
+  await expect(page.getByLabel('Szukaj firmy')).toBeVisible();
+  await page.getByLabel('Szukaj firmy').fill('Fixture Company');
   const company = page
     .locator('details')
     .filter({ has: page.getByText('Fixture Company', { exact: true }) });

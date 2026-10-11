@@ -1,6 +1,98 @@
 # Weryfikacja — 11 października 2026
 
-## AUTO_POLICY, źródła i prywatna historia
+## Stabilizacja nocna — `codex/overnight-stabilization`
+
+Windows win32/x64, Node **v24.19.0**, npm **11.17.0**. Czysty punkt wyjścia
+`4e6b864c2623626cf319671ab3a83c8756dd6822`; `git fetch origin` wykonany.
+Bazowy `npm run check`: **237/237 backend, 7/7 UI**, typecheck/build PASS.
+Nie wykazano błędu bazowych kontroli. Późniejszy pełny etap P0:
+**253/253 backend, 7/7 UI**, typecheck/build PASS.
+
+**Końcowy `npm run check`: 280/280 backend, 7/7 UI, typecheck/build PASS**,
+Windows win32/x64, Node v24.19.0. Backend 648,1 s; Playwright 56,2 s.
+`git diff --check` PASS. Dodatkowy ostatni review obejmował całość diffu i pliki nowe.
+
+Odtworzone FAIL → PASS: wcześniejsza korespondencja A (przed podglądem i przy ostatnim
+scanie), zmiana kolejności A/B podczas kontroli, ręczne zatwierdzanie w oknie sendera.
+Pierwszy test zmiany kolejności nie wykonywał świeżego odczytu z powodu poprawnego cache;
+fixture zmieniono na przestarzałe źródło, aby faktycznie uruchomić badaną granicę await.
+Niezależny przegląd odtworzył ponadto zmianę origin po fetch, zmianę gałęzi, Start podczas
+handoff, niesymetryczne aliasy, odziedziczenie starego zakresu, restart kierunków po zmianie
+limitu i cache ignorujący nową podstronę pominiętej firmy. Wszystkie dostały poprawki
+oraz regresje w izolowanych danych. Podwójny Start i pojedyncza rezerwacja miały już
+zabezpieczenia; dodano sprawdzenie równoległych wywołań sendera.
+
+Testy kwalifikacji A–F oraz treści: active=no nie blokuje samego zapytania;
+GENERAL zachowuje przeznaczenie; unknown daje pytanie; niedopasowanej oferty nie
+przepisujemy na PROSPECT. Osobna podstawa działalności jest literalna, a odmowa firmy,
+formularz, konflikt i niejednoznaczny zakres ograniczenia blokują. Cel konkretnego
+adresu jest sprawdzany w jego zdaniu/linii, nie na podstawie innego adresu sprzedaży
+w stopce. To nie jest gwarancja bezbłędnej interpretacji każdej strony.
+
+Próba przyspieszenia bramki historii przez lokalne fingerprinty została wycofana:
+niezależny przegląd odtworzył ominięcie przez commondir i zmianę efektywnego globalnego
+origin. Końcowy kod zachowuje pełną kontrolę Git; nowe regresje używają wyłącznie plików
+temp i przywracają zmienną GIT_CONFIG_GLOBAL w finally. Odrzucono niebezpieczny cache,
+nie osłabiono asercji własności. Pomiar/optymalizacja Stop pozostają P2.
+
+Gmail: najwyżej dwa kompletne scany na jedną kontrolę, ten sam scope, sprawdzenie
+konta/paginacji; pozytywna wiadomość manualna blokuje kontakt. Niestabilny historyId
+i błąd strony pozostają ERROR. Retry dotyczy wyłącznie bezpiecznego odczytu z backoffem,
+nigdy POST. Zachowana niepewność i ostatnia bramka MIME/CV/konta/sesji.
+
+Planer testowany po 10 wykonanych kierunkach, także przez ponowne utworzenie obiektu
+i pełny restart AUTO w soak. Metryki/cursor/cooldown w SQLite; zmiana samego limitu
+nie rozpoczyna listy od nowa. Kolejka pozostawia resztę kandydatów PENDING; nowa wersja
+źródła/kontaktu unieważnia cache zależny od źródeł i materiałów.
+
+`npx tsx --test tests/auto-soak.test.ts`: **3/3 PASS**, seed **17, 41, 93**.
+Każdy przebieg ma 96 kroków po 15 minut oraz 6 godzin logicznego snu — **30 godzin**,
+łącznie 90 godzin logicznych. Fikcyjne nowe/znane firmy i tracking URL, błędy źródeł
+i historii, niepewny review, Pauza/Stop/restart, zmiana dnia Europe/Warsaw, brak limitu,
+symulowany właściciel i transakcyjny transfer do osobnej bazy; na końcu timeout po
+przyjęciu. Asercje: >8 kierunków, >5 maili, queue≤3, brak drugiego kontaktu/rezerwacji,
+brak nadrabiania serią, zero POST po odwołaniu i zachowany SEND_UNKNOWN. Zegar źródeł
+fixture został związany z czasem logicznym: wcześniejsza wersja fixture zwracała czas
+rzeczywisty, więc po dobie kontrola słusznie blokowała przeterminowane dowody.
+
+Soak używa podstawionego transportu właściciela bez sieci; **osobny** A→B→A używa dwóch
+baz i dwóch realnych klonów lokalnego Git, aliasu prawnego, ręcznych rekordów i syntetycznych
+zamrożonych prób/liczników FIRST_CONTACT/SELF_TEST. Nie jest to realna doba Google ani
+pełna macierz awarii właściciela w tej samej symulacji. Testy limitów, OPEN/PROSPECT,
+zmiany globalnej historii, paginacji i procesu CLI są osobnymi scenariuszami.
+
+Pełny check w trakcie pracy: **273/274 backend**. Regresja własnej zmiany cache powodowała
+nowe wersje tej samej firmy i przedwczesny koniec historycznej godzinnej sesji ręcznej.
+Zależność od nowych źródeł ograniczono do AUTO_POLICY, zachowując dotychczasowy limit
+i deduplikację RESEARCH_ONLY. Istniejąca asercja 10 kandydatów i 5 tur bez zmian;
+celowany test PASS. Pełna kontrola końcowego kodu została ponowiona.
+
+Regresja własnej zmiany UI: ograniczenie pobierania pominęło dane outbox raportu DEMO
+i bezpieczne wartości przed pierwszym załadowaniem widoku. Dwa scenariusze Playwright
+FAIL; uzupełniono wymagane dane aktywnego Raportu i ponowny kompletny przebieg **7/7 PASS**.
+Nie usuwano asercji ani nie zwiększano timeoutów. AUTO UI sprawdza brak pobierania replies/reports,
+blokadę ręcznego endpointu, wyszukiwarkę historii i zachowanie trybów. Zrzuty 1440/390 px
+w ignorowanym test-results; wyłącznie fikcyjne treści.
+
+CI: `.github/workflows/offline-check.yml`, Windows/macOS, Node 24.19.0,
+`npm ci`, Chromium i `npm run check`. Oficjalne akcje checkout/setup-node/upload-artifact
+v7 zweryfikowane 11 października w README upstream i przez odczyt tagów Git, przypięte SHA.
+Permissions contents:read, brak zapisanych sekretów i płatnej infrastruktury, concurrency,
+retencja fikcyjnych PNG/raportu po porażce 3 dni. Stan CI konkretnego SHA publikacji zostanie podany w końcowym raporcie czatu;
+przebiegi są dostępne w [Actions](https://github.com/JakubLewosz/JobHunter/actions).
+Nie uznawać przygotowania workflow za zakończony wynik macOS.
+
+**Zero** prawdziwych send/SELF_TEST, odczytów skrzynki, zmian nadawcy, OAuth/CV,
+zatwierdzonych materiałów, prywatnych liczników i historii. Nie uruchamiano prywatnej
+bazy do migracji i nie zatrzymano backendu użytkownika. Migracje tylko na tymczasowych
+syntetycznych bazach. Nie wykonano optional live researchu ani nowego audytu native CLI.
+
+Nieweryfikowane: macOS użytkownika, publiczny research/aktualne CLI login/limity,
+całodzienne działanie z Gmail, dostarczalność, pełna izolacja OS, rzeczywisty prywatny
+origin oraz kompletna macierz przerw handoff/utraty wyniku push. Dokładny następny
+etap w TASKS; konfiguracja/pilotaż w URUCHOMIENIE_RANO.
+
+## Poprzedni etap — AUTO_POLICY, źródła i prywatna historia
 
 Rzeczywiście wykonany końcowy `npm run check` na Windows win32/x64, Node 24.19.0: **237/237 testów backendu, 7/7 scenariuszy Playwright, typecheck i build PASS**. `git diff --check` PASS. Testy używają tymczasowych SQLite, fikcyjnych źródeł/Gmaila, fikcyjnego procesu CLI oraz lokalnych repozytoriów Git. Nie wysyłano rzeczywistych maili, nie uruchamiano prawdziwej kampanii, nie zmieniano nadawcy, OAuth, prywatnej bazy lub jej liczników. Nie tworzono zdalnego repo historii.
 

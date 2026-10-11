@@ -4,6 +4,14 @@ Osobiste narzędzie Jakuba Lewosza do pierwszego kontaktu z firmami w sprawie p�
 
 Aktualne wymagania: [specyfikacja](JobHunter_SPEC.md), [wizja](docs/WIZJA_PROJEKTU.md), [styl](docs/MESSAGE_STYLE.md). Stan: [TASKS](docs/TASKS.md). Historyczne próby dostarczalności pozostają w [audycie](docs/GMAIL_DELIVERABILITY_AUDIT.md). Potwierdzenie w Wysłanych nie dowodzi doręczenia do Odebranych.
 
+Stabilizacja na `codex/overnight-stabilization`: pominięcie znanej firmy nie kończy sesji,
+błędy są związane z wybraną wersją, zapytanie jest osobną decyzją od dopasowania oferty,
+a trwały planer rozwija kierunki po pierwszych ośmiu i stosuje cooldown. Kandydaci po
+zapełnieniu kolejki pozostają do przetworzenia. Zmiana zakresu unieważnia stare operacje;
+starsza polityka wymaga ponownego zatwierdzenia konfiguracji. Instrukcja:
+[Uruchomienie rano](docs/URUCHOMIENIE_RANO.md). Wyniki i pozostające ograniczenia:
+[TEST_REPORT](docs/TEST_REPORT.md), [plan prac](docs/OVERNIGHT_PLAN.md).
+
 ## Tryby
 
 | Tryb              | Zachowanie                                                                                                         |

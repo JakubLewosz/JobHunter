@@ -2,6 +2,45 @@
 
 ## Aktualny stan — 11 października 2026
 
+### Stabilizacja `codex/overnight-stabilization`
+
+- [x] Odtworzyć wcześniejszy kontakt przed podglądem i przed POST: pominięcie konkretnej
+      firmy, brak zatrzymania poszukiwań, brak drugiego pierwszego kontaktu.
+- [x] Zachować wybrany draft/version/company/session/outbox przez await; wersjonowane,
+      idempotentne pominięcia. Edycja/Stop nie dopuszczają nowej treści po starej kontroli.
+- [x] Oddzielić offer fit od intencji kontaktu: macierz A–F, GENERAL bez promocji,
+      pytanie przy unknown, osobny dowód do zapytania mimo niedopasowanej oferty,
+      odmowy/kanał/przeznaczenie/sprzeczności nadal blokowane.
+- [x] Trwały planer poza ośmioma kierunkami: normalizacja, metryki, dobór obszarów
+      oparty na skuteczności, cooldown, restart, postęp niezależny od zmiany limitu.
+      Niedokończeni kandydaci pozostają PENDING do zwolnienia kolejki.
+- [x] Celowany ponowny scan Gmaila ograniczony do tej samej firmy; bounded read retry.
+      Ręczne endpointy Gmaila zablokowane w AUTO, internalApproval usunięte.
+- [x] Blokować Start przez całe handoff/prepare; origin/gałąź/ścieżka rewalidowane,
+      push do zatwierdzonego celu. A→B→A z aliasem, kontaktami i syntetycznymi licznikami.
+- [x] Symulacja ponad doby, seed 17/41/93: pauza/Stop/restart, zmiana dnia,
+      błędy odczytu/źródeł, queue≤3, ≥9 kierunków, jeden POST/rezerwację i SEND_UNKNOWN.
+- [x] Gotowość/terminy w obecnym panelu, szukanie/status historii, data przeniesionego
+      kontaktu i powód konkretnej wersji. Pobieranie danych aktywnego widoku;
+      naprawiona wykryta regresja DEMO raportów. UI 7/7 po poprawce.
+- [x] Instrukcja URUCHOMIENIE_RANO i CI offline Windows/macOS z minimalnymi uprawnieniami.
+- [x] Końcowy pełny check/przegląd: 280/280 backend + 7/7 UI, typecheck/build/diff check PASS.
+- [ ] Commity/push i odczyt ref/CI: publikacja w toku; końcowy wynik w raporcie czatu.
+
+Następny etap implementacji (nie oznaczony jako gotowy): pełna macierz awarii
+przekazania przed/po rename, commit i utraconym wyniku push; scenariusz rozstrzygnięcia
+SEND_UNKNOWN w pełnym A→B→A na oryginalnym MIME; systemowy sen/wybudzenie; duża historia
+i zmierzony czas reakcji Stop podczas synchronicznych operacji Git. Rozszerzyć soak
+o mieszany scenariusz OPEN/PROSPECT/429 i rzeczywistą zmianę właściciela w tej samej
+symulacji (obecne testy pokrywają je osobno). Nie zastępować tych dowodów liczbą iteracji.
+
+BLOCKED_EXTERNAL: prywatny origin użytkownika i pierwszy rzeczywisty eksport z oryginalnej
+bazy, prawdziwa skrzynka/pilotaż, pełny dzień z Google, niezależny audyt OS, próba na
+macOS użytkownika. Opcjonalnego live researchu nocą nie wykonano. CI potwierdzać tylko
+dla zakończonego SHA; nie zmieniano prawdziwej poczty/runtime/OAuth/liczników.
+
+### Poprzedni etap — punkt wyjścia stabilizacji
+
 Obowiązuje specyfikacja 2.0. Sekcje niżej zachowują historię wcześniejszych prac i nie przywracają akceptacji każdego maila lub blokady implementacji AUTO_POLICY.
 
 - [x] Pobrano istniejące main do pustego lokalnego checkout; praca na `codex/auto-policy`, bez resetów danych użytkownika.

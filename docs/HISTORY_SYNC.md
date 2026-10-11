@@ -2,6 +2,29 @@
 
 Nie utworzono zdalnego repozytorium ani nie opublikowano prywatnego stanu. Testy tworzą wyłącznie lokalne, fikcyjne repozytoria. Konkretny adres prywatnego origin wskazuje i potwierdza użytkownik w Ustawieniach.
 
+Stabilizacja: origin, gałąź `main`, rzeczywisty katalog repo i brak dowiązań plików
+są ponownie sprawdzane po operacjach asynchronicznych. Push używa jawnie zatwierdzonego
+celu; zmiana lokalnej nazwy origin nie może przekierować eksportu. Start pozostaje
+zablokowany przez cały czas przygotowania/przekazania. Potwierdzone aliasy domen
+uczestniczą w mapowaniu identyfikatorów w obu kierunkach; niejednoznaczne firmy nadal
+powodują konflikt, bez automatycznego scalania sprzecznych tożsamości.
+
+Wymagany jest zwykły samodzielny klon z lokalnym katalogiem `.git`, bez commondir,
+config.worktree i lokalnych include; pliki nie mogą prowadzić przez dowiązania.
+Eksport i kontrolowane pliki mają limit 32 MiB. Przekroczenie daje czytelną blokadę,
+bez cichego ucinania historii. Ostatnia bramka nadal sprawdza efektywny origin i HEAD
+przez Git, także po zmianie syntetycznej konfiguracji globalnej w teście. Próba cache
+tych kontroli została wycofana po niezależnym przeglądzie; koszt synchronicznego Git
+i czas reakcji Stop pozostają do zmierzenia i poprawy w kolejnym etapie.
+
+Test A → B → A korzysta z dwóch osobnych SQLite i dwóch klonów lokalnego bare repo.
+Sprawdza kontakty CSV, potwierdzony alias/nazwę prawną, syntetyczne zamrożone rekordy
+pierwszych kontaktów i oddzielny licznik SELF_TEST, sumę i ponowny import bez duplikacji.
+Inne testy sprawdzają timeout/reconcile istniejącej fikcyjnej próby, zmianę origin po
+fetch, zmianę gałęzi i przerwany staging. Nie jest to kompletna próba każdej awarii
+filesystemu i utraty odpowiedzi push. Niedomknięty zapis pozostaje blokadą; nie usuwać
+właściciela, history.pending ani liczników jako automatycznej naprawy.
+
 ## Konfiguracja
 
 Utwórz sam osobne **prywatne** repozytorium historii, np. przez GitHub. Nie używaj repo kodu JobHunter. Sklonuj je poza katalogiem kodu i katalogiem danych SQLite; wybierz gałąź `main`. Dla pustego repo wybierz `main` jako początkową gałąź przed pierwszą sesją. Aplikacja zapisze pierwszy commit historii po Start. Dostęp Git/SSH/HTTPS konfigurujesz lokalnie, bez tokenów w pliku historii.

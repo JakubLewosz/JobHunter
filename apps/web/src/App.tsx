@@ -226,20 +226,53 @@ export function App() {
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [autoView, setAutoView] = useState<'work' | 'history' | 'settings'>('work');
+  const dataRef = useRef<Data | undefined>(undefined);
+  const screenRef = useRef(screen),
+    autoViewRef = useRef(autoView),
+    loadVersion = useRef(0);
+  screenRef.current = screen;
+  autoViewRef.current = autoView;
   async function load() {
-    const paths = [
-      'dashboard',
-      'profile',
-      'companies',
-      'drafts',
-      'replies',
-      'campaign',
-      'capabilities',
-      'reports',
-      'outbox',
-    ] as const;
-    const values = await Promise.all(paths.map((p) => api(p)));
-    setData(Object.fromEntries(paths.map((p, i) => [p, values[i]])) as Data);
+    const version = ++loadVersion.current;
+    const dashboard = await api('dashboard');
+    const initial = !dataRef.current;
+    const paths: Exclude<keyof Data, 'dashboard'>[] = [];
+    if (dashboard.mode === 'AUTO_POLICY') {
+      if (initial || autoViewRef.current === 'settings') paths.push('profile');
+      if (autoViewRef.current === 'history') paths.push('companies', 'drafts', 'outbox');
+    } else {
+      if (initial) paths.push('profile', 'campaign', 'capabilities');
+      const needed: Partial<Record<Screen, Exclude<keyof Data, 'dashboard'>[]>> = {
+        companies: ['companies'],
+        drafts: ['drafts', 'outbox'],
+        replies: ['replies'],
+        profile: ['profile'],
+        campaign: ['campaign'],
+        integrations: ['capabilities'],
+        reports: ['reports', 'outbox', 'replies'],
+        dashboard: ['campaign', 'drafts', 'outbox'],
+      };
+      paths.push(...(needed[screenRef.current] ?? []));
+    }
+    const unique = [...new Set(paths)];
+    const values = await Promise.all(unique.map((p) => api(p)));
+    if (version !== loadVersion.current) return;
+    const updated = {
+      profile: {},
+      companies: [],
+      drafts: [],
+      replies: [],
+      campaign: {},
+      capabilities: { items: [] },
+      reports: { runs: [], markdown: '' },
+      outbox: [],
+      ...(dataRef.current ?? {}),
+      dashboard,
+      ...Object.fromEntries(unique.map((p, i) => [p, values[i]])),
+    } as Data;
+    dataRef.current = updated;
+    setData(updated);
   }
   useEffect(() => {
     let alive = true;
@@ -259,9 +292,10 @@ export function App() {
   }, []);
   useEffect(() => {
     if (!ready) return;
+    void load().catch((e) => setError(e.message));
     const t = setInterval(() => void load().catch((e) => setError(e.message)), 2000);
     return () => clearInterval(t);
-  }, [ready]);
+  }, [ready, screen, autoView]);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(''), 4500);
@@ -299,7 +333,7 @@ export function App() {
   if (d.mode === 'AUTO_POLICY')
     return (
       <>
-        <AutoWorkspace data={data} act={act} busy={busy} />
+        <AutoWorkspace data={data} act={act} busy={busy} view={autoView} setView={setAutoView} />
         {error && (
           <div className="auto-error" role="alert">
             {error}

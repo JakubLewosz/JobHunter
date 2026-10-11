@@ -21,6 +21,11 @@ const stateLabels: Record<string, string> = {
   SESSION_LIMIT: 'Osiągnięto limit sesji',
   DAILY_LIMIT: 'Osiągnięto limit dzienny',
   WAITING_FOR_NEW_SOURCES: 'Czeka na nowe źródła',
+  RESEARCH_COOLDOWN: 'Szukanie czeka po pustych wynikach',
+  GMAIL_RATE_LIMIT: 'Limit Gmaila — wznów po odnowieniu limitu',
+  GMAIL_HISTORY_LIMIT: 'Historia przekroczyła budżet odczytu — sprawdź zakres',
+  GMAIL_READ: 'Nie ukończono odczytu Gmaila',
+  HISTORY_CHANGED: 'Historia zmieniała się podczas kontroli',
   MATERIALS_CHANGED: 'Sprawdź zmienione materiały i zatwierdź politykę',
   ACCOUNT_CHANGED: 'Sprawdź konto nadawcy i zatwierdź politykę',
   HISTORY_OWNED: 'Zakończ przekazanie na poprzednim urządzeniu',
@@ -34,12 +39,17 @@ export function AutoWorkspace({
   data,
   act,
   busy,
+  view,
+  setView,
 }: {
   data: { dashboard: Dashboard; profile: Row; companies: Row[]; drafts: Row[]; outbox: Row[] };
   act: Act;
   busy: boolean;
+  view: 'work' | 'history' | 'settings';
+  setView: (view: 'work' | 'history' | 'settings') => void;
 }) {
-  const [view, setView] = useState<'work' | 'history' | 'settings'>('work');
+  const [search, setSearch] = useState(''),
+    [status, setStatus] = useState('');
   const d = data.dashboard,
     auto = d.state.auto ?? {},
     p = auto.policy;
@@ -123,13 +133,17 @@ export function AutoWorkspace({
               <div className="button-row">
                 <button
                   className="primary"
-                  disabled={busy || !p || (auto.session?.status === 'RUNNING' && !d.state.paused)}
+                  disabled={
+                    busy ||
+                    !p ||
+                    (auto.session?.status === 'RUNNING' && !d.state.paused && !auto.senderWait)
+                  }
                   onClick={() =>
                     void act(() => api('auto/start', {}), 'Sesja uruchomiona zgodnie z polityką.')
                   }
                 >
                   <Play size={16} />
-                  {auto.session && d.state.paused
+                  {auto.session && (d.state.paused || auto.senderWait)
                     ? 'Wznów — szukaj i wysyłaj'
                     : 'Start — szukaj i wysyłaj'}
                 </button>
@@ -146,6 +160,36 @@ export function AutoWorkspace({
               <p>
                 {currentCompany ? `Obecnie: ${currentCompany}` : 'Postęp jest zapisany lokalnie.'}
               </p>
+              <p>
+                Kolejka: {auto.queueSize ?? 0}/3 ·{' '}
+                {auto.sending ? 'trwa kontrola/wysyłka' : 'sender czeka'}.
+              </p>
+              {auto.nextResearchAt && !d.state.stopped && (
+                <p>
+                  Następny research:{' '}
+                  {new Date(auto.nextResearchAt).toLocaleString('pl-PL', {
+                    timeZone: 'Europe/Warsaw',
+                  })}
+                </p>
+              )}
+              {auto.nextSendAt && !d.state.stopped && (
+                <p>
+                  Następna kontrola wysyłki:{' '}
+                  {new Date(auto.nextSendAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}
+                </p>
+              )}
+              {auto.senderWait && (
+                <p>
+                  Sender: {stateLabels[auto.senderWait] ?? auto.senderWait}. Research może uzupełnić
+                  kolejkę. Po rozwiązaniu problemu użyj Wznów.
+                </p>
+              )}
+              {auto.senderReason && (
+                <p>
+                  Oczekiwanie na ponowny odczyt:{' '}
+                  {stateLabels[auto.senderReason] ?? auto.senderReason}.
+                </p>
+              )}
               {auto.session?.reason && (
                 <p role="status">
                   Powód: {stateLabels[auto.session.reason] ?? auto.session.reason}. Sprawdź
@@ -154,9 +198,9 @@ export function AutoWorkspace({
               )}
               <div className="stats-grid">
                 {[
-                  [d.stats.discovered ?? 0, 'Znalezione firmy'],
+                  [d.stats.discovered ?? 0, 'Firmy z lokalnego researchu — cała historia'],
                   [d.stats.sent ?? 0, 'Pierwsze wiadomości'],
-                  [d.stats.skipped ?? 0, 'Pominięcia'],
+                  [d.stats.skipped ?? 0, 'Pominięte firmy — cała historia'],
                 ].map(([value, label]) => (
                   <div className="stat-card" key={label}>
                     <strong>{value}</strong>
@@ -164,6 +208,39 @@ export function AutoWorkspace({
                   </div>
                 ))}
               </div>
+              <p>
+                Wiadomości obejmują całą lokalną i przeniesioną historię; research i pominięcia
+                dotyczą tego urządzenia. Nieodczytane źródła/błędy kandydatów:{' '}
+                {d.stats.unreadSources ?? 0}; nie oznaczają odrzucenia firmy.
+              </p>
+              <details>
+                <summary>Gotowość programu</summary>
+                {Object.entries(auto.readiness ?? {}).map(([key, value]) => (
+                  <p key={key}>
+                    {
+                      (
+                        {
+                          materials: 'Materiały',
+                          cv: 'CV',
+                          gmail: 'Konto i zgody Gmaila',
+                          codex: 'Codex i wyszukiwanie',
+                          policy: 'Aktualna polityka',
+                          history: 'Konfiguracja historii',
+                          unresolved: 'Niepewne próby',
+                        } as Record<string, string>
+                      )[key]
+                    }
+                    :{' '}
+                    {key === 'unresolved'
+                      ? value
+                        ? 'wymagają rozstrzygnięcia'
+                        : 'brak'
+                      : value
+                        ? 'gotowe'
+                        : 'sprawdź w Ustawieniach'}
+                  </p>
+                ))}
+              </details>
               <p>Nadawca: {p?.senderEmail ?? (account || 'Wymaga konfiguracji')}</p>
               <p>
                 CV:{' '}
@@ -211,118 +288,157 @@ export function AutoWorkspace({
         )}
         {view === 'history' && (
           <section className="panel">
+            <label>
+              Szukaj firmy
+              <input value={search} onChange={(e) => setSearch(e.target.value)} />
+            </label>
+            <label>
+              Status
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">Wszystkie</option>
+                <option value="NEW">Nowe</option>
+                <option value="CONTACTED">Kontaktowano</option>
+                <option value="SEND_UNKNOWN">Niepewny wynik</option>
+                <option value="SKIPPED">Pominięte</option>
+              </select>
+            </label>
             <p>
               Potwierdzenie w Wysłanych oznacza zapis u nadawcy; nie potwierdza folderu odbiorcy.
               Testy do siebie są poza licznikiem firm.
             </p>
-            {data.companies.map((c) => {
-              const sent = data.outbox.find(
-                  (o) => o.company_id === c.id && o.kind === 'FIRST_CONTACT',
-                ),
-                draft = data.drafts.find((d) => d.company_id === c.id),
-                shared = c.sharedAttempt;
-              return (
-                <details className="auto-company" key={c.id}>
-                  <summary>
-                    <strong>{c.canonical_name}</strong> ·{' '}
-                    {sent?.status ?? shared?.state ?? c.history_status}
-                    {sent?.created_at &&
-                      ` · ${new Date(sent.created_at).toLocaleDateString('pl-PL')}`}
-                  </summary>
-                  {c.primary_domain && (
-                    <p>
-                      <a href={`https://${c.primary_domain}`} target="_blank" rel="noreferrer">
-                        {c.primary_domain}
-                      </a>
-                    </p>
-                  )}
-                  <p>{c.researchDetails?.title ?? c.description ?? c.title ?? ''}</p>
-                  <p>{draft?.email ?? shared?.recipient ?? c.email ?? 'Kontakt niepotwierdzony'}</p>
-                  <h3>{sent?.subject ?? shared?.subject ?? draft?.subject ?? 'Bez wiadomości'}</h3>
-                  <pre className="message-preview">
-                    {sent?.body ?? shared?.body ?? draft?.body ?? ''}
-                  </pre>
-                  {sent && ['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(sent.status) && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        void act(
-                          () => api(`gmail/outbox/${sent.id}/reconcile`, { consent: true }),
-                          'Sprawdzono istniejącą próbę w Wysłanych, bez ponownego send.',
-                        )
-                      }
-                    >
-                      Sprawdź tę próbę w Wysłanych
-                    </button>
-                  )}
-                  <p>{c.suppression_reason ?? sent?.reason ?? c.skipReason ?? c.reasons ?? ''}</p>
-                  {c.sources?.map((s: Row) => (
-                    <p key={s.canonical_url + s.fetched_at}>
-                      <a href={s.canonical_url} target="_blank" rel="noreferrer">
-                        Źródło
-                      </a>{' '}
-                      · {new Date(s.fetched_at).toLocaleString('pl-PL')}
-                      <br />
-                      {s.fragment}
-                    </p>
-                  ))}
-                  {c.researchDetails && (
-                    <div>
-                      <h3>Warunki i podstawa kontaktu</h3>
+            {data.companies
+              .filter(
+                (c) =>
+                  c.canonical_name
+                    .toLocaleLowerCase('pl')
+                    .includes(search.toLocaleLowerCase('pl')) &&
+                  (!status ||
+                    (status === 'SKIPPED'
+                      ? c.skips?.length
+                      : status === 'SEND_UNKNOWN'
+                        ? c.sharedAttempt?.state === 'SEND_UNKNOWN' ||
+                          data.outbox.some(
+                            (o) => o.company_id === c.id && o.status === 'SEND_UNKNOWN',
+                          )
+                        : c.history_status === status)),
+              )
+              .map((c) => {
+                const sent = data.outbox.find(
+                    (o) => o.company_id === c.id && o.kind === 'FIRST_CONTACT',
+                  ),
+                  draft = data.drafts.find((d) => d.company_id === c.id),
+                  shared = c.sharedAttempt;
+                return (
+                  <details className="auto-company" key={c.id}>
+                    <summary>
+                      <strong>{c.canonical_name}</strong> ·{' '}
+                      {sent?.status ?? shared?.state ?? c.history_status}
+                      {c.lastContactAt &&
+                        ` · ${new Date(c.lastContactAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`}
+                    </summary>
+                    {c.primary_domain && (
                       <p>
-                        Rodzaj:{' '}
-                        {
-                          (
-                            {
-                              ACTIVE: 'Aktywna oferta',
-                              OPEN: 'Otwarte kandydatury',
-                              PROSPECT: 'Zapytanie bez potwierdzonego naboru',
-                              ARCHIVED: 'Archiwum',
-                              UNKNOWN: 'Niepotwierdzony',
-                            } as Record<string, string>
-                          )[c.researchDetails.type]
-                        }
+                        <a href={`https://${c.primary_domain}`} target="_blank" rel="noreferrer">
+                          {c.primary_domain}
+                        </a>
                       </p>
-                      {Object.entries(c.researchDetails.conditions).map(([key, value]) => {
-                        const condition = value as Row;
-                        return (
-                          <p key={key}>
-                            <strong>
+                    )}
+                    <p>{c.researchDetails?.title ?? c.description ?? c.title ?? ''}</p>
+                    <p>
+                      {draft?.email ?? shared?.recipient ?? c.email ?? 'Kontakt niepotwierdzony'}
+                    </p>
+                    <h3>
+                      {sent?.subject ?? shared?.subject ?? draft?.subject ?? 'Bez wiadomości'}
+                    </h3>
+                    <pre className="message-preview">
+                      {sent?.body ?? shared?.body ?? draft?.body ?? ''}
+                    </pre>
+                    {sent && ['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(sent.status) && (
+                      <button
+                        className="secondary"
+                        onClick={() =>
+                          void act(
+                            () => api(`gmail/outbox/${sent.id}/reconcile`, { consent: true }),
+                            'Sprawdzono istniejącą próbę w Wysłanych, bez ponownego send.',
+                          )
+                        }
+                      >
+                        Sprawdź tę próbę w Wysłanych
+                      </button>
+                    )}
+                    <p>{c.suppression_reason ?? sent?.reason ?? c.skipReason ?? c.reasons ?? ''}</p>
+                    {c.skips?.map((s: Row) => (
+                      <p key={s.draft_id + ':' + s.draft_version}>
+                        Szkic {s.draft_id}, wersja {s.draft_version}: {s.reason_code} — {s.message}
+                      </p>
+                    ))}
+                    {c.sources?.map((s: Row) => (
+                      <p key={s.canonical_url + s.fetched_at}>
+                        <a href={s.canonical_url} target="_blank" rel="noreferrer">
+                          Źródło
+                        </a>{' '}
+                        · {new Date(s.fetched_at).toLocaleString('pl-PL')}
+                        <br />
+                        {s.fragment}
+                      </p>
+                    ))}
+                    {c.researchDetails && (
+                      <div>
+                        <h3>Warunki i podstawa kontaktu</h3>
+                        <p>
+                          Rodzaj:{' '}
+                          {
+                            (
+                              {
+                                ACTIVE: 'Aktywna oferta',
+                                OPEN: 'Otwarte kandydatury',
+                                PROSPECT: 'Zapytanie bez potwierdzonego naboru',
+                                ARCHIVED: 'Archiwum',
+                                UNKNOWN: 'Niepotwierdzony',
+                              } as Record<string, string>
+                            )[c.researchDetails.type]
+                          }
+                        </p>
+                        {Object.entries(c.researchDetails.conditions).map(([key, value]) => {
+                          const condition = value as Row;
+                          return (
+                            <p key={key}>
+                              <strong>
+                                {
+                                  (
+                                    {
+                                      remote: 'Zdalność',
+                                      partTime: 'Część etatu',
+                                      paid: 'Odpłatność',
+                                      junior: 'Początkujący',
+                                      hours: 'Godziny',
+                                      contract: 'Umowa',
+                                      active: 'Aktualny nabór',
+                                      openInquiry: 'Otwarte zgłoszenia',
+                                    } as Record<string, string>
+                                  )[key]
+                                }
+                                :
+                              </strong>{' '}
                               {
                                 (
                                   {
-                                    remote: 'Zdalność',
-                                    partTime: 'Część etatu',
-                                    paid: 'Odpłatność',
-                                    junior: 'Początkujący',
-                                    hours: 'Godziny',
-                                    contract: 'Umowa',
-                                    active: 'Aktualny nabór',
-                                    openInquiry: 'Otwarte zgłoszenia',
+                                    yes: 'potwierdzone',
+                                    no: 'wykluczone',
+                                    unknown: 'nieznane',
+                                    conflicting: 'sprzeczne',
                                   } as Record<string, string>
-                                )[key]
-                              }
-                              :
-                            </strong>{' '}
-                            {
-                              (
-                                {
-                                  yes: 'potwierdzone',
-                                  no: 'wykluczone',
-                                  unknown: 'nieznane',
-                                  conflicting: 'sprzeczne',
-                                } as Record<string, string>
-                              )[condition.value]
-                            }{' '}
-                            — {condition.explanation}
-                          </p>
-                        );
-                      })}
-                    </div>
-                  )}
-                </details>
-              );
-            })}
+                                )[condition.value]
+                              }{' '}
+                              — {condition.explanation}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </details>
+                );
+              })}
           </section>
         )}
         {view === 'settings' && (

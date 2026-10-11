@@ -33,3 +33,6 @@ token*.json
 !.env.example
 *.local.json
 *.local.toml
+history.json
+history.pending
+*.raw

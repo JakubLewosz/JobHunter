@@ -16,6 +16,24 @@ OAuth podłącza użytkownik przez osobny helper. Tokeny/klient w systemowym mag
 
 Błąd/limit/niepełna historia nie oznacza pustej historii. HTTP 429 odczytu wstrzymuje sender bez intensywnego retry. Przejściowe 5xx odczytu mają ograniczony backoff; send zawsze pojedynczy. SELF_TEST nie oznacza kontaktu z firmą; stare testy i dane odpowiedzi pozostają w SQLite.
 
+`historyId` z getProfile opisuje całą skrzynkę. Po zmianie podczas celowanego odczytu
+wykonujemy najwyżej jeden ponowny kompletny scan **tego samego zakresu firmy**, z
+paginacją i kontrolą konta. Nie pobieramy globalnego history.list ani całej poczty.
+Trwające zmiany nadal dają HISTORY_CHANGED, błąd strony/limit nie oznacza pustego wyniku.
+Sender może ponowić bezpieczny odczyt w dwóch kolejnych terminach z backoffem,
+potem wymaga jawnego wznowienia. Nie dotyczy to POST wysyłki.
+
+Metoda nie zapewnia atomowego snapshotu Google: pozostaje możliwa nowa ręczna wiadomość
+po ostatniej kontroli a przed POST. Słabsza gwarancja jest jawna; nie ma exactly-once.
+Podstawa wyboru wynika z oficjalnych [sync](https://developers.google.com/workspace/gmail/api/guides/sync),
+[getProfile](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users/getProfile)
+i [history.list](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.history/list),
+sprawdzonych 11 października 2026.
+
+AUTO_POLICY nie udostępnia ręcznego preview/approve/test-recipient/resetu kwot ani
+odczytu odpowiedzi przez stare endpointy. Reconcile konkretnej istniejącej próby
+pozostaje dostępny. Wewnętrzna decyzja nie używa globalnej flagi uprawnień.
+
 Prywatny Git: wskazany i potwierdzony osobny origin, wersjonowany JSON z transakcyjnego odczytu, atomowy plik, transakcyjny import. Właściciel publikowany przed Start; drugi komputer nie przejmuje niedomkniętej sesji. Przekazanie wymaga Stop, zakończenia operacji i udanego eksportu/push. Konflikt, dirty checkout, przerwany eksport, zdalna zmiana lub problem dostępu blokuje sender. Bez force-push, kasowania historii lub kopiowania aktywnej SQLite.
 
 Eksport obejmuje tylko firmy/aliasy, ręczne kontakty, blokady, własne pierwsze próby z tematami/treścią/hashami i liczniki rezerwacji. Nie obejmuje OAuth, loginu Codexa, PDF, MIME załączników, całej skrzynki, profilu ani aktywnej zgody. Testy używają lokalnych repozytoriów i fikcyjnych danych. Odzyskanie niepewnej próby wymaga oryginalnego lokalnego zapisu; brak tego zapisu nie pozwala na ślepy retry.
