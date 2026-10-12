@@ -7,8 +7,8 @@ Czysty lokalny checkout, nowa gałąź codex/local-windows-pilot. Nie znaleziono
 backendu w tym checkoutcie. Bazowy check na macOS arm64 / Node v24.11.0:
 282/282 backend, 7/7 Chromium, typecheck/build PASS.
 
-Końcowy npm run check: **319/319 backend, 7/7 UI**, typecheck/build PASS.
-Backend 101,3 s, Playwright 32,7 s. git diff --check PASS. Wszystkie dane testów
+Końcowy npm run check: **322/322 backend, 7/7 UI**, typecheck/build PASS.
+Backend 100,8 s, Playwright 31,2 s. git diff --check PASS. Wszystkie dane testów
 syntetyczne w katalogach tymczasowych, odbiorcy example.test / example.invalid.
 To rzeczywiste testy macOS tego kodu, nie prywatnej konfiguracji użytkownika.
 Nie wykonano lokalnej próby PowerShell/instalacji domowego Windowsa nowej wersji;
@@ -33,6 +33,12 @@ poprzedniego schematu zachowuje pełny eksport firm/aliasów/manual records/blok
 SENT/SEND_UNKNOWN/shared attempts/shared usage i liczników; brak aktywnych approvals.
 Migracja 016 dodaje tylko strukturę kontekstu. Nie otwierano prywatnej bazy do migracji.
 
+Końcowy przegląd wykrył, że pomocniczy backup/restore-copy otwierał również oryginalny
+Store i mógł uruchomić jego migracje. Poprawka oddziela read-only backup oraz odtworzenie
+kopii od migratora. Procesowa regresja sprawdza identyczne bajty starszej syntetycznej
+bazy i brak migracji 016 w backupie. Niepoprawne configure jest odrzucane przed odczytem/
+migracją bazy. Przed pierwszą aktualizacją helper można uruchomić z osobnego checkoutu.
+
 HTML: reprodukcja FAIL przed poprawką na dokładnym przykładzie bez kropki między
 sekcjami. Po poprawce prawdziwy PublicSourceReader/DOM → kwalifikacja → fikcyjny AUTO:
 osobny GENERAL i sprzedaż, nagłówek Sprzedaż nad biuro, HR obok faktur/RODO, div/section,
@@ -56,16 +62,34 @@ nowego POST i odpowiedź. Fikcyjny POST już przyjęty kończy się niezależnie
 
 | Obciążenie | Odebranie Stop | Odwołanie prawa | Odpowiedź | Zakończenie przyjętego POST |
 | --- | ---: | ---: | ---: | ---: |
-| Powolny publiczny read | 34,87 ms | 37,39 ms | 40,40 ms | brak |
-| Powolny model | 25,60 ms | 26,86 ms | 30,10 ms | brak |
-| 10 000 firm i kontaktów + 3 równoległe odświeżenia | 476,68 ms | 477,75 ms | 478,12 ms | brak |
-| Przyjęty fikcyjny POST | 21,48 ms | 22,79 ms | 23,17 ms | 350,61 ms |
+| Powolny publiczny read | 31,99 ms | 33,43 ms | 37,70 ms | brak |
+| Powolny model | 27,96 ms | 28,13 ms | 31,58 ms | brak |
+| 10 000 firm i kontaktów + 3 równoległe odświeżenia | 443,07 ms | 443,36 ms | 444,39 ms | brak |
+| Przyjęty fikcyjny POST | 24,43 ms | 24,58 ms | 28,38 ms | 350,85 ms |
 
 Odtworzony wcześniejszy FAIL: 10 000 firm i 3 odświeżenia dashboardu dały 3269,64 ms
 do odebrania Stop. Usunięto N+1 historii i pełną historię z normalnego dashboardu.
 Końcowy test jest silniejszy: także 10 000 kontaktów i odczyt pełnej historii firm.
 Po Stop żadnego nowego POST. To pomiary na tym macOS, nie SLA na każdym komputerze,
 czas internetu/Google lub odwołanie już wysłanego żądania.
+
+Duży HTML bez grup sekcji, 2000 adresów / 108,9 kB: odtworzono 6863,95 ms parsera.
+Lokalny indeks kontekstów i etykiet oraz deduplikacja zbiorami usuwają powtarzane
+skanowanie całego kontenera. Powtórka 45,15 ms, test celowany 65,30 ms, pełny check
+107,88 ms pod równoległym obciążeniem. Etykiety każdego adresu i sprzeczności zachowane;
+nie cache'ujemy tych wyników między różnymi odczytami strony. Regresja zachowuje próg
+1000 ms, bez zwiększenia timeoutu lub poluzowania kwalifikacji.
+
+CI pierwszego SHA f25621e: macOS 319/319 + 7/7 PASS, Windows 314/319 (5 FAIL).
+Jeden FAIL był błędem zegara fixture: przy wolnym Windowsie realny fetched_at powstawał
+kilka sekund po początkowym zegarze logicznym; +24h1s nie wykonywało odświeżenia.
+Źródła fikcyjnego adaptera związano z jego zegarem logicznym, asercje bez zmian.
+Cztery FAIL mierzyły odwołanie prawa dopiero po zapisach SQLite (123–164 ms po receipt),
+zamiast faktycznej bramki. Kod ma teraz odrębne prawo sesji w pamięci, odwoływane na
+wejściu Stop/Pauzy/wstrzymania, przed I/O. Test rejestruje tę bramkę, zachowuje próg
+100 ms i dodatkowo wymusza błąd zapisu: nadal zero POST. Nie osłabiono ostatnich kontroli
+SQLite, sesji, materiałów lub kontaktów. Po poprawkach pełny lokalny check 322/322 + 7/7.
+CI nowego finalnego SHA jest sprawdzane po pushu; poprzedni PASS macOS go nie zastępuje.
 
 Soak: **6/6 PASS** — LOCAL_ONLY i PRIVATE_GIT, seed 17/41/93. Każdy 96 kroków po
 15 minut plus 6 godzin logicznego snu, 30 h logicznych. Lokalny wariant zatruwa wszystkie

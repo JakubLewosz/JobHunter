@@ -93,6 +93,9 @@ export function parsePublicHTML(html: string) {
   const text = normalize(rendered).slice(0, 100000);
   const summaries = new WeakMap<object, { value: string; distinct: number }>();
   const contexts: AddressContext[] = [];
+  const groupedContexts = new Map<string, Map<string, AddressContext[]>>();
+  const unlabeled = new Map<string, boolean>(),
+    seenContexts = new Map<string, Set<string>>();
   for (const occurrence of occurrences.slice(0, 2000)) {
     let parent = occurrence.node.parent,
       chosen = texts.get(occurrence.node) ?? '',
@@ -119,7 +122,12 @@ export function parsePublicHTML(html: string) {
         chosen = value;
       parent = parent.parent;
     }
-    if (!chosen.replace(emailPattern, '').trim()) {
+    let needsLabel = unlabeled.get(chosen);
+    if (needsLabel === undefined) {
+      needsLabel = !chosen.replace(emailPattern, '').trim();
+      unlabeled.set(chosen, needsLabel);
+    }
+    if (needsLabel) {
       let container = occurrence.node.parent,
         levels = 0;
       while (container && levels++ < 16) {
@@ -136,16 +144,30 @@ export function parsePublicHTML(html: string) {
         container = container.parent;
       }
     }
-    const matches = addressContexts(chosen.replace(/\n+/g, '\n')).filter(
-      (c) => c.email === occurrence.email,
-    );
-    for (const context of matches)
-      if (!contexts.some((c) => c.email === context.email && c.text === context.text))
+    let indexed = groupedContexts.get(chosen);
+    if (!indexed) {
+      indexed = new Map();
+      for (const context of addressContexts(chosen.replace(/\n+/g, '\n'))) {
+        const list = indexed.get(context.email) ?? [];
+        list.push(context);
+        indexed.set(context.email, list);
+      }
+      groupedContexts.set(chosen, indexed);
+    }
+    const matches = indexed.get(occurrence.email) ?? [];
+    for (const context of matches) {
+      const known = seenContexts.get(context.email) ?? new Set<string>();
+      if (!known.has(context.text)) {
+        known.add(context.text);
         contexts.push(context);
+      }
+      seenContexts.set(context.email, known);
+    }
   }
+  const literalText = text.toLowerCase();
   return {
     text,
-    contexts: contexts.filter((c) => text.toLowerCase().includes(c.email)),
+    contexts: contexts.filter((c) => literalText.includes(c.email)),
     parserVersion,
   };
 }

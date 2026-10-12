@@ -2,11 +2,26 @@ import Database from 'better-sqlite3';
 import { existsSync, realpathSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve, relative, sep, isAbsolute } from 'node:path';
 import { acquireProfileLock } from '../apps/server/src/backend-lock.js';
-import { Store } from '../apps/server/src/db.js';
+import { Store, backupSQLite } from '../apps/server/src/db.js';
 import { exportHistory, importHistory, historySchema } from '../apps/server/src/history-sync.js';
 import { restoreBackupCopy } from '../apps/server/src/backup.js';
 
 const [command, input, extra, confirmation] = process.argv.slice(2);
+if (!['doctor', 'backup', 'configure', 'export', 'import', 'restore-copy'].includes(command))
+  throw new Error('Nieznana operacja historii.');
+if (
+  command === 'configure' &&
+  (process.platform !== 'win32' ||
+    extra !== '--confirm-existing-history' ||
+    confirmation !== '--single-workstation')
+)
+  throw new Error(
+    'Konfiguracja wyłącznie na Windows po diagnostyce: configure KATALOG --confirm-existing-history --single-workstation.',
+  );
+if (command === 'restore-copy' && (!extra || !confirmation))
+  throw new Error('restore-copy KATALOG BACKUP NOWY_KATALOG_PROFILU.');
+if (command === 'import' && (!extra || confirmation !== '--confirm-private-import'))
+  throw new Error('Import wymaga prywatnego pliku i --confirm-private-import.');
 if (!input)
   throw new Error('Wskaż jawnie katalog bazowy poza repo: doctor/backup/configure/export/import.');
 const base = realpathSync(resolve(input));
@@ -68,71 +83,14 @@ if (command === 'doctor') {
   const lock = acquireProfileLock(dir);
   let store: Store | undefined;
   try {
-    store = new Store(dir);
-    store.assertExclusive = lock.assert;
-    store.assertHealthy();
-    if (command === 'backup') console.log('Spójny backup:', store.backup());
-    else if (command === 'configure') {
-      if (
-        process.platform !== 'win32' ||
-        extra !== '--confirm-existing-history' ||
-        confirmation !== '--single-workstation'
-      )
-        throw new Error(
-          'Konfiguracja wyłącznie na Windows: configure KATALOG --confirm-existing-history --single-workstation, po diagnostyce oryginalnej historii.',
-        );
-      if (store.get('mode', 'DEMO') === 'DEMO')
-        throw new Error('Baza DEMO nie może być historią roboczą.');
-      if (
-        !store.one("SELECT id FROM history_records WHERE status<>'SUGGESTED'") &&
-        !store.one('SELECT id FROM send_attempts') &&
-        !store.one('SELECT id FROM shared_attempts') &&
-        !store.one('SELECT id FROM shared_usage')
-      )
-        throw new Error('Brak wcześniejszej historii. Nie oznaczono pustej bazy jako kompletnej.');
-      // Marker enables providers, never a session or an approval; PRIVATE_GIT transition is separate.
-      writeFileSync(
-        join(base, 'workstation.json'),
-        JSON.stringify({
-          kind: 'WORKSTATION',
-          base,
-          historyConfirmed: true,
-          configuredAt: new Date().toISOString(),
-        }),
-        { mode: 0o600, flag: 'wx' },
-      );
-      console.log(
-        'Instalacja robocza skonfigurowana. Backend pozostaje zatrzymany; Start wymaga polityki.',
-      );
-    } else if (command === 'export') {
-      if (
-        store.get('historySyncConfig', null) &&
-        store.get('historySyncStatus', '') !== 'HANDED_OFF'
-      )
-        throw new Error(
-          'Najpierw zakończ i opublikuj dotychczasową PRIVATE_GIT. Eksport nie obchodzi stanu innego urządzenia.',
-        );
-      if (!extra || existsSync(resolve(extra)))
-        throw new Error('Wskaż nowy prywatny plik eksportu poza repo.');
-      const output = resolve(extra),
-        outputRel = relative(process.cwd(), output);
-      if (!outputRel.startsWith('..' + sep) && !isAbsolute(outputRel))
-        throw new Error('Eksport musi być poza repo.');
-      writeFileSync(output, JSON.stringify(exportHistory(store)), { mode: 0o600, flag: 'wx' });
-      console.log('Zapisano prywatną historię; bez poświadczeń, CV i aktywnej zgody.');
-    } else if (command === 'import') {
-      if (!extra || confirmation !== '--confirm-private-import')
-        throw new Error('Import wymaga prywatnego pliku i --confirm-private-import.');
-      importHistory(store, imported);
-      if (!store.get('mode', null)) store.set('mode', 'RESEARCH_ONLY');
-      store.set('stopped', true);
-      store.set('gmailSenderPaused', true);
-      console.log('Dodano historię bez usuwania istniejących rekordów i bez zgody na wysyłkę.');
+    if (command === 'backup') {
+      const db = new Database(path, { readonly: true, fileMustExist: true });
+      try {
+        console.log('Spójny backup:', backupSQLite(db, dir));
+      } finally {
+        db.close();
+      }
     } else if (command === 'restore-copy') {
-      if (!extra || !confirmation)
-        throw new Error(
-          'restore-copy KATALOG BAZOWY BACKUP NOWY KATALOG PROFILU; oryginał pozostaje bez zmian.',
-        );
       const output = resolve(confirmation),
         outputRel = relative(process.cwd(), output);
       if (!outputRel.startsWith('..' + sep) && !isAbsolute(outputRel))
@@ -141,7 +99,62 @@ if (command === 'doctor') {
         'Odtworzono kopię bez aktywnej zgody:',
         restoreBackupCopy(resolve(extra), output),
       );
-    } else throw new Error('Nieznana operacja historii.');
+    } else {
+      store = new Store(dir);
+      store.assertExclusive = lock.assert;
+      store.assertHealthy();
+      if (command === 'configure') {
+        if (store.get('mode', 'DEMO') === 'DEMO')
+          throw new Error('Baza DEMO nie może być historią roboczą.');
+        if (
+          !store.one("SELECT id FROM history_records WHERE status<>'SUGGESTED'") &&
+          !store.one('SELECT id FROM send_attempts') &&
+          !store.one('SELECT id FROM shared_attempts') &&
+          !store.one('SELECT id FROM shared_usage')
+        )
+          throw new Error(
+            'Brak wcześniejszej historii. Nie oznaczono pustej bazy jako kompletnej.',
+          );
+        // Marker enables providers, never a session or an approval; PRIVATE_GIT transition is separate.
+        writeFileSync(
+          join(base, 'workstation.json'),
+          JSON.stringify({
+            kind: 'WORKSTATION',
+            base,
+            historyConfirmed: true,
+            configuredAt: new Date().toISOString(),
+          }),
+          { mode: 0o600, flag: 'wx' },
+        );
+        console.log(
+          'Instalacja robocza skonfigurowana. Backend pozostaje zatrzymany; Start wymaga polityki.',
+        );
+      } else if (command === 'export') {
+        if (
+          store.get('historySyncConfig', null) &&
+          store.get('historySyncStatus', '') !== 'HANDED_OFF'
+        )
+          throw new Error(
+            'Najpierw zakończ i opublikuj dotychczasową PRIVATE_GIT. Eksport nie obchodzi stanu innego urządzenia.',
+          );
+        if (!extra || existsSync(resolve(extra)))
+          throw new Error('Wskaż nowy prywatny plik eksportu poza repo.');
+        const output = resolve(extra),
+          outputRel = relative(process.cwd(), output);
+        if (!outputRel.startsWith('..' + sep) && !isAbsolute(outputRel))
+          throw new Error('Eksport musi być poza repo.');
+        writeFileSync(output, JSON.stringify(exportHistory(store)), { mode: 0o600, flag: 'wx' });
+        console.log('Zapisano prywatną historię; bez poświadczeń, CV i aktywnej zgody.');
+      } else if (command === 'import') {
+        if (!extra || confirmation !== '--confirm-private-import')
+          throw new Error('Import wymaga prywatnego pliku i --confirm-private-import.');
+        importHistory(store, imported);
+        if (!store.get('mode', null)) store.set('mode', 'RESEARCH_ONLY');
+        store.set('stopped', true);
+        store.set('gmailSenderPaused', true);
+        console.log('Dodano historię bez usuwania istniejących rekordów i bez zgody na wysyłkę.');
+      } else throw new Error('Nieznana operacja historii.');
+    }
   } finally {
     store?.close();
     lock.release();

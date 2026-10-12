@@ -4,6 +4,23 @@ import { randomUUID } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import type { Row } from '../../../packages/shared/types.js';
 
+export function backupSQLite(db: Database.Database, profileDir: string) {
+  const dir = join(profileDir, 'backups');
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const path = join(dir, `before-update-${Date.now()}-${randomUUID()}.sqlite`);
+  db.pragma('synchronous = FULL');
+  db.prepare('VACUUM INTO ?').run(path);
+  chmodSync(path, 0o600);
+  const copy = new Database(path, { readonly: true, fileMustExist: true });
+  try {
+    if (copy.pragma('integrity_check', { simple: true }) !== 'ok')
+      throw new Error('BACKUP_INVALID');
+  } finally {
+    copy.close();
+  }
+  return path;
+}
+
 export class Store {
   readonly db: Database.Database;
   assertExclusive: () => void = () => {};
@@ -55,19 +72,7 @@ export class Store {
   }
   backup() {
     this.assertExclusive();
-    const dir = join(this.dir, 'backups');
-    mkdirSync(dir, { recursive: true, mode: 0o700 });
-    const path = join(dir, `before-update-${Date.now()}-${randomUUID()}.sqlite`);
-    this.db.prepare('VACUUM INTO ?').run(path);
-    chmodSync(path, 0o600);
-    const copy = new Database(path, { readonly: true, fileMustExist: true });
-    try {
-      if (copy.pragma('integrity_check', { simple: true }) !== 'ok')
-        throw new Error('BACKUP_INVALID');
-    } finally {
-      copy.close();
-    }
-    return path;
+    return backupSQLite(this.db, this.dir);
   }
   one(sql: string, ...args: any[]): Row | undefined {
     return this.db.prepare(sql).get(...args) as Row | undefined;

@@ -29,7 +29,7 @@ npm run history:local -- doctor "$env:LOCALAPPDATA\JobHunter"
 
 Diagnostyka jest tylko do odczytu: katalog, integralność, liczby firm/kontaktów/aliasów/ręcznych rekordów/blokad/prób/rezerwacji i niepewnych prób. Nie publikuje treści. Liczby nie dowodzą kompletności; brak bazy nie tworzy nowej. Sprawdź również Maca, jeśli nie wiadomo, gdzie jest oryginał. Nie resetuj historii, liczników lub SEND_UNKNOWN.
 
-Jeżeli wcześniejsze kontakty są tylko na Macu: po Stop i zamknięciu tamtego backendu wykonaj `npm run history:local -- export KATALOG_BAZOWY PRYWATNY_PLIK_POZA_REPO`. Przenieś plik prywatnie, np. nośnikiem, bez GitHuba. Na Windowsie utwórz tylko katalog bazowy, potem `npm run history:local -- import KATALOG_BAZOWY PRYWATNY_PLIK --confirm-private-import`. To istniejący addytywny format: blokady, próby/shared records i liczniki, bez materiałów/CV/poświadczeń/zgody na send. Sprawdź diagnostykę i kompletność. PRIVATE_GIT wymaga wcześniej domkniętej opublikowanej historii; niepewny stan drugiego urządzenia blokuje zmianę. Nie wykonywano tych operacji na prywatnych danych w tej sesji.
+Jeżeli wcześniejsze kontakty są tylko na Macu: po Stop i zamknięciu tamtego backendu zrób `history:local backup KATALOG_BAZOWY`. Dla starszego schematu odtwórz prywatną kopię do `KOPIA_BAZOWA/research-only` przez `history:local restore-copy KATALOG_BAZOWY BACKUP KOPIA_BAZOWA/research-only`, a następnie wykonaj `history:local export KOPIA_BAZOWA PRYWATNY_PLIK_POZA_REPO`. Oryginał pozostaje bez zmian; kopia może przejść migracje. Przenieś sam minimalny eksport prywatnie, np. nośnikiem, bez GitHuba. Na Windowsie utwórz tylko katalog bazowy, potem `npm run history:local -- import KATALOG_BAZOWY PRYWATNY_PLIK --confirm-private-import`. To istniejący addytywny format: blokady, próby/shared records i liczniki, bez materiałów/CV/poświadczeń/zgody na send. Sprawdź diagnostykę i kompletność. PRIVATE_GIT wymaga wcześniej domkniętej opublikowanej historii; niepewny stan drugiego urządzenia blokuje zmianę. Nie wykonywano tych operacji na prywatnych danych w tej sesji.
 
 Po sprawdzeniu pełnej istniejącej historii, przy zamkniętym backendzie:
 
@@ -54,6 +54,8 @@ workstation.json jest lokalny, poza repo, nie kopiowany między komputerami. Nie
 ## C. Aktualizacja po pushu
 
 Osobny checkout roboczy i development. Stop w panelu → czekaj na rozpoczęte operacje → zakończ backend scripts/stop.ps1 → backup → git status → wybrana stabilna wersja. Bez pull/npm ci/build/hot reloadu przy aktywnym senderze.
+
+Przed pierwszą aktualizacją dawny checkout może nie mieć history:local. Uruchom nowy helper z osobnego checkoutu developerskiego po npm ci, podając jawnie oryginalny katalog poza repo. Doctor i backup korzystają z read-only SQLite, bez migracji oryginału. Nie uruchamiaj npm ci/build w aktywnym checkoutcie roboczym. Restore-copy migruje wyłącznie nową kopię do kontroli; configure/import są osobnymi jawnymi operacjami.
 
 ```powershell
 # WORKSTATION i ten sam katalog bazowy jak dotąd:

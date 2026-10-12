@@ -14,6 +14,7 @@ import { acquireProfileLock } from '../apps/server/src/backend-lock.js';
 import { restoreBackupCopy } from '../apps/server/src/backup.js';
 import { exportHistory, importHistory } from '../apps/server/src/history-sync.js';
 import { ResearchJobHunter } from '../apps/server/src/research/service.js';
+import Database from 'better-sqlite3';
 
 test('LOCAL_ONLY: full AUTO, Stop/restart and readiness never call HistorySync or Git', async (t) => {
   const f = await setup(t, true, false, false, true);
@@ -90,6 +91,52 @@ test('development process refuses a legacy personal directory even in DEMO, with
     assert.deepEqual(readFileSync(join(profileDir, 'jobhunter.sqlite')), before);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+test('maintenance backup and rejected configure never migrate or mutate an older synthetic database', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-readonly-backup-')),
+    dir = join(root, 'research-only');
+  const old = new Store(dir);
+  old.db.exec(
+    'ALTER TABLE research_sources DROP COLUMN address_contexts; ALTER TABLE research_sources DROP COLUMN parser_version;',
+  );
+  old.exec("DELETE FROM migrations WHERE name='016_address_context.sql'");
+  old.close();
+  const bytes = readFileSync(join(dir, 'jobhunter.sqlite'));
+  try {
+    await promisify(execFile)(process.execPath, [
+      '--import',
+      'tsx',
+      'scripts/local-history.ts',
+      'backup',
+      root,
+    ]);
+    assert.deepEqual(readFileSync(join(dir, 'jobhunter.sqlite')), bytes);
+    const copy = new Database(join(dir, 'backups', readdirSync(join(dir, 'backups'))[0]), {
+      readonly: true,
+      fileMustExist: true,
+    });
+    try {
+      assert.equal(
+        copy.prepare("SELECT name FROM migrations WHERE name='016_address_context.sql'").get(),
+        undefined,
+      );
+    } finally {
+      copy.close();
+    }
+    await assert.rejects(
+      promisify(execFile)(process.execPath, [
+        '--import',
+        'tsx',
+        'scripts/local-history.ts',
+        'configure',
+        root,
+      ]),
+    );
+    assert.deepEqual(readFileSync(join(dir, 'jobhunter.sqlite')), bytes);
+    assert.equal(existsSync(join(root, 'workstation.json')), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   }
 });
 test('one profile cannot open two backends on different ports; loss of lock blocks Start', async (t) => {
@@ -275,4 +322,24 @@ test('LOCAL_ONLY: timeout and imported unknown attempts cannot be bypassed by re
   await restarted.dispatchOne();
   assert.equal(f.gateway.posts.length, 1);
   await restarted.stopWorker();
+});
+test('Stop revokes memory authority before database cleanup, even if persistence fails', async (t) => {
+  const f = await setup(t, true, false, false, true);
+  await f.service.startAuto();
+  await f.service.tick();
+  f.advance();
+  const exec = f.store.exec.bind(f.store);
+  f.gateway.beforePost = async () => {
+    f.store.exec = () => {
+      throw new Error('SYNTHETIC_DATABASE_WRITE_FAILURE');
+    };
+    assert.throws(() => f.service.control('stop'), /SYNTHETIC_DATABASE_WRITE_FAILURE/);
+    f.store.exec = exec;
+  };
+  try {
+    await f.service.dispatchOne();
+    assert.equal(f.gateway.posts.length, 0);
+  } finally {
+    f.store.exec = exec;
+  }
 });

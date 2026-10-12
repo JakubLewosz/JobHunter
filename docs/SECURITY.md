@@ -8,6 +8,11 @@ procesami i portami, sprawdzana przed POST. Utrata blokady, nieznana konfiguracj
 niespójna baza i SENDING/SEND_UNKNOWN blokują. PRIVATE_GIT niżej dotyczy wyłącznie
 opcjonalnej już skonfigurowanej historii, bez automatycznego fallbacku po awarii.
 
+Stop/Pauza odwołuje odrębne prawo sesji w pamięci przed synchronicznym zapisem SQLite.
+Nawet błąd zapisu nie pozwala na następny POST. To nie zastępuje ostatniej bramki bazy,
+sesji, kontaktu, materiałów lub rezerwacji. Ręczny backup nie inicjalizuje migratora;
+restore-copy otwiera/migruje wyłącznie nową kopię, nigdy oryginał.
+
 DEVELOPMENT domyślnie otwiera osobny JobHunter-development/DEMO. Nie inicjalizuje natywnego
 Gmaila ani metadanych osobistego konta; częściowe wstrzyknięcie providera jest odrzucane.
 Natywne połączenie i helper OAuth wymagają WORKSTATION, Windowsa, lokalnego workstation.json

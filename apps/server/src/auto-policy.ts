@@ -98,6 +98,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   readonly queryPlanner: QueryPlanner;
   private pumping = false;
   private sessionId: string | null = null;
+  private sessionEnabled = false;
   private preparing = false;
   private starting = false;
   private transferring = false;
@@ -302,7 +303,8 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       );
     if (
       requireSession &&
-      (!this.sessionId ||
+      (!this.sessionEnabled ||
+        !this.sessionId ||
         this.state().stopped ||
         this.state().paused ||
         this.store.one('SELECT status FROM auto_sessions WHERE id=?', this.sessionId)?.status !==
@@ -409,12 +411,16 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       );
       const run = this.store.one("SELECT id FROM runs WHERE status='PAUSED'");
       if (run) await ResearchJobHunter.prototype.start.call(this, p.searchScope);
+      if (epoch !== this.controlEpoch)
+        throw new DomainError('CANCELLED', 'Uprawnienie Start zostało odwołane.');
+      this.assertPolicy(false);
       this.event(
         'AUTO_STARTED',
         'Start — szukaj i wysyłaj zgodnie z zatwierdzoną polityką.',
         this.sessionId,
         'user',
       );
+      this.sessionEnabled = true;
     } finally {
       this.starting = false;
     }
@@ -422,6 +428,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   override control(action: 'pause' | 'stop' | 'emergency-stop' | 'resume-sender') {
     if (action === 'resume-sender')
       throw new DomainError('START_REQUIRED', 'Użyj jawnego Start/Wznów sesję.');
+    this.revokeSessionAuthority();
     this.controlEpoch++;
     this.preparationController?.abort();
     super.control(action);
@@ -436,6 +443,9 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         this.sessionId,
       );
     if (action !== 'pause') this.sessionId = null;
+  }
+  protected revokeSessionAuthority() {
+    this.sessionEnabled = false;
   }
   async handoff() {
     if (this.historyMode() === 'LOCAL_ONLY')
@@ -728,6 +738,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       this.store.set('workerStatus', reason);
       return;
     }
+    this.revokeSessionAuthority();
     if (this.sessionId)
       this.store.exec(
         "UPDATE auto_sessions SET status='WAITING',reason=? WHERE id=?",

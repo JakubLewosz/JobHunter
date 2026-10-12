@@ -19,10 +19,13 @@ domowego Windowsa. PRIVATE_GIT pozostaje opcjonalny, odłożony. Brak origin nie
       FAILED_EXTRACTION przez schemat CLI, 0 szkiców. Schemat poprawiony i natywnie
       sprawdzony na danych syntetycznych; nie powtarzano publicznej próby. Pełny wynik
       researchu nadal do potwierdzenia na Windowsie, gotowe smoke:public / --approved-profile.
-- [x] Dokumentacja A/B/C, końcowy check **319 backend/7 UI**, 6 soak, diff check,
+- [x] Dokumentacja A/B/C, końcowy check **322 backend/7 UI**, 6 soak, diff check,
       przegląd kodu i skan 61 plików bez sekretów/prywatnych artefaktów.
 
 Kod: 3dfb49b8e4db92580fb3be735088b923f37d7e93, codex/local-windows-pilot.
+Końcowy dodatkowy commit naprawia read-only backup/restore-copy, liniowy koszt dużego
+HTML, natychmiastowe odwołanie prawa przed SQLite i zegar fixture po regresjach Windows.
+Pierwszy CI f25621e: macOS PASS, Windows 5 FAIL, powody i poprawki w TEST_REPORT.
 Publikacja obejmuje osobny commit raportu. Zdalny ref i wynik CI **finalnego SHA** są
 sprawdzane po pushu i podane w końcowym raporcie czatu / Actions; nie zakładaj wyniku
 na podstawie samego przygotowania workflow. Main nie jest automatycznie scalany.

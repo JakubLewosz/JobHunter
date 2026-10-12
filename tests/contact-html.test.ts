@@ -10,6 +10,8 @@ import { FixtureRunner } from './research-fixture.js';
 import { setup } from './auto-fixture.js';
 import type { TestContext } from 'node:test';
 import { hash } from '../apps/server/src/util.js';
+import { parsePublicHTML } from '../apps/server/src/research/html.js';
+import { performance } from 'node:perf_hooks';
 
 const activity =
   '<p>Fixture Company. Tworzymy aplikacje webowe, automatyzacje i integracje API.</p>';
@@ -139,7 +141,11 @@ async function autoHTML(
     resolve: async () => [{ address: '93.184.216.34', family: 4 }] as any,
     transport: async () => ({ status: 200, contentType: 'text/html', body: activity + page }),
   });
-  f.reader.read = publicReader.read.bind(publicReader);
+  f.reader.read = async (url, signal) => {
+    const source = await publicReader.read(url, signal);
+    source.fetched_at = f.options.clock().toISOString();
+    return source;
+  };
   const run = f.runner.run.bind(f.runner);
   f.runner.run = async (prompt, schema, options) => {
     const result = await run(prompt, schema, options);
@@ -234,4 +240,28 @@ test('old public cache without structural proof is re-read, versioned and cannot
     f.store.one('SELECT parser_version FROM research_sources WHERE id=?', old.id)?.parser_version,
     0,
   );
+});
+test('HTML: 2000-address container is parsed once per context and preserves its labels', (t) => {
+  const html =
+    '<footer>' +
+    Array.from(
+      { length: 2000 },
+      (_, i) =>
+        `${i === 1999 ? 'Sprzedaż' : 'Kontakt ogólny'}<br>kontakt${i}@fixture.example.test<br>`,
+    ).join('') +
+    '</footer>';
+  const started = performance.now(),
+    parsed = parsePublicHTML(html),
+    elapsed = performance.now() - started;
+  assert.equal(parsed.contexts.length, 2000);
+  assert.match(
+    parsed.contexts.find((c) => c.email === 'kontakt1999@fixture.example.test')!.text,
+    /Sprzedaż/,
+  );
+  assert.doesNotMatch(
+    parsed.contexts.find((c) => c.email === 'kontakt0@fixture.example.test')!.text,
+    /Sprzedaż/,
+  );
+  t.diagnostic(JSON.stringify({ parserAddresses: 2000, parserMs: elapsed }));
+  assert.ok(elapsed < 1000, 'bounded HTML must not hold the event loop for multiple seconds');
 });

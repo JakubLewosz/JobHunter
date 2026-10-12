@@ -73,10 +73,10 @@ for (const scenario of ['slow-read', 'slow-model', 'large-history', 'inflight-po
     result.app.server.prependListener('request', (req) => {
       if (req.url === '/api/stop') received = performance.now();
     });
-    const control = service.control.bind(service);
-    service.control = (action) => {
-      control(action);
-      if (action === 'stop') revoked = performance.now();
+    const revoke = (service as any).revokeSessionAuthority.bind(service);
+    (service as any).revokeSessionAuthority = () => {
+      revoke();
+      revoked = performance.now();
     };
     const session = await fetch(url + '/api/session', {
       method: 'POST',
