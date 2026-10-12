@@ -75,7 +75,9 @@ test('public diagnostic distinguishes a review execution error from contact reje
   assert.equal(summary.outcome, 'INCOMPLETE');
   assert.equal(summary.extractionsCompleted, 1);
   assert.equal(summary.contactsQualified, 1);
-  assert.equal(summary.drafts, 0);
+  assert.equal(summary.drafts, 1);
+  assert.equal(summary.draftsFullyChecked, 0);
+  assert.equal(JSON.parse(d.service.draftRows()[0].semantic_review).supported, null);
   assert.deepEqual(summary.skipped, {});
   assert.deepEqual(summary.itemErrors, [{ stage: 'DRAFT', code: 'CODEX_FAILED', count: 1 }]);
   assert.deepEqual(summary.modelErrors, [

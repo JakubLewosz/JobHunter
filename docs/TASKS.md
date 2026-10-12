@@ -23,9 +23,17 @@ domowego Windowsa. PRIVATE_GIT pozostaje opcjonalny, odłożony. Brak origin nie
 - [x] Regresje i minimalna poprawka sklejania etykiety Email z adresem; parser v2,
       ponowny odczyt cache v0/v1, całkowicie syntetyczny szablon diagnostyczny i brak
       narzuconej tożsamości/szkoły w prompcie; raport limitu zapisanego przez worker.
-- [ ] Świeży publiczny smoke po parserze v2/szablonie: limit dwóch prób tego zlecenia
-      wykorzystany. Nadal nieweryfikowane powody natywnych CODEX_FAILED i odrzucona
-      deklaracja technologii. Rzeczywisty profil i domowy Windows wymagają osobnej próby.
+- [x] Świeży publiczny smoke po parserze v2/szablonie i osobna próba problematycznej
+      strony: 5+1 firm, 6+2 stron, 4+1 zachowanych wersji, 2+1 pozytywne kontrole.
+- [x] Diagnostyka CLI z ID/etapem/czasem/wersją/exit/sygnałem i redakcją; zachowanie
+      niezweryfikowanych materiałów, powód/fragment odrzucenia i retry samego review.
+- [x] Replay źródeł i rzeczywiste odtworzenie błędu kontekstu review (source/evidence
+      IDs i brak inquiryBasis); 5 review-only PASS na identycznych tekstach/hashach.
+- [x] Stop: twardy brak POST w pełnym zestawie i 3 szeregowe pomiary z dotychczasowymi
+      progami, zachowane w check/CI. Nie podniesiono progu dla uzyskania PASS.
+- [ ] Pierwotne CODEX_FAILED oraz utracony fragment UNSUPPORTED_TECHNOLOGY pozostają
+      nieustalone; nie wystąpiły ponownie. Nowe błędy będą miały lokalną diagnostykę.
+      Rzeczywisty profil, domowy Windows i Gmail nadal wymagają osobnej próby.
 - [x] Dokumentacja A/B/C, końcowy check **322 backend/7 UI**, 6 soak, diff check,
       przegląd kodu i skan 61 plików bez sekretów/prywatnych artefaktów.
 

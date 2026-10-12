@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Store } from '../db.js';
-import { ResearchJobHunter, CodexSearchProvider } from './service.js';
+import { ResearchJobHunter } from './service.js';
 import { DisabledMailProvider } from '../providers.js';
 import { ExecCodexRunner, type StructuredRunner } from './codex.js';
 import type { SourceReader } from './fetcher.js';
@@ -71,7 +71,7 @@ export function approvedDiagnosticMaterials(base: string): Materials {
 
 class DiagnosticResearch extends ResearchJobHunter {
   protected override enqueue(key: string, query: string | null, maxDrafts: number) {
-    const run = super.enqueue(key, query, maxDrafts);
+    const run = super.enqueue(key, query, Math.min(5, this.campaign().max_candidates));
     this.store.exec('INSERT INTO auto_run_scope VALUES (?,?)', run, hash('DIAGNOSTIC_ONLY'));
     return run;
   }
@@ -90,19 +90,12 @@ export function createPublicDiagnostic(
     throw new Error('DIAGNOSTIC_REQUIRES_NEW_DIRECTORY');
   const store = new Store(dir),
     runner = options.runner ?? new ExecCodexRunner();
-  const search = new CodexSearchProvider(runner);
   const maximum = Math.min(10, Math.max(1, options.maxCompanies ?? 5));
   // AUTO's public qualification/drafting branch, instantiated without GmailJobHunter or a gateway.
   const service = new DiagnosticResearch(store, {
     mode: 'AUTO_POLICY',
     runner,
     reader: options.reader,
-    search: {
-      search: async (query, signal) => {
-        const r = await search.search(query, signal);
-        return { ...r, urls: r.urls.slice(0, maximum) };
-      },
-    },
   });
   if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service)
     throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
@@ -174,6 +167,13 @@ Alex Testowy`;
     const skipped: Record<string, number> = {};
     for (const decision of decisions.filter((r) => !r.allowed))
       skipped[decision.reason] = (skipped[decision.reason] ?? 0) + 1;
+    const drafts = service.draftRows();
+    const fullyChecked = drafts.filter((d) => {
+      const review = JSON.parse(d.semantic_review);
+      return (
+        review.supported === true && !review.issues.length && !service.draftMaterialIssues(d).length
+      );
+    });
     return {
       outcome:
         run?.status === 'COMPLETED'
@@ -193,6 +193,20 @@ Alex Testowy`;
       qualificationsCompleted: store.one('SELECT count(*) n FROM research_qualifications')!.n,
       contactsQualified: decisions.filter((r) => r.allowed).length,
       drafts: service.draftRows().length,
+      generatedVersions: store.one(
+        "SELECT count(*) n FROM model_calls WHERE stage='DRAFT' AND status='OK'",
+      )!.n,
+      validationRejections: store.one(
+        "SELECT count(*) n FROM research_draft_materials WHERE code_status='REJECTED'",
+      )!.n,
+      semanticRejections: drafts.filter((d) => JSON.parse(d.semantic_review).supported === false)
+        .length,
+      reviewExecutionErrors: store.one(
+        "SELECT count(*) n FROM model_calls WHERE stage IN ('SEMANTIC_REVIEW','VERIFY_DRAFT') AND status='ERROR'",
+      )!.n,
+      draftsFullyChecked: fullyChecked.length,
+      draftsUnverified: drafts.length - fullyChecked.length,
+      diagnosticsDirectory: store.get('modelDiagnosticsDirectory', null),
       skipped,
       itemErrors: store.all(
         "SELECT stage,error AS code,count(*) AS count FROM research_items WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",

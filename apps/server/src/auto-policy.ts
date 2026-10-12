@@ -558,6 +558,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       )
         problems.push('UNVERIFIED_COMPANY');
       const review = JSON.parse(d.semantic_review);
+      problems.push(...this.draftMaterialIssues(d));
       if (review.supported !== true || review.issues.length)
         problems.push('SEMANTIC_REVIEW_REQUIRED');
       const contactSource = sources.find((s) => s.id === verified.contact.proof.sourceId);

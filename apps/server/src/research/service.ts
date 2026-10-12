@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { JobHunter, profileSchema } from '../service.js';
 import {
   defaultMessageTemplate,
@@ -10,7 +13,14 @@ import {
 import { Store } from '../db.js';
 import { DomainError, hash, id, iso, csvCell, normalizeName } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
-import { ExecCodexRunner, configurationFingerprint, type StructuredRunner } from './codex.js';
+import {
+  ExecCodexRunner,
+  CodexCallError,
+  cleanDiagnostic,
+  diagnosticCategory,
+  configurationFingerprint,
+  type StructuredRunner,
+} from './codex.js';
 import { PublicSourceReader, publicURL, type Source, type SourceReader } from './fetcher.js';
 import { normalizeResearchURL, normalizeQuery } from './query-planner.js';
 import {
@@ -26,13 +36,17 @@ import {
   realDraftSchema,
   reviewSchema,
   validateAnalysis,
+  verifyQuote,
   qualifyReal,
   contactEligibility,
-  researchInstructions,
+  researchInstructions as baseResearchInstructions,
   compact,
   type Analysis,
 } from './contracts.js';
 import { parserVersion } from './html.js';
+const researchInstructions =
+  baseResearchInstructions +
+  '\nZdalna obsługa klientów lub spotkania online nie potwierdzają zdalnej pracy kandydata. Ceny usług nie potwierdzają wynagrodzenia. Warunki zatrudnienia wymagają osobnych dowodów; inaczej pozostają unknown.';
 
 export interface SearchProvider {
   search(
@@ -43,20 +57,33 @@ export interface SearchProvider {
 export class CodexSearchProvider implements SearchProvider {
   constructor(
     private runner: StructuredRunner,
-    private record: (meta: Row) => void = () => {},
+    private record: (meta: Row, status?: string, error?: string) => void = () => {},
   ) {}
   async search(query: string, signal?: AbortSignal) {
-    const result = await this.runner.run(
-      `${researchInstructions}\nUżyj rzeczywistego web search. Zwróć maksymalnie 10 publicznych stron firm lub ogłoszeń, preferuj kontakt bezpośredni. Szukaj firm we wszystkich dziedzinach pasujących do zatwierdzonych projektów, nie tylko jednej technologii. Firmy bez ogłoszonego wakatu lub potwierdzonych godzin mogą być kandydatami do zapytania o współpracę. Preferuj ich strony o działalności i publicznym kontakcie firmowym lub rekrutacyjnym; nie zgaduj adresów. Nie używaj Useme jako głównego źródła. Kandydaci to propozycje do osobnego pobrania, nie potwierdzone fakty. Jeśli narzędzie wyszukiwania nie jest dostępne, zwróć puste queries i candidates. Zapytanie (dane): ${JSON.stringify(query)}`,
-      searchSchema,
-      { search: true, signal },
-    );
-    this.record(result.meta);
-    if (!result.meta.webSearches || !result.value.queries.length)
+    const callId = id();
+    let result;
+    try {
+      result = await this.runner.run(
+        `${researchInstructions}\nUżyj rzeczywistego web search. Zwróć maksymalnie 10 publicznych stron firm lub ogłoszeń, preferuj kontakt bezpośredni. Szukaj firm we wszystkich dziedzinach pasujących do zatwierdzonych projektów, nie tylko jednej technologii. Firmy bez ogłoszonego wakatu lub potwierdzonych godzin mogą być kandydatami do zapytania o współpracę. Preferuj ich strony o działalności i publicznym kontakcie firmowym lub rekrutacyjnym; nie zgaduj adresów. Nie używaj Useme jako głównego źródła. Kandydaci to propozycje do osobnego pobrania, nie potwierdzone fakty. Jeśli narzędzie wyszukiwania nie jest dostępne, zwróć puste queries i candidates. Zapytanie (dane): ${JSON.stringify(query)}`,
+        searchSchema,
+        { search: true, signal, callId, stage: 'SEARCH' },
+      );
+    } catch (e) {
+      this.record(
+        { callId, diagnostic: e instanceof CodexCallError ? e.diagnostic : undefined },
+        'ERROR',
+        e instanceof DomainError ? e.code : 'MODEL_FAILED',
+      );
+      throw e;
+    }
+    if (!result.meta.webSearches || !result.value.queries.length) {
+      this.record({ ...result.meta, callId }, 'ERROR', 'SEARCH_UNAVAILABLE');
       throw new DomainError(
         'SEARCH_UNAVAILABLE',
         'Nie potwierdzono użycia web search w CLI. Import publicznego URL pozostaje dostępny.',
       );
+    }
+    this.record({ ...result.meta, callId });
     return {
       urls: result.value.candidates,
       queries: result.meta.searchQueries?.length ? result.meta.searchQueries : result.value.queries,
@@ -82,6 +109,7 @@ export class ResearchJobHunter extends JobHunter {
   private controller?: AbortController;
   private probing = false;
   private activeRunId: string | null = null;
+  private diagnosticDir?: string;
   constructor(
     store: Store,
     options: {
@@ -97,7 +125,9 @@ export class ResearchJobHunter extends JobHunter {
     this.reader = options.reader ?? new PublicSourceReader();
     this.search =
       options.search ??
-      new CodexSearchProvider(this.runner, (m) => this.recordCall(this.activeRunId, 'SEARCH', m));
+      new CodexSearchProvider(this.runner, (m, status, error) =>
+        this.recordCall(this.activeRunId, 'SEARCH', m, status, error),
+      );
     if (
       !this.profile().approved_at &&
       !store.one("SELECT id FROM candidate_facts WHERE fact_key='contract'")
@@ -146,20 +176,55 @@ export class ResearchJobHunter extends JobHunter {
     status = 'OK',
     error: string | null = null,
   ) {
+    const callId = meta.diagnostic?.callId ?? meta.callId ?? id();
+    const diagnostic = meta.diagnostic ?? {
+      callId,
+      stage,
+      startedAt: this.now(),
+      elapsedMs: meta.elapsedMs ?? 0,
+      cliVersion: null,
+      operation: 'RUNNER',
+      exitCode: null,
+      signal: null,
+      code: error,
+      category: diagnosticCategory(error),
+      message: '',
+    };
+    diagnostic.message = cleanDiagnostic(diagnostic.message ?? '');
+    if (status === 'ERROR') {
+      diagnostic.code = error;
+      diagnostic.category = diagnosticCategory(error);
+    }
     this.store.exec(
-      'INSERT INTO model_calls VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-      id(),
+      'INSERT INTO model_calls VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+      callId,
       runId,
       stage,
       status,
-      meta.elapsedMs ?? 0,
+      diagnostic.elapsedMs ?? meta.elapsedMs ?? 0,
       meta.inputTokens ?? null,
       meta.outputTokens ?? null,
       meta.cachedInputTokens ?? null,
       meta.model ?? null,
       error,
       this.now(),
+      JSON.stringify(diagnostic),
     );
+    if (status === 'ERROR') {
+      try {
+        this.diagnosticDir ??= mkdtempSync(join(tmpdir(), 'jh-cli-diagnostics-'));
+        this.store.set('modelDiagnosticsDirectory', this.diagnosticDir);
+        writeFileSync(
+          join(this.diagnosticDir, `${callId}.json`),
+          JSON.stringify(diagnostic, null, 2),
+          { mode: 0o600 },
+        );
+      } catch {
+        try {
+          this.store.set('modelDiagnosticsWriteError', 'TRACE_WRITE_FAILED');
+        } catch {}
+      }
+    }
   }
   async call<T>(
     runId: string | null,
@@ -169,9 +234,10 @@ export class ResearchJobHunter extends JobHunter {
     signal?: AbortSignal,
   ) {
     const started = Date.now();
+    const callId = id();
     try {
-      const r = await this.runner.run(prompt, schema, { signal });
-      this.recordCall(runId, stage, r.meta);
+      const r = await this.runner.run(prompt, schema, { signal, callId, stage });
+      this.recordCall(runId, stage, { ...r.meta, callId });
       return r.value;
     } catch (e) {
       if (
@@ -195,7 +261,11 @@ export class ResearchJobHunter extends JobHunter {
       this.recordCall(
         runId,
         stage,
-        { elapsedMs: Date.now() - started },
+        {
+          callId,
+          elapsedMs: Date.now() - started,
+          diagnostic: e instanceof CodexCallError ? e.diagnostic : undefined,
+        },
         'ERROR',
         e instanceof DomainError ? e.code : 'MODEL_FAILED',
       );
@@ -900,6 +970,7 @@ export class ResearchJobHunter extends JobHunter {
           analysis.companyProof,
           analysis.titleProof,
           analysis.typeProof,
+          ...(analysis.inquiryBasis ? [analysis.inquiryBasis] : []),
           ...Object.values(analysis.conditions),
           ...analysis.requirements,
           analysis.contact.proof,
@@ -1189,8 +1260,16 @@ export class ResearchJobHunter extends JobHunter {
       !regeneration &&
       (this.mode !== 'AUTO_POLICY' ||
         this.store.get(`draftResearchBinding:${existing.id}`, null) === researchBinding)
-    )
+    ) {
+      const material = this.store.one(
+        'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+        existing.id,
+        existing.version,
+      );
+      if (material && ['PENDING', 'ERROR', 'RUNNING'].includes(material.review_status))
+        await this.reviewStoredDraft(existing.id, existing.version, item.run_id, signal);
       return;
+    }
     const count = this.store.get<number>(
       `draftedInRun:${item.run_id}`,
       this.store.one(
@@ -1201,7 +1280,7 @@ export class ResearchJobHunter extends JobHunter {
     const config = this.store.one('SELECT * FROM research_run_config WHERE run_id=?', item.run_id)!;
     if (count >= config.max_drafts && !regeneration) return;
     const evidence = this.store.all(
-      'SELECT e.id,e.fragment,e.canonical_url FROM evidence e JOIN research_evidence r ON r.evidence_id=e.id WHERE e.company_id=? AND r.source_id IN (SELECT value FROM json_each(?))',
+      'SELECT e.id,e.fragment,e.canonical_url,r.source_id AS sourceId FROM evidence e JOIN research_evidence r ON r.evidence_id=e.id WHERE e.company_id=? AND r.source_id IN (SELECT value FROM json_each(?))',
       o.company_id,
       item.source_ids,
     );
@@ -1238,40 +1317,30 @@ export class ResearchJobHunter extends JobHunter {
         recent,
       });
     const v = await this.call(item.run_id, 'DRAFT', prompt, realDraftSchema, signal);
-    const styleWarnings = this.checkDraft(v, o.company_id, draftProfile, evidence, analysis);
-    const review = await this.call(
-      item.run_id,
-      'SEMANTIC_REVIEW',
-      semanticReviewPrompt({
-        draft: v,
-        profile: draftProfile,
-        evidence,
-        analysis,
-        contactType: messageContactType(analysis),
-      }),
-      reviewSchema,
-      signal,
-    );
-    const reviewWarnings =
-      review.supported === true
-        ? review.issues
-        : [
-            review.supported === null
-              ? 'Kontrola semantyczna nie ma wystarczającej pewności. Wymagany przegląd.'
-              : 'Kontrola semantyczna nie potwierdziła deklaracji. Wymagany przegląd i poprawa.',
-            ...review.issues,
-          ];
-    if (this.profile().profile_hash !== p.hash || !this.profile().approved_at)
-      throw new DomainError('PROFILE_CHANGED', 'Profil zmienił się podczas generowania.');
-    signal.throwIfAborted();
     if (
       existing &&
       this.store.one('SELECT version FROM drafts WHERE id=?', existing.id)?.version !==
         existing.version
-    )
+    ) {
+      const current = this.store.one('SELECT * FROM drafts WHERE id=?', existing.id)!;
+      this.saveDraftMaterial(
+        current,
+        v,
+        { profile: draftProfile, evidence, analysis },
+        'INVALIDATED',
+        'INVALIDATED',
+      );
       throw new DomainError('VERSION_CONFLICT', 'Treść zmieniła się podczas generowania.');
+    }
     const draftId = existing?.id ?? id();
-    const version = (existing?.version ?? 0) + 1;
+    const version =
+      Math.max(
+        existing?.version ?? 0,
+        this.store.one(
+          'SELECT max(version) n FROM research_draft_materials WHERE draft_id=?',
+          draftId,
+        )?.n ?? 0,
+      ) + 1;
     const at = this.now();
     const h = hash(JSON.stringify(v));
     this.store.atomic(() => {
@@ -1323,8 +1392,7 @@ export class ResearchJobHunter extends JobHunter {
         JSON.stringify(v.claims),
         JSON.stringify([
           ...v.warnings,
-          ...styleWarnings,
-          ...reviewWarnings,
+          'Materiał NIEZWERYFIKOWANY: kontrole kodowa i semantyczna nie zostały zakończone.',
           ...analysis.warnings,
           ...(analysis.type === 'PROSPECT'
             ? [
@@ -1335,13 +1403,11 @@ export class ResearchJobHunter extends JobHunter {
             ? 'Kontrola semantyczna jest pomocnicza; decyzję o wysłaniu podejmuje kod polityki.'
             : 'Kontrola semantyczna jest pomocnicza; wymagany przegląd użytkownika.',
         ]),
-        JSON.stringify(review),
+        JSON.stringify({ supported: null, issues: ['Kontrole jeszcze niezakończone.'] }),
       );
       this.event(
-        'DRAFTED',
-        this.mode === 'AUTO_POLICY'
-          ? 'Zapisano indywidualny szkic do kontroli polityki sesji.'
-          : 'Indywidualny szkic Codexa do ręcznego przeglądu i skopiowania.',
+        'DRAFT_MATERIAL_STORED',
+        'Utrwalono dokładną nową wersję jako materiał NIEZWERYFIKOWANY, bez prawa do wysyłki.',
         draftId,
       );
       this.store.set(`draftedInRun:${item.run_id}`, count + 1);
@@ -1353,7 +1419,333 @@ export class ResearchJobHunter extends JobHunter {
           this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', item.run_id)!
             .scope_hash,
         );
+      this.saveDraftMaterial(this.store.one('SELECT * FROM drafts WHERE id=?', draftId)!, v, {
+        profile: draftProfile,
+        evidence,
+        analysis,
+      });
     });
+    await this.reviewStoredDraft(draftId, version, item.run_id, signal);
+  }
+  private materialBinding(d: Row) {
+    const profile = this.profile();
+    const contact = this.store.one(
+      'SELECT email,kind,evidence_id,verification_status,literal_verified FROM contacts WHERE id=?',
+      d.contact_id,
+    );
+    const qualification = this.store.one(
+      'SELECT details FROM research_qualifications WHERE opportunity_id=?',
+      d.opportunity_id,
+    );
+    const sources = this.sourcesForDraft(d).map((s) => ({
+      id: s.id,
+      hash: s.content_hash,
+      url: s.final_url,
+      method: s.method,
+      parser: s.parser_version,
+      text: hash(s.text),
+      contexts: hash(s.address_contexts ?? ''),
+    }));
+    return hash(
+      JSON.stringify({
+        version: d.version,
+        payload: d.payload_hash,
+        subject: d.subject,
+        body: d.body,
+        facts: d.fact_ids,
+        evidence: d.evidence_ids,
+        claims: this.store.one('SELECT claims FROM research_drafts WHERE draft_id=?', d.id)?.claims,
+        profileHash: profile.profile_hash,
+        approved: profile.approved_at,
+        factsHash: hash(JSON.stringify(profile.facts)),
+        contact,
+        qualification,
+        sources,
+      }),
+    );
+  }
+  protected draftMaterialContext(d: Row) {
+    return this.materialBinding(d);
+  }
+  protected saveDraftMaterial(
+    d: Row,
+    payload: Row,
+    context: Row,
+    codeStatus = 'PENDING',
+    reviewStatus = 'PENDING',
+  ) {
+    const version =
+      codeStatus === 'INVALIDATED'
+        ? Math.max(
+            d.version,
+            this.store.one(
+              'SELECT max(version) n FROM research_draft_materials WHERE draft_id=?',
+              d.id,
+            )?.n ?? 0,
+          ) + 1
+        : d.version;
+    this.store.exec(
+      'INSERT INTO research_draft_materials VALUES (?,?,?,?,?,?,?,NULL,?,NULL,?,?) ON CONFLICT(draft_id,version) DO UPDATE SET payload_hash=excluded.payload_hash,context_hash=excluded.context_hash,payload_json=excluded.payload_json,context_json=excluded.context_json,code_status=excluded.code_status,code_error=NULL,review_status=excluded.review_status,review_error=NULL,updated_at=excluded.updated_at',
+      d.id,
+      version,
+      codeStatus === 'INVALIDATED' ? hash(JSON.stringify(payload)) : d.payload_hash,
+      this.materialBinding(d),
+      JSON.stringify(payload),
+      JSON.stringify(context),
+      codeStatus,
+      reviewStatus,
+      this.now(),
+      this.now(),
+    );
+  }
+  draftMaterialIssues(d: Row) {
+    const material = this.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    );
+    if (!material)
+      return this.store.one('SELECT draft_id FROM research_draft_materials WHERE draft_id=?', d.id)
+        ? ['DRAFT_MATERIAL_STALE']
+        : [];
+    if (
+      material.context_hash !== this.materialBinding(d) ||
+      material.payload_hash !== d.payload_hash
+    )
+      return ['DRAFT_MATERIAL_STALE'];
+    return material.code_status === 'PASS' && material.review_status === 'COMPLETED'
+      ? []
+      : ['DRAFT_MATERIAL_UNVERIFIED'];
+  }
+  async retryDraftReview(draftId: string, version: number, signal?: AbortSignal) {
+    if (this.researching || this.probing)
+      throw new DomainError('BUSY', 'Poczekaj na zakończenie pracy.');
+    const d = this.draftRows().find((d) => d.id === draftId && d.version === version);
+    if (!d) throw new DomainError('VERSION_CONFLICT', 'Odśwież szkic.');
+    if (
+      !this.store.one(
+        'SELECT draft_id FROM research_draft_materials WHERE draft_id=? AND version=?',
+        draftId,
+        version,
+      )
+    ) {
+      if (d.profile_hash !== this.minimalProfile().hash)
+        throw new DomainError('PROFILE_CHANGED', 'Profil starszego szkicu zmienił się.');
+      const analysis = JSON.parse(
+        this.store.one(
+          'SELECT details FROM research_qualifications WHERE opportunity_id=?',
+          d.opportunity_id,
+        )!.details,
+      );
+      const evidence = this.store.all(
+        'SELECT id,fragment,canonical_url FROM evidence WHERE company_id=?',
+        d.company_id,
+      );
+      this.saveDraftMaterial(
+        d,
+        {
+          subject: d.subject,
+          body: d.body,
+          factIds: JSON.parse(d.fact_ids),
+          evidenceIds: JSON.parse(d.evidence_ids),
+          claims: JSON.parse(d.claims),
+          warnings: JSON.parse(d.warnings),
+        },
+        { profile: this.minimalProfile(), analysis, evidence, origin: 'SAVED_EXISTING_DRAFT' },
+      );
+    }
+    this.probing = true;
+    this.controller = new AbortController();
+    try {
+      return await this.reviewStoredDraft(
+        draftId,
+        version,
+        null,
+        signal ? AbortSignal.any([signal, this.controller.signal]) : this.controller.signal,
+      );
+    } finally {
+      this.probing = false;
+      this.controller = undefined;
+    }
+  }
+  private async reviewStoredDraft(
+    draftId: string,
+    version: number,
+    runId: string | null,
+    signal: AbortSignal,
+  ) {
+    const d = this.store.one('SELECT * FROM drafts WHERE id=?', draftId);
+    const material = this.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      draftId,
+      version,
+    );
+    if (!d || d.version !== version || !material)
+      throw new DomainError('VERSION_CONFLICT', 'Brak bieżącej utrwalonej wersji.');
+    const clearReview = (message: string) => {
+      if (this.store.one('SELECT version FROM drafts WHERE id=?', draftId)?.version === version)
+        this.store.exec(
+          'UPDATE research_drafts SET semantic_review=?,reviewed_at=NULL WHERE draft_id=?',
+          JSON.stringify({ supported: null, issues: [message] }),
+          draftId,
+        );
+    };
+    if (
+      material.context_hash !== this.materialBinding(d) ||
+      material.payload_hash !== d.payload_hash
+    ) {
+      this.store.exec(
+        "UPDATE research_draft_materials SET review_status='INVALIDATED',updated_at=? WHERE draft_id=? AND version=?",
+        this.now(),
+        draftId,
+        version,
+      );
+      clearReview('Treść, profil, kontakt lub źródła zmieniły się; kontrola nieważna.');
+      throw new DomainError('DRAFT_MATERIAL_STALE', 'Materiały kontroli zmieniły się.');
+    }
+    const payload = JSON.parse(material.payload_json),
+      context = JSON.parse(material.context_json);
+    const sources = this.sourcesForDraft(d);
+    const analysis = validateAnalysis(context.analysis, sources);
+    const evidence = context.evidence.map((e: Row) => ({
+      ...e,
+      sourceId:
+        this.store.one('SELECT source_id FROM research_evidence WHERE evidence_id=?', e.id)
+          ?.source_id ?? null,
+    }));
+    const basis = analysis.inquiryBasis;
+    const readProofs =
+      basis && verifyQuote(basis, sources)
+        ? [{ sourceId: basis.sourceId, quote: basis.quote }]
+        : [];
+    if (context.profile.hash !== this.profile().profile_hash || !this.profile().approved_at) {
+      this.store.exec(
+        "UPDATE research_draft_materials SET code_status='INVALIDATED',review_status='INVALIDATED' WHERE draft_id=? AND version=?",
+        draftId,
+        version,
+      );
+      clearReview('Profil zmienił się; wynik dla poprzednich faktów jest nieważny.');
+      throw new DomainError('PROFILE_CHANGED', 'Profil zmienił się przed kontrolą.');
+    }
+    let styleWarnings: string[];
+    try {
+      styleWarnings = this.checkDraft(
+        payload,
+        d.company_id,
+        context.profile,
+        context.evidence,
+        context.analysis,
+      );
+      this.store.exec(
+        "UPDATE research_draft_materials SET code_status='PASS',code_error=NULL WHERE draft_id=? AND version=?",
+        draftId,
+        version,
+      );
+    } catch (e) {
+      const rejection = {
+        code: e instanceof DomainError ? e.code : 'VALIDATION_FAILED',
+        message: e instanceof Error ? e.message : 'Validation failure',
+        ...(e instanceof DomainError ? e.details : {}),
+        fragment: e instanceof DomainError && e.details?.claim ? e.details.claim : payload.body,
+      };
+      this.store.exec(
+        "UPDATE research_draft_materials SET code_status='REJECTED',code_error=?,review_status='NOT_RUN',updated_at=? WHERE draft_id=? AND version=?",
+        JSON.stringify(rejection),
+        this.now(),
+        draftId,
+        version,
+      );
+      clearReview('Odrzucenie przez kontrolę kodową: ' + rejection.code);
+      throw e;
+    }
+    clearReview('Kontrola semantyczna w toku; brak zgody na wysyłkę.');
+    this.store.exec(
+      "UPDATE research_draft_materials SET review_status='RUNNING',review_error=NULL WHERE draft_id=? AND version=?",
+      draftId,
+      version,
+    );
+    let review;
+    try {
+      signal.throwIfAborted();
+      review = await this.call(
+        runId,
+        'SEMANTIC_REVIEW',
+        semanticReviewPrompt({
+          draft: payload,
+          profile: context.profile,
+          evidence,
+          analysis,
+          readProofs,
+          contactType: messageContactType(analysis),
+        }),
+        reviewSchema,
+        signal,
+      );
+      signal.throwIfAborted();
+    } catch (e) {
+      this.store.exec(
+        "UPDATE research_draft_materials SET review_status='ERROR',review_error=?,updated_at=? WHERE draft_id=? AND version=?",
+        JSON.stringify({
+          code: signal.aborted ? 'CANCELLED' : e instanceof DomainError ? e.code : 'MODEL_FAILED',
+          callId: e instanceof CodexCallError ? e.diagnostic.callId : null,
+        }),
+        this.now(),
+        draftId,
+        version,
+      );
+      clearReview('Błąd wykonania review; tekst zachowany jako NIEZWERYFIKOWANY.');
+      throw e;
+    }
+    const current = this.store.one('SELECT * FROM drafts WHERE id=?', draftId)!;
+    if (material.context_hash !== this.materialBinding(current) || current.version !== version) {
+      this.store.exec(
+        "UPDATE research_draft_materials SET review_status='INVALIDATED',updated_at=? WHERE draft_id=? AND version=?",
+        this.now(),
+        draftId,
+        version,
+      );
+      clearReview('Materiały zmieniły się podczas kontroli; wynik nieważny.');
+      throw new DomainError('VERSION_CONFLICT', 'Materiały zmieniły się podczas review.');
+    }
+    const reviewWarnings =
+      review.supported === true
+        ? review.issues
+        : [
+            review.supported === false
+              ? 'Kontrola semantyczna nie potwierdziła deklaracji.'
+              : 'Kontrola semantyczna nie ma wystarczającej pewności.',
+            ...review.issues,
+          ];
+    this.store.atomic(() => {
+      this.store.exec(
+        "UPDATE research_draft_materials SET review_status='COMPLETED',review_error=NULL,updated_at=? WHERE draft_id=? AND version=?",
+        this.now(),
+        draftId,
+        version,
+      );
+      this.store.exec(
+        'UPDATE research_drafts SET semantic_review=?,warnings=? WHERE draft_id=?',
+        JSON.stringify(review),
+        JSON.stringify([
+          ...payload.warnings,
+          ...styleWarnings,
+          ...reviewWarnings,
+          ...analysis.warnings,
+          ...(context.analysis.type === 'PROSPECT'
+            ? [
+                'Zapytanie o współpracę: rekrutacja i warunki niepotwierdzone; kontakt ogólny może wymagać przekierowania.',
+              ]
+            : []),
+        ]),
+        draftId,
+      );
+      this.event(
+        'DRAFTED',
+        'Zakończono kontrole utrwalonego szkicu; wynik nie stanowi zgody na wysyłkę.',
+        draftId,
+      );
+    });
+    return review;
   }
   checkDraft(
     v: z.infer<typeof realDraftSchema>,
@@ -1373,14 +1765,22 @@ export class ResearchJobHunter extends JobHunter {
       );
     for (const c of v.claims) {
       if (!compact(v.body + ' ' + v.subject).includes(compact(c.text)))
-        throw new DomainError('INVALID_CLAIM', 'Deklaracja nie występuje w szkicu.');
+        throw new DomainError('INVALID_CLAIM', 'Deklaracja nie występuje w szkicu.', 409, {
+          claim: c.text,
+          factIds: c.factIds,
+          evidenceIds: c.evidenceIds,
+        });
       if (
         (c.kind === 'CANDIDATE' &&
           (!c.factIds.length || c.factIds.some((fid) => !v.factIds.includes(fid)))) ||
         (c.kind === 'COMPANY' &&
           (!c.evidenceIds.length || c.evidenceIds.some((eid) => !v.evidenceIds.includes(eid))))
       )
-        throw new DomainError('INVALID_CLAIM', 'Deklaracja nie ma właściwych odwołań.');
+        throw new DomainError('INVALID_CLAIM', 'Deklaracja nie ma właściwych odwołań.', 409, {
+          claim: c.text,
+          factIds: c.factIds,
+          evidenceIds: c.evidenceIds,
+        });
     }
     checkAvailability(v, p);
     const styleWarnings = checkMessageRules(v, p, analysis);

@@ -1,6 +1,10 @@
 import type { Row } from '../../../../packages/shared/types.js';
 import { DomainError } from '../util.js';
-import { compact, researchInstructions, type Analysis } from './contracts.js';
+import {
+  compact,
+  researchInstructions as baseResearchInstructions,
+  type Analysis,
+} from './contracts.js';
 import { projectKeys, relevantProjectFacts } from './drafting.js';
 
 export type ContactType = 'ACTIVE_JOB' | 'OPEN_APPLICATION' | 'GENERAL_RECRUITMENT_CONTACT';
@@ -46,6 +50,9 @@ Wzór template jest punktem wyjścia do układu, nie źródłem dodatkowych fakt
   return instruction + JSON.stringify({ ...data, contactType: type });
 }
 export function semanticReviewPrompt(data: Row) {
+  const researchInstructions =
+    baseResearchInstructions +
+    '\nOceniaj twierdzenia w draft.subject, draft.body i claims, nie poprawność wszystkich hipotez i objaśnień metadanych analysis. Hipoteza o projekcie niewybranym do szkicu nie jest deklaracją kandydata. analysis.*.sourceId oznacza odczytane źródło; evidence[].id oznacza fragment dowodu i służy claims.evidenceIds. Są to różne identyfikatory: evidence[].sourceId jest ich mapowaniem. readProofs zawiera dodatkowe cytaty potwierdzone kodowo w tych samych zapisanych źródłach. Nie żądaj równości sourceId i evidence.id ani zmiany prawidłowych odwołań.';
   return `${researchInstructions}\ncontactType opisuje schemat wiadomości, nie przeznaczenie adresu; rzeczywisty cel kontaktu pozostaje analysis.contact.kind. GENERAL_RECRUITMENT_CONTACT nie zmienia GENERAL w RECRUITMENT. Sprawdź KAŻDE istotne stwierdzenie w temacie i całym szkicu, także poza claims. Zweryfikuj uczeń vs student, fakty o projektach, technologie kandydata, komercję, przesadne deklaracje AI, stawki, dostępność i istnienie aktywnej oferty. Sprawdź też naturalny ton zgłoszenia: bez sprzedaży usług i proponowania prezentacji, jeden projekt domyślnie, dwa tylko gdy odrębne dowody uzasadniają oba. Neutralne określenie projekt lub aplikacja zamiast demo samo w sobie nie oznacza produkcyjnego wdrożenia; produkcja nadal wymaga dowodu. Publiczne repozytorium, sam link GitHub lub samo dawne określenie publiczne demo nie potwierdzają działającej publicznie aplikacji. Taka deklaracja wymaga w zatwierdzonych faktach potwierdzenia działającej wersji i jej adresu poza repozytorium GitHub; przy braku tego potwierdzenia zgłoś problem w issues. supported=true dla treści popartej faktami i źródłami; false dla wykrytych niepopartych deklaracji; null przy niewystarczającej pewności lub dwuznaczności. Opisz problemy w issues. Nie odrzucaj za samą zmianę naturalnego sformułowania. To pomocnicza kontrola, nie zgoda na wysyłkę. Dane: ${JSON.stringify(data)}`;
 }
 
@@ -75,7 +82,7 @@ const technologyGroups = [
   ['ruby'],
   ['docker'],
   ['n8n'],
-  ['llm', 'modele językowe', 'modelami językowymi', 'model językowy'],
+  ['llm', 'modele językowe', 'modelami językowymi', 'model językowy', 'modeli językowych'],
   ['computer vision', 'analiza obrazu', 'analizy obrazu'],
 ];
 function positiveEvidence(facts: Row[], patterns: RegExp) {
@@ -170,6 +177,8 @@ export function checkMessageRules(draft: Row, profile: Row, analysis?: Analysis)
         throw new DomainError(
           'UNSUPPORTED_TECHNOLOGY',
           `Technologia ${group[0]} w deklaracji kandydata nie wynika ze wskazanych faktów.`,
+          409,
+          { technology: group[0], claim: claim.text, factIds: claim.factIds },
         );
     }
   }

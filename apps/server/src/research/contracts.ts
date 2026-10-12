@@ -128,6 +128,12 @@ export function validateAnalysis(raw: unknown, sources: Source[]): Analysis {
     v.type = 'UNKNOWN';
     v.warnings.push('Rodzaj naboru niepotwierdzony.');
   }
+  if (v.inquiryBasis && !verifyQuote(v.inquiryBasis, sources)) {
+    v.inquiryBasis = null;
+    v.warnings.push(
+      'inquiryBasis: niepotwierdzony cytat; pominięto tę propozycję podstawy zapytania.',
+    );
+  }
   for (const key of conditionKeys) {
     const c = v.conditions[key];
     if (c.value !== 'unknown' && !verifyQuote(c, sources)) {

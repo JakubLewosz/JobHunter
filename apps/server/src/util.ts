@@ -64,6 +64,7 @@ export class DomainError extends Error {
     public code: string,
     message: string,
     public status = 409,
+    public details?: Record<string, unknown>,
   ) {
     super(message);
   }

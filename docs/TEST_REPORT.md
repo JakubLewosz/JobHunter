@@ -1,6 +1,139 @@
 # Weryfikacja — 12 października 2026
 
+## Diagnostyka i zachowanie materiałów — runda po fb8151e
+
+Punkt wyjścia fb8151e, czysty codex/local-windows-pilot, git fetch origin i zgodność
+HEAD/upstream 0/0. DEVELOPMENT/LOCAL_ONLY i blokada prawdziwej poczty bez zmian.
+Natywny CLI 0.162.0-alpha.17.2, istniejące logowanie ChatGPT, ta sama izolacja/flag.
+
+### Ustalone przyczyny i poprawki
+
+- Utrata informacji o awarii: ExecCodexRunner redukował błąd do ogólnego kodu, a
+  model_calls nie zachowywało wersji/exit status/sygnału/komunikatu. Teraz każde
+  wywołanie ma ID, etap, początek/czas, wersję CLI, operację, exit code/sygnał,
+  klasyfikację i ograniczony oczyszczony komunikat. SEARCH także zapisuje błędy.
+  Diagnostyka błędu jest w lokalnej bazie i osobnym prywatnym katalogu tymczasowym,
+  nie w repo; bez środowiska, args, danych logowania i niepotrzebnych zdarzeń modelu.
+  Fixture prawdziwego procesu Node kończy się kodem 37: zachowano EFRAME37/cause,
+  usunięto fikcyjne tokeny/API key/Bearer oraz całe zdarzenie agent_message.
+- Utrata tekstu: zapis następował dopiero po checkDraft i review. Strukturalny
+  DRAFT jest teraz utrwalany przed nimi jako NIEZWERYFIKOWANY: dokładny tekst,
+  wersja/hash, payload z claims/factIds/evidenceIds i kontekst faktów/dowodów.
+  Migracja 017 jest addytywna; backup przed migracją pozostaje aktywny. Błąd review
+  zachowuje tekst, ERROR i null supported; retry sprawdza ten sam materiał bez DRAFT.
+  REJECTED kodowo zachowuje powód/fragment, a UNSUPPORTED_TECHNOLOGY również
+  technologię, claim i factIds. Zmiana tekstu/profilu/kontaktu/źródeł unieważnia
+  kontrolę. Sender wymaga bieżącego powiązania i zakończonych kontroli, nie samego
+  starego supported=true. Edycja podczas generowania nie jest nadpisywana; nowy
+  wynik pozostaje osobnym niezweryfikowanym materiałem w historii wersji.
+- Odtworzone negatywne review na realnych zapisanych materiałach: brak mapowania
+  sourceId → evidence.id i brak inquiryBasis w fragmentach przekazanych do kontroli.
+  Model żądał równości dwóch różnych przestrzeni identyfikatorów i oceniał hipotezy
+  metadanych jako deklaracje w mailu, choć sam opisywał tekst jako poparty faktami.
+  Pakiet ma teraz sourceId przy dowodzie i kodowo sprawdzone dodatkowe cytaty;
+  niezweryfikowane inquiryBasis daje null/ostrzeżenie. Review ocenia twierdzenia
+  tematu/treści/claims, nie niewybrane projekty w objaśnieniu analizy. Pytanie o
+  dostępność nie potwierdza zatrudnienia zdalnego; instrukcja ekstrakcji rozdziela
+  zdalną obsługę klientów/ceny usług od warunków współpracy kandydata.
+- Odtworzony false positive technologii w fixture: „modele językowe” w deklaracji
+  vs „modeli językowych” w zatwierdzonym fakcie. Dodano tylko tę odmianę do istniejącej
+  grupy LLM. Nadal konieczny jest odpowiedni factId; samo występowanie technologii
+  w firmie lub niepowiązanym fakcie nie wystarcza. FAIL → PASS, negatywna asercja
+  obcego factId zachowana. Nie jest to dowód, że ten konkretny zwrot wystąpił w
+  historycznym utraconym szkicu UNSUPPORTED_TECHNOLOGY.
+
+Historyczne SEARCH/DRAFT/SEMANTIC_REVIEW / CODEX_FAILED z poprzedniej rundy nadal
+mają **nieustaloną pierwotną przyczynę**: komunikaty i exit metadata nie istnieją.
+Nie powróciły w tej rundzie. Nie przypisano im limitu, loginu ani błędu kontekstu
+wyłącznie na podstawie kodu. Historyczny kwestionowany fragment technologii także
+nie został odzyskany; utraconych tekstów nie przedstawiamy jako odzyskanych.
+
+### Replay zapisanych źródeł
+
+Odczytano wyłącznie poprzednią syntetyczną diagnostykę, read-only, i wykonano
+spójne kopie SQLite poza repo. Oryginał identyczny bajtowo po backupie. Nie otwierano
+prywatnej bazy roboczej. Replay ma wyłączone search/HTTP i brak klasy/gateway Gmaila.
+Publiczny parser v1 jest jawnie historią tekstu, nie nowym odczytem parsera v2.
+
+Jeden zachowany szkic: ponowiono wyłącznie review, dokładny tekst/wariant/hash
+bez zmian. Trzy utracone teksty: 3 NOWE generacje na zachowanych analizach/źródłach,
+nie rekonstrukcja poprzedniej treści. Ich początkowe review wykonały się poprawnie,
+ale dały false przez opisany niepełny kontekst, nie przez awarię procesu.
+
+Po poprawce kontekstu: **5 review-only** na kopiach (3 nowych materiałów replay +
+2 z pierwszej świeżej próby), **5 supported=true/issues=[]**, **0 DRAFT i 0 HTTP/search**.
+Porównano dokładny tekst, wersję i hash przed/po: wszystkie identyczne. Zachowano
+prywatne wyniki false przed poprawką; nie przepisano wyników w oryginalnych bazach.
+
+### Świeże próby publiczne
+
+Dokładnie dwie próby tej rundy, osobne nowe dane, profil syntetyczny, każda <15 min
+i ≤5 firm. Pierwsza istniejącym npm run smoke:public, druga celowo 1 wcześniej
+odrzucona firma: świeży HTTP strony i kontaktu, bez powtarzania wyszukiwania.
+
+| Wynik | Próba 1: search/HTTP | Próba 2: celowany świeży HTTP |
+| --- | ---: | ---: |
+| Kandydaci/firmy | 5 | 1 |
+| Strony READ | 6 | 2 |
+| Zakończone ekstrakcje | 5 | 1 |
+| Dopuszczone kontakty GENERAL | 4 | 1 |
+| Wygenerowane i zachowane wersje | 4 | 1 |
+| Odrzucenia kontaktu | 1 | 0 |
+| Odrzucenia kodowe szkicu | 0 | 0 |
+| Poprawnie wykonane review z false | 2 | 0 |
+| Błędy wykonania review | 0 | 0 |
+| Szkice po pełnej kontroli treści | 2 | 1 |
+| Niezweryfikowane / niedopuszczone przez review | 2 | 0 |
+| Attempts / outbox | 0 / 0 | 0 / 0 |
+
+Tabeli nie przepisano po replay: pierwsze dwa false były realnymi wynikami i nie
+liczyły się jako szkice po kontroli. Ich późniejsze 2 PASS należą do replay, nie
+do trzeciej próby publicznej. Niezweryfikowany materiał nie jest gotowy do wysyłki;
+nawet pozytywny review w tym adapterze nigdy nie udziela prawa do wysyłki.
+
+Próba 2 potwierdziła parser v2 na rzeczywistej wcześniej problematycznej stronie:
+Email oddzielone od adresu, brak dawnego zlepienia, literalny kontakt i kontekst,
+GENERAL bez promocji, ekstrakcja → kwalifikacja → zachowany szkic → code/review PASS.
+Bez zgadywania, zmiany źródła lub ręcznego dopuszczania kontaktu. Nie było limitu/
+braku logowania; test tych blokad pozostaje fixture, nie pozorowanym research.
+
+### Stop i warunki CI
+
+Ponownie odczytano log macOS fb8151e: large-history receipt **1131,73 ms**,
+revoke **1132,63 ms** (różnica **0,90 ms**), odpowiedź **1139,52 ms**; brak POST
+w toku w tym przypadku. Oddzielny przyjęty POST kończył się po **352,25 ms**,
+nie był odwoływany przez Stop. FAIL dotyczył receipt <1000 ms, nie bramki wysyłki.
+
+Izolowane 3 pomiary przed pełnym check: receipt **335,79 / 295,26 / 207,58 ms**;
+revoke po kolejnych **0,12 / 0,12 / 0,10 ms**. Historia: 10 035 wierszy, **7 588 632
+bajty** odpowiedzi, budowa danych **17,65–19,72 ms**, dodatkowo serializacja i obsługa
+HTTP na tym samym event loop. Pełny zestaw wykonywał testy w kilku procesach wraz
+z ciężkimi testami Git/SQLite; w kolejnych lokalnych check receipt **459,56 / 550,26 ms**.
+Dokładnego opóźnienia 1131,73 ms na hostcie CI nie odtworzono lokalnie; obciążenie
+współbieżnymi testami i dużą odpowiedzią jest rozpoznanym czynnikiem, nie dowodem
+na każdy szczegół schedulera/GC tamtego przebiegu ani gwarancją SLA aplikacji.
+
+Pełny zestaw nadal mierzy Stop i twardo sprawdza brak nowych POST **od chwili odwołania
+prawa**, także przed odpowiedzią HTTP. Ten sam scenariusz i 10 000 firm/kontaktów
+jest dodatkowo uruchamiany szeregowo 3 razy (12 przypadków) w test:performance,
+automatycznie w npm run check / obu jobach CI. Progi **1000 ms receipt i 100 ms
+revoke po receipt bez zmian**. To rozdzielenie testu funkcjonalnego pod konkurencyjnym
+obciążeniem od powtarzalnego pomiaru; nie wyłączenie pomiaru lub zakazu POST.
+
+Końcowy npm run check: **338/338 backend, 12/12 izolowanych pomiarów Stop, 7/7 UI**,
+typecheck/build PASS, macOS arm64 / Node v24.11.0. Celowane nowe regresje 12/12 PASS.
+git diff --check PASS. Ostatnia powtórka początkowo miała brak pliku Chromium w
+cache: backend/performance przeszły, UI nie wystartowało. Odtworzono wyłącznie
+zależność testową przez playwright install chromium i powtórzono cały check.
+CI finalnego SHA jest sprawdzane po pushu; wynik będzie podany w czacie, bez
+zakładania PASS na podstawie samego workflow lub wcześniejszego SHA. Szczegółowe źródła,
+szkice i diagnostyka pozostają poza repo. **Zero** rzeczywistego Gmaila/skrzynek/
+send/SELF_TEST, prywatnego runtime/CV/materiałów/liczników, repo historii lub zakupów.
+Domowa instalacja Windows i jej profil/Gmail nadal nieweryfikowane; CI to fixture.
+
 ## Powtórzenie publicznego researchu po strictOutputSchema
+
+Poniżej zapis poprzedniej rundy, nie aktualne liczniki.
 
 Punkt wyjścia **a32d843**, codex/local-windows-pilot. git fetch origin wykonany;
 HEAD zgodny z upstream (0/0), checkout czysty. Zachowano bieżącą gałąź. Natywny
