@@ -1,6 +1,44 @@
 # Zadania
 
-## Aktualny stan — 11 października 2026
+## Wynik 12 października 2026 — jeden komputer roboczy
+
+Nowa decyzja zastępuje obowiązek prywatnego Git/handoff. Kod rozwijany na Windows/macOS;
+jedna trwała historia i prawdziwa poczta wyłącznie w jawnie skonfigurowanej instalacji
+domowego Windowsa. PRIVATE_GIT pozostaje opcjonalny, odłożony. Brak origin nie blokuje LOCAL_ONLY.
+
+- [x] Stan bazowy najnowszej gałęzi overnight (810b860), izolowane kontrole macOS.
+- [x] LOCAL_ONLY w całej ścieżce AUTO; blokada lokalnego profilu, bezpieczny backup
+      przed migracją i diagnostyka istniejącej historii; restart bez zgody na send.
+- [x] Domyślny development, osobne dane i technicznie niedostępny native Gmail;
+      jawna lokalna instalacja Windows, bez zmiany prywatnego runtime w tej sesji.
+- [x] HTML → źródło → lokalny kontekst adresu → kwalifikacja → decyzja AUTO;
+      granice sekcji/wierszy/list, konflikty i świadoma kontrola starego cache.
+- [x] Trzy widoki, lokalna gotowość, test prawdziwego API Stop z pomiarami,
+      regresje, dwa procesy i restart/backup na syntetycznych danych.
+- [x] Adapter diagnostyczny bez Gmaila i jedna ograniczona próba: 5 firm/5 stron,
+      FAILED_EXTRACTION przez schemat CLI, 0 szkiców. Schemat poprawiony i natywnie
+      sprawdzony na danych syntetycznych; nie powtarzano publicznej próby. Pełny wynik
+      researchu nadal do potwierdzenia na Windowsie, gotowe smoke:public / --approved-profile.
+- [x] Dokumentacja A/B/C, końcowy check **319 backend/7 UI**, 6 soak, diff check,
+      przegląd kodu i skan 61 plików bez sekretów/prywatnych artefaktów.
+
+Kod: 3dfb49b8e4db92580fb3be735088b923f37d7e93, codex/local-windows-pilot.
+Publikacja obejmuje osobny commit raportu. Zdalny ref i wynik CI **finalnego SHA** są
+sprawdzane po pushu i podane w końcowym raporcie czatu / Actions; nie zakładaj wyniku
+na podstawie samego przygotowania workflow. Main nie jest automatycznie scalany.
+
+Pozostaje użytkownikowi na domowym Windowsie: ustalić i potwierdzić oryginalną historię
+(doctor, w razie potrzeby jednorazowy prywatny import), backup, lokalny WORKSTATION,
+zatwierdzone materiały/CV/konto/polityka i aktualny publiczny smoke bez Gmaila.
+Dopiero potem samodzielny pilotaż 3–5 maili i ewentualna dłuższa sesja. Brak origin
+historii nie jest zadaniem blokującym. Nieweryfikowane: prywatna instalacja Windows,
+pełny dzień Google, systemowy sen/wybudzenie, dostarczalność i pełna izolacja OS.
+
+Zakaz tej sesji: prawdziwe send/SELF_TEST, odczyt skrzynki/OAuth, prywatna baza/CV,
+liczniki, zakup usług, repo historii i zatrzymanie aplikacji użytkownika.
+Starsze listy poniżej są zapisem historii i nie przywracają obowiązkowego handoff.
+
+## Stan historyczny — 11 października 2026
 
 ### Stabilizacja `codex/overnight-stabilization`
 

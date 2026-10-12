@@ -1,4 +1,110 @@
-# Weryfikacja — 11 października 2026
+# Weryfikacja — 12 października 2026
+
+## LOCAL_ONLY i domowy Windows
+
+Pobrano aktualne refy GitHub; main 4e6b864 był o 5 commitów za overnight 810b860.
+Czysty lokalny checkout, nowa gałąź codex/local-windows-pilot. Nie znaleziono aktywnego
+backendu w tym checkoutcie. Bazowy check na macOS arm64 / Node v24.11.0:
+282/282 backend, 7/7 Chromium, typecheck/build PASS.
+
+Końcowy npm run check: **319/319 backend, 7/7 UI**, typecheck/build PASS.
+Backend 101,3 s, Playwright 32,7 s. git diff --check PASS. Wszystkie dane testów
+syntetyczne w katalogach tymczasowych, odbiorcy example.test / example.invalid.
+To rzeczywiste testy macOS tego kodu, nie prywatnej konfiguracji użytkownika.
+Nie wykonano lokalnej próby PowerShell/instalacji domowego Windowsa nowej wersji;
+wynik CI finalnego SHA będzie podany po faktycznym zakończeniu.
+
+LOCAL_ONLY: pełny search/read/qualify/draft/send na fikcyjnych providerach bez repo.
+claim/assertOwner/checkpoint/status HistorySync są celowo zatrute błędem; sesja
+przechodzi, bo nie korzysta z nich ani Gita. Start/Wznów/Stop/readiness i shutdown
+pozostają lokalne. Dwa Start dają jedną sesję. Drugi rzeczywisty proces otwierający
+ten sam profil na innym porcie dostaje PROFILE_LOCKED. Utrata lock w oknie przed
+POST daje zero POST. Development nie ma natywnego gateway/metadanych konta; sam
+Windows bez lokalnego markeru też nie upoważnia. Fikcyjne AUTO działa niezależnie od OS.
+
+Przejście PRIVATE_GIT → LOCAL_ONLY wymaga Stop, potwierdzenia i zgodności zamkniętej
+opublikowanej historii; niepowodzenie nie daje fallbacku. Istniejące testy opcjonalnego
+PRIVATE_GIT zachowane. Restart i odtworzenie backupu nie przenoszą prawa do wysyłki.
+Zmiana RESEARCH_ONLY ↔ AUTO zachowuje bazę i niezmienioną politykę, lecz odwołuje sesje
+i zgody. Timeout/shared unknown po restarcie lub zmianie historii nadal blokuje.
+
+Backup przez VACUUM INTO obejmuje WAL. Test odtworzenia i migracji syntetycznej bazy
+poprzedniego schematu zachowuje pełny eksport firm/aliasów/manual records/blokad/
+SENT/SEND_UNKNOWN/shared attempts/shared usage i liczników; brak aktywnych approvals.
+Migracja 016 dodaje tylko strukturę kontekstu. Nie otwierano prywatnej bazy do migracji.
+
+HTML: reprodukcja FAIL przed poprawką na dokładnym przykładzie bez kropki między
+sekcjami. Po poprawce prawdziwy PublicSourceReader/DOM → kwalifikacja → fikcyjny AUTO:
+osobny GENERAL i sprzedaż, nagłówek Sprzedaż nad biuro, HR obok faktur/RODO, div/section,
+lista/br/tabela, heading nad kartą/listą, minifikacja/wcięcia, sprzeczne etykiety,
+marketing systemów sprzedażowych, globalna odmowa, zmiana celu i usunięcie adresu PASS.
+GENERAL pozostaje GENERAL. Stary cache PUBLIC_HTTP bez struktury nie kwalifikuje
+kontaktu; następuje realny ponowny odczyt i nowa wersja. compact nadal weryfikuje cytaty.
+Hash obejmuje wersję parsera i surową treść; stare rekordy i wysłane MIME nieprzepisane.
+Test MIME nadal porównuje identyczną treść, normalizując tylko nowe granice bloków.
+
+UI: trzy widoki, brak origin/handoff w LOCAL_ONLY, stan developerski i syntetyczne dane,
+lokalna gotowość, Start/Pauza/Stop, historia i ponowne otwarcie zamkniętej karty podczas
+działającej sesji. Zrzuty 1440/390 px obejrzane, brak poziomego overflow. PNG tylko
+w ignorowanym test-results. Dodatkowo końcowy scenariusz AUTO czeka na aktualny licznik.
+
+## Pomiar Stop przez HTTP
+
+Realny serwer Fastify na osobnym porcie, prawdziwe żądania HTTP/sesja/CSRF; fikcyjne
+usługi. Od t0 wysłania Stop mierzymy odebranie request przez Node, odwołanie prawa do
+nowego POST i odpowiedź. Fikcyjny POST już przyjęty kończy się niezależnie po 350 ms.
+
+| Obciążenie | Odebranie Stop | Odwołanie prawa | Odpowiedź | Zakończenie przyjętego POST |
+| --- | ---: | ---: | ---: | ---: |
+| Powolny publiczny read | 34,87 ms | 37,39 ms | 40,40 ms | brak |
+| Powolny model | 25,60 ms | 26,86 ms | 30,10 ms | brak |
+| 10 000 firm i kontaktów + 3 równoległe odświeżenia | 476,68 ms | 477,75 ms | 478,12 ms | brak |
+| Przyjęty fikcyjny POST | 21,48 ms | 22,79 ms | 23,17 ms | 350,61 ms |
+
+Odtworzony wcześniejszy FAIL: 10 000 firm i 3 odświeżenia dashboardu dały 3269,64 ms
+do odebrania Stop. Usunięto N+1 historii i pełną historię z normalnego dashboardu.
+Końcowy test jest silniejszy: także 10 000 kontaktów i odczyt pełnej historii firm.
+Po Stop żadnego nowego POST. To pomiary na tym macOS, nie SLA na każdym komputerze,
+czas internetu/Google lub odwołanie już wysłanego żądania.
+
+Soak: **6/6 PASS** — LOCAL_ONLY i PRIVATE_GIT, seed 17/41/93. Każdy 96 kroków po
+15 minut plus 6 godzin logicznego snu, 30 h logicznych. Lokalny wariant zatruwa wszystkie
+operacje HistorySync także po restarcie. ≥9 kierunków, >5 wiadomości, queue≤3, brak
+drugiego kontaktu/rezerwacji, Pauza/Stop/restart/dzień Warszawa, błędy odczytów i końcowy
+timeout zachowany jako SEND_UNKNOWN. To symulacja zegara z fikcyjnymi usługami, nie
+całodniowa praca z Google. Prawdziwy systemowy sleep/resume nadal nieweryfikowany.
+
+## Ograniczona próba publiczna
+
+Wykonano jedną smoke:public na macOS: nowy katalog tymczasowy, jawnie syntetyczny profil,
+maksymalnie 5 firm/15 min. Brak GmailJobHunter/gateway/native poczty/zgód/outbox potwierdzony
+w kodzie i testem przed uruchomieniem. Native CLI **0.162.0-alpha.17.2**, exec help i
+login status ChatGPT sprawdzone; bez odczytu auth.json lub zmian konfiguracji globalnej.
+
+Wynik **niepełny/FAILED_EXTRACTION**: 5 kandydatów, 5 odczytanych stron, 0 zakwalifikowanych
+kontaktów, 0 szkiców i 0 prób/outbox. Pięć ekstrakcji zapisanych jako CODEX_FAILED.
+Kontrolny syntetyczny proces ujawnił odrzucenie schematu (optional properties w strict
+output); poprawka wymaga jawnych kluczy w schemacie CLI, bez zmiany walidatorów/izolacji.
+Regresja offline i rzeczywisty Codex na fikcyjnym wejściu PASS, webSearches=0.
+
+Nie powtarzano publicznej próby po poprawce. Nie ma szkiców do oceny zgodności treści
+ze źródłami; próba nie rozstrzyga kontekstu kontaktów na realnych stronach lub skuteczności
+kandydatury. Pełne źródła/wyniki są poza repo; raport nie publikuje firm/adresów/logów.
+Gotowe polecenie Windows: npm run smoke:public, potem jawne --approved-profile KATALOG_BAZOWY
+z już zatwierdzonymi materiałami (tylko odczyt oryginału). Brak loginu/uprawnień/limitu
+da BLOCKED_EXTERNAL, nie fallback do paid API/full access.
+
+**Zero prawdziwych send/SELF_TEST, odczytów skrzynki, zmian nadawcy/OAuth/CV/materiałów,
+prywatnej bazy/liczników/runtime, repo historii lub zakupów.** Nie zatrzymano aplikacji
+użytkownika i nie uruchomiono migracji na prywatnych danych. Publiczna próba była
+wyraźnie diagnostyczna; nie przygotowuje kolejki do późniejszej produkcyjnej wysyłki.
+
+## Wyniki historyczne
+
+Kod nowego etapu: 3dfb49b8e4db92580fb3be735088b923f37d7e93, gałąź
+[codex/local-windows-pilot](https://github.com/JakubLewosz/JobHunter/tree/codex/local-windows-pilot).
+Osobny commit zachowuje ten raport. Zdalny ref i CI finalnego SHA są sprawdzane po
+pushu i raportowane w czacie / Actions; main nie jest automatycznie scalany.
 
 ## Stabilizacja nocna — `codex/overnight-stabilization`
 
