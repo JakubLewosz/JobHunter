@@ -230,7 +230,9 @@ export function App() {
   const dataRef = useRef<Data | undefined>(undefined);
   const screenRef = useRef(screen),
     autoViewRef = useRef(autoView),
-    loadVersion = useRef(0);
+    loadVersion = useRef(0),
+    profileRefresh = useRef(0),
+    loadedProfileRefresh = useRef(0);
   screenRef.current = screen;
   autoViewRef.current = autoView;
   async function load() {
@@ -255,6 +257,8 @@ export function App() {
       };
       paths.push(...(needed[screenRef.current] ?? []));
     }
+    const refresh = profileRefresh.current;
+    if (refresh !== loadedProfileRefresh.current) paths.push('profile');
     const unique = [...new Set(paths)];
     const values = await Promise.all(unique.map((p) => api(p)));
     if (version !== loadVersion.current) return;
@@ -271,6 +275,8 @@ export function App() {
       dashboard,
       ...Object.fromEntries(unique.map((p, i) => [p, values[i]])),
     } as Data;
+    // Only the accepted load consumes invalidation; a newer view/poll must inherit it.
+    if (unique.includes('profile')) loadedProfileRefresh.current = refresh;
     dataRef.current = updated;
     setData(updated);
   }
@@ -306,6 +312,7 @@ export function App() {
     setError('');
     try {
       await fn();
+      profileRefresh.current++;
       await load();
       if (message) setToast(message);
     } catch (e) {

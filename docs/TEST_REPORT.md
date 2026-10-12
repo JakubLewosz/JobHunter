@@ -1,5 +1,55 @@
 # Weryfikacja — 12 października 2026
 
+## Zatwierdzone CV po szybkiej nawigacji — runda po 2f515ff
+
+Punkt wyjścia 2f515ff, czysty codex/local-windows-pilot, git fetch origin,
+HEAD/upstream 0/0. MacBook, DEVELOPMENT i oddzielne syntetyczne bazy testowe.
+Nie zmieniono działającej poprawki review/sendera, backendu, parsera, schematów
+Codexa, LOCAL_ONLY, prywatnego runtime/CV/nadawcy lub historii. Zero native Gmaila,
+publicznego researchu i rzeczywistych maili/SELF_TEST.
+
+**Mechanizm błędu potwierdzono pełnym testem przeglądarkowym przed poprawką.**
+Po dodaniu fikcyjnego PDF zatrzymano żądanie zatwierdzenia, przełączono panel na
+Wiadomości i dopiero wtedy przekazano żądanie do istniejącego backendu fixture.
+Zatwierdzenie zwróciło 200; ponowny odczyt profilu potwierdził approved_at dla
+dokładnie tego ID/pliku w testowej SQLite. Mimo tego select zawierał wyłącznie
+placeholder, także po kilku cyklach pollingu. Test FAIL po 10 s asercji obecności
+opcji, bez zwiększenia timeoutu. Oczyszczone dane syntetyczne: status/ID/profil/opcje
+zachowane w prywatnym katalogu tymczasowym poza repo, bez dołączenia do artefaktów.
+
+Przyczyna: act po sukcesie wykonywał load zależny od bieżącego widoku. Po nawigacji
+drafts/outbox odświeżały się, ale profile nie; cached cvs zachowywało approved_at=null,
+a GmailDelivery poprawnie wykluczał niezatwierdzony plik. Taki sam objaw wystąpił
+na MacBooku, więc nie przypisujemy go wydajności Windowsa. Stary Windows CI
+38251081308 potwierdza brak opcji/timeout, ale nie zawiera diagnostyki API/profile:
+ten konkretny historyczny interleaving pozostaje nieudowodniony.
+
+Minimalna poprawka w App.tsx: udane act invaliduje profil, a następny load pobiera
+go niezależnie od aktualnego widoku. Generacja invalidacji jest konsumowana dopiero
+przez zaakceptowany load zawierający profil. Jeśli loadVersion odrzuci starszą
+odpowiedź, nowszy load/poll przejmuje nadal oczekującą invalidację. Starsza odpowiedź
+nie nadpisuje nowszego stanu. Nie ustawiamy approved_at optymistycznie; zachowano
+backendowe zatwierdzenia, CV hash/binding i unieważnianie podglądu po zmianie CV.
+Nie przywrócono pełnego pobierania aplikacji co 2 s ani nie zmieniono timeoutów.
+
+8 nowych testów UI: zatwierdzenie i upload po nawigacji; odmowa 403 i błąd sieci;
+opóźniona stara odpowiedź profilu; odrzucenie mutation refresh przez nowszy poll
+z zastępczym pobraniem profilu; kilka CV, dokładny wybór, polling i unieważnienie
+podglądu/zgody; wspólna ścieżka PersonalMaterials w ustawieniach AUTO_POLICY.
+Nowe testy nie wywołują sendera; przygotowanie podglądu nie tworzy outbox/POST.
+AUTO pozostaje zatrzymane, a samo zatwierdzenie/wybór CV nie zmienia polityki.
+
+Zwykły gmail.spec osobno zachowany: operacje potwierdzane rzeczywistą odpowiedzią
+API i stanem UI, konkretne ID CV zamiast ogólnego przycisku. Nie zastępuje regresji
+nawigacji. Trzy z góry zaplanowane przebiegi 9 testów każdy: **27/27 PASS**; każde
+uruchomienie Playwright tworzy świeży root DEVELOPMENT i nowe bazy fixture.
+Zegar Playwright służy do wyzwalania pollingu, nie sleep/reload maskującego błąd.
+Pełny npm run check: typecheck/build PASS, **350/350 backend, 12/12 performance Stop,
+15/15 UI**. git diff --check i formatowanie zmienionych plików TS/TSX PASS.
+CI finalnego SHA na obu systemach zostanie sprawdzone po pushu i wskazane w raporcie
+końcowym czatu, nie na podstawie wcześniejszego zielonego przebiegu.
+To nie jest test rzeczywistej poczty ani instalacji domowego Windowsa.
+
 ## Współbieżność review i sendera — runda po c9b899f
 
 Punkt wyjścia c9b899f, czysty codex/local-windows-pilot, po git fetch origin
