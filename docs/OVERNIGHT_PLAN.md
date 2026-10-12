@@ -1,5 +1,9 @@
 # Stabilizacja — 11 października 2026
 
+Ten plan jest historyczny. Od 12 października aktualny zakres jest w TASKS:
+LOCAL_ONLY na jednym domowym Windowsie. Rozwój macOS/Windows bez prawdziwej poczty;
+PRIVATE_GIT i jego dalsza macierz handoff są opcjonalne, odłożone i nie blokują pilotażu.
+
 Gałąź `codex/overnight-stabilization`, punkt wyjścia `4e6b864`. Czysty checkout;
 zgoda obejmuje kod/testy/dokumentację i push do JakubLewosz/JobHunter.
 Testy wyłącznie na fikcyjnych providerach, osobnych bazach i lokalnych repo Git.

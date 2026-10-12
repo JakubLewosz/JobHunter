@@ -53,6 +53,7 @@ export function AutoWorkspace({
   const d = data.dashboard,
     auto = d.state.auto ?? {},
     p = auto.policy;
+  const local = auto.sync?.mode === 'LOCAL_ONLY';
   const [form, setForm] = useState({
     senderEmail: p?.senderEmail ?? '',
     cvId: p?.cvId ?? '',
@@ -124,7 +125,14 @@ export function AutoWorkspace({
                   ? 'Historia firm'
                   : 'Ustawienia'}
             </h1>
-            <p>Odpowiedzi czytasz i obsługujesz sam w Gmailu.</p>
+            <p>
+              {auto.runtime === 'DEVELOPMENT'
+                ? 'Tryb developerski — bez prawdziwej wysyłki'
+                : 'Odpowiedzi czytasz i obsługujesz sam w Gmailu.'}
+            </p>
+            {auto.fictionalProviders && (
+              <p>Dane syntetyczne tej instalacji; nie są historią domowego Windowsa.</p>
+            )}
           </div>
         </div>
         {view === 'work' && (
@@ -136,6 +144,7 @@ export function AutoWorkspace({
                   disabled={
                     busy ||
                     !p ||
+                    !auto.readiness?.installation ||
                     (auto.session?.status === 'RUNNING' && !d.state.paused && !auto.senderWait)
                   }
                   onClick={() =>
@@ -226,6 +235,8 @@ export function AutoWorkspace({
                           codex: 'Codex i wyszukiwanie',
                           policy: 'Aktualna polityka',
                           history: 'Konfiguracja historii',
+                          database: 'Spójność lokalnej bazy',
+                          installation: 'Lokalna instalacja / fikcyjne adaptery testowe',
                           unresolved: 'Niepewne próby',
                         } as Record<string, string>
                       )[key]
@@ -253,17 +264,24 @@ export function AutoWorkspace({
               </p>
               <p>
                 Historia:{' '}
-                {stateLabels[auto.sync?.status] ?? auto.sync?.status ?? 'Wymaga konfiguracji'}
+                {local
+                  ? 'Historia lokalna — na tym komputerze'
+                  : (stateLabels[auto.sync?.status] ?? auto.sync?.status ?? 'Wymaga konfiguracji')}
               </p>
-              <button
-                className="secondary"
-                onClick={() =>
-                  void act(() => api('auto/handoff', {}), 'Sesja zakończona i historia przekazana.')
-                }
-                disabled={busy || auto.sync?.status !== 'OWNED'}
-              >
-                Stop i przekaż historię drugiemu urządzeniu
-              </button>
+              {!local && (
+                <button
+                  className="secondary"
+                  onClick={() =>
+                    void act(
+                      () => api('auto/handoff', {}),
+                      'Sesja zakończona i historia przekazana.',
+                    )
+                  }
+                  disabled={busy || auto.sync?.status !== 'OWNED'}
+                >
+                  Stop i przekaż historię drugiemu urządzeniu
+                </button>
+              )}
             </section>
             {!p && (
               <section className="panel">
@@ -564,69 +582,101 @@ export function AutoWorkspace({
                 Zatwierdź politykę
               </button>
             </section>
-            <section className="panel">
-              <h2>Prywatne repozytorium historii</h2>
-              <p>
-                Wskaż osobne, sklonowane prywatne repozytorium na gałęzi main. Po zakończeniu sesji
-                użyj „Stop i przekaż historię”. Niedomknięta sesja blokuje drugie urządzenie.
-              </p>
-              <label>
-                Katalog lokalny
-                <input value={directory} onChange={(e) => setDirectory(e.target.value)} />
-              </label>
-              <label>
-                Dokładny adres origin
-                <input value={remote} onChange={(e) => setRemote(e.target.value)} />
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={privateConfirmed}
-                  onChange={(e) => setPrivateConfirmed(e.target.checked)}
-                />
-                Potwierdzam, że wskazany origin jest moim prywatnym repozytorium i zatwierdzam
-                publikowanie tam minimalnej historii.
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={initialHistoryConfirmed}
-                  onChange={(e) => setInitialHistoryConfirmed(e.target.checked)}
-                />
-                Przy pierwszym utworzeniu historii: ta lokalna baza zawiera dotychczasowe kontakty.
-                Potwierdzam ją jako początkowe źródło historii.
-              </label>
-              <button
-                className="secondary"
-                disabled={busy || !privateConfirmed || !d.state.stopped}
-                onClick={() =>
-                  void act(
-                    () =>
-                      api('auto/history/configure', {
-                        directory,
-                        expectedRemote: remote,
-                        confirmedPrivate: true,
-                        confirmedInitialHistory: initialHistoryConfirmed,
-                      }),
-                    'Konfiguracja prywatnej historii zapisana.',
-                  )
-                }
-              >
-                Zapisz repozytorium historii
-              </button>
-              <button
-                className="secondary"
-                disabled={busy || !d.state.stopped || !auto.sync?.configured}
-                onClick={() =>
-                  void act(
-                    () => api('auto/history/prepare', {}),
-                    'Przygotowano i opublikowano historię bez uruchamiania sesji wysyłkowej.',
-                  )
-                }
-              >
-                Przygotuj historię bez uruchamiania sesji
-              </button>
-            </section>
+            {!local && (
+              <section className="panel">
+                <h2>Prywatne repozytorium historii</h2>
+                <p>
+                  Wskaż osobne, sklonowane prywatne repozytorium na gałęzi main. Po zakończeniu
+                  sesji użyj „Stop i przekaż historię”. Niedomknięta sesja blokuje drugie
+                  urządzenie.
+                </p>
+                <label>
+                  Katalog lokalny
+                  <input value={directory} onChange={(e) => setDirectory(e.target.value)} />
+                </label>
+                <label>
+                  Dokładny adres origin
+                  <input value={remote} onChange={(e) => setRemote(e.target.value)} />
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={privateConfirmed}
+                    onChange={(e) => setPrivateConfirmed(e.target.checked)}
+                  />
+                  Potwierdzam, że wskazany origin jest moim prywatnym repozytorium i zatwierdzam
+                  publikowanie tam minimalnej historii.
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={initialHistoryConfirmed}
+                    onChange={(e) => setInitialHistoryConfirmed(e.target.checked)}
+                  />
+                  Przy pierwszym utworzeniu historii: ta lokalna baza zawiera dotychczasowe
+                  kontakty. Potwierdzam ją jako początkowe źródło historii.
+                </label>
+                <button
+                  className="secondary"
+                  disabled={busy || !privateConfirmed || !d.state.stopped}
+                  onClick={() =>
+                    void act(
+                      () =>
+                        api('auto/history/configure', {
+                          directory,
+                          expectedRemote: remote,
+                          confirmedPrivate: true,
+                          confirmedInitialHistory: initialHistoryConfirmed,
+                        }),
+                      'Konfiguracja prywatnej historii zapisana.',
+                    )
+                  }
+                >
+                  Zapisz repozytorium historii
+                </button>
+                <button
+                  className="secondary"
+                  disabled={busy || !d.state.stopped || !auto.sync?.configured}
+                  onClick={() =>
+                    void act(
+                      () => api('auto/history/prepare', {}),
+                      'Przygotowano i opublikowano historię bez uruchamiania sesji wysyłkowej.',
+                    )
+                  }
+                >
+                  Przygotuj historię bez uruchamiania sesji
+                </button>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={initialHistoryConfirmed}
+                    onChange={(e) => setInitialHistoryConfirmed(e.target.checked)}
+                  />
+                  Lokalna baza obejmuje pełną historię; od teraz pracuje tylko domowy Windows.
+                </label>
+                <button
+                  className="secondary"
+                  disabled={busy || !d.state.stopped || !initialHistoryConfirmed}
+                  onClick={() =>
+                    void act(
+                      () =>
+                        api('auto/history/local', {
+                          confirmedHistory: true,
+                          confirmedSingleWorkstation: true,
+                        }),
+                      'Zapisano LOCAL_ONLY; historia zachowana.',
+                    )
+                  }
+                >
+                  Przejdź na historię lokalną
+                </button>
+              </section>
+            )}
+            {local && (
+              <section className="panel">
+                <h2>Historia lokalna — na tym komputerze</h2>
+              </section>
+            )}
           </>
         )}
       </main>

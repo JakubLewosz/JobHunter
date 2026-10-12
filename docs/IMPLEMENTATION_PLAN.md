@@ -1,6 +1,6 @@
 # Rozwój E3 — 7 października 2026
 
-> Ten plan jest zapisem wcześniejszego etapu. Od 11 października obowiązuje specyfikacja 2.0, AGENTS i aktualna część TASKS: AUTO_POLICY, praca ciągła i prywatne przekazanie historii. Dawna blokada E5/akceptacja każdego maila nie jest bieżącym wymaganiem.
+> Ten plan jest historyczny. Od 12 października obowiązuje specyfikacja 2.1, AGENTS i aktualne TASKS: AUTO_POLICY, praca ciągła, LOCAL_ONLY na domowym Windowsie i osobny development. Prywatny Git/handoff jest opcjonalny i odłożony. Dawna blokada E5/akceptacja każdego maila nie jest bieżącym wymaganiem.
 
 Punkt wyjścia: czyste `main`, commit `109effa`. Bazowe `npm run check`: 44 testy i 4 scenariusze UI, PASS. Bez zastępowania istniejącej aplikacji.
 

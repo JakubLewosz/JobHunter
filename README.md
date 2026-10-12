@@ -1,90 +1,81 @@
 # JobHunter
 
-Osobiste narzędzie Jakuba Lewosza do pierwszego kontaktu z firmami w sprawie płatnej, regularnej współpracy programistycznej. Polski research, polskie wiadomości, zatwierdzone fakty i CV. Preferencje: w pełni zdalnie, około 20 godzin tygodniowo głównie po lekcjach. Odpowiedzi użytkownik obsługuje sam w Gmailu.
+Osobiste narzędzie do pierwszego kontaktu z firmami działającymi w Polsce: płatna, regularna współpraca programistyczna, w pełni zdalnie, około 20 godzin tygodniowo po lekcjach. Zatwierdzone fakty/CV i polskie wiadomości. Odpowiedzi użytkownik obsługuje w Gmailu.
 
-Aktualne wymagania: [specyfikacja](JobHunter_SPEC.md), [wizja](docs/WIZJA_PROJEKTU.md), [styl](docs/MESSAGE_STYLE.md). Stan: [TASKS](docs/TASKS.md). Historyczne próby dostarczalności pozostają w [audycie](docs/GMAIL_DELIVERABILITY_AUDIT.md). Potwierdzenie w Wysłanych nie dowodzi doręczenia do Odebranych.
+Od 12 października 2026 kod rozwijamy na Windows/macOS, lecz prawdziwy research i poczta pracują na **jednym domowym Windowsie**. GitHub przenosi kod, nie lokalną historię, CV, szkice lub poświadczenia. Push nie jest deploymentem. Gałąź `codex/local-windows-pilot` obejmuje nocne poprawki `810b860`.
 
-Stabilizacja na `codex/overnight-stabilization`: pominięcie znanej firmy nie kończy sesji,
-błędy są związane z wybraną wersją, zapytanie jest osobną decyzją od dopasowania oferty,
-a trwały planer rozwija kierunki po pierwszych ośmiu i stosuje cooldown. Kandydaci po
-zapełnieniu kolejki pozostają do przetworzenia. Zmiana zakresu unieważnia stare operacje;
-starsza polityka wymaga ponownego zatwierdzenia konfiguracji. Instrukcja:
-[Uruchomienie rano](docs/URUCHOMIENIE_RANO.md). Wyniki i pozostające ograniczenia:
-[TEST_REPORT](docs/TEST_REPORT.md), [plan prac](docs/OVERNIGHT_PLAN.md).
+[Specyfikacja](JobHunter_SPEC.md), [wizja](docs/WIZJA_PROJEKTU.md), [styl](docs/MESSAGE_STYLE.md), [zadania](docs/TASKS.md), [testy](docs/TEST_REPORT.md). Rozwój nie upoważnia do prawdziwej poczty, również SELF_TEST, lub zmian prywatnego runtime.
 
-## Tryby
+## Tryby i środowiska
 
-| Tryb              | Zachowanie                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| DEMO              | Osobna baza, fikcyjne firmy i lokalna poczta.                                                                      |
-| RESEARCH_ONLY     | Publiczne źródła i lokalne szkice, bez Gmaila i wysyłki.                                                           |
-| APPROVAL_REQUIRED | Opcjonalny ręczny podgląd i zgoda na konkretną paczkę.                                                             |
-| AUTO_POLICY       | Zatwierdzona konfiguracja i jawny **Start — szukaj i wysyłaj**; zgodne pierwsze wiadomości bez osobnej akceptacji. |
+| Tryb              | Działanie                                                                     |
+| ----------------- | ----------------------------------------------------------------------------- |
+| DEMO              | Osobna baza, fikcyjne firmy i symulowana poczta.                              |
+| RESEARCH_ONLY     | Publiczne źródła/szkice, bez Gmaila i zgód na przyszły send.                  |
+| APPROVAL_REQUIRED | Opcjonalny ręczny podgląd i zgoda na paczkę.                                  |
+| AUTO_POLICY       | Polityka i świadomy Start; zgodne pierwsze wiadomości bez osobnej akceptacji. |
 
-Rozwój kodu nie upoważnia do rzeczywistych wysyłek, również testowych. Prace z 11 października korzystają wyłącznie z fikcyjnych providerów i tymczasowych lokalnych repozytoriów. Nie zmieniano rzeczywistego nadawcy, historii ani OAuth.
+`JOBHUNTER_RUNTIME=DEVELOPMENT` jest domyślny: osobne dane, technicznie niedostępny natywny Gmail i brak odczytu osobistego konta. Testy wstrzykują pełne fikcyjne providery; AUTO działa z nimi na Windowsie i macOS.
 
-## Instalacja i uruchomienie
+`WORKSTATION` wymaga Windowsa i lokalnego `workstation.json` poza repo, z potwierdzoną istniejącą historią. Sam OS/clone/build/otwarcie panelu nie daje prawa do wysyłki. Materiały/CV/nadawcę/politykę zatwierdza użytkownik; Start udziela prawa sesji.
 
-Wymagane Node.js 24 LTS, Git i natywny Codex CLI. Zależności mają przypięte wersje. `.npmrc` wyłącza automatyczne skrypty instalacyjne zależności: SQLite 13 dostarcza gotowe biblioteki dla obsługiwanych systemów; `npm run doctor` sprawdza faktyczne załadowanie. Nie potrzeba przebudowy SQLite przez Visual Studio.
+## Development
+
+Node 24 LTS. Nowy klon, osobny checkout:
+
+```sh
+git fetch origin
+git switch codex/local-windows-pilot
+npm ci
+npm run check
+npm run doctor
+npm start
+# drugi terminal:
+npm run open
+```
+
+Domyślnie DEVELOPMENT/DEMO na 127.0.0.1:4317. JOBHUNTER_PORT wybiera port. Windows: scripts/start.ps1 uruchamia backend w tle i otwiera panel; zamknięcie karty nie kończy backendu. scripts/stop.ps1 lub node scripts/stop.mjs kończy własny backend. Tryb zmieniaj po zamknięciu procesu. .env nie jest ładowany automatycznie.
+
+`npm run dev` wymusza DEVELOPMENT/DEMO; watch nie uruchamia instalacji roboczej.
+
+Zależności są przypięte, .npmrc wyłącza ich skrypty instalacyjne; doctor faktycznie ładuje SQLite. JOBHUNTER_CODEX_PATH wskazuje natywne CLI, bez cmd/bat. Codex używa istniejącego loginu ChatGPT, bez fallbacku do płatnego API.
+
+## Domowy Windows
+
+Procedury A/B/C są w [URUCHOMIENIE_RANO](docs/URUCHOMIENIE_RANO.md). Najpierw diagnostyka **oryginalnej** historii:
 
 ```powershell
-npm ci
-npm run build
-npm run doctor
+npm run history:local -- doctor "$env:LOCALAPPDATA\JobHunter"
+# Po potwierdzeniu kompletności i zamknięciu backendu:
+npm run history:local -- backup "$env:LOCALAPPDATA\JobHunter"
+npm run history:local -- configure "$env:LOCALAPPDATA\JobHunter" --confirm-existing-history --single-workstation
+$env:JOBHUNTER_RUNTIME = 'WORKSTATION'
 $env:JOBHUNTER_MODE = 'AUTO_POLICY'
-npm start
+.\scripts\start.ps1
 ```
 
-W drugim PowerShell ustaw ten sam `JOBHUNTER_MODE` i uruchom `npm run open`. Alternatywnie `scripts/start.ps1` uruchamia backend w tle i otwiera panel. Na macOS:
+Configure nie tworzy bazy, nie zatwierdza materiałów/polityki i nie włącza sesji. Jeżeli historia jest tylko na Macu, instrukcja opisuje prywatny eksport/import istniejącym formatem, bez GitHuba. Same liczniki nie dowodzą kompletności. Nie zmieniamy nadawcy/OAuth automatycznie; [GMAIL_SETUP](docs/GMAIL_SETUP.md).
 
-```sh
-npm ci
-npm run build
-JOBHUNTER_MODE=AUTO_POLICY npm start
-# drugi terminal:
-JOBHUNTER_MODE=AUTO_POLICY npm run open
-```
+Sprawdź fakty/projekty, PDF, konto i zgody Gmaila, Codex/search oraz politykę kontaktów/tempa/limitów. GENERAL zachowuje GENERAL. Brak wakatu może uzasadniać zapytanie z dowodem działalności; nie udajemy dopasowania do oferty. Sprzedaż/faktury/RODO, odmowy firmy i wymagany kanał blokują kontakt.
 
-Backend słucha wyłącznie na `127.0.0.1:4317`. Link dostępu pochodzi z `npm run open`. `JOBHUNTER_PORT` zmienia port. `JOBHUNTER_CODEX_PATH` może wskazywać absolutną ścieżkę do natywnego CLI; wrappery cmd/bat są odrzucane. `.env` nie jest automatycznie ładowany. Tryb zmienia się wyłącznie po zamknięciu backendu.
+## Lokalna historia
 
-## Pierwsza konfiguracja AUTO_POLICY
+`LOCAL_ONLY` jest domyślną strategią, niezależną od trybu pracy. AUTO działa bez repo historii i operacji Git w Start/bramkach/senderze/Stop/readiness. Kontakty, aliasy, blokady, próby i rezerwacje pozostają w SQLite. Jeden profil ma jeden backend także na różnych portach; utrata blokady lub niespójność blokuje send.
 
-1. W **Ustawieniach / Moje materiały i CV** sprawdź propozycje faktów i opisy projektów. Zatwierdź fakty oraz lokalny PDF. Propozycje w repo nie są zatwierdzonym doświadczeniem.
-2. W **Połączeniach** wykonaj test Codexa i wyszukiwania. Wymagane istniejące logowanie ChatGPT; brak automatycznego klucza API. Sam help nie potwierdza udanego researchu.
-3. Podłącz Gmail samodzielnie według [GMAIL_SETUP](docs/GMAIL_SETUP.md). Tokeny pozostają w magazynie systemowym. Aplikacja nie rozszerza uprawnień sama. Celowany odczyt historii/Wysłanych wymaga istniejącego readonly; Google daje szerszy zakres, aplikacja ogranicza odczyty do wybranego kontaktu i potwierdzonych domen.
-4. Wskaż **osobne prywatne repozytorium historii**, jego lokalny katalog na gałęzi main i dokładny origin. Potwierdź prywatność oraz publikowanie minimalnej historii. Pierwszą inicjalizację wykonaj na komputerze z dotychczasową bazą, potwierdzając ją jako źródło historii. **Przygotuj historię bez uruchamiania sesji** publikuje stan bez prawa do wysyłki. Aplikacja nie tworzy zdalnego repozytorium. [Instrukcja przekazywania](docs/HISTORY_SYNC.md).
-5. W **Polityce automatycznej sesji** wskaż bieżącego nadawcę, zatwierdzone CV, zakres poszukiwań, dozwolone kontakty i tempo. Limit sesji/dnia pozostaw pusty dla pracy ciągłej. Domyślne tempo panelu: 300 s między wysyłkami i 600 s między cyklami researchu; minimum konfiguracji 60 s. Kolejka najwyżej trzech oczekujących szkiców ogranicza produkcję materiałów, nie liczbę maili w sesji.
-6. Dopiero **Start — szukaj i wysyłaj** udziela tej lokalnej sesji uprawnienia do zgodnych pierwszych kontaktów. GENERAL jest opcjonalnym kontaktem do zapytania o współpracę; nie staje się RECRUITMENT. SALES, niepotwierdzone adresy i ograniczenia kanału aplikacji blokują automat.
+`PRIVATE_GIT` jest opcjonalnym modułem kompatybilności. Istniejąca konfiguracja zachowuje go do jawnego przejścia po Stop i sprawdzeniu zgodności pełnej opublikowanej historii. Bez obejścia niepewnych prób lub nieopublikowanych danych. [HISTORY_SYNC](docs/HISTORY_SYNC.md) dotyczy tylko tego wariantu.
 
-Zmiana faktów, wybranego CV lub nadawcy wstrzymuje używanie starej polityki. Zatrzymaj sesję, sprawdź materiały i zatwierdź nową politykę. AUTO_POLICY nie ma daty wygasania sesji ani ukrytego końca po 3 mailach, 10 firmach, 8 cyklach czy godzinie.
+Stop kończy sesję; Pauza przerywa research i blokuje nowe operacje. Restart jest zatrzymany, bez nadrabiania snu serią. POST już przekazany dostawcy może zakończyć się później. Przed jednym POST zapisujemy rezerwację i zamrożony MIME. Timeout/restart w SENDING zachowuje SEND_UNKNOWN; bez retry send. Reconcile sprawdza istniejącą próbę. Nie obiecujemy exactly-once lub dostarczenia do Odebranych.
 
-## Praca i zatrzymanie
+## Dane i aktualizacja
 
-**Pauza** przerywa własny research, zachowuje postęp i blokuje nowe operacje. **Wznów** jest jawne. **Stop** kończy sesję i odwołuje prawo do kolejnych wysyłek. Restart backendu zawsze wymaga Start. Nie nadrabiamy uśpienia serią wiadomości.
+WORKSTATION zachowuje %LOCALAPPDATA%\JobHunter\research-only albo jawny dotychczasowy JOBHUNTER_DATA_DIR. RESEARCH_ONLY/APPROVAL_REQUIRED/AUTO współdzielą historię. Development używa osobnego JobHunter-development w lokalnym katalogu systemu. DEMO ma podkatalog demo. Istniejąca nieoznaczona baza osobista nie jest otwierana jako development.
 
-Już wysłanego żądania nie da się cofnąć. Przed pojedynczym POST zapisujemy rezerwację, identyfikator i zamrożony MIME. Timeout lub restart w SENDING zachowuje SEND_UNKNOWN; nie następuje ponowne send. W Historii dostępne jest **Sprawdź tę próbę w Wysłanych** dla lokalnych prób. Przy niepewnej próbie przeniesionej z innego urządzenia rozstrzygnięcie wykonaj na komputerze posiadającym oryginalny zapis i opublikuj zaktualizowaną historię.
+**Stop → koniec operacji → zamknięcie backendu → backup → wybrana wersja kodu → npm ci/build/doctor → zatrzymany backend → świadomy Start.** Zalecany osobny checkout roboczy. Bez pull/build/hot reloadu w kampanii. Przed migracją Store robi sprawdzony VACUUM INTO w research-only/backups poza repo, uwzględniający WAL. Nigdy nie kopiuj samego aktywnego SQLite.
 
-Na koniec użyj **Stop i przekaż historię drugiemu urządzeniu**. Zwykły Stop nie zwalnia zdalnego właściciela: najpierw trzeba ukończyć spójny eksport i push. Błąd Git, konflikt, nieukończony eksport lub właściciel na drugim komputerze blokują wysyłkę. Awaria pierwszego komputera nie daje drugiemu automatycznego prawa do pracy.
+## Publiczna diagnostyka
 
-**Historia firm** pokazuje kontakt, datę, wynik, zamrożony temat i treść, źródła oraz powody pominięcia. Licznik firm wyklucza SELF_TEST. Stare dane odpowiedzi są zachowane, zakładka odpowiedzi jest ukryta.
+`npm run smoke:public`: maksymalnie 5 firm, 15 minut, nowy katalog tymczasowy i jawnie fikcyjny profil. Ten sam parser oraz publiczna kwalifikacja/drafting AUTO, bez klasy Gmail, gateway, approvals, outbox i przyszłej kolejki produkcyjnej. Raport zawiera liczniki/powody; strony i ewentualne szkice zostają poza repo. To test techniczny, nie ocena kandydatury Jakuba. Brak zgodności CLI/loginu/limitu daje BLOCKED_EXTERNAL, bez full access i zmian konfiguracji.
 
-Zamknięcie backendu: `node scripts/stop.mjs` z tym samym JOBHUNTER_MODE. Na Windowsie: `scripts/stop.ps1`. Przed zmianą urządzenia wykonaj przekazanie w panelu, dopiero potem zamknij backend.
+Na domowym Windowsie `npm run smoke:public -- --approved-profile KATALOG_BAZOWY` jawnie kopiuje tylko wcześniej zatwierdzone materiały (odczyt oryginału) do nowego katalogu diagnostycznego. Nadal bez Gmaila, zgód/outbox i przyszłej kolejki produkcyjnej.
 
-## Dane
-
-- Windows: %LOCALAPPDATA%\JobHunter; macOS: ~/Library/Application Support/JobHunter; Linux: ~/.local/share/JobHunter.
-- JOBHUNTER_DATA_DIR pozwala wskazać katalog poza repo kodu.
-- demo jest oddzielne od research-only. RESEARCH_ONLY, APPROVAL_REQUIRED i AUTO_POLICY współdzielą osobistą historię i materiały; przejście trybu odwołuje oczekujące zgody.
-- Nie kopiuj działającego SQLite do Gita. Synchronizujemy wersjonowany JSON z transakcyjnego odczytu, bez tokenów, CV/PDF, konfiguracji OAuth, loginu Codexa, całej skrzynki i aktywnej zgody.
-- Import wcześniejszych kontaktów CSV i blokada Fingoweb pozostają. Nie usuwaj historii w celu rozpoczęcia od nowa.
-
-## Weryfikacja i architektura
-
-```sh
-npx playwright install chromium
-npm run check
-```
-
-Typecheck, testy backendu, build i Playwright używają fikcyjnych providerów. Synchronizacja jest testowana na lokalnych repozytoriach. Wyniki: [TEST_REPORT](docs/TEST_REPORT.md), dokładny zakres Windows: [WINDOWS_SMOKE](docs/WINDOWS_SMOKE.md). Przy systemowym CA można użyć NODE_USE_SYSTEM_CA=1 podczas pobierania przeglądarki; nie wyłączaj TLS.
-
-React/TypeScript/Vite, Fastify, SQLite i istniejący adapter codex exec. Research i sender mają osobne zajętości/timery. Model dostaje minimalne zatwierdzone fakty, projekty i publiczne źródła. Odbiorcy, nadawca, CV, polityka, limity i historia należą do kodu. [Bezpieczeństwo](docs/SECURITY.md). Bez CRM, automatycznych odpowiedzi/follow-upów, kalendarza, LinkedIn i nowych płatnych usług.
+Wynik próby z 12 października, poprawka schematu i granice: [TEST_REPORT](docs/TEST_REPORT.md). npm run check obejmuje typecheck, backend, build i Playwright na fikcyjnych usługach/tymczasowych bazach. Testy opcjonalnego PRIVATE_GIT zachowane. [WINDOWS_SMOKE](docs/WINDOWS_SMOKE.md), [SECURITY](docs/SECURITY.md). CI finalnego SHA potwierdzamy po zakończeniu.

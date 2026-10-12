@@ -1,18 +1,9 @@
-import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { createApp } from '../apps/server/src/app.js';
 import { AutoPolicyJobHunter } from '../apps/server/src/auto-policy.js';
 import { FixtureRunner, FixtureReader } from './research-fixture.js';
 import { FixtureGmail } from './gmail-fixture.js';
-const root = process.env.JOBHUNTER_E2E_DIR!,
-  remote = join(root, 'auto-remote.git'),
-  repo = join(root, 'auto-history');
-execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore', windowsHide: true });
-execFileSync('git', ['clone', remote, repo], { stdio: 'ignore', windowsHide: true });
-execFileSync('git', ['-C', repo, 'symbolic-ref', 'HEAD', 'refs/heads/main'], {
-  stdio: 'ignore',
-  windowsHide: true,
-});
+const root = process.env.JOBHUNTER_E2E_DIR!;
 const gateway = new FixtureGmail(),
   runner = new FixtureRunner(),
   reader = new FixtureReader();
@@ -49,12 +40,11 @@ service.configurePolicy({
   confirmed: true,
   targetedHistoryConsent: true,
 });
-service.historySync.configure({
-  directory: repo,
-  expectedRemote: remote,
-  confirmedPrivate: true,
-  confirmedInitialHistory: true,
-});
+await service.configureLocalHistory({ confirmedHistory: true, confirmedSingleWorkstation: true });
+for (const key of ['claim', 'assertOwner', 'checkpoint', 'status'] as const)
+  (service.historySync as any)[key] = () => {
+    throw new Error('UNEXPECTED_HISTORY_GIT');
+  };
 app.post('/api/fixture/advance', async () => {
   time += 61000;
   await service.tick();

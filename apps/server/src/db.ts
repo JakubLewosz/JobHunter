@@ -1,23 +1,34 @@
 import Database from 'better-sqlite3';
-import { readFileSync, readdirSync, mkdirSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdirSync, existsSync, chmodSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import type { Row } from '../../../packages/shared/types.js';
 
 export class Store {
   readonly db: Database.Database;
+  assertExclusive: () => void = () => {};
   constructor(public readonly dir: string) {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
+    const existed = existsSync(join(dir, 'jobhunter.sqlite'));
     this.db = new Database(join(dir, 'jobhunter.sqlite'));
     this.db.pragma('foreign_keys = ON');
     this.db.pragma('busy_timeout = 5000');
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('synchronous = FULL');
+    const names = readdirSync(resolve('migrations'))
+      .filter((n) => n.endsWith('.sql'))
+      .sort();
+    const hasMigrations = this.db
+      .prepare("SELECT name FROM sqlite_master WHERE name='migrations'")
+      .get();
+    const applied = hasMigrations
+      ? new Set(this.all('SELECT name FROM migrations').map((r) => r.name))
+      : new Set();
+    if (existed && names.some((name) => !applied.has(name))) this.backup();
     this.db.exec(
       'CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)',
     );
-    for (const name of readdirSync(resolve('migrations'))
-      .filter((n) => n.endsWith('.sql'))
-      .sort()) {
+    for (const name of names) {
       if (!this.one('SELECT name FROM migrations WHERE name=?', name)) {
         // Table rebuilds must not cascade-delete children. Check integrity before committing.
         this.db.pragma('foreign_keys = OFF');
@@ -33,6 +44,30 @@ export class Store {
         }
       }
     }
+  }
+  assertHealthy() {
+    this.assertExclusive();
+    if (
+      this.db.pragma('quick_check', { simple: true }) !== 'ok' ||
+      (this.db.pragma('foreign_key_check') as unknown[]).length
+    )
+      throw new Error('LOCAL_DATABASE_INCONSISTENT');
+  }
+  backup() {
+    this.assertExclusive();
+    const dir = join(this.dir, 'backups');
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
+    const path = join(dir, `before-update-${Date.now()}-${randomUUID()}.sqlite`);
+    this.db.prepare('VACUUM INTO ?').run(path);
+    chmodSync(path, 0o600);
+    const copy = new Database(path, { readonly: true, fileMustExist: true });
+    try {
+      if (copy.pragma('integrity_check', { simple: true }) !== 'ok')
+        throw new Error('BACKUP_INVALID');
+    } finally {
+      copy.close();
+    }
+    return path;
   }
   one(sql: string, ...args: any[]): Row | undefined {
     return this.db.prepare(sql).get(...args) as Row | undefined;

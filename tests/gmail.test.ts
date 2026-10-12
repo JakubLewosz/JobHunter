@@ -359,7 +359,8 @@ test('Gmail MIME: jedna tożsamość nadawcy, tekst i bezpieczny HTML z tą sam�
     html,
     /<a href="https:\/\/github\.com\/Fictional\?x=1&amp;y=2">https:\/\/github\.com\/Fictional\?x=1&amp;y=2<\/a>/,
   );
-  assert.equal(textFromHTML(html), body.replace(/\s+/g, ' ').trim());
+  assert.ok(textFromHTML(html).includes('\n'), 'parser retains HTML block boundaries');
+  assert.equal(textFromHTML(html).replace(/\s+/g, ' '), body.replace(/\s+/g, ' ').trim());
 });
 test('RESEARCH_ONLY: podgląd z CV wymaga zatwierdzenia pliku, ale nie tworzy approval/outbox', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'jh-gmail-api-'));

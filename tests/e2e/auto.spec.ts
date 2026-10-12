@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-test('AUTO_POLICY: Start, continuous policy send, history, Pause, Stop and handoff', async ({
+test('LOCAL_ONLY AUTO: Start, continuous send, history, Pause, Stop and panel reopen', async ({
   page,
 }) => {
   const requests: string[] = [];
@@ -12,6 +12,12 @@ test('AUTO_POLICY: Start, continuous policy send, history, Pause, Stop and hando
     page.getByRole('button', { name: 'Start — szukaj i wysyłaj', exact: true }),
   ).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Odpowiedzi', exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText('Tryb developerski — bez prawdziwej wysyłki', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Stop i przekaż historię drugiemu urządzeniu', exact: true }),
+  ).toHaveCount(0);
   expect(requests).not.toContain('/api/replies');
   expect(requests).not.toContain('/api/reports');
   const blocked = await page.evaluate(async () => {
@@ -39,6 +45,9 @@ test('AUTO_POLICY: Start, continuous policy send, history, Pause, Stop and hando
     });
   expect((await advance()).posts).toBe(1);
   await expect(page.getByText('Pierwsze wiadomości', { exact: true })).toBeVisible();
+  await expect(
+    page.locator('.stat-card').filter({ hasText: 'Pierwsze wiadomości' }).locator('strong'),
+  ).toHaveText('1');
   await page.screenshot({ path: 'test-results/auto-desktop.png', fullPage: true });
   await page.getByRole('button', { name: 'Historia firm', exact: true }).click();
   await expect(page.getByLabel('Szukaj firmy')).toBeVisible();
@@ -62,14 +71,24 @@ test('AUTO_POLICY: Start, continuous policy send, history, Pause, Stop and hando
   await expect(
     page.getByRole('heading', { name: 'Polityka automatycznej sesji', exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Prywatne repozytorium historii' })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Historia lokalna — na tym komputerze' }),
+  ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
   await page.screenshot({ path: 'test-results/auto-mobile.png', fullPage: true });
   await page.getByRole('button', { name: 'Praca programu', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Stop i przekaż historię drugiemu urządzeniu', exact: true })
-    .click();
-  await expect(page.getByText('Historia: Historia przekazana', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Start — szukaj i wysyłaj', exact: true }).click();
+  const context = page.context();
+  await page.close();
+  const reopened = await context.newPage();
+  await reopened.goto('http://127.0.0.1:4331/');
+  await expect(reopened.getByRole('heading', { name: 'Pracuje', exact: true })).toBeVisible();
+  await reopened.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(reopened.getByRole('heading', { name: 'Zatrzymany', exact: true })).toBeVisible();
 });

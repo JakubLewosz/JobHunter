@@ -2,9 +2,20 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 export function GmailPreparation({ delivery = false }: { delivery?: boolean }) {
   const [email, setEmail] = useState<string>();
+  const [development, setDevelopment] = useState(false);
   useEffect(() => {
-    void api('research/gmail-preparation').then((r) => setEmail(r.account?.email));
+    void api('research/gmail-preparation').then((r) => {
+      setEmail(r.account?.email);
+      setDevelopment(r.runtime === 'DEVELOPMENT');
+    });
   }, []);
+  if (development && !email)
+    return (
+      <section className="panel research-panel gmail-preparation">
+        <h2>Gmail niedostępny</h2>
+        <p>Tryb developerski — bez prawdziwej wysyłki</p>
+      </section>
+    );
   if (delivery)
     return (
       <section className="panel research-panel gmail-preparation">

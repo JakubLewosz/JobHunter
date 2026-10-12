@@ -2,7 +2,10 @@ param([switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'dist\apps\server\src\main.js'))) { throw 'Najpierw uruchom scripts\setup.ps1.' }
-$taskDataRoot = if ($env:JOBHUNTER_DATA_DIR) { $env:JOBHUNTER_DATA_DIR } else { Join-Path $env:LOCALAPPDATA 'JobHunter' }
+$taskRuntime = if ($env:JOBHUNTER_RUNTIME) { $env:JOBHUNTER_RUNTIME } else { 'DEVELOPMENT' }
+if ($taskRuntime -notin @('DEVELOPMENT','WORKSTATION')) { throw 'Nieprawidlowy JOBHUNTER_RUNTIME.' }
+$taskAppDirectory = if ($taskRuntime -eq 'WORKSTATION') { 'JobHunter' } else { 'JobHunter-development' }
+$taskDataRoot = if ($env:JOBHUNTER_DATA_DIR) { $env:JOBHUNTER_DATA_DIR } else { Join-Path $env:LOCALAPPDATA $taskAppDirectory }
 $taskMode = if ($env:JOBHUNTER_MODE) { $env:JOBHUNTER_MODE } else { 'DEMO' }
 if ($taskMode -notin @('DEMO','RESEARCH_ONLY','APPROVAL_REQUIRED','AUTO_POLICY')) { throw 'Nieprawidlowy JOBHUNTER_MODE.' }
 $taskSubdir = if ($taskMode -eq 'DEMO') { 'demo' } else { 'research-only' }

@@ -1,8 +1,8 @@
-Kontynuuj istniejący JobHunter, nie buduj od zera. Obowiązują AGENTS.md, JobHunter_SPEC.md (2.0, 11 października 2026), README.md i aktualny stan docs/TASKS.md / docs/TEST_REPORT.md.
+Kontynuuj istniejący JobHunter, nie buduj od zera. Obowiązują AGENTS.md, JobHunter_SPEC.md (2.1, 12 października 2026), README.md i aktualny stan docs/TASKS.md / docs/TEST_REPORT.md.
 
 AUTO_POLICY używa jawnej polityki i Start — szukaj i wysyłaj. Nie przywracaj akceptacji każdego maila. DEMO, RESEARCH_ONLY i opcjonalny APPROVAL_REQUIRED pozostają odrębne. Brak limitu użytkownika oznacza pracę ciągłą w określonym tempie. Odpowiedzi użytkownik obsługuje sam w Gmailu.
 
-Zachowaj fakty/CV, literalne dowody i przeznaczenie kontaktów, historię/aliasy/Fingoweb, rezerwację przed pojedynczym POST i SEND_UNKNOWN. Prywatna historia jest w osobnym wskazanym i potwierdzonym repo z właścicielem i spójnym przekazaniem. Nie przenoś aktywnej zgody ani sekretów.
+Zachowaj fakty/CV, literalne dowody i lokalny kontekst kontaktów, historię/aliasy/Fingoweb, rezerwację przed pojedynczym POST i SEND_UNKNOWN. Jedna trwała historia LOCAL_ONLY i prawdziwa poczta pracują na domowym Windowsie. MacBook/development ma syntetyczne dane i technicznie niedostępny natywny Gmail. Brak origin nie blokuje AUTO; PRIVATE_GIT jest opcjonalny i odłożony. Nie przenoś aktywnej zgody ani sekretów. Stop/backup przed aktualizacją, push nie jest deploymentem.
 
 Sprawdź kod i status Git, wdrażaj małymi etapami i wykonuj właściwe testy oraz npm run check. Nie resetuj ani nie nadpisuj pracy użytkownika. Rozwój nie upoważnia do rzeczywistych wysyłek, także testowych, zmiany nadawcy/kwot/OAuth, tworzenia zdalnego repo historii lub publikowania prywatnych danych. Nie naprawiaj CLI przez full access lub płatny API key.
 

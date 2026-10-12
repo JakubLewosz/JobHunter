@@ -23,6 +23,20 @@ export interface StructuredRunner {
     options?: { signal?: AbortSignal; search?: boolean },
   ): Promise<{ value: T; meta: CallMeta }>;
 }
+export function strictOutputSchema(schema: z.ZodType) {
+  const value = z.toJSONSchema(schema);
+  const requireProperties = (node: any) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.properties) node.required = Object.keys(node.properties);
+    for (const child of Object.values(node)) {
+      if (Array.isArray(child)) child.forEach(requireProperties);
+      else requireProperties(child);
+    }
+  };
+  // CLI structured output requires every property; optional domain fields still retain their validators.
+  requireProperties(value);
+  return value;
+}
 export function cliPath(): string {
   if (process.env.JOBHUNTER_CODEX_PATH) {
     if (!isAbsolute(process.env.JOBHUNTER_CODEX_PATH))
@@ -124,6 +138,11 @@ export function execArguments(schemaPath: string, search: boolean) {
   ];
 }
 function cliError(text: string): DomainError {
+  if (/invalid.{0,20}schema|schema.{0,40}invalid/i.test(text))
+    return new DomainError(
+      'CODEX_SCHEMA_CONFIGURATION',
+      'CLI odrzuciło schemat wyniku. Nie wykonano analizy; bez osłabienia izolacji.',
+    );
   if (/usage limit|rate.?limit|quota|429|usage_limit/i.test(text))
     return new DomainError(
       'CODEX_LIMIT',
@@ -255,7 +274,7 @@ export class ExecCodexRunner implements StructuredRunner {
     const task = await mkdtemp(join(tmpdir(), 'jobhunter-agent-'));
     const schemaPath = join(task, 'schema.json');
     try {
-      await writeFile(schemaPath, JSON.stringify(z.toJSONSchema(schema)), { mode: 0o600 });
+      await writeFile(schemaPath, JSON.stringify(strictOutputSchema(schema)), { mode: 0o600 });
       const started = Date.now();
       const output = await this.process(
         this.options.binary ?? cliPath(),

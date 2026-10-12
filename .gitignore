@@ -36,3 +36,5 @@ token*.json
 history.json
 history.pending
 *.raw
+workstation.json
+development.json

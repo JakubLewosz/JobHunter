@@ -1,32 +1,42 @@
 # JobHunter — materiał do przeglądu
 
-Prace z 11 października 2026. Specyfikacja 2.0 i AGENTS zastępują dawny wymóg akceptacji każdego maila i blokadę implementacji AUTO_POLICY. Granice danych, separacji trybów i niezamówionych wysyłek pozostają.
+12 października 2026, specyfikacja 2.1. Gałąź codex/local-windows-pilot na overnight 810b860.
+Nowa decyzja: jedna trwała historia LOCAL_ONLY i poczta na domowym Windowsie; kod rozwijany
+Windows/macOS, development z osobnymi danymi i technicznie niedostępnym natywnym Gmailem.
+Prywatny Git/handoff jest opcjonalny i odłożony; brak origin nie blokuje lokalnego AUTO.
 
-Aktualna stabilizacja jest na `codex/overnight-stabilization`; zakres i rzeczywiste
-wyniki w OVERNIGHT_PLAN/TEST_REPORT. Sprawdzono niezależnym agentem backend i wyścigi;
-odtworzono i naprawiono także zmianę origin podczas fetch, zmianę gałęzi, Start podczas
-handoff, okno internalApproval, cofanie postępu po zmianie samego limitu, dziedziczenie
-starego zakresu i cache ignorujące nowe źródło pominiętego szkicu.
+Czytaj README → AGENTS → JobHunter_SPEC → TASKS → TEST_REPORT → SECURITY → URUCHOMIENIE_RANO.
+Styl w MESSAGE_STYLE, HISTORY_SYNC tylko dla opcjonalnego PRIVATE_GIT. Dawne próby Gmaila
+nie są potwierdzeniem obecnej sesji lub dostarczalności.
 
-Migracje 013–015 są addytywne: konkretne pominięcia wersji, planer i związanie
-researchu/szkicu z zakresem. Stare dane pozostają; brak scopeHash w dawnej polityce
-wymaga jawnego ponownego zatwierdzenia konfiguracji. Kolejne zgodne maile nadal
-nie wymagają przeglądu użytkownika. Nowe źródło/kontakt może dać nową wersję, ale
-nie usuwa skip starej wersji ani blokady wcześniejszego kontaktu.
+Do przeglądu: całe LOCAL_ONLY (Start/Wznów/Stop/shutdown, issues/gates/dispatch i readiness),
+blokada jednego profilu niezależna od portu, utrata lock przed POST, lokalny marker Windowsa,
+brak natywnego Gmaila/OAuth/metadanych w developmentcie i poczty w publicznym smoke.
 
-Przegląd kolejnego etapu: pełna macierz awarii handoff (przed/po rename, commit i push),
-rozstrzyganie niepewnej próby w pełnym A→B→A, systemowy sen/wybudzenie, skalowanie
-dużej historii i wpływ synchronicznych kontroli Git na opóźnienie Stop. CI offline
-Windows/macOS ma read-only permissions, przypięte SHA oficjalnych akcji, brak sekretów,
-ograniczoną retencję fikcyjnych artefaktów i brak workflow cyklicznych. Nie zastępuje
-prawdziwej skrzynki ani dziennej kampanii.
+Store przed migracją tworzy integralny VACUUM INTO z WAL poza repo. Migracja 016 jest
+addytywna: parser_version/address_contexts. Restore-copy zachowuje historię/shared records/
+liczniki i MIME, odwołuje zgody/sesje, zachowuje niepewność. Przejście PRIVATE_GIT → LOCAL_ONLY
+wymaga Stop, potwierdzenia użytkownika i zgodności zamkniętej opublikowanej historii.
 
-Czytaj: README → AGENTS → JobHunter_SPEC → docs/TASKS → docs/TEST_REPORT → docs/SECURITY → docs/HISTORY_SYNC. Styl jest w MESSAGE_STYLE. Audyt Gmaila opisuje wcześniejsze próby, nie działanie nowej sesji.
+Parser htmlparser2 zachowuje granice i kontekst nagłówka/sekcji/listy/wiersza. GENERAL
+nie jest promowany, sprzeczne etykiety blokują, marketing sprzedażowy nie zmienia celu
+kontaktu. Zmiana celu/zniknięcie adresu blokuje dawny szkic; stary publiczny cache
+wymaga odczytu, hash jest wersjonowany parserem. Nie przepisujemy wysłanych MIME.
 
-Zachowane: bezpieczny fetcher, źródła/cytaty, strict schematy, wersje faktów/CV/szkiców, checkpointy researchu, Gmail z zamrożonym MIME, pojedynczy POST i konserwatywny reconcile, import kontaktów i Fingoweb.
+Zachowane nocne poprawki: znana firma jest pomijana bez końca sesji, dokładna wersja
+i uprawnienie przez await, intencja oddzielna od offer fit, planer po ośmiu kierunkach,
+bounded queue bez utraty kandydatów, pojedynczy POST, SEND_UNKNOWN i ostatnia bramka.
 
-Nowe: ponowna weryfikacja źródeł, aktualizacja/unieważnianie kontaktów, ręczny przegląd GENERAL, AUTO_POLICY związany z materiałami/nadawcą, ciągłe cykle i osobny sender, opcjonalne limity/tempo, minimalny eksport/import i właściciel historii. Panel AUTO ma Pracę, Historię i Ustawienia. Zakładka odpowiedzi ukryta, dane zachowane.
+Stop testowany przez realny serwer HTTP z powolnym read/model, 10 000 fikcyjnych firm
+i kontaktów oraz równoległym odświeżaniem. Rozróżnia receipt/revoke/inflight completion.
+Odtworzono wielosekundowe opóźnienie dashboardu i usunięto N+1 oraz pełną historię z jego
+normalnego odczytu. Wyniki pomiarów w TEST_REPORT, bez obietnicy czasu na każdym sprzęcie.
 
-Przegląd powinien sprawdzić ostatnią bramkę przed POST, wyścigi Stop/Pauzy/zmiany materiałów, rezerwacje po awarii, brak transferu zgody, opublikowaną własność, odtwarzanie historii i zachowanie konfliktów. Fikcyjny Gmail/lokalny Git nie dowodzą rzeczywistej dostarczalności lub jakości wszystkich ekstrakcji.
+Publiczna próba: 5 firm/5 stron, bez szkiców przez odrzucony schemat CLI. Poprawka
+schematu sprawdzona natywnym Codexem na danych syntetycznych; publicznej próby nie
+powtarzano. Brak prawdziwej poczty/SELF_TEST, odczytu skrzynki lub zmian prywatnego runtime.
 
-Repo kodu nie zawiera prywatnej SQLite, CV, tokenów/OAuth ani oryginalnych EML. Rozwój nie upoważnia do odtwarzania tych danych, resetów, zmiany nadawcy, maili testowych i tworzenia zdalnego repo historii. Rzeczywisty nadawca pozostaje wyborem użytkownika w lokalnej konfiguracji, poza checkout.
+Pozostaje: diagnostyka i potwierdzenie oryginalnej historii na Windowsie, konfiguracja
+lokalnej instalacji/materiałów/CV/konta/polityki, publiczny smoke bez Gmaila z zatwierdzonymi
+materiałami, potem samodzielny pilotaż. Nie potwierdzono pełnego dnia Google, prywatnej
+instalacji Windows, pełnej izolacji OS lub dostarczalności. CI dotyczy finalnego SHA.

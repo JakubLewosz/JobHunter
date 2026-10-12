@@ -1,5 +1,21 @@
 # Możliwości — 8–9 października 2026
 
+## Aktualizacja 12 października — LOCAL_ONLY
+
+Nowa gałąź codex/local-windows-pilot obejmuje overnight 810b860. Lokalny AUTO bez
+repo historii/Gita, atomowa blokada profilu między procesami/portami, backup SQLite
+przed migracją i odtworzenie bez zgody. Domyślny development ma osobne dane i brak
+native Gmaila; WORKSTATION tylko po jawnej lokalnej konfiguracji Windowsa. HTML DOM,
+wersjonowane konteksty konkretnych adresów i nowa kontrola starego cache. Panel ma
+trzy widoki, lokalną gotowość i nie zatrzymuje backendu po zamknięciu karty.
+Pomiar realnego HTTP Stop pod obciążeniem oraz wyniki check/soak: TEST_REPORT.
+
+Jedna publiczna próba z syntetycznym profilem: 5 kandydatów/5 stron, zero kwalifikacji
+lub szkiców przez odrzucenie schematu ekstrakcji CLI. Schemat naprawiony i sprawdzony
+rzeczywistym Codexem na fikcyjnym wejściu. Nie powtarzano publicznej próby; pełny
+research nowej wersji pozostaje do potwierdzenia na Windowsie. Bez Gmaila i prywatnego
+runtime. Niższe sekcje są historyczne, nie przywracają obowiązkowego prywatnego origin.
+
 ## Aktualizacja — 11 października 2026
 
 Na Windows win32/x64: Node 24.19.0, npm 11.17.0, SQLite 3.53.4, Codex CLI 0.162.0-alpha.17.2. Faktyczne version/exec help/features potwierdzają użyte flagi i ograniczenia; nie uruchamiano rzeczywistego researchu lub Gmaila. `npm ci` działa dzięki dołączonym bibliotekom i wyłączeniu zależnościowych lifecycle scripts w .npmrc. Doctor ładuje SQLite. Start/health/stop PowerShell PASS w osobnym DEMO ze ścieżką zawierającą spacje i polskie znaki.

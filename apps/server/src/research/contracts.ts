@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DomainError, normalizeName } from '../util.js';
 import type { Source } from './fetcher.js';
+import { addressContexts, parserVersion, type AddressContext } from './html.js';
 
 const proof = z
   .object({
@@ -178,7 +179,7 @@ export function validateAnalysis(raw: unknown, sources: Source[]): Analysis {
 export type ContactIntent =
   'APPLICATION' | 'OPEN_APPLICATION' | 'CONDITIONS_INQUIRY' | 'COMPANY_INQUIRY';
 const restrictedPurpose =
-  /sprzedaż|sprzedaz|sales|faktur|rozlicze[nń]|billing|invoice|security|bezpieczeństw|ochron.{0,15}danych|privacy|\biod\b|\bdpo\b/iu;
+  /(?:^|\n)\s*(?:(?:dział|departament|department|kontakt|contact|e-?mail|biuro)\s*(?:do|ds\.|for|:|-)?\s*)?(?:sprzeda[żz]|sales|faktur|rozlicze[nń]|billing|invoice|security|bezpieczeństw|ochron.{0,15}danych|privacy|rodo|iod\b|dpo\b)|(?:kontakt|contact|adres|mail).{0,40}(?:sprzeda[żz]|sales|faktur|billing|invoice|privacy|rodo)/iu;
 export function contactPurposeAllowed(v: Analysis, sources: Source[]) {
   const email = v.contact.email;
   if (!email || !['GENERAL', 'RECRUITMENT'].includes(v.contact.kind)) return false;
@@ -190,10 +191,22 @@ export function contactPurposeAllowed(v: Analysis, sources: Source[]) {
     return false;
   const source = sources.find((s) => s.id === v.contact.proof.sourceId);
   if (!source || !verifyQuote(v.contact.proof, sources)) return false;
-  const contexts = source.text
-    .split(/[\n;]|(?<=[.!?])\s+/u)
-    .filter((line) => compact(line).includes(email));
-  return contexts.length > 0 && contexts.every((line) => !restrictedPurpose.test(line));
+  if (source.method === 'PUBLIC_HTTP' && source.parser_version !== parserVersion) return false;
+  let contexts: AddressContext[];
+  try {
+    contexts = source.address_contexts
+      ? JSON.parse(source.address_contexts)
+      : addressContexts(source.text);
+  } catch {
+    return false;
+  }
+  const concrete = contexts.filter((c) => c.email.toLowerCase() === email.toLowerCase());
+  return (
+    concrete.length > 0 &&
+    concrete.every(
+      (c) => compact(c.text).includes(email.toLowerCase()) && !restrictedPurpose.test(c.text),
+    )
+  );
 }
 export function contactEligibility(
   v: Analysis,

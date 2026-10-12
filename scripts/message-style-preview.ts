@@ -1,6 +1,6 @@
 // Explicit content-only control run. Fictional companies/recipients; no live DB writes or Gmail.
 import Database from 'better-sqlite3';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { Store } from '../apps/server/src/db.js';
@@ -22,15 +22,12 @@ import {
 } from '../apps/server/src/research/contracts.js';
 import type { Source } from '../apps/server/src/research/fetcher.js';
 import { hash } from '../apps/server/src/util.js';
+import { developmentRuntime, workstationRuntime } from '../apps/server/src/runtime.js';
+if (process.env.JOBHUNTER_RUNTIME !== 'WORKSTATION' || !process.env.JOBHUNTER_DATA_DIR)
+  developmentRuntime.assertNative();
+workstationRuntime(join(process.env.JOBHUNTER_DATA_DIR!, 'research-only')).assertNative();
 const live = new Database(
-  join(
-    homedir(),
-    'Library',
-    'Application Support',
-    'JobHunter',
-    'research-only',
-    'jobhunter.sqlite',
-  ),
+  join(process.env.JOBHUNTER_DATA_DIR!, 'research-only', 'jobhunter.sqlite'),
   { readonly: true, fileMustExist: true },
 );
 let profile: any;
@@ -111,7 +108,7 @@ const definitions = [
     contractConfirmed: false,
   },
 ];
-const output = join(homedir(), 'Library', 'Application Support', 'JobHunter', 'content-previews');
+const output = join(process.env.JOBHUNTER_DATA_DIR!, 'content-previews');
 mkdirSync(output, { recursive: true, mode: 0o700 });
 const only = process.argv[2];
 const previews: any[] =

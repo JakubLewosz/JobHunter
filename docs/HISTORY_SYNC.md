@@ -1,4 +1,17 @@
-# Prywatna historia i przekazanie Windows/macOS
+# Opcjonalny PRIVATE_GIT — kierunek odłożony
+
+Od 12 października 2026 normalną ścieżką jest LOCAL_ONLY na jednym domowym Windowsie.
+Nie potrzeba repo historii, origin ani handoff; brak tych ustawień nie blokuje AUTO.
+Poniższa instrukcja dotyczy wyłącznie opcjonalnego PRIVATE_GIT zachowanego dla kompatybilności.
+Pełna macierz awarii synchronizacji nie jest obecnie zadaniem blokującym pilotaż lokalny.
+
+Istniejący skonfigurowany profil nie przechodzi automatycznie na LOCAL_ONLY. Użyj Stop,
+domknij opublikowaną historię na oryginalnym urządzeniu, sprawdź brak niepewnych prób,
+a potem jawnie potwierdź lokalną pełną historię i jeden komputer w Ustawieniach.
+Kod sprawdza zamknięty stan, remote/revision i równość eksportu z lokalną bazą.
+Zmiana zachowuje shared_attempts/shared_usage, aliasy, blokady i liczniki. Niepewny stan
+drugiego urządzenia wymaga wyjaśnienia; nie twórz pustego profilu w celu obejścia.
+Aktualna normalna procedura: [URUCHOMIENIE_RANO](URUCHOMIENIE_RANO.md).
 
 Nie utworzono zdalnego repozytorium ani nie opublikowano prywatnego stanu. Testy tworzą wyłącznie lokalne, fikcyjne repozytoria. Konkretny adres prywatnego origin wskazuje i potwierdza użytkownik w Ustawieniach.
 

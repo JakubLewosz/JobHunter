@@ -1,5 +1,14 @@
 # Windows smoke — do wykonania przez użytkownika
 
+## Nowa wersja 12 października 2026
+
+LOCAL_ONLY/WORKSTATION i poprawka HTML zostały rozwinięte na macOS arm64, Node 24.11.0.
+Nie wykonano lokalnego smoke Windows/PowerShell nowej wersji ani prywatnej instalacji.
+Wynik CI Windows dla finalnego SHA podawany jest osobno po faktycznym zakończeniu.
+Wcześniejsze Windows PASS poniżej nie są zaliczeniem nowego runtime.
+Aktualna procedura A/B/C i pilotażu: URUCHOMIENIE_RANO. Development domyślnie bez Gmaila;
+prawdziwy sender wymaga lokalnie skonfigurowanego domowego Windowsa i świadomego Start.
+
 ## Rzeczywiste próby z 11 października 2026
 
 Windows win32 x64 / Node 24.19.0: npm ci, doctor (SQLite 3.53.4), typecheck/build, backend fixture tests i Playwright Chromium uruchomiono rzeczywiście na Windowsie. Panel sprawdzony przy 1440 i 390 px. `scripts/start.ps1 -NoBrowser` → rzeczywisty backend DEMO/health → `scripts/stop.ps1` i zwolnienie blokady PASS, w nowym tymczasowym katalogu „JobHunter smoke Łódź …”. Bez otwarcia zwykłej przeglądarki użytkownika i bez Gmaila. Dokładne liczby końcowego zestawu są w TEST_REPORT.

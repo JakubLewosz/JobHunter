@@ -32,7 +32,9 @@ try {
   );
 }
 console.log(
-  'Stan modelu i wyszukiwarki: sprawdź testy w panelu / Połączenia. Doctor odczytuje tylko wersję CLI. AUTO_POLICY wymaga zatwierdzonej polityki, prywatnej historii i jawnego Start; Gmail inicjalizuje się przy operacji.',
+  'Środowisko: ' +
+    (process.env.JOBHUNTER_RUNTIME ?? 'DEVELOPMENT') +
+    '. Development nie inicjalizuje natywnego Gmaila. LOCAL_ONLY używa lokalnej SQLite bez repo historii. Test Codexa, materiały i polityka wymagają sprawdzenia w panelu; Start jest osobny.',
 );
 console.log(
   'Windows smoke test:',

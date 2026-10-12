@@ -10,7 +10,8 @@ import { companyDomain, day, DomainError, hash, id, iso, normalizeEmail } from '
 import { prepareMime } from './mime.js';
 import { compareMime } from './inspection.js';
 import { gmailReadScope, gmailSendScope, setupInfo, type AccountInfo } from './oauth.js';
-import { nativeGmail, type GmailGateway, type GmailMessage } from './reader.js';
+import { nativeGmail, disabledGmail, type GmailGateway, type GmailMessage } from './reader.js';
+import { developmentRuntime, type Runtime } from '../runtime.js';
 
 export type DeliveryKind = 'FIRST_CONTACT' | 'SELF_TEST';
 function explain(codes: string[]) {
@@ -48,20 +49,40 @@ export class GmailJobHunter extends ResearchJobHunter {
   protected activeSendingOutbox: string | null = null;
   private historyBusy = false;
   private accountInfo: () => AccountInfo | null;
+  readonly runtime: Runtime;
+  readonly fictionalProviders: boolean;
   constructor(
     store: Store,
     options: ConstructorParameters<typeof ResearchJobHunter>[1] & {
       gateway?: GmailGateway;
       accountInfo?: () => AccountInfo | null;
+      runtime?: Runtime;
     } = {},
   ) {
     super(store, {
       ...options,
       mode: options.mode === 'AUTO_POLICY' ? 'AUTO_POLICY' : 'APPROVAL_REQUIRED',
     });
-    this.gateway = options.gateway ?? nativeGmail();
+    this.runtime = options.runtime ?? developmentRuntime;
+    this.fictionalProviders = !!options.gateway && !!options.accountInfo;
+    if (!!options.gateway !== !!options.accountInfo)
+      throw new DomainError(
+        'PROVIDER_CONFIG',
+        'Provider testowy wymaga własnych metadanych konta.',
+      );
+    this.gateway =
+      options.gateway ??
+      (this.runtime.kind === 'WORKSTATION'
+        ? nativeGmail(this.runtime.assertNative)
+        : disabledGmail());
     this.accountInfo =
-      options.accountInfo ?? (() => setupInfo(join(store.dir, '..', 'gmail-preparation')));
+      options.accountInfo ??
+      (this.runtime.kind === 'WORKSTATION'
+        ? () => {
+            this.runtime.assertNative();
+            return setupInfo(join(store.dir, '..', 'gmail-preparation'));
+          }
+        : () => null);
     store.set('gmailSenderPaused', true);
     this.revokeApprovals('Po restarcie wysyłka wymaga ponownego przeglądu');
     store.exec(

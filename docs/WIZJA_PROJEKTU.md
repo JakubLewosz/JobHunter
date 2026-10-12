@@ -1,6 +1,6 @@
 # JobHunter — docelowy sposób pracy
 
-Ustalenia z 11 października 2026 zastępują wcześniejszy model akceptacji każdej wiadomości i obsługi odpowiedzi w aplikacji.
+Ustalenia z 12 października 2026 zastępują obowiązkową synchronizację. Nadal obowiązuje automat bez akceptacji każdej wiadomości i ręczna obsługa odpowiedzi w Gmailu.
 
 Jakub rano uruchamia program i klika **Start — szukaj i wysyłaj**. JobHunter szuka firm przede wszystkim z Polski, poznaje ich działalność, weryfikuje publiczny kontakt, dobiera zatwierdzony projekt i pisze naturalną polską wiadomość z CV. Kod sprawdza politykę i historię, wysyła zgodny pierwszy kontakt i przechodzi dalej. Nie wymaga potwierdzania każdej firmy/paczki. Pracuje do Stop, jawnego limitu lub problemu wymagającego reakcji. Odpowiedzi Jakub obsługuje sam w Gmailu.
 
@@ -10,7 +10,7 @@ Fakty, projekty i CV zatwierdza się w konfiguracji i po istotnej zmianie. Nie z
 
 Polityka określa nadawcę, materiały, kontakty, zakres, tempo i opcjonalne limity. GENERAL może być dopuszczony do zapytania, zachowując rzeczywiste przeznaczenie. Brak limitu oznacza pracę ciągłą w określonym tempie. DEMO, RESEARCH_ONLY i ręczny APPROVAL_REQUIRED pozostają odrębne.
 
-Windows i MacBook korzystają z osobnej prywatnej historii i jawnego przekazania właściciela. Aktualizacja kodu lub pull nie dowodzi aktualności bazy. Niepewne próby i niedomknięte przekazanie blokują ponowny kontakt. Stop odwołuje zgodę sesji; restart nie wznawia sendera.
+Kod można rozwijać na Windowsie i MacBooku. Prawdziwy research i poczta pracują tylko na domowym Windowsie, ze świadomie skonfigurowaną instalacją i jedną trwałą lokalną historią poza repo. LOCAL_ONLY nie wymaga prywatnego origin lub handoff. MacBook jest developerski: osobne dane syntetyczne i brak natywnego Gmaila. Prywatny Git pozostaje opcjonalnym, odłożonym kierunkiem. Stop odwołuje zgodę sesji; restart nie wznawia sendera. Push kodu nie jest deploymentem, aktualizacja odbywa się po Stop i backupie.
 
 Dwa główne widoki: Praca programu i Historia firm. Materiały, połączenia i polityka w Ustawieniach. Bez CRM, AI do odpowiedzi, follow-upów, kalendarza, LinkedIn, Useme i formularzy. Nowe źródła są późniejszym rozszerzeniem istniejących adapterów.
 

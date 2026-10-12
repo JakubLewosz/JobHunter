@@ -1,5 +1,10 @@
 # Styl zgłoszeń JobHunter
 
+Od 12 października development używa syntetycznych fixture. Dawny message-style-preview.ts
+odczytuje wcześniej zatwierdzone materiały wyłącznie przy jawnym WORKSTATION na Windowsie
+i wskazanym JOBHUNTER_DATA_DIR; nie otwiera domyślnej prywatnej historii Maca. Publiczny
+smoke:public ma nowy katalog diagnostyczny i technicznie brak Gmaila (URUCHOMIENIE_RANO).
+
 Aktualizacja z 8 października 2026 na podstawie schematu Jakuba. Zastępuje obowiązkowe AI na początku i schemat 80–130 słów.
 
 Aktualne drobne poprawki języka: naturalny mail programisty szukającego regularnej współpracy. Cztery części pozostają: kim jestem/cel → fakt o firmie i krótki opis jednego projektu → dostępność → pytanie, następnie GitHub i podpis. Standardowo 150–220 słów, bez pustych zdań i powtórzeń. Bez automatycznego „początkujący programista” w zakończeniu.

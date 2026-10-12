@@ -1,4 +1,40 @@
-# Bezpieczeństwo JobHunter — 11 października 2026
+# Bezpieczeństwo JobHunter — 12 października 2026
+
+## Lokalna instalacja
+
+LOCAL_ONLY jest domyślną strategią, niezależną od trybu. Jedna SQLite na domowym Windowsie;
+Start/bramki/sender/Stop/readiness nie wykonują Gita. Blokada profilu jest atomowa między
+procesami i portami, sprawdzana przed POST. Utrata blokady, nieznana konfiguracja,
+niespójna baza i SENDING/SEND_UNKNOWN blokują. PRIVATE_GIT niżej dotyczy wyłącznie
+opcjonalnej już skonfigurowanej historii, bez automatycznego fallbacku po awarii.
+
+DEVELOPMENT domyślnie otwiera osobny JobHunter-development/DEMO. Nie inicjalizuje natywnego
+Gmaila ani metadanych osobistego konta; częściowe wstrzyknięcie providera jest odrzucane.
+Natywne połączenie i helper OAuth wymagają WORKSTATION, Windowsa, lokalnego workstation.json
+powiązanego z istniejącym katalogiem oraz świadomie potwierdzonej historii. Oznaczenie
+nie jest zgodą sesji i nie jest kopiowane/synchronizowane. Nie jest attestation sprzętu
+i nie chroni przed użytkownikiem, który świadomie zmienia własny kod/pliki.
+
+Przed migracją istniejącej bazy: VACUUM INTO z FULL i sprawdzeniem integralności, kopia
+poza repo w katalogu backups. Uwzględnia WAL; nie jest kopiowaniem aktywnego pliku.
+Odtworzenie kopii zachowuje historię/liczniki i terminalne MIME, odwołuje sesje/zgody,
+zmienia SENDING na SEND_UNKNOWN i nie oznacza lokalnej historii jako kompletnej.
+Podstawa: [SQLite VACUUM INTO](https://www.sqlite.org/lang_vacuum.html).
+
+HTML jest parsowany htmlparser2 bez wykonywania skryptów. Konteksty adresów wynikają
+z sekcji/kart/list/wierszy i są przechowywane z parser_version. Konflikt celu blokuje.
+compact nadal służy literalnym cytatom, nie kasuje strukturalnego kontekstu decyzji.
+Nowy hash źródła obejmuje wersję parsera i surową treść; stary cache PUBLIC_HTTP bez
+struktury wymaga odczytu i nowej weryfikacji, nie jest nowym dowodem przez zmianę daty.
+Wcześniejsze rekordy/MIME pozostają. Globalne odmowy/kanały niezależne od lokalnej etykiety.
+
+Publiczny smoke tworzy nową bazę tymczasową i ResearchJobHunter z publiczną gałęzią AUTO,
+bez GmailJobHunter/gateway/zgód/outbox. Domyślnie profil jest syntetyczny. Jawna opcja
+--approved-profile wymaga skonfigurowanego Windowsa i kopiuje tylko już zatwierdzone
+materiały z read-only transakcji; źródłowa baza nie jest migrowana lub zapisywana.
+Brak CV bajtów, poczty i sekretów w kontekście modelu. Wyniki nie są przyszłą kolejką.
+Schematy CLI wymagają jawnych pól opcjonalnych; walidatory domenowe/izolacja pozostają.
+Dokumentacja: [CLI](https://learn.chatgpt.com/docs/developer-commands?surface=cli).
 
 ## Uprawnienia i tryby
 

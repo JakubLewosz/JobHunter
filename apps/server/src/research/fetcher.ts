@@ -5,6 +5,7 @@ import { request as httpsRequest } from 'node:https';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 import { Readable } from 'node:stream';
 import { hash, id, iso, DomainError } from '../util.js';
+import { parsePublicHTML, parserVersion, addressContexts } from './html.js';
 
 export function publicIP(address: string): boolean {
   const ip = address.toLowerCase();
@@ -67,20 +68,7 @@ export function publicURL(value: string): URL {
   return url;
 }
 export function textFromHTML(html: string): string {
-  return html
-    .replace(/<(script|style|noscript|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&#(x[0-9a-f]+|\d+);/gi, (_, n: string) => {
-      const code = n[0].toLowerCase() === 'x' ? parseInt(n.slice(1), 16) : Number(n);
-      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : ' ';
-    })
-    .replace(
-      /&(amp|lt|gt|quot|apos|nbsp);/g,
-      (_, n: string) => ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' })[n]!,
-    )
-    .replace(/\s+/g, ' ')
-    .trim();
+  return parsePublicHTML(html).text;
 }
 export type Source = {
   id: string;
@@ -95,6 +83,8 @@ export type Source = {
   content_hash: string | null;
   text: string;
   error: string | null;
+  parser_version?: number;
+  address_contexts?: string;
 };
 export interface SourceReader {
   read(url: string, signal?: AbortSignal): Promise<Source>;
@@ -194,7 +184,12 @@ export class PublicSourceReader implements SourceReader {
         result.title = textFromHTML(
           response.body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
         ).slice(0, 300);
-        result.text = textFromHTML(response.body).slice(0, 100000);
+        const parsed = /^text\/plain\b/i.test(response.contentType ?? '')
+          ? { text: response.body.slice(0, 100000), contexts: addressContexts(response.body) }
+          : parsePublicHTML(response.body);
+        result.text = parsed.text;
+        result.parser_version = parserVersion;
+        result.address_contexts = JSON.stringify(parsed.contexts);
         if (
           /captcha|verify you are human|just a moment|access denied|checking your browser/i.test(
             result.title + ' ' + result.text.slice(0, 600),
@@ -205,7 +200,7 @@ export class PublicSourceReader implements SourceReader {
           break;
         }
         result.status = result.text ? 'READ' : 'EMPTY';
-        result.content_hash = hash(response.body);
+        result.content_hash = hash(JSON.stringify({ parserVersion, body: response.body }));
         result.fragment = result.text.slice(0, 1200);
         break;
       }

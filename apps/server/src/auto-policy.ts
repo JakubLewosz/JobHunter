@@ -91,7 +91,10 @@ export function autoErrorDecision(
   return 'session';
 }
 export class AutoPolicyJobHunter extends GmailJobHunter {
-  readonly historySync: HistorySync;
+  private sync?: HistorySync;
+  get historySync() {
+    return (this.sync ??= new HistorySync(this.store));
+  }
   readonly queryPlanner: QueryPlanner;
   private pumping = false;
   private sessionId: string | null = null;
@@ -102,7 +105,6 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   private preparationController?: AbortController;
   constructor(store: Store, options: ConstructorParameters<typeof GmailJobHunter>[1] = {}) {
     super(store, { ...options, mode: 'AUTO_POLICY' });
-    this.historySync = new HistorySync(store);
     this.queryPlanner = new QueryPlanner(store, this.clock);
     store.exec(
       "UPDATE auto_sessions SET status='STOPPED',stopped_at=?,reason='RESTART' WHERE status IN ('RUNNING','PAUSED','WAITING')",
@@ -114,6 +116,89 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   }
   policyConfig() {
     return this.store.get<Row | null>('autoPolicy', null);
+  }
+  historyMode(): 'LOCAL_ONLY' | 'PRIVATE_GIT' {
+    const mode = this.store.get(
+      'historyStorageMode',
+      this.store.get('historySyncConfig', null) ? 'PRIVATE_GIT' : 'LOCAL_ONLY',
+    );
+    if (mode !== 'LOCAL_ONLY' && mode !== 'PRIVATE_GIT')
+      throw new DomainError(
+        'HISTORY_STORAGE_UNKNOWN',
+        'Nieznana konfiguracja historii wymaga sprawdzenia.',
+      );
+    return mode;
+  }
+  private assertHistory() {
+    this.store.assertExclusive();
+    if (this.historyMode() === 'PRIVATE_GIT') {
+      this.historySync.assertOwner();
+      return;
+    }
+    if (this.runtime.kind === 'WORKSTATION') this.runtime.assertNative();
+    else if (!this.fictionalProviders || !this.store.get('localHistoryConfirmed', false))
+      throw new DomainError(
+        'LOCAL_HISTORY_REQUIRED',
+        'Sprawdź właściwą lokalną historię. Development nie ma prawa do prawdziwej poczty.',
+      );
+  }
+  historyState() {
+    if (this.historyMode() === 'PRIVATE_GIT')
+      return { ...this.historySync.status(), mode: 'PRIVATE_GIT' };
+    let configured = false;
+    try {
+      this.assertHistory();
+      configured = true;
+    } catch {}
+    return { mode: 'LOCAL_ONLY', configured, status: 'LOCAL_ONLY', directory: this.store.dir };
+  }
+  async configureLocalHistory(input: {
+    confirmedHistory: boolean;
+    confirmedSingleWorkstation: boolean;
+  }) {
+    if (!input.confirmedHistory || !input.confirmedSingleWorkstation)
+      throw new DomainError(
+        'LOCAL_HISTORY_REQUIRED',
+        'Potwierdź pełną dotychczasową historię i jeden komputer roboczy.',
+      );
+    if (
+      !this.state().stopped ||
+      this.starting ||
+      this.preparing ||
+      this.sending ||
+      this.researching ||
+      this.transferring
+    )
+      throw new DomainError(
+        'SESSION_ACTIVE',
+        'Zatrzymaj sesję i zaczekaj na zakończenie operacji.',
+      );
+    if (
+      this.store.one("SELECT id FROM outbox WHERE status IN ('SENDING','SEND_UNKNOWN')") ||
+      this.store.one(
+        "SELECT s.id FROM shared_attempts s WHERE state IN ('SENDING','SEND_UNKNOWN') AND NOT EXISTS(SELECT 1 FROM send_attempts a WHERE a.id=s.id AND a.state IN ('SENT_PROVIDER','SENT_CONFIRMED'))",
+      )
+    )
+      throw new DomainError('SEND_UNKNOWN', 'Zmiana historii nie rozstrzyga niepewnych prób.');
+    this.transferring = true;
+    try {
+      this.store.assertHealthy();
+      if (this.historyMode() === 'PRIVATE_GIT') await this.historySync.confirmLocalTransition();
+      this.store.atomic(() => {
+        this.store.set('historyStorageMode', 'LOCAL_ONLY');
+        this.store.set('localHistoryConfirmed', true);
+        this.revokeApprovals('Jawna zmiana sposobu przechowywania historii');
+        this.event(
+          'LOCAL_HISTORY_CONFIRMED',
+          'Historia lokalna na jednym komputerze; zachowano wszystkie dotychczasowe rekordy.',
+          null,
+          'user',
+        );
+      });
+      return this.historyState();
+    } finally {
+      this.transferring = false;
+    }
   }
   configurePolicy(raw: unknown) {
     if (
@@ -262,9 +347,17 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     await this.startAuto();
   }
   async startAuto() {
+    if (
+      this.sessionId &&
+      !this.state().paused &&
+      !this.state().stopped &&
+      !this.store.get('autoSenderWait', null)
+    )
+      throw new DomainError('BUSY', 'Sesja już pracuje.');
     if (this.starting || this.researching || this.preparing || this.sending || this.transferring)
       throw new DomainError('BUSY', 'Trwa kończenie poprzedniej operacji.');
     const p = this.assertPolicy(false);
+    this.store.assertHealthy();
     if (!this.capability('codexCapability').tested || !this.capability('searchCapability').tested)
       throw new DomainError(
         'SEARCH_NOT_TESTED',
@@ -274,13 +367,14 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     const epoch = this.controlEpoch;
     try {
       if (this.sessionId) {
-        this.historySync.assertOwner();
+        this.assertHistory();
         this.store.exec(
           "UPDATE auto_sessions SET status='RUNNING',reason=NULL WHERE id=?",
           this.sessionId,
         );
       } else {
-        await this.historySync.claim();
+        if (this.historyMode() === 'PRIVATE_GIT') await this.historySync.claim();
+        else this.assertHistory();
         if (this.controlEpoch !== epoch)
           throw new DomainError(
             'CANCELLED',
@@ -344,6 +438,11 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     if (action !== 'pause') this.sessionId = null;
   }
   async handoff() {
+    if (this.historyMode() === 'LOCAL_ONLY')
+      throw new DomainError(
+        'LOCAL_ONLY',
+        'Historia jest lokalna. Użyj Stop, bez przekazywania urządzeniu.',
+      );
     if (this.transferring) throw new DomainError('BUSY', 'Trwa przekazanie historii.');
     this.transferring = true;
     try {
@@ -358,6 +457,8 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     }
   }
   async prepareHistory() {
+    if (this.historyMode() === 'LOCAL_ONLY')
+      throw new DomainError('LOCAL_ONLY', 'Historia lokalna nie wymaga eksportu do repozytorium.');
     if (this.transferring) throw new DomainError('BUSY', 'Trwa przygotowanie historii.');
     if (!this.state().stopped)
       throw new DomainError('SESSION_ACTIVE', 'Zatrzymaj sesję przed przygotowaniem historii.');
@@ -405,7 +506,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     try {
       const p = this.assertPolicy();
       if (!this.inScope(d)) problems.push('SCOPE_CHANGED');
-      this.historySync.assertOwner();
+      this.assertHistory();
       if (account.subject !== p.accountSubject || account.email !== p.senderEmail)
         problems.push('ACCOUNT_CHANGED');
       const o = this.store.one('SELECT * FROM opportunities WHERE id=?', d.opportunity_id)!;
@@ -656,7 +757,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     const epoch = this.controlEpoch;
     try {
       this.assertPolicy();
-      this.historySync.assertOwner();
+      this.assertHistory();
       const limits = this.quotaIssues();
       if (limits.length) {
         this.wait(limits[0]);
@@ -694,7 +795,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         contactBinding: this.contactBinding(chosen),
         outboxId: queued?.id,
       };
-      await this.historySync.checkpoint();
+      if (this.historyMode() === 'PRIVATE_GIT') await this.historySync.checkpoint();
       this.selected(operation);
       if (!queued) {
         await this.refreshDraftSources(operation.draftId, this.preparationController.signal);
@@ -873,7 +974,9 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       session: this.sessionId
         ? this.store.one('SELECT * FROM auto_sessions WHERE id=?', this.sessionId)
         : null,
-      sync: this.historySync?.status(),
+      sync: this.historyState(),
+      runtime: this.runtime.kind,
+      fictionalProviders: this.fictionalProviders,
       nextSendAt: this.store.get('autoNextSendAt', null),
       nextResearchAt: this.store.get('autoNextResearchAt', null),
       senderWait: this.store.get('autoSenderWait', null),
@@ -905,7 +1008,16 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
             return false;
           }
         })(),
-        history: this.historySync.status().configured,
+        history: this.historyState().configured,
+        database: (() => {
+          try {
+            this.store.assertHealthy();
+            return true;
+          } catch {
+            return false;
+          }
+        })(),
+        installation: this.fictionalProviders || this.runtime.kind === 'WORKSTATION',
         unresolved:
           !!this.store.one("SELECT id FROM outbox WHERE status IN ('SENDING','SEND_UNKNOWN')") ||
           !!this.store.one(
@@ -931,39 +1043,50 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     return d;
   }
   override companies(): (Row & { researchDetails: any })[] {
+    const contexts = new Map(
+      this.store.all('SELECT * FROM shared_company_context').map((r) => [r.company_id, r]),
+    );
+    const attempts = new Map<string, Row>();
+    for (const row of this.store.all('SELECT * FROM shared_attempts ORDER BY created_at DESC'))
+      if (!attempts.has(row.company_id)) attempts.set(row.company_id, row);
+    const sourcesByCompany = new Map<string, Row[]>(),
+      skipsByCompany = new Map<string, Row[]>();
+    for (const row of this.store.all(
+      'SELECT company_id,canonical_url,fetched_at,fragment FROM evidence',
+    )) {
+      const list = sourcesByCompany.get(row.company_id) ?? [];
+      list.push(row);
+      sourcesByCompany.set(row.company_id, list);
+    }
+    for (const row of this.store.all('SELECT * FROM auto_skips ORDER BY created_at DESC')) {
+      const list = skipsByCompany.get(row.company_id) ?? [];
+      list.push(row);
+      skipsByCompany.set(row.company_id, list);
+    }
+    const contacted = new Map(
+      this.store
+        .all(
+          `SELECT company_id,max(at) at FROM (
+      SELECT company_id,created_at at FROM outbox WHERE kind='FIRST_CONTACT' AND status IN ('SENT_PROVIDER','SENT_CONFIRMED','SEND_UNKNOWN','SENDING')
+      UNION ALL SELECT company_id,created_at at FROM shared_attempts WHERE state<>'FAILED_NOT_SENT'
+      UNION ALL SELECT company_id,occurred_at at FROM history_records WHERE status<>'SUGGESTED'
+      UNION ALL SELECT m.company_id,m.sent_at at FROM gmail_messages m LEFT JOIN outbox o ON o.id=m.outbox_id WHERE m.outbox_id IS NULL OR o.kind='FIRST_CONTACT'
+    ) GROUP BY company_id`,
+        )
+        .map((r) => [r.company_id, r.at]),
+    );
     const unique = new Map<string, Row & { researchDetails: any }>();
     for (const c of super.companies())
       if (!unique.has(c.id)) {
-        const sharedContext = this.store.one(
-          'SELECT * FROM shared_company_context WHERE company_id=?',
-          c.id,
-        );
-        const sources = this.store.all(
-          'SELECT canonical_url,fetched_at,fragment FROM evidence WHERE company_id=?',
-          c.id,
-        );
+        const sharedContext = contexts.get(c.id);
+        const sources = sourcesByCompany.get(c.id) ?? [];
         unique.set(c.id, {
           ...c,
           description: sharedContext?.description ?? c.title,
-          sharedAttempt: this.store.one(
-            'SELECT * FROM shared_attempts WHERE company_id=? ORDER BY created_at DESC LIMIT 1',
-            c.id,
-          ),
-          skipReason: this.store.one(
-            "SELECT message FROM audit_events WHERE action='AUTO_SKIPPED' AND entity_id IN (SELECT id FROM drafts WHERE company_id=?) ORDER BY created_at DESC LIMIT 1",
-            c.id,
-          )?.message,
-          skips: this.store.all(
-            'SELECT draft_id,draft_version,reason_code,message,created_at FROM auto_skips WHERE company_id=? ORDER BY created_at DESC',
-            c.id,
-          ),
-          lastContactAt: this.store.one(
-            "SELECT max(at) at FROM (SELECT created_at at FROM outbox WHERE company_id=? AND kind='FIRST_CONTACT' AND status IN ('SENT_PROVIDER','SENT_CONFIRMED','SEND_UNKNOWN','SENDING') UNION SELECT created_at at FROM shared_attempts WHERE company_id=? AND state<>'FAILED_NOT_SENT' UNION SELECT occurred_at at FROM history_records WHERE company_id=? AND status<>'SUGGESTED' UNION SELECT m.sent_at at FROM gmail_messages m LEFT JOIN outbox o ON o.id=m.outbox_id WHERE m.company_id=? AND (m.outbox_id IS NULL OR o.kind='FIRST_CONTACT'))",
-            c.id,
-            c.id,
-            c.id,
-            c.id,
-          )?.at,
+          sharedAttempt: attempts.get(c.id),
+          skipReason: skipsByCompany.get(c.id)?.[0]?.message,
+          skips: skipsByCompany.get(c.id) ?? [],
+          lastContactAt: contacted.get(c.id),
           sources: sources.length
             ? sources
             : JSON.parse(sharedContext?.sources ?? '[]').map((s: Row) => ({
@@ -974,5 +1097,10 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         });
       }
     return [...unique.values()];
+  }
+  protected override recentCompanies() {
+    return this.store.all(
+      'SELECT c.*,o.id opportunity_id,o.title,o.decision FROM opportunities o JOIN companies c ON c.id=o.company_id ORDER BY c.created_at DESC LIMIT 4',
+    );
   }
 }

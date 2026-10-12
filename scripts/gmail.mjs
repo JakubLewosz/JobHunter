@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { base } from './paths.mjs';
 import { DomainError } from '../dist/apps/server/src/util.js';
+import { workstationRuntime, developmentRuntime } from '../dist/apps/server/src/runtime.js';
 import {
   connectGoogle,
   disconnectGoogle,
@@ -15,11 +16,13 @@ import {
 const dir = join(base, 'gmail-preparation');
 const [command, file] = process.argv.slice(2);
 try {
+  if (process.env.JOBHUNTER_RUNTIME !== 'WORKSTATION') developmentRuntime.assertNative();
+  workstationRuntime(join(base, 'research-only')).assertNative();
   if (command === 'status') {
     const info = setupInfo(dir);
     console.log(
       info
-        ? `Zapisano konto ${info.email}. Odczyt: ${info.scopes.includes(gmailReadScope) ? 'dopuszczony przez Google' : 'wymaga dodatkowego logowania'}. Wysyłkę konkretnej wiadomości zatwierdzasz w panelu APPROVAL_REQUIRED.`
+        ? `Zapisano konto ${info.email}. Odczyt: ${info.scopes.includes(gmailReadScope) ? 'dopuszczony przez Google' : 'wymaga dodatkowego logowania'}. Podłączenie nie uruchamia sesji. AUTO_POLICY wymaga zatwierdzonych materiałów, polityki i świadomego Start.`
         : 'Konto Gmail jeszcze niepodłączone. Instrukcja: docs/GMAIL_SETUP.md',
     );
   } else if (command === 'connect' || command === 'enable-read') {
@@ -57,7 +60,7 @@ try {
       command === 'enable-read',
     );
     console.log(
-      `Połączono ${info.email}. Nie wysłano żadnej wiadomości. W panelu APPROVAL_REQUIRED przygotuj i zatwierdź konkretny podgląd z CV.`,
+      `Połączono ${info.email}. Nie wysłano żadnej wiadomości. Sesję AUTO_POLICY uruchamia dopiero użytkownik po zatwierdzeniu materiałów i polityki; APPROVAL_REQUIRED pozostaje opcjonalny.`,
     );
   } else if (command === 'disconnect') {
     await disconnectGoogle(await nativeSecretStore(), dir);

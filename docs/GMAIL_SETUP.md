@@ -1,6 +1,6 @@
 # Gmail z CV w JobHunter
 
-> Aktualizacja 11 października 2026: instrukcje podłączenia OAuth pozostają; niżej opisany ręczny przepływ dotyczy APPROVAL_REQUIRED i wcześniejszych prób. AUTO_POLICY korzysta z tego samego lokalnego konta, jawnej konfiguracji/polityki i Start, bez przeglądu każdego maila. Odpowiedzi obsługuje użytkownik w Gmailu. Aktualna instrukcja: README i HISTORY_SYNC. Rozwój nadal nie upoważnia do wysyłek ani rozszerzania scopes.
+> Aktualizacja 12 października 2026: prawdziwa poczta wyłącznie w świadomie skonfigurowanym WORKSTATION na domowym Windowsie (lokalne oznaczenie poza repo i istniejąca historia). DEVELOPMENT/macOS nie inicjalizują natywnego Gmaila; helper OAuth też odrzuca taką konfigurację. Nie kopiujemy tokenów z Maca i nie zmieniamy nadawcy automatycznie. Instrukcja: README i URUCHOMIENIE_RANO. LOCAL_ONLY nie wymaga repo historii. Niższy ręczny przepływ dotyczy APPROVAL_REQUIRED i wcześniejszych prób; AUTO wymaga zatwierdzonej polityki i osobnego Start, bez przeglądu każdego maila. Rozwój nie upoważnia do wysyłek/OAuth/rozszerzenia scopes.
 
 Tryb `APPROVAL_REQUIRED` ma przegląd konkretnych wiadomości, test do siebie, sprawdzanie historii i wysyłkę paczki do trzech firm. RESEARCH_ONLY nadal nie czyta Gmaila i nie wysyła. Dodanie tej możliwości nie upoważnia do rzeczywistych wysyłek podczas kodowania.
 

@@ -134,11 +134,7 @@ export class JobHunter {
     this.recover();
     if (existing !== this.mode) {
       this.revokeApprovals('Zmiana trybu aplikacji');
-      store.exec(
-        'UPDATE campaigns SET mode=?,policy_version=policy_version+1 WHERE id=?',
-        this.mode,
-        this.campaignId,
-      );
+      store.exec('UPDATE campaigns SET mode=? WHERE id=?', this.mode, this.campaignId);
     }
   }
   now() {
@@ -1598,13 +1594,16 @@ export class JobHunter {
         'SELECT * FROM audit_events ORDER BY created_at DESC,rowid DESC LIMIT 40',
       ),
       runs: this.store.all('SELECT * FROM runs ORDER BY started_at DESC LIMIT 15'),
-      recentCompanies: this.companies()
-        .filter((c) => c.opportunity_id)
-        .slice(0, 4),
+      recentCompanies: this.recentCompanies(),
       profileApproved: !!this.profile().approved_at,
       pending: count("SELECT count(*) n FROM drafts WHERE status='NEEDS_REVIEW'"),
       unknown: count("SELECT count(*) n FROM outbox WHERE status='SEND_UNKNOWN'"),
     };
+  }
+  protected recentCompanies() {
+    return this.companies()
+      .filter((c) => c.opportunity_id)
+      .slice(0, 4);
   }
   report(format: 'md' | 'csv') {
     const d = this.dashboard();

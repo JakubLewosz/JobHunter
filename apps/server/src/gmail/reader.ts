@@ -413,7 +413,23 @@ export class GmailApi implements GmailGateway {
     return provider.sendFrozenMessage(input);
   }
 }
-export function nativeGmail(): GmailGateway {
+export function disabledGmail(): GmailGateway {
+  const denied = async (): Promise<never> => {
+    throw new DomainError('SEND_DISABLED', 'Tryb developerski — bez prawdziwej wysyłki.');
+  };
+  return {
+    account: denied,
+    marker: denied,
+    scan: denied,
+    thread: denied,
+    sent: denied,
+    send: denied,
+  };
+}
+export function nativeGmail(assertNative: () => void): GmailGateway {
   // Lazy credential access: constructing the app never opens Keychain or reads the mailbox.
-  return new GmailApi(async () => gmailCredentials(await nativeSecretStore()));
+  return new GmailApi(async () => {
+    assertNative();
+    return gmailCredentials(await nativeSecretStore());
+  });
 }

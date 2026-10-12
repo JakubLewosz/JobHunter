@@ -486,6 +486,9 @@ export function App() {
           )}
           <div className="page-heading">
             <div>
+              {d.state.runtime === 'DEVELOPMENT' && (
+                <p>Tryb developerski — bez prawdziwej wysyłki</p>
+              )}
               <div className="eyebrow">
                 {screen === 'dashboard' ? 'DOBRZE CIĘ WIDZIEĆ, JAKUB' : currentName?.toUpperCase()}
               </div>

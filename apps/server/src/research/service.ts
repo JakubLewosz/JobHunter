@@ -331,9 +331,10 @@ export class ResearchJobHunter extends JobHunter {
   }
   saveSource(source: Source): Source {
     const existing = this.store.one(
-      'SELECT * FROM research_sources WHERE original_url=? AND content_hash=?',
+      'SELECT * FROM research_sources WHERE original_url=? AND content_hash=? AND parser_version=?',
       source.original_url,
       source.content_hash,
+      source.parser_version ?? 0,
     );
     if (existing) {
       this.store.atomic(() => {
@@ -372,7 +373,7 @@ export class ResearchJobHunter extends JobHunter {
       return this.store.one('SELECT * FROM research_sources WHERE id=?', existing.id) as Source;
     }
     this.store.exec(
-      'INSERT INTO research_sources VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO research_sources VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
       source.id,
       source.original_url,
       source.final_url,
@@ -385,6 +386,8 @@ export class ResearchJobHunter extends JobHunter {
       source.content_hash,
       source.text,
       source.error,
+      source.parser_version ?? 0,
+      source.address_contexts ?? null,
     );
     this.event('SOURCE_READ', `${source.status}: ${source.original_url}`, source.id);
     this.store.exec(
@@ -412,7 +415,8 @@ export class ResearchJobHunter extends JobHunter {
       normalized,
       iso(new Date(this.clock().getTime() - 24 * 3600000)),
     );
-    if (existing) return existing as Source;
+    if (existing && (existing.method !== 'PUBLIC_HTTP' || existing.parser_version === 1))
+      return existing as Source;
     let source = await this.reader.read(normalized, signal);
     if (['TIMEOUT', 'FETCH_FAILED'].includes(source.status)) {
       this.saveSource(source);
@@ -474,7 +478,12 @@ export class ResearchJobHunter extends JobHunter {
         'SELECT id FROM source_verifications WHERE source_id=?',
         source.id,
       );
-      if (checked && this.clock().getTime() - Date.parse(source.fetched_at) <= 86400000) continue;
+      if (
+        checked &&
+        (source.method !== 'PUBLIC_HTTP' || source.parser_version === 1) &&
+        this.clock().getTime() - Date.parse(source.fetched_at) <= 86400000
+      )
+        continue;
       signal?.throwIfAborted();
       const fresh = this.saveSource(await this.reader.read(source.original_url, signal));
       if (fresh.status !== 'READ' || fresh.id !== source.id)
@@ -1450,16 +1459,14 @@ export class ResearchJobHunter extends JobHunter {
     return { runId, queued: true };
   }
   override companies(): (Row & { researchDetails: any })[] {
+    const details = new Map(
+      this.store
+        .all('SELECT opportunity_id,details FROM research_qualifications')
+        .map((r) => [r.opportunity_id, JSON.parse(r.details)]),
+    );
     return super.companies().map((c) => ({
       ...c,
-      researchDetails: c.opportunity_id
-        ? JSON.parse(
-            this.store.one(
-              'SELECT details FROM research_qualifications WHERE opportunity_id=?',
-              c.opportunity_id,
-            )?.details ?? 'null',
-          )
-        : null,
+      researchDetails: details.get(c.opportunity_id) ?? null,
     }));
   }
   override draftRows() {

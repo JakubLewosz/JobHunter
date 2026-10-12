@@ -66,14 +66,22 @@ export function git(dir: string, ...args: string[]) {
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 }
-export async function setup(t: TestContext, prospect = false, many = false, split = false) {
+export async function setup(
+  t: TestContext,
+  prospect = false,
+  many = false,
+  split = false,
+  local = false,
+) {
   const root = mkdtempSync(join(tmpdir(), 'jh-auto-')),
     dir = join(root, 'data'),
     repo = join(root, 'history'),
     remote = join(root, 'remote.git');
-  execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore', windowsHide: true });
-  execFileSync('git', ['clone', remote, repo], { stdio: 'ignore', windowsHide: true });
-  git(repo, 'symbolic-ref', 'HEAD', 'refs/heads/main');
+  if (!local) {
+    execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore', windowsHide: true });
+    execFileSync('git', ['clone', remote, repo], { stdio: 'ignore', windowsHide: true });
+    git(repo, 'symbolic-ref', 'HEAD', 'refs/heads/main');
+  }
   const store = new Store(dir),
     gateway = new FixtureGmail(),
     runner = many ? new ManyRunner() : split ? new SplitContactRunner() : new FixtureRunner(),
@@ -139,12 +147,18 @@ export async function setup(t: TestContext, prospect = false, many = false, spli
     targetedHistoryConsent: true,
   };
   service.configurePolicy(policy);
-  service.historySync.configure({
-    directory: repo,
-    expectedRemote: remote,
-    confirmedPrivate: true,
-    confirmedInitialHistory: true,
-  });
+  if (local)
+    await service.configureLocalHistory({
+      confirmedHistory: true,
+      confirmedSingleWorkstation: true,
+    });
+  else
+    service.historySync.configure({
+      directory: repo,
+      expectedRemote: remote,
+      confirmedPrivate: true,
+      confirmedInitialHistory: true,
+    });
   await service.probe('codex');
   await service.probe('search');
   return {

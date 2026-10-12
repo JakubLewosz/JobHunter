@@ -1,8 +1,17 @@
 import { defineConfig } from '@playwright/test';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-process.env.JOBHUNTER_E2E_DIR ??= mkdtempSync(join(tmpdir(), 'jobhunter-e2e-'));
+if (!process.env.JOBHUNTER_E2E_DIR) {
+  process.env.JOBHUNTER_E2E_DIR = mkdtempSync(join(tmpdir(), 'jobhunter-e2e-'));
+  writeFileSync(
+    join(process.env.JOBHUNTER_E2E_DIR, 'development.json'),
+    JSON.stringify({ kind: 'DEVELOPMENT' }),
+    { mode: 0o600 },
+  );
+} else if (!existsSync(join(process.env.JOBHUNTER_E2E_DIR, 'development.json'))) {
+  throw new Error('Playwright wymaga osobnego katalogu syntetycznego developmentu.');
+}
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: false,

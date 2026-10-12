@@ -392,6 +392,7 @@ export class HistorySync {
       confirmedInitialHistory: input.confirmedInitialHistory === true,
     });
     this.store.set('historySyncRevision', null);
+    this.store.set('historyStorageMode', 'PRIVATE_GIT');
     return this.status();
   }
   status() {
@@ -662,6 +663,28 @@ export class HistorySync {
     } finally {
       this.busy = false;
     }
+  }
+  async confirmLocalTransition() {
+    if (this.busy || this.status().status !== 'HANDED_OFF')
+      throw new DomainError(
+        'HISTORY_TRANSITION_REQUIRED',
+        'Najpierw zakończ i opublikuj historię na dotychczasowym urządzeniu. Niepewny stan drugiego urządzenia wymaga sprawdzenia, bez nowego pustego profilu.',
+      );
+    const directory = this.repository();
+    await this.gitNetwork(directory, ['fetch', 'origin']);
+    this.repository();
+    const snapshot = this.current(directory);
+    if (
+      !snapshot.closed ||
+      snapshot.owner !== null ||
+      this.git(directory, ['rev-parse', 'origin/main']) !==
+        this.store.get('historySyncRevision', '') ||
+      JSON.stringify(snapshot) !== JSON.stringify(exportHistory(this.store, snapshot.generation))
+    )
+      throw new DomainError(
+        'HISTORY_TRANSITION_REQUIRED',
+        'Historia lokalna i opublikowana różnią się albo inne urządzenie nadal pracuje. Uzgodnij i zachowaj dotychczasowe dane przed zmianą.',
+      );
   }
   private async publish(directory: string, snapshot: Snapshot) {
     this.repository();

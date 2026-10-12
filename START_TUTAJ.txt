@@ -1,12 +1,16 @@
-JOBHUNTER — ISTNIEJĄCA APLIKACJA
+JOBHUNTER — JEDEN KOMPUTER ROBOCZY
 
-1. Nie twórz nowego projektu. Czytaj README.md, AGENTS.md i specyfikację 2.0.
-2. Node 24 LTS: npm ci, npm run build, npm run doctor.
-3. W PowerShell ustaw JOBHUNTER_MODE na AUTO_POLICY i uruchom npm start.
-4. W drugim PowerShell ustaw ten sam tryb i wykonaj npm run open.
-5. W Ustawieniach zatwierdź materiały/CV, istniejący Gmail/Codex, politykę i osobne prywatne repo historii.
-6. Pierwszą historię przygotuj na komputerze z dotychczasową bazą, bez sesji wysyłkowej.
-7. Rzeczywiste wysyłki zaczynają się dopiero po świadomym „Start — szukaj i wysyłaj”.
-8. Pauza zachowuje sesję; Stop ją kończy. Przed zmianą urządzenia użyj „Stop i przekaż historię”.
+Specyfikacja 2.1 (12 października): kod Windows/macOS, prawdziwy research i poczta
+tylko na domowym Windowsie, jedna trwała historia LOCAL_ONLY poza repo.
 
-Rozwój aplikacji nie zleca rzeczywistych maili, resetowania historii, zmiany nadawcy lub publikacji prywatnych danych. Nie wpisuj sekretów do promptów. Szczegóły i wyniki testów: README.md, docs/HISTORY_SYNC.md, docs/TEST_REPORT.md, docs/TASKS.md.
+Development: npm ci, npm run check, npm run doctor, npm start i npm run open.
+Domyślnie DEVELOPMENT/DEMO, osobne dane syntetyczne, bez natywnego Gmaila.
+
+Domowy Windows: ustal oryginalną historię, history:local doctor/backup, następnie configure.
+WORKSTATION i tryb ustaw jawnie. Materiały/CV/nadawcę/politykę zatwierdza użytkownik;
+Start jest osobną decyzją sesji. Brak prywatnego origin nie blokuje AUTO.
+
+Push kodu nie aktualizuje kampanii. Stop, koniec operacji, backup, dopiero aktualizacja.
+Restart zatrzymany. Nigdy nie resetuj historii lub SEND_UNKNOWN.
+Procedury A/B/C: docs/URUCHOMIENIE_RANO.md. Wyniki: docs/TEST_REPORT.md.
+Rozwój nie autoryzuje prawdziwej poczty lub zmian prywatnych danych.

@@ -1,6 +1,6 @@
 # JobHunter — aktualna specyfikacja
 
-Wersja 2.0, 11 października 2026. Zastępuje ręczną akceptację każdej wiadomości i rozbudowaną obsługę odpowiedzi ze specyfikacji 1.0. Granice danych, prawdziwości, separacji trybów i niezamówionych wysyłek pozostają.
+Wersja 2.1, 12 października 2026. Zastępuje obowiązkową synchronizację między urządzeniami. Zachowuje AUTO_POLICY bez akceptacji każdego maila i granice danych/prawdziwości/niezamówionych wysyłek.
 
 ## Produkt
 
@@ -14,7 +14,7 @@ Szukanie obejmuje software house’y, agencje, zespoły produktowe, SaaS, web/ba
 
 Rozróżniamy ACTIVE, OPEN i PROSPECT. Nieznane warunki pozostają unknown. Niedopasowane ogłoszenie nie jest blokadą całej firmy: osobno udokumentowana działalność i właściwy kontakt mogą uzasadniać PROSPECT. Nie przedstawiamy kandydata jako spełniającego wymagania seniorskej/full-time oferty. Wyraźne odmowy spontanicznych zgłoszeń i ograniczenia kanału aplikacji mają pierwszeństwo.
 
-Dowody mają pierwotny/końcowy URL, czas, metodę, tekst/fragment i hash. Wersja treści jest oddzielona od zdarzenia ponownej weryfikacji. Nieudany odczyt nie odmładza źródła. Kontakt ma oddzielny literalny dowód, przeznaczenie i kwalifikację użycia. Zniknięcie lub zmiana celu unieważnia wcześniejszy dowód.
+Dowody mają pierwotny/końcowy URL, czas, metodę, tekst/fragment i hash. Wersja treści jest oddzielona od zdarzenia ponownej weryfikacji. Nieudany odczyt nie odmładza źródła. Kontakt ma oddzielny literalny dowód, kontekst strukturalny HTML, przeznaczenie i kwalifikację użycia. Nagłówek nad adresem jest związany z sekcją/listą/wierszem; niezwiązany dział nie dyskwalifikuje innego adresu. Konflikt, zniknięcie lub zmiana celu unieważnia wcześniejszy dowód. Globalne odmowy/kanały pozostają niezależne.
 
 Materiały mają jawne wersje i zatwierdzenie. Publiczny GitHub nie jest działającym publicznym demo; projekt portfolio nie jest produkcją. Kandydat jest uczniem technikum, nie studentem uczelni. Nie dopisujemy doświadczenia, stawek, egzaminów ani kompetencji. CV wskazuje i zatwierdza użytkownik; sprawdzamy SHA-256 niezmiennej kopii. Zmiana faktów/CV/nadawcy wymaga ponownego sprawdzenia polityki.
 
@@ -24,7 +24,7 @@ Styl pozostaje w docs/MESSAGE_STYLE.md: przedstawienie, prawdziwe nawiązanie, z
 
 DEMO jest osobną symulacją. RESEARCH_ONLY nie inicjalizuje Gmaila/send. APPROVAL_REQUIRED zachowuje opcjonalną akceptację paczek. AUTO_POLICY wymaga zatwierdzenia nadawcy, faktów, CV, kontaktów/naboru, zakresu, tempa, opcjonalnych limitów i ograniczonego technicznego odczytu historii. Potem jawny Start tworzy lokalną sesję; poprawne wiadomości nie wymagają osobnych zgód.
 
-Kod sprawdza tożsamość firmy, literalny adres/źródło/przeznaczenie/aktualność, treść wobec faktów/źródeł, historię/blokady/niepewne próby, aktualną politykę/CV/nadawcę i własność historii. GENERAL dopuszczony do zapytania zachowuje GENERAL; nie jest potwierdzoną rekrutacją. Kontakty sprzedaży/faktur/security/privacy i niepewne informacje są blokowane. Kontrola modelu jest pomocnicza; kontrole deterministyczne pozostają. Niepewny szkic zapisujemy jako pominięty/do sprawdzenia i kontynuujemy inne firmy.
+Kod sprawdza tożsamość firmy, literalny adres/źródło/przeznaczenie/aktualność, treść wobec faktów/źródeł, historię/blokady/niepewne próby, aktualną politykę/CV/nadawcę i lokalną blokadę profilu. GENERAL dopuszczony do zapytania zachowuje GENERAL; nie jest potwierdzoną rekrutacją. Kontakty sprzedaży/faktur/security/privacy i niepewne informacje są blokowane. Kontrola modelu jest pomocnicza; kontrole deterministyczne pozostają. Niepewny szkic zapisujemy jako pominięty/do sprawdzenia i kontynuujemy inne firmy.
 
 ## Sesja i sender
 
@@ -34,12 +34,16 @@ Research i sender mają oddzielną zajętość. Pauza blokuje nowe operacje i za
 
 ## Historia i urządzenia
 
-Osobne prywatne repo historii przenosi wersjonowany minimalny JSON: firmy, potwierdzone aliasy, kontakty ręczne, blokady, próby/rezerwacje i liczniki. Nie przenosi aktywnej zgody, tokenów/OAuth, CV/PDF, loginu Codexa, SQLite/WAL lub całej skrzynki. Eksport wynika z transakcyjnego odczytu, plik publikujemy atomowo, import jest transakcyjny i nie usuwa lokalnych danych. Konflikt blokuje wysyłkę; bez force-push.
+GitHub przechowuje kod/testy/bezpieczną dokumentację. Jedna trwała SQLite na domowym Windowsie obejmuje historię między sesjami/nadawcami; materiały/CV i konfiguracja są poza repo, poświadczenia w lokalnym magazynie systemowym. Aktualizacja/zmiana gałęzi/trybu nie tworzy pustej alternatywnej historii. RESEARCH_ONLY i AUTO używają tego samego research-only. MacBook jest developerski, z osobnymi danymi syntetycznymi i technicznie niedostępnym natywnym Gmailem.
 
-Start weryfikuje remote i przejmuje opublikowaną własność. Nieukończona sesja innego urządzenia blokuje pracę także po pull. Przekazanie zatrzymuje operacje, czeka na rozpoczętą próbę, eksportuje/publikuje i dopiero zwalnia właściciela. Brak konfiguracji daje instrukcję, nie sukces. Nie tworzymy zdalnego repo ani nie publikujemy prywatnego stanu bez wskazania i potwierdzenia celu. Testy używają lokalnych repo i fikcyjnych danych.
+LOCAL_ONLY jest jawną strategią, niezależną od trybu pracy. Start/bramki/sender/Stop/readiness nie potrzebują Gita, origin ani zdalnego właściciela. Blokada jednego profilu działa między procesami i portami. Niespójna baza, utrata blokady, nieznany profil i SEND_UNKNOWN nadal blokują. Nie gwarantujemy własności między niepołączonymi komputerami: pracuje jeden komputer.
+
+PRIVATE_GIT może pozostać jako opcjonalny moduł kompatybilności. Już skonfigurowany profil zachowuje go do jawnego przejścia po Stop: pełna lokalna historia, zamknięty opublikowany stan, brak niepewnych prób i sprawdzenie zgodności. Bez ignorowania błędów synchronizacji, porzucenia nieopublikowanej historii lub kasowania shared_attempts/shared_usage. Pełna macierz awarii handoff jest odłożona.
+
+Nowy checkout uruchamia DEVELOPMENT/DEMO. WORKSTATION wymaga Windowsa i lokalnego oznaczenia istniejącej historii poza repo; nie udziela aktywnej zgody na send. Przed migracją spójny lokalny backup SQLite, test odtworzenia bez aktywnej sesji/zgód. Push nie aktualizuje pracującego backendu. Aktualizacja po Stop, zakończeniu operacji i backupie; restart pozostaje zatrzymany. Bez hot reloadu, automatycznego pull/restartu lub zmian zasilania.
 
 ## Panel i testy
 
-Dwa główne widoki: Praca programu i Historia firm. Materiały, połączenia i polityka w Ustawieniach. Stan, firma, liczniki, limit, nadawca, CV, synchronizacja i powód blokady są widoczne. Historia zachowuje temat/treść, datę, kontakt i źródła. SELF_TEST nie zwiększa statystyk aplikowania. Odpowiedzi/CRM/raporty nie są eksponowane; stare dane nie są usuwane.
+Dwa główne widoki: Praca programu i Historia firm. Materiały, połączenia i polityka w Ustawieniach. W LOCAL_ONLY: „Historia lokalna — na tym komputerze”, bez obowiązkowego origin i przycisku przekazywania. Development jest wyraźnie oznaczony. Gotowość obejmuje instalację/bazę/niepewne próby, aktualne materiały/CV/konto/zgody/politykę i Codexa. Zamknięcie karty nie zatrzymuje backendu. Historia zachowuje temat/treść, datę, kontakt i źródła. SELF_TEST poza licznikiem firm; stare dane bez usuwania.
 
 Testy: automat bez akceptacji maili, GENERAL/polityka, unknown kontra fałszywe dopasowanie, zmiana profilu/CV/nadawcy, Stop/Pauza, niepewny send, tempo/limity/brak limitu, dostawcy, świeżość źródeł, deduplikacja i właściciel między urządzeniami, konflikty/przerwany eksport/brak sekretów oraz SELF_TEST. Po etapach npm run check; Windows zaliczamy wyłącznie po rzeczywistym uruchomieniu z opisem zakresu. Specyfikacja nie dowodzi wdrożenia: patrz docs/TASKS.md i docs/TEST_REPORT.md.
