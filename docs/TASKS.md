@@ -1,5 +1,84 @@
 # Zadania
 
+## Publiczny research i publikacja — 12 października 2026
+
+- [x] Zgoda użytkownika na skorygowaną propozycję i oryginalny PDF; zgodność
+      SHA sprawdzona. Osobna diagnostyka użyła 9 faktów, bez domyślnego FixDesk
+      lub dodatkowych aktywności CV. Produkcyjne materiały nie były zapisywane.
+- [x] Rzeczywisty Codex/web search, trzy partie na niezerowanym budżecie;
+      30 rozpoczętych tożsamości, 5 zweryfikowanych analiz, 2 zachowane szkice.
+      Po osiągnięciu 150 HTTP brak nowych firm/HTTP; domknięto zapisane kontrole.
+      15 wywołań modelu, 2 pozytywne kontrole, 3 pominięcia, 1 błąd ekstrakcji.
+- [x] Odwzorowanie TLS i poprawka porównywania linku z końcową kropką;
+      nie wyłączono zabezpieczeń. Dwa teksty bez zmian sprawdzono ponownie;
+      pierwotne odrzucenia są zachowane. Brak szerokiej przebudowy stylu/UI.
+- [x] Osiem plików publicznego pakietu i LATEST; automatyczny audyt wszystkich
+      firm/wersji/ID/odnośników/danych prywatnych i zerowej poczty PASS.
+- [x] Końcowy npm run check PASS: 382 backend, 12 performance, 15 UI,
+      typecheck/build; diff check PASS. Fikcyjne usługi, bez Gmaila.
+- [ ] Zweryfikować zdalny SHA pakietu po pushu i stan CI dla tego SHA.
+- [ ] Przed pilotażem: wyjaśnić nadmierną interpretację contract=no w Tukano
+      (profil nie wymaga zlecenia), wąską kontrolę celu adresu Merixstudio oraz
+      niepoparty tytuł ekstrakcji Payarto. Nie zmieniono wyników ręcznie i nie
+      osłabiono walidatorów dla zwiększenia liczby szkiców.
+- [ ] Nowa baza/import Fingoweb, LOCAL_ONLY/WORKSTATION i backup nadal wymagają
+      konkretnych potwierdzeń użytkownika. Przenieść zatwierdzony zestaw do
+      tej bazy bez automatycznej aprobaty domyślnego FixDesk. CV pozostaje bez
+      edycji. Dopiero później osobne decyzje Gmail/polityka/SELF_TEST/Start.
+      Research i publikacja nie są zgodą na którykolwiek send.
+
+## Domowy Windows — punkt wznowienia z 12 października 2026
+
+Kod `a3bc37b`, zależności i pełny check Windows przygotowane: **350 backend,
+12 performance Stop, 15 UI PASS**. Nie uruchomiono prywatnego backendu ani Gmaila.
+
+- [x] Poszerzona diagnostyka Windows tylko do odczytu: profil bieżącego
+      użytkownika, dostępne D i wybrane katalogi wspólne. Przed nową próbą fixture
+      znaleziono 73 tymczasowe bazy; wszystkie adresy kontaktów/rekordów/prób
+      w domenach .test/.invalid. Nie ustalono żadnej bazy osobistej; chronione
+      katalogi systemowe niedostępne. Nie migrowano ani nie resetowano baz.
+- [x] Przygotowana procedura nowej instalacji i ręcznej historii CSV w
+      URUCHOMIENIE_RANO; jednorazowa kontrola na fikcyjnych danych PASS.
+- [x] Użytkownik wybrał nową instalację Windows bez przenoszenia historii testów
+      z MacBooka. Potwierdził brak wcześniejszych wysyłek JobHuntera do firm;
+      SELF_TEST nie były aplikacjami. Nie usuwamy historycznych danych Maca.
+- [x] Przygotowany prywatny pusty szablon CSV poza repo: pięć nagłówków,
+      UTF-8 BOM, separator przecinek, zero firm. Nie utworzono bazy roboczej.
+- [x] Po otrzymaniu listy użytkownika uzupełniono CSV jednym rzeczywistym
+      wcześniejszym kontaktem. Adres/domena/data nieznane i pozostawione puste.
+      Podgląd istniejącego importera PASS; zapisany lokalnie poza repo wraz
+      z hashem. Nie wykonano importu, także do tymczasowej bazy podglądu.
+- [x] CSV zatwierdzony przez użytkownika. Inne wcześniejsze ręczne zgłoszenia
+      świadomie objęte wyjątkiem jednej kolejnej wiadomości, nie deklaracją
+      braku wcześniejszego kontaktu. Nie wymagać kompletowania ich CSV.
+- [x] Jawny nowy initializer i publiczna diagnostyka pomijają 33 dawne nazwy.
+      Wdrożono trwałą, nieodnawianą granicę kampanii i zachowano Fingoweb,
+      istniejące rekordy, odmowy oraz niepewne/własne próby. Testy w TEST_REPORT.
+- [ ] Po przygotowaniu inicjalizacji pokazać pełne podsumowanie docelowego
+      katalogu, skutków i dokładnego CSV/hashu; uzyskać zgodę na utworzenie
+      bazy oraz import. Dopiero potem tworzyć bazę; bez danych syntetycznych.
+- [ ] Po zaakceptowanym utworzeniu/importowaniu nowej historii wykonać
+      `history:local doctor`, pokazać liczniki/blokady i potwierdzić zakres
+      NOWEJ kampanii z wyjątkiem dawnych zgłoszeń oraz jeden Windows.
+      Nie potwierdzać kompletnej oryginalnej historii w imieniu użytkownika.
+- [ ] Wykonać spójny backup istniejącym helperem; po wymaganym potwierdzeniu
+      configure WORKSTATION i sprawdzić LOCAL_ONLY, pozostawiając send zatrzymany.
+- [ ] Skonfigurować z użytkownikiem rzeczywisty profil, projekty i wskazane CV.
+      Propozycje z kodu pozostają niezatwierdzone; nie zatwierdzać za użytkownika.
+      Po jego akceptacji `smoke:public -- --approved-profile`
+      w osobnym katalogu, maksymalnie 5 firm/15 minut, bez Gmaila i kolejki produkcyjnej.
+- [x] Wskazany PDF odczytany/wyrenderowany bez zmian; użytkownik potwierdził
+      właściwe CV. Propozycja profilu i dane pozostają wyłącznie poza repo.
+- [x] Końcowe zatwierdzenie zmienionych fragmentów materiałów (zlecenie publicznego researchu): główne trzy
+      projekty, zwykle jeden na firmę; FixDesk wymaga osobnego opisu w obecnym
+      zestawie i nie jest faktem/poleceniem ani permanentnym wykluczeniem.
+      Przy konfiguracji nie zatwierdzić domyślnego opisu FixDesk ze starego seed.
+      Przekazać do diagnostyki tylko wybrany zatwierdzony zestaw faktów, bez
+      fallbacku do brakujących opisów z kodu. Nie przebudowywać CV/stylu/programu.
+- [ ] Pokazać firmy, literalne dowody/przeznaczenie adresów, pełne wiadomości,
+      wyniki kontroli i konkretne pominięcia. Pierwszy pilotaż Gmaila wymaga
+      osobnej decyzji użytkownika; w tej sesji nie wysyłać żadnych wiadomości.
+
 ## Wynik 12 października 2026 — jeden komputer roboczy
 
 Nowa decyzja zastępuje obowiązek prywatnego Git/handoff. Kod rozwijany na Windows/macOS;

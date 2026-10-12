@@ -105,6 +105,8 @@ export class PublicSourceReader implements SourceReader {
       timeoutMs?: number;
       maxBytes?: number;
       maxRedirects?: number;
+      beforeRequest?: (url: string) => void;
+      onHTML?: (url: string, html: string) => void;
       resolve?: typeof lookup;
       transport?: (url: URL, address: string, signal: AbortSignal) => Promise<Response>;
     } = {},
@@ -143,6 +145,7 @@ export class PublicSourceReader implements SourceReader {
         const addresses = await abortable(resolving, combined);
         if (!addresses.length || addresses.some((x) => !publicIP(x.address)))
           throw new DomainError('SSRF_BLOCKED', 'DNS wskazuje niepubliczny adres.');
+        this.options.beforeRequest?.(url.href);
         const response = await (this.options.transport ?? this.download.bind(this))(
           url,
           addresses[0].address,
@@ -200,6 +203,7 @@ export class PublicSourceReader implements SourceReader {
           break;
         }
         result.status = result.text ? 'READ' : 'EMPTY';
+        if (result.status === 'READ') this.options.onHTML?.(url.href, response.body);
         result.content_hash = hash(JSON.stringify({ parserVersion, body: response.body }));
         result.fragment = result.text.slice(0, 1200);
         break;
@@ -210,7 +214,14 @@ export class PublicSourceReader implements SourceReader {
         ? 'TIMEOUT'
         : error instanceof DomainError
           ? error.code
-          : 'FETCH_FAILED';
+          : [
+                'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+                'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+                'CERT_HAS_EXPIRED',
+                'DEPTH_ZERO_SELF_SIGNED_CERT',
+              ].includes((error as { code?: string })?.code ?? '')
+            ? 'TLS_UNTRUSTED'
+            : 'FETCH_FAILED';
       result.error = result.status; // Never persist raw errors that may contain credentials or private paths.
     } finally {
       this.active--;

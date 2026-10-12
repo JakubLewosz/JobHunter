@@ -6,6 +6,7 @@ import { gmailCredentials, gmailReadScope, nativeSecretStore, type AccountInfo }
 import type { FrozenMessage } from '../providers.js';
 import { textFromHTML } from '../research/fetcher.js';
 import { inspectMime, decodeSubject, maxMimeBytes } from './inspection.js';
+import { priorResponseCheck } from '../prior-applications.js';
 export { decodeSubject } from './inspection.js';
 
 export interface GmailMessage {
@@ -20,6 +21,7 @@ export interface GmailMessage {
   body: string;
   category: string;
   raw?: Buffer; // Full MIME only for consented reconciliation; never the truncated reply body.
+  priorContactCheck?: 'CLEAR' | 'OPT_OUT' | 'UNKNOWN';
 }
 export interface SentQuery {
   messageId: string;
@@ -39,6 +41,7 @@ export interface GmailGateway {
     query: string,
     page: (messages: GmailMessage[], next: string | null) => void,
     expected?: AccountInfo,
+    options?: { priorApplicationsBefore: string; email: string; domains: string[] },
   ): Promise<void>;
   thread(id: string): Promise<GmailMessage[]>;
   sent(input: SentQuery): Promise<GmailMessage[]>;
@@ -59,7 +62,11 @@ const headersSchema = z
 function addresses(text: string) {
   return addressparser(text, { flatten: true }).map((a) => a.address.toLowerCase());
 }
-export function parseGmailMessage(raw: unknown, full = false): GmailMessage {
+export function parseGmailMessage(
+  raw: unknown,
+  full = false,
+  inspectPriorResponse = false,
+): GmailMessage {
   const m = z
     .object({
       id: providerId,
@@ -83,25 +90,48 @@ export function parseGmailMessage(raw: unknown, full = false): GmailMessage {
   const to = addresses([header('To'), header('Cc'), header('Bcc')].filter(Boolean).join(', '));
   let body = '';
   let html = '';
+  let complete = true;
+  let textSeen = false;
   const visit = (part: any, depth = 0) => {
-    if (depth > 15) return;
+    if (part.filename) return; // No attachment extraction or download.
+    if (depth > 15) {
+      complete = false;
+      return;
+    }
     if (part.mimeType === 'text/plain' && !part.filename && typeof part.body?.data === 'string') {
-      if (part.body.data.length <= 48000)
-        body += Buffer.from(part.body.data, 'base64url')
-          .toString('utf8')
-          .slice(0, 16000 - body.length);
+      textSeen = true;
+      if (!/^[a-zA-Z0-9_-]*={0,2}$/.test(part.body.data) || part.body.data.length % 4 === 1)
+        complete = false;
+      if (part.body.data.length <= 48000) {
+        const decoded = Buffer.from(part.body.data, 'base64url').toString('utf8');
+        if (decoded.includes('\uFFFD')) complete = false;
+        if (body.length + decoded.length > 16000) complete = false;
+        body += decoded.slice(0, 16000 - body.length);
+      } else complete = false;
     }
     if (
       part.mimeType === 'text/html' &&
       !part.filename &&
       typeof part.body?.data === 'string' &&
       part.body.data.length <= 48000
+    ) {
+      textSeen = true;
+      if (!/^[a-zA-Z0-9_-]*={0,2}$/.test(part.body.data) || part.body.data.length % 4 === 1)
+        complete = false;
+      const decoded = Buffer.from(part.body.data, 'base64url').toString('utf8');
+      if (decoded.includes('\uFFFD')) complete = false;
+      if (html.length + decoded.length > 16000) complete = false;
+      html += decoded.slice(0, 16000 - html.length);
+    }
+    if (
+      (part.mimeType === 'text/plain' || part.mimeType === 'text/html') &&
+      (typeof part.body?.data !== 'string' || part.body.data.length > 48000)
     )
-      html += Buffer.from(part.body.data, 'base64url')
-        .toString('utf8')
-        .slice(0, 16000 - html.length);
-    if (Array.isArray(part.parts))
+      complete = false;
+    if (Array.isArray(part.parts)) {
+      if (part.parts.length > 50) complete = false;
       for (const child of part.parts.slice(0, 50)) visit(child, depth + 1);
+    }
   };
   if (full) visit(m.payload);
   if (!body && html) body = textFromHTML(html).slice(0, 16000);
@@ -123,6 +153,14 @@ export function parseGmailMessage(raw: unknown, full = false): GmailMessage {
     at: new Date(timestamp).toISOString(),
     body,
     category,
+    ...(inspectPriorResponse
+      ? {
+          priorContactCheck: priorResponseCheck(
+            `${decodeSubject(header('Subject'))}\n${body}\n${textFromHTML(html)}`,
+            full && complete && textSeen,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -211,8 +249,11 @@ export class GmailApi implements GmailGateway {
     query: string,
     onPage: (messages: GmailMessage[], next: string | null) => void,
     expected?: AccountInfo,
-    maxMessages = 1000,
+    limitOrOptions:
+      number | { priorApplicationsBefore: string; email: string; domains: string[] } = 1000,
   ) {
+    const maxMessages = typeof limitOrOptions === 'number' ? limitOrOptions : 1000;
+    const prior = typeof limitOrOptions === 'number' ? null : limitOrOptions;
     let cursor: string | null = null;
     const seen = new Set<string>();
     let total = 0;
@@ -261,9 +302,44 @@ export class GmailApi implements GmailGateway {
           'Precedence',
         ])
           params.append('metadataHeaders', name);
-        const m = parseGmailMessage(await this.read(`messages/${id}`, params, expected));
+        let m = parseGmailMessage(await this.read(`messages/${id}`, params, expected));
         if (m.id !== id)
           throw new DomainError('GMAIL_MESSAGE', 'Niezgodny identyfikator odczytanej wiadomości.');
+        const inScope =
+          prior &&
+          [...m.from, ...m.to].some(
+            (email) =>
+              email === prior.email ||
+              prior.domains.some(
+                (domain) =>
+                  email.split('@')[1] === domain || email.split('@')[1]?.endsWith('.' + domain),
+              ),
+          );
+        if (
+          prior &&
+          inScope &&
+          !m.labels.includes('SENT') &&
+          Date.parse(m.at) < Date.parse(prior.priorApplicationsBefore)
+        ) {
+          const metadata = m;
+          m = parseGmailMessage(
+            await this.read(`messages/${id}`, new URLSearchParams({ format: 'full' }), expected),
+            true,
+            true,
+          );
+          if (
+            m.id !== metadata.id ||
+            m.threadId !== metadata.threadId ||
+            m.at !== metadata.at ||
+            m.labels.includes('SENT') ||
+            JSON.stringify(m.from) !== JSON.stringify(metadata.from) ||
+            JSON.stringify(m.to) !== JSON.stringify(metadata.to)
+          )
+            throw new DomainError(
+              'GMAIL_MESSAGE',
+              'Wiadomość zmieniła zakres podczas kontroli odmowy kontaktu.',
+            );
+        }
         messages.push(m);
       }
       cursor = page.nextPageToken ?? null;

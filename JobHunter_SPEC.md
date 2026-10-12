@@ -32,6 +32,8 @@ Brak limitu użytkownika oznacza pracę ciągłą. Tempo jest niezależne od lic
 
 Research i sender mają oddzielną zajętość. Pauza blokuje nowe operacje i zachowuje postęp. Stop kończy sesję i odwołuje uprawnienie. Restart wymaga Start, uśpienie nie wywołuje zaległej serii. Przed jednym POST utrwalamy rezerwację, ID i zamrożony MIME. SENDING/SENT/SEND_UNKNOWN blokują kolejny pierwszy kontakt między sesjami, kontami i urządzeniami. Timeout po możliwym przyjęciu pozostaje niepewny. Reconcile potwierdza istniejącą próbę, nie wysyła drugi raz. Bez obietnicy exactly-once między SQLite i Gmailem.
 
+Jawna decyzja użytkownika może dopuścić jeden kolejny kontakt po ręcznych zgłoszeniach sprzed trwałej granicy nowej kampanii. Nie oznacza to braku wcześniejszych zgłoszeń ani obowiązku kompletowania ich CSV. Granica powstaje raz, nie przy każdym Start, restarcie, aktualizacji lub dniu. Nowe próby JobHuntera pozostają trwale blokujące. Fingoweb, prośby o zaprzestanie kontaktu, niepewne próby i istniejące blokady nie podlegają wyjątkowi. Starsze odpowiedzi wymagają celowanej lokalnej kontroli odmów, bez modelu i pobierania załączników; odczyt niepełny pozostaje blokujący. Istniejących zapisów nie usuwamy, a jawna nowa inicjalizacja nie dodaje 33 dawnych propozycji jako blokad.
+
 ## Historia i urządzenia
 
 GitHub przechowuje kod/testy/bezpieczną dokumentację. Jedna trwała SQLite na domowym Windowsie obejmuje historię między sesjami/nadawcami; materiały/CV i konfiguracja są poza repo, poświadczenia w lokalnym magazynie systemowym. Aktualizacja/zmiana gałęzi/trybu nie tworzy pustej alternatywnej historii. RESEARCH_ONLY i AUTO używają tego samego research-only. MacBook jest developerski, z osobnymi danymi syntetycznymi i technicznie niedostępnym natywnym Gmailem.

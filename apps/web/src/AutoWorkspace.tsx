@@ -546,6 +546,17 @@ export function AutoWorkspace({
                   </label>
                 ))}
               </div>
+              {auto.sync?.priorApplications && (
+                <p>
+                  Wcześniejsze zgłoszenia: dopuszczona jedna kolejna wiadomość do firmy po
+                  zgłoszeniach wysłanych przed{' '}
+                  {new Date(auto.sync.priorApplications.cutoffAt).toLocaleString('pl-PL', {
+                    timeZone: 'Europe/Warsaw',
+                  })}
+                  . Nowe wysyłki blokują kolejne wiadomości także po restarcie. Fingoweb, odmowy
+                  kontaktu i niepewne próby pozostają wykluczone.
+                </p>
+              )}
               <label>
                 <input
                   type="checkbox"
@@ -554,8 +565,10 @@ export function AutoWorkspace({
                 />
                 Zatwierdzam wskazane konto, aktualne fakty i CV, zakres, kontakty i tempo.
                 Dopuszczam celowany odczyt nagłówków historii wyłącznie adresów i potwierdzonych
-                domen wybranych firm. Po Start zgodne pierwsze wiadomości będą wysyłane
-                automatycznie.
+                domen wybranych firm.
+                {auto.sync?.priorApplications &&
+                  ' Dopuszczam również lokalną kontrolę próśb o zaprzestanie kontaktu w starszych odpowiedziach tych firm, bez przekazywania poczty modelowi.'}{' '}
+                Po Start zgodne pierwsze wiadomości będą wysyłane automatycznie.
               </label>
               <button
                 className="primary"

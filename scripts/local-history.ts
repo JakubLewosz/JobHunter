@@ -5,6 +5,7 @@ import { acquireProfileLock } from '../apps/server/src/backend-lock.js';
 import { Store, backupSQLite } from '../apps/server/src/db.js';
 import { exportHistory, importHistory, historySchema } from '../apps/server/src/history-sync.js';
 import { restoreBackupCopy } from '../apps/server/src/backup.js';
+import { priorApplicationException } from '../apps/server/src/prior-applications.js';
 
 const [command, input, extra, confirmation] = process.argv.slice(2);
 if (!['doctor', 'backup', 'configure', 'export', 'import', 'restore-copy'].includes(command))
@@ -12,11 +13,11 @@ if (!['doctor', 'backup', 'configure', 'export', 'import', 'restore-copy'].inclu
 if (
   command === 'configure' &&
   (process.platform !== 'win32' ||
-    extra !== '--confirm-existing-history' ||
+    !['--confirm-existing-history', '--confirm-new-campaign-history'].includes(extra) ||
     confirmation !== '--single-workstation')
 )
   throw new Error(
-    'Konfiguracja wyłącznie na Windows po diagnostyce: configure KATALOG --confirm-existing-history --single-workstation.',
+    'Konfiguracja wyłącznie na Windows po diagnostyce: configure KATALOG --confirm-existing-history (lub --confirm-new-campaign-history) --single-workstation.',
   );
 if (command === 'restore-copy' && (!extra || !confirmation))
   throw new Error('restore-copy KATALOG BACKUP NOWY_KATALOG_PROFILU.');
@@ -43,6 +44,9 @@ if (!existsSync(path) && !imported)
 if (command === 'doctor') {
   const db = new Database(path, { readonly: true, fileMustExist: true });
   try {
+    const prior = db
+      .prepare("SELECT value FROM app_state WHERE key='priorApplicationException'")
+      .get() as { value: string } | undefined;
     const counts = Object.fromEntries(
       [
         'companies',
@@ -67,8 +71,13 @@ if (command === 'doctor') {
           uncertain: db
             .prepare("SELECT count(*) n FROM outbox WHERE status IN ('SENDING','SEND_UNKNOWN')")
             .get(),
-          historyComplete:
-            'Wymaga świadomego potwierdzenia użytkownika; liczby nie potwierdzają kompletności.',
+          historyScope: prior
+            ? 'NEW_CAMPAIGN_WITH_PRIOR_APPLICATION_EXCEPTION'
+            : 'EXISTING_HISTORY',
+          priorApplicationException: prior ? JSON.parse(prior.value) : null,
+          historyComplete: prior
+            ? 'Nowa kampania z jawnym wyjątkiem wcześniejszych zgłoszeń; nie jest deklaracją kompletnej listy dawnych kontaktów. Nowe wysyłki są trwale rejestrowane.'
+            : 'Wymaga świadomego potwierdzenia użytkownika; liczby nie potwierdzają kompletności.',
         },
         null,
         2,
@@ -104,6 +113,15 @@ if (command === 'doctor') {
       store.assertExclusive = lock.assert;
       store.assertHealthy();
       if (command === 'configure') {
+        const exception =
+          extra === '--confirm-new-campaign-history' ? priorApplicationException(store) : null;
+        if (
+          extra === '--confirm-new-campaign-history' &&
+          (!exception || !store.get('skipLegacyHistorySeed', false))
+        )
+          throw new Error(
+            'Nowy zakres historii wymaga jawnej inicjalizacji i trwałej decyzji o wcześniejszych zgłoszeniach.',
+          );
         if (store.get('mode', 'DEMO') === 'DEMO')
           throw new Error('Baza DEMO nie może być historią roboczą.');
         if (
@@ -122,6 +140,12 @@ if (command === 'doctor') {
             kind: 'WORKSTATION',
             base,
             historyConfirmed: true,
+            ...(exception
+              ? {
+                  historyScope: 'NEW_CAMPAIGN_WITH_PRIOR_APPLICATION_EXCEPTION',
+                  priorApplicationCutoffAt: exception.cutoffAt,
+                }
+              : {}),
             configuredAt: new Date().toISOString(),
           }),
           { mode: 0o600, flag: 'wx' },

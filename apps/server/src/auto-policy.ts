@@ -8,6 +8,7 @@ import { Store } from './db.js';
 import { DomainError, hash, id, iso, day, companyDomain } from './util.js';
 import { validateAnalysis, compact, contactEligibility } from './research/contracts.js';
 import { QueryPlanner } from './research/query-planner.js';
+import { priorApplicationException } from './prior-applications.js';
 
 export const autoPolicySchema = z
   .object({
@@ -153,7 +154,13 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       this.assertHistory();
       configured = true;
     } catch {}
-    return { mode: 'LOCAL_ONLY', configured, status: 'LOCAL_ONLY', directory: this.store.dir };
+    return {
+      mode: 'LOCAL_ONLY',
+      configured,
+      status: 'LOCAL_ONLY',
+      directory: this.store.dir,
+      priorApplications: priorApplicationException(this.store),
+    };
   }
   async configureLocalHistory(input: {
     confirmedHistory: boolean;
@@ -230,6 +237,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       profileHash: p.hash,
       cvHash: cv.sha256,
       accountSubject: account.subject,
+      priorApplications: priorApplicationException(this.store),
       approvedAt: this.now(),
       scopeHash: hash(
         JSON.stringify({
@@ -275,6 +283,14 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     const p = this.policyConfig(),
       account = this.deliveryState().account;
     if (!p) throw new DomainError('POLICY_REQUIRED', 'Najpierw zatwierdź politykę w Ustawieniach.');
+    if (
+      hash(JSON.stringify(p.priorApplications ?? null)) !==
+      hash(JSON.stringify(priorApplicationException(this.store)))
+    )
+      throw new DomainError(
+        'POLICY_PRIOR_APPLICATIONS_CHANGED',
+        'Decyzja o wcześniejszych zgłoszeniach zmieniła się; ponownie sprawdź politykę.',
+      );
     if (!p.scopeHash)
       throw new DomainError(
         'POLICY_SCOPE_REQUIRED',

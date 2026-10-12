@@ -24,7 +24,7 @@ try {
   await diagnostic.service.probe('codex');
   await diagnostic.service.probe('search');
   await diagnostic.service.start(
-    'Polskie firmy tworzące aplikacje webowe, automatyzacje i integracje API, także bez wakatu. Maksymalnie 5 firm do technicznej diagnostyki z profilem fikcyjnym.',
+    `Polskie firmy tworzące aplikacje webowe, automatyzacje i integracje API, także bez wakatu. Maksymalnie 5 firm do technicznej diagnostyki ${flag ? 'z zatwierdzonym profilem użytkownika' : 'z profilem fikcyjnym'}.`,
   );
   await diagnostic.service.tick();
   const run = diagnostic.store.one(

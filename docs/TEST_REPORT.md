@@ -1,5 +1,185 @@
 # Weryfikacja — 12 października 2026
 
+## Publiczny research na Windowsie — pakiet do weryfikacji
+
+Research 23:29–23:40 Europe/Warsaw, bazowy HEAD `a3bc37b`, dirty.
+Pełne identyfikatory i hashe faktycznie użytych trzech partii w
+[pakiecie](research-review/2026-10-12_23-29_windows-01a1313a/README.md).
+Node 24.19.0 / Codex CLI 0.162.0-alpha.17.2 / istniejący login ChatGPT.
+Rzeczywisty probe JSON i web search PASS; wersja modelu nieustalona.
+Nie użyto płatnego API, profilu syntetycznego jako użytkownika ani Gmaila.
+
+Użytkownik zatwierdził dokładne korekty propozycji i wskazany oryginalny PDF;
+hash sprawdzono bez edycji. Osobny diagnostic clone ma 9 faktów, bez fallbacku
+do FixDesk. Dodatkowe aktywności CV nie są faktami generatora. Ograniczenia
+statusu projektów są oddzielnie w template. Produkcyjna baza nie powstała.
+
+Pierwsza partia: 30 rozpoczętych tożsamości, zero odczytanych źródeł.
+Kontrolny odczyt odtworzył `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Node z
+`--use-system-ca` odczytał tę stronę z HTTP 200, bez wyłączania TLS/SSRF.
+Przyczyna wszystkich historycznych FETCH_FAILED nie została osobno ustalona.
+Nie poprawiono wstecz ich statusów. Kolejne partie dokończyły tylko rozpoczęte
+przypadki z tym samym niezerowanym budżetem; po 150 HTTP wyłączono ten transport.
+
+Końcowo: 5 zweryfikowanych ekstrakcji i kwalifikacji, 5 literalnych kontaktów,
+2 kwalifikujące się kontakty, 2 zachowane wersje/2 pełne kontrole, 3 pominięcia,
+1 odrzucenie walidacji ekstrakcji (`UNVERIFIED_TITLE`). 15 wywołań modelu;
+150 prób HTTP obejmuje błędy/retry/redirecty i dwie kontrole sieciowe.
+23 zachowane READ obejmują kontrolny odczyt, nie 23 nowe firmy. Zero błędów
+wykonania modelu. Dokładne liczniki i ograniczenia w MANIFEST.
+
+Dwa pierwotne odrzucenia `UNAPPROVED_LINK` odtworzono minimalnym fixture FAIL:
+kropka po URL w zatwierdzonym zdaniu była traktowana jako część adresu.
+Mała normalizacja końcowej interpunkcji daje PASS; inny URL nadal blokowany.
+Te same teksty sprawdzono ponownie, bez regeneracji i podmiany faktów.
+Historia pierwszych kontroli pozostaje w pakiecie. Celowane diagnostic/review
+tests **10/10 PASS** na fikcyjnych danych. Końcowy `npm run check`, Windows
+win32/x64 i Node 24.19.0: **PASS, exit 0**. Typecheck/build PASS,
+**382/382 backend** (522,2 s), **12/12 performance Stop** (15,4 s),
+**15/15 Playwright** (48,0 s). Nie jest to test rzeczywistej poczty.
+
+Audyt eksportu wszystkich rekordów/wersji/factIds/evidenceIds/sourceIds,
+hashy, linków, danych prywatnych i zerowych approvals/outbox/send PASS.
+Pakiet zawiera osiem plików UTF-8 i LATEST; SQLite/WAL/PDF/backupy i surowe
+logi pozostają poza repo. Przykłady sprawdzono także dla pominięć i błędu.
+Nadmierne contract=no w Tukano, wąska interpretacja celu kontaktu Merixstudio
+i niepoparty tytuł Payarto są jawne; nie zmieniono kwalifikacji ręcznie.
+Nie wykonano prawdziwego SELF_TEST, Gmail read/send, inicjalizacji WORKSTATION
+lub importu do historii osobistej. Publikacja nie jest deploymentem.
+
+## Lokalna nowa kampania — wyjątek wcześniejszych zgłoszeń
+
+Baza kodu `a3bc37b` z lokalnymi niezacommitowanymi zmianami. Jawny nowy
+initializer używa istniejącego CSV preview/import, bez sieci, modelu lub
+Gmaila; odrzuca istniejący katalog, brak potwierdzenia i zmieniony hash.
+Nie dodaje 33 dawnych nazw. Fingoweb i materiały DRAFT pozostają.
+Nie wykonano inicjalizacji danych użytkownika, oznaczenia WORKSTATION lub
+importu. Prawdziwy backend pozostaje wyłączony.
+
+Decyzja o wcześniejszych aplikacjach jest zapisywana raz z ID/wersją/granicą
+i związana z polityką. Nie odnawia się po Stop, Start, restarcie lub dniu.
+Nowe własne/niepewne próby i blokady pozostają trwałe. Stara odpowiedź wymaga
+lokalnej kontroli próśb o zaprzestanie kontaktu; UNKNOWN blokuje. Ograniczone
+frazy PL/EN, kontrola plain/HTML, brak załączników i poczty w promptach modelu.
+Migracja 018 jedynie dodaje status kontroli; nie usuwa historii.
+
+FAIL → PASS odtworzone przed poprawką: nowy seed 34 firm zamiast jednej
+blokady oraz stary SENT blokujący dozwoloną wiadomość. Nowe celowane testy:
+25/25 PASS, potem dodatkowa odmiana „nie pisać”: reader 15/15 PASS.
+Osobne public-diagnostic 4/4 PASS po pominięciu dawnego seed. Przypadki obejmują
+restart z ponownym otwarciem SQLite/dzień, dokładnie jedną próbę, SEND_UNKNOWN,
+późną odmowę, zachowanie ręcznych rekordów, niepełny odczyt, zakres adresów,
+nieprzekazywanie poczty modelowi i trwałą blokadę po OPT_OUT.
+
+Rzeczywisty `npm run check`, Windows win32/x64, Node 24.19.0:
+typecheck PASS, **375/375 backend** (1612,2 s), następnie performance
+**11/12**. Jedno FAIL: odbiór żądania Stop przy 10035 fikcyjnych firmach
+1082,23 ms wobec progu 1000 ms; odwołanie prawa po odbiorze po 1,10 ms,
+brak nowych POST. Nie podniesiono progu. Całe polecenie check zakończyło się
+exit 1 przed build/UI — nie oznaczamy go jako PASS.
+
+Jedno celowane powtórzenie `test:performance`: **12/12 PASS**, bez zmian
+testu/progu lub optymalizacji kodu dla pomiaru. Przyczyny zmienności odbioru
+HTTP nie ustalono. Oddzielnie końcowy build PASS i Playwright **15/15 PASS**
+(49,7 s), w syntetycznych bazach i na fikcyjnych usługach. Nie jest to
+rzeczywisty pilotaż Gmaila, pełny dzień lub gwarancja opóźnienia Stop na tym
+komputerze.
+
+Wskazany rzeczywisty PDF ma jedną stronę; treść i układ sprawdzono bez edycji,
+hash źródła nie zmienił się. Użytkownik potwierdził właściwe CV i przekazał
+doprecyzowania materiałów. Zmienione fragmenty propozycji czekają na końcową
+akceptację; brak zatwierdzeń profilu/CV w bazie, bo baza nie została utworzona.
+Pliki/propozycje/dane użytkownika poza repo. Zero prawdziwych send/SELF_TEST,
+odczytów Gmaila, zmian OAuth/nadawcy lub publikacji danych.
+
+## Domowy Windows — przygotowanie bez poczty
+
+Sprawdzono zdalne refy i wybrano `a3bc37b2b9200a3b3c8435ee1046448716373ca4`
+na `codex/local-windows-pilot`, zawierający wcześniejszy `810b860`. Main nadal
+wskazuje starszy `4e6b864`. Początkowy checkout był czysty; przed aktualizacją
+nie wykryto backendu JobHuntera. Nie zatrzymywano procesu użytkownika.
+
+Windows win32/x64, Node **v24.19.0**, npm **11.17.0**. Po `npm ci` uzupełniono
+brakujący przypięty `htmlparser2`; doctor potwierdził SQLite **3.53.4** i natywny
+CLI **0.162.0-alpha.17.2**. Sprawdzono help/features i istniejące logowanie
+ChatGPT przez `login status`, bez odczytu plików uwierzytelnienia. Nie jest to
+potwierdzenie dostępności rzeczywistego wyszukiwania lub limitu modelu.
+
+Rzeczywisty `npm run check`: **350/350 backend, 12/12 performance Stop,
+15/15 UI**, typecheck/build PASS. Backend 553,1 s, performance 16,1 s,
+Playwright 48,5 s. Wyłącznie fikcyjne providery, tymczasowe bazy i lokalne
+repozytoria testowe; nie testowano prywatnej instalacji WORKSTATION.
+
+Domyślny katalog danych roboczych nie istnieje; `history:local doctor` zakończył
+się `ENOENT`, nie tworząc bazy. Brak zmiennej wskazującej inne miejsce danych.
+Liczników, blokad i kompletności rzeczywistej historii nie ustalono. Poproszono
+użytkownika o właściwy katalog albo informację, że oryginał pozostaje na Macu.
+Backup, configure WORKSTATION/LOCAL_ONLY, odczyt materiałów/CV i publiczny smoke
+pozostają niewykonane do ustalenia historii oraz wymaganych potwierdzeń.
+
+Zero rzeczywistych wysyłek/SELF_TEST, odczytów Gmaila, zmian OAuth/nadawcy,
+zatwierdzonych materiałów lub prywatnej historii. Nie publikowano danych.
+
+### Poszerzone szukanie bazy i procedura ręcznej historii
+
+Na prośbę użytkownika przeszukano metadane plików bieżącego profilu Windows
+(AppData, Documents, Desktop, Downloads, OneDrive i pozostałe dostępne katalogi),
+dostępnego D oraz ProgramData/xampp/inetpub. Poza Temp nie znaleziono bazy ani
+znacznika JobHuntera. Odmowy dostępu do chronionych katalogów systemowych
+zachowano jako ograniczenie; bez eskalacji lub zmiany uprawnień. Mac nie był
+dostępny w tej sesji, więc brak oryginalnej historii na obu urządzeniach
+pozostaje niepotwierdzony.
+
+Przed nowym sprawdzeniem fixture znaleziono **73 jobhunter.sqlite** w Temp:
+19 DEMO, 18 RESEARCH_ONLY, 17 APPROVAL_REQUIRED, 19 AUTO_POLICY. Odczyt
+`readonly/fileMustExist` i quick_check: 73/73 integralne, zero workstation.json.
+Wszystkie adresy w contacts/history_records/send_attempts mają domeny testowe
+.test/.invalid; nie odczytywano treści wiadomości lub poświadczeń. Oficjalny
+`history:local doctor` na najnowszym fixture RESEARCH_ONLY: 35 firm, 1 kontakt,
+36 aliasów, 1 blokada, zero ręcznych rekordów/prób/rezerwacji/shared/niepewnych.
+Te liczby opisują test, nie rzeczywistą historię użytkownika.
+
+Oddzielny nowy katalog DEVELOPMENT, Windows win32/x64, Node 24.19.0:
+jednorazowa kontrola procedury bootstrap z istniejącymi Store/ResearchJobHunter.
+Tylko dwa fikcyjne kontakty CSV: CONTACTED i REJECTED. PASS: podgląd nie dodaje
+rekordów, zmieniony tekst blokowany przez hash, import 2, reimport 0, scalenie
+aliasu przez domenę, zachowane statusy, doctor i spójny backup. Configure
+przetestowano wyłącznie na tej syntetycznej historii. Zero wywołań sieci,
+Gmaila, prób/outbox/rezerwacji, zatwierdzonych faktów i CV; stopped=true.
+Nie uruchamiano serwera lub workerów. Pełny check powyżej nadal dotyczy tego
+samego kodu a3bc37b; teraz zmieniono wyłącznie dokumentację.
+
+Nowa baza robocza/import/oznaczenie WORKSTATION nie zostały wykonane.
+Następny krok: decyzja o Macu/źródle historii, rzeczywisty prywatny CSV,
+lokalny podgląd i konkretna zgoda przed utworzeniem bazy oraz importem.
+
+### Decyzja o nowej instalacji i pusty szablon CSV
+
+Użytkownik potwierdził brak wcześniejszych wiadomości JobHuntera do firm
+i wybrał nową instalację Windows bez historii SELF_TEST z Maca. To świadoma
+decyzja o źródle nowej historii, nie usunięcie danych ani zatwierdzenie importu.
+
+Przygotowano poza repo pusty CSV UTF-8 BOM z dokładnymi kolumnami istniejącego
+importera: company,status,domain,email,date. Zero wierszy firm. Zgodność nagłówków
+i zapisanych bajtów sprawdzona; podgląd nagłówków wyrenderowany i obejrzany.
+Brak konkretnej listy ręcznych kontaktów: nie ma podglądu danych/hashu do
+zatwierdzenia importu. Nie utworzono docelowego katalogu danych lub SQLite.
+Nie zmieniono kodu, nie uruchomiono Gmaila/researchu, nie zatwierdzono profilu/CV.
+Pełny check wcześniejszego etapu nadal dotyczy tego samego a3bc37b.
+
+Użytkownik następnie podał listę obejmującą jeden ręczny kontakt. Prywatny CSV
+uzupełniono jako CONTACTED, bez dopisywania nieznanego adresu/domeny/daty.
+Istniejący previewHistory uruchomiono wyłącznie w nowym tymczasowym DEVELOPMENT,
+bez importHistory, start/tick/probe, serwera i sieci. PASS: jeden poprawny wiersz,
+zero zapisanych history_records, send_attempts i outbox. CSV i jego hash/podgląd
+pozostają poza repo; baza docelowa nadal nie istnieje. Nie zatwierdzono importu
+lub utworzenia bazy za użytkownika.
+
+Podgląd nowej inicjalizacji wykazał dodatkowo 34 seedowane firmy, w tym 33 dawne
+HISTORY_TO_VERIFY i jedną zachowaną blokadę. Proponowana mała korekta tylko
+nowej inicjalizacji jest opisana w TASKS/URUCHOMIENIE_RANO, jeszcze niewdrożona.
+Nie zmieniono kodu ani istniejącej historii.
+
 ## Zatwierdzone CV po szybkiej nawigacji — runda po 2f515ff
 
 Punkt wyjścia 2f515ff, czysty codex/local-windows-pilot, git fetch origin,

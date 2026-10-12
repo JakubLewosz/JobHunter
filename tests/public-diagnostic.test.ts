@@ -27,6 +27,8 @@ test('public diagnostic uses AUTO public qualification with no gateway, native G
   });
   assert.ok(d.service.mail instanceof DisabledMailProvider);
   assert.equal('gateway' in d.service, false);
+  assert.equal(d.store.one("SELECT count(*) n FROM companies WHERE history_status='HISTORY_TO_VERIFY'")!.n, 0, 'public diagnostics do not manufacture legacy contact history');
+  assert.equal(d.store.one('SELECT count(*) n FROM history_records')!.n, 0);
   assert.equal(d.service.minimalProfile().name, 'Alex Testowy');
   assert.ok(d.service.minimalProfile().facts.every((f) => !f.content.includes('Jakub')));
   assert.doesNotMatch(d.service.profile().message_template, /Jakub|INFOTECH|Białymstoku/);

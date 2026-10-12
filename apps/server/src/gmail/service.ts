@@ -12,6 +12,11 @@ import { compareMime } from './inspection.js';
 import { gmailReadScope, gmailSendScope, setupInfo, type AccountInfo } from './oauth.js';
 import { nativeGmail, disabledGmail, type GmailGateway, type GmailMessage } from './reader.js';
 import { developmentRuntime, type Runtime } from '../runtime.js';
+import {
+  manualHistoryBlocks,
+  gmailHistoryBlocks,
+  priorApplicationException,
+} from '../prior-applications.js';
 
 export type DeliveryKind = 'FIRST_CONTACT' | 'SELF_TEST';
 function explain(codes: string[]) {
@@ -97,6 +102,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       readReady: !!account?.scopes.includes(gmailReadScope),
       sendReady: !!account?.scopes.includes(gmailSendScope),
       paused: this.store.get('gmailSenderPaused', true),
+      priorApplications: priorApplicationException(this.store),
       dailyQuota: this.dailyQuota(),
       selfTestConfirmed: !!this.store.one(
         "SELECT o.id FROM outbox o JOIN gmail_outbox g ON g.outbox_id=o.id JOIN gmail_preview_items i ON i.id=g.item_id JOIN gmail_previews p ON p.id=i.preview_id WHERE o.kind='SELF_TEST' AND p.diagnostic=0 AND o.status='SENT_CONFIRMED' AND g.account_subject=?",
@@ -278,9 +284,27 @@ export class GmailJobHunter extends ResearchJobHunter {
     outboxId: string | null = null,
   ) {
     const direction = m.labels.includes('SENT') ? 'OUTGOING' : 'INCOMING';
+    const known = this.store.one(
+      'SELECT direction,sent_at,sender,recipients FROM gmail_messages WHERE account_subject=? AND provider_id=? AND company_id=?',
+      account.subject,
+      m.id,
+      companyId,
+    );
+    if (
+      known &&
+      (known.direction !== direction ||
+        known.sent_at !== m.at ||
+        known.sender !== m.from.join(', ') ||
+        known.recipients !== JSON.stringify(m.to))
+    )
+      throw new DomainError(
+        'GMAIL_MESSAGE',
+        'Zakres lub data znanej wiadomości zmieniły się; historia wymaga sprawdzenia.',
+      );
     this.store.exec(
-      `INSERT INTO gmail_messages (id,account_subject,provider_id,provider_thread_id,company_id,outbox_id,direction,sender,recipients,subject,message_id,sent_at,body,category,created_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(account_subject,provider_id,company_id) DO UPDATE SET outbox_id=coalesce(excluded.outbox_id,gmail_messages.outbox_id),body=CASE WHEN excluded.body<>'' THEN excluded.body ELSE gmail_messages.body END`,
+      `INSERT INTO gmail_messages (id,account_subject,provider_id,provider_thread_id,company_id,outbox_id,direction,sender,recipients,subject,message_id,sent_at,body,category,created_at,prior_contact_check)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(account_subject,provider_id,company_id) DO UPDATE SET outbox_id=coalesce(excluded.outbox_id,gmail_messages.outbox_id),body=CASE WHEN excluded.body<>'' THEN excluded.body ELSE gmail_messages.body END,
+      prior_contact_check=CASE WHEN gmail_messages.prior_contact_check='OPT_OUT' THEN 'OPT_OUT' ELSE excluded.prior_contact_check END`,
       id(),
       account.subject,
       m.id,
@@ -296,7 +320,15 @@ export class GmailJobHunter extends ResearchJobHunter {
       m.body,
       m.category,
       this.now(),
+      m.priorContactCheck ?? 'UNKNOWN',
     );
+    if (m.priorContactCheck === 'OPT_OUT')
+      this.suppress(
+        companyId,
+        'DO_NOT_CONTACT',
+        'Jawna prośba o zaprzestanie kontaktu wykryta w lokalnej kontroli wybranej historii Gmaila.',
+        'system',
+      );
   }
   async checkHistory(input: { drafts: { id: string; version: number }[]; consent: boolean }) {
     if (!input.consent)
@@ -319,7 +351,9 @@ export class GmailJobHunter extends ResearchJobHunter {
         this.event(
           this.mode === 'AUTO_POLICY' ? 'GMAIL_READ_POLICY' : 'GMAIL_READ_CONSENT',
           this.mode === 'AUTO_POLICY'
-            ? 'Polityka sesji dopuszcza celowany odczyt nagłówków adresu i potwierdzonych domen tej firmy.'
+            ? priorApplicationException(this.store)
+              ? 'Polityka sesji dopuszcza celowany odczyt nagłówków oraz lokalną kontrolę odmów w starszych odpowiedziach tej firmy; poczta nie trafia do modelu.'
+              : 'Polityka sesji dopuszcza celowany odczyt nagłówków adresu i potwierdzonych domen tej firmy.'
             : 'Użytkownik dopuścił odczyt nagłówków całej historii dla tego kontaktu i domen firmy na godzinę.',
           d.company_id,
           this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
@@ -349,6 +383,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       account.subject,
     );
     try {
+      const prior = priorApplicationException(this.store);
       let after = '',
         stable = false;
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -367,6 +402,13 @@ export class GmailJobHunter extends ResearchJobHunter {
               );
             }),
           account,
+          prior
+            ? {
+                priorApplicationsBefore: prior.cutoffAt,
+                email: scope.email,
+                domains: scope.domains,
+              }
+            : undefined,
         );
         after = await this.gateway.marker(account);
         this.sameAccount(await this.gateway.account(), account.subject, account.email);
@@ -447,7 +489,8 @@ export class GmailJobHunter extends ResearchJobHunter {
       this.store.one('SELECT id FROM suppressions WHERE company_id=?', d.company_id)
     )
       issues.push('SUPPRESSED');
-    if (d.history_status !== 'NEW') issues.push('CONTACT_HISTORY');
+    if (this.companyHistoryBlocked(d.company_id, this.activeSendingOutbox))
+      issues.push('CONTACT_HISTORY');
     if (
       this.store.one(
         "SELECT id FROM shared_attempts WHERE (company_id=? OR lower(recipient)=?) AND state<>'FAILED_NOT_SENT'",
@@ -457,10 +500,12 @@ export class GmailJobHunter extends ResearchJobHunter {
     )
       issues.push('CONTACT_HISTORY');
     if (
-      this.store.one(
-        "SELECT id FROM history_records WHERE lower(email)=? AND status<>'SUGGESTED'",
-        normalizeEmail(d.email),
-      )
+      this.store
+        .all(
+          "SELECT * FROM history_records WHERE lower(email)=? AND status<>'SUGGESTED'",
+          normalizeEmail(d.email),
+        )
+        .some((record) => manualHistoryBlocks(this.store, record))
     )
       issues.push('RECIPIENT_HISTORY');
     const o = this.store.one('SELECT * FROM opportunities WHERE id=?', d.opportunity_id)!,
@@ -479,8 +524,11 @@ export class GmailJobHunter extends ResearchJobHunter {
       .filter(Boolean);
     if (
       this.store
-        .all("SELECT domain FROM history_records WHERE status<>'SUGGESTED' AND domain IS NOT NULL")
-        .some((r) => companyDomains.includes(companyDomain(r.domain)))
+        .all("SELECT * FROM history_records WHERE status<>'SUGGESTED' AND domain IS NOT NULL")
+        .some(
+          (r) =>
+            companyDomains.includes(companyDomain(r.domain)) && manualHistoryBlocks(this.store, r),
+        )
     )
       issues.push('CONTACT_HISTORY');
     if (
@@ -528,12 +576,14 @@ export class GmailJobHunter extends ResearchJobHunter {
       )
         issues.push('HISTORY_REQUIRED');
       if (
-        this.store.one(
-          // Known company correspondence survives switching senders. Replies to an
-          // application self test belong to its test recipient, not this company.
-          "SELECT m.id FROM gmail_messages m LEFT JOIN outbox o ON o.id=m.outbox_id WHERE m.company_id=? AND (m.outbox_id IS NULL OR o.kind='FIRST_CONTACT') LIMIT 1",
-          d.company_id,
-        )
+        this.store
+          .all(
+            // Known company correspondence survives switching senders. Replies to an
+            // application self test belong to its test recipient, not this company.
+            "SELECT m.* FROM gmail_messages m LEFT JOIN outbox o ON o.id=m.outbox_id WHERE m.company_id=? AND (m.outbox_id IS NULL OR o.kind='FIRST_CONTACT')",
+            d.company_id,
+          )
+          .some((message) => gmailHistoryBlocks(this.store, message))
       )
         issues.push('GMAIL_CONTACT_HISTORY');
     }

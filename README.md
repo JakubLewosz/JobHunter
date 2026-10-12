@@ -6,6 +6,12 @@ Od 12 października 2026 kod rozwijamy na Windows/macOS, lecz prawdziwy research
 
 [Specyfikacja](JobHunter_SPEC.md), [wizja](docs/WIZJA_PROJEKTU.md), [styl](docs/MESSAGE_STYLE.md), [zadania](docs/TASKS.md), [testy](docs/TEST_REPORT.md). Rozwój nie upoważnia do prawdziwej poczty, również SELF_TEST, lub zmian prywatnego runtime.
 
+[Publiczny pakiet diagnostyczny z 12 października](docs/research-review/LATEST.md)
+opublikowano na jawną zgodę użytkownika: firmy, publiczne kontakty, krótkie
+źródła, zachowane wiadomości i zatwierdzone fakty zawodowe. Ten wyjątek dotyczy
+konkretnego raportu. Baza robocza, CV, poświadczenia i poczta pozostają lokalne;
+publikacja nie jest zgodą na wysyłkę.
+
 ## Tryby i środowiska
 
 | Tryb              | Działanie                                                                     |

@@ -10,7 +10,7 @@ import { hash } from '../util.js';
 import Database from 'better-sqlite3';
 import { workstationRuntime } from '../runtime.js';
 
-type Materials = {
+export type Materials = {
   name: string;
   goal: string;
   hoursApprox: number;
@@ -77,6 +77,25 @@ class DiagnosticResearch extends ResearchJobHunter {
   }
 }
 
+export function reopenPublicDiagnostic(
+  dir: string,
+  runner: StructuredRunner,
+  reader: SourceReader,
+) {
+  if (!existsSync(join(dir, 'jobhunter.sqlite'))) throw new Error('DIAGNOSTIC_DATABASE_REQUIRED');
+  const store = new Store(dir);
+  if (!store.get('diagnosticOnly', false)) {
+    store.close();
+    throw new Error('DIAGNOSTIC_ONLY_REQUIRED');
+  }
+  const service = new DiagnosticResearch(store, { mode: 'AUTO_POLICY', runner, reader });
+  if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service) {
+    store.close();
+    throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
+  }
+  return { store, service };
+}
+
 export function createPublicDiagnostic(
   dir: string,
   options: {
@@ -91,6 +110,7 @@ export function createPublicDiagnostic(
   const store = new Store(dir),
     runner = options.runner ?? new ExecCodexRunner();
   const maximum = Math.min(10, Math.max(1, options.maxCompanies ?? 5));
+  store.set('skipLegacyHistorySeed', true);
   // AUTO's public qualification/drafting branch, instantiated without GmailJobHunter or a gateway.
   const service = new DiagnosticResearch(store, {
     mode: 'AUTO_POLICY',
@@ -129,11 +149,23 @@ GitHub: https://github.com/FixtureExample
 
 Pozdrawiam
 Alex Testowy`;
-  const p = service.profile();
-  if (options.materials && p.facts.some((f) => !options.materials!.facts[f.fact_key])) {
-    store.close();
-    throw new Error('APPROVED_FACTS_INCOMPLETE');
+  if (options.materials) {
+    const keys = Object.keys(options.materials.facts);
+    const required = ['identity', 'education', 'availability', 'contract', 'ai', 'portfolio'];
+    const known = service.profile().facts.map((f) => f.fact_key);
+    if (
+      required.some((key) => !options.materials!.facts[key]?.trim()) ||
+      keys.some((key) => !known.includes(key))
+    ) {
+      store.close();
+      throw new Error('APPROVED_FACTS_INCOMPLETE');
+    }
+    // Only the fresh diagnostic database: an unapproved project is absent, never a fallback fact.
+    for (const fact of service.profile().facts)
+      if (!keys.includes(fact.fact_key))
+        store.exec('DELETE FROM candidate_facts WHERE id=?', fact.id);
   }
+  const p = service.profile();
   service.updateProfile({
     name: options.materials?.name ?? 'Alex Testowy',
     goal:

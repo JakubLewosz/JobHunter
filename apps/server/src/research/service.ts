@@ -1100,7 +1100,7 @@ export class ResearchJobHunter extends JobHunter {
           q.reasons.unshift(eligibility.reason);
         }
       }
-      if (c.suppression_reason || c.history_status !== 'NEW') {
+      if (this.companyHistoryBlocked(c.id)) {
         q.decision = 'NEEDS_REVIEW';
         q.reasons.unshift(
           `Historia/blokada: ${c.suppression_reason ?? c.history_status}. Szkic zablokowany.`,
@@ -1213,8 +1213,7 @@ export class ResearchJobHunter extends JobHunter {
       o.decision === 'REJECTED' ||
       !o.email ||
       !(recruitmentContact || prospectContact) ||
-      o.suppression_reason ||
-      o.history_status !== 'NEW'
+      this.companyHistoryBlocked(o.company_id)
     )
       return;
     const existing = this.store.one(
@@ -1794,8 +1793,10 @@ export class ResearchJobHunter extends JobHunter {
         'UNSUPPORTED_PROJECT',
         'Szkic opisuje projekt bez potwierdzonego dopasowania.',
       );
-    const allowedLinks = p.facts.flatMap((f) => f.content.match(/https?:\/\/[^\s)]+/g) ?? []);
-    if ((v.body.match(/https?:\/\/[^\s)]+/g) ?? []).some((url) => !allowedLinks.includes(url)))
+    const proseLinks = (text: string) =>
+      (text.match(/https?:\/\/[^\s)]+/g) ?? []).map((url) => url.replace(/[.,;:]+$/, ''));
+    const allowedLinks = p.facts.flatMap((f) => proseLinks(f.content));
+    if (proseLinks(v.body).some((url) => !allowedLinks.includes(url)))
       throw new DomainError('UNAPPROVED_LINK', 'Niepotwierdzony link w szkicu.');
     return styleWarnings;
   }
@@ -1833,7 +1834,7 @@ export class ResearchJobHunter extends JobHunter {
     const draft = this.draftRows().find((d) => d.id === draftId);
     if (!draft || draft.version !== version)
       throw new DomainError('VERSION_CONFLICT', 'Odśwież wersję szkicu.');
-    if (draft.status === 'SENT' || draft.suppression_reason || draft.history_status !== 'NEW')
+    if (draft.status === 'SENT' || this.companyHistoryBlocked(draft.company_id))
       throw new DomainError('DRAFT_BLOCKED', 'Historia firmy blokuje ponowną generację.');
     const previous = this.store.one(
       'SELECT * FROM research_items WHERE opportunity_id=? AND analysis IS NOT NULL ORDER BY updated_at DESC LIMIT 1',

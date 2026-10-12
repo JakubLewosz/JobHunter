@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 import { Store } from './db.js';
+import { companyHistoryBlocks } from './prior-applications.js';
 import {
   companyDomain,
   csvCell,
@@ -231,7 +232,8 @@ export class JobHunter {
         at,
         at,
       );
-      for (const name of historyNames) this.findOrCreateCompany(name, null, 'HISTORY_TO_VERIFY');
+      if (!this.store.get('skipLegacyHistorySeed', false))
+        for (const name of historyNames) this.findOrCreateCompany(name, null, 'HISTORY_TO_VERIFY');
       const fingoweb = this.findOrCreateCompany('Fingoweb', null, 'RECRUITMENT_ON_HOLD').company;
       this.suppress(
         fingoweb.id,
@@ -359,6 +361,10 @@ export class JobHunter {
       company: this.store.one('SELECT * FROM companies WHERE id=?', companyId)!,
       duplicate: false,
     };
+  }
+  protected companyHistoryBlocked(companyId: string, ownOutbox: string | null = null) {
+    const company = this.store.one('SELECT * FROM companies WHERE id=?', companyId);
+    return !company || companyHistoryBlocks(this.store, company, ownOutbox);
   }
   suppress(companyId: string, reason: string, source: string, actor = 'system') {
     this.store.exec(

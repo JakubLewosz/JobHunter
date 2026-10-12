@@ -21,6 +21,7 @@
     "smoke:research": "node scripts/research-smoke.mjs",
     "smoke:public": "tsx scripts/public-research-smoke.ts",
     "history:local": "tsx scripts/local-history.ts",
+    "history:new": "tsx scripts/initialize-local.ts",
     "gmail:connect": "node scripts/gmail.mjs connect",
     "gmail:status": "node scripts/gmail.mjs status",
     "gmail:enable-read": "node scripts/gmail.mjs enable-read",

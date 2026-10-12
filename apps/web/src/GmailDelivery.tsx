@@ -136,6 +136,8 @@ export function GmailDelivery({
         Sprawdzenie historii odczytuje nagłówki wcześniejszej korespondencji dla wybranych adresów i
         domen firm, także w Koszu i Spamie. Zgoda aplikacji obowiązuje godzinę. Poczta pozostaje
         poza modelem AI.
+        {state?.priorApplications &&
+          ' Przy jawnym wyjątku nowej kampanii odczyt obejmuje również lokalną kontrolę próśb o zaprzestanie kontaktu w starszych odpowiedziach tych firm; nie pobiera załączników.'}
       </p>
       {state?.history?.map((h: Row) => (
         <div key={`${h.company_id}:${h.account_subject}`}>

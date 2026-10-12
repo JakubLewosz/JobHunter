@@ -66,6 +66,19 @@ potem wymaga jawnego wznowienia. Nie dotyczy to POST wysyłki.
 
 Metoda nie zapewnia atomowego snapshotu Google: pozostaje możliwa nowa ręczna wiadomość
 po ostatniej kontroli a przed POST. Słabsza gwarancja jest jawna; nie ma exactly-once.
+
+Przy jawnym wyjątku jednej nowej kampanii samo dawne OUTGOING sprzed zapisanej
+granicy nie blokuje kolejnego kontaktu. Własne FIRST_CONTACT/outbox/próby,
+SEND_UNKNOWN i blokady nadal mają pierwszeństwo. Starsze INCOMING nie są
+ignorowane na podstawie samych nagłówków: tylko dla dopuszczonego adresu lub
+potwierdzonej domeny pobieramy ograniczony tekst bez załączników i lokalnie
+szukamy jawnych próśb o zaprzestanie kontaktu (frazy polskie/angielskie).
+Oba warianty plain/HTML są kontrolowane. Niepełne, nadmierne, uszkodzone lub
+nieczytelne dane pozostają UNKNOWN i blokują. OPT_OUT tworzy trwałą blokadę;
+późniejszy CLEAR jej nie usuwa. Poczta nie trafia do modelu. To ograniczony
+detektor fraz, nie gwarancja semantycznej interpretacji każdej odpowiedzi.
+Polityka i panel pokazują poszerzony zakres przed zgodą. Granica jest częścią
+bindingu polityki i nie jest odnawiana przez restart/dzień/Start.
 Podstawa wyboru wynika z oficjalnych [sync](https://developers.google.com/workspace/gmail/api/guides/sync),
 [getProfile](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users/getProfile)
 i [history.list](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.history/list),
