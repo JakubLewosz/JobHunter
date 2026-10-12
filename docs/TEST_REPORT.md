@@ -1,5 +1,49 @@
 # Weryfikacja — 12 października 2026
 
+## Współbieżność review i sendera — runda po c9b899f
+
+Punkt wyjścia c9b899f, czysty codex/local-windows-pilot, po git fetch origin
+HEAD/upstream 0/0. Wyłącznie istniejący fixture DEVELOPMENT/LOCAL_ONLY/AUTO_POLICY,
+fikcyjni providerzy, syntetyczny profil/CV i osobne tymczasowe bazy. Bez publicznej
+próby, native Gmaila, prawdziwej poczty/SELF_TEST, prywatnego runtime lub historii.
+
+**Podejrzany błąd odtworzono przed poprawką.** Test zatrzymał SEMANTIC_REVIEW na
+kontrolowanym Promise i potwierdził zapis szkicu, auto_draft_scope oraz RUNNING.
+Sender uruchomiony w swoim terminie wykonał zero POST i zero trwałych pominięć,
+ale przestawił sesję na WAITING, paused=true i anulował kontroler trwającego review.
+Przyczyna: wybór niezweryfikowanego materiału → DRAFT_MATERIAL_UNVERIFIED z końcowej
+bramki → domyślna decyzja o problemie sesji → wait/pause odwołujące research.
+
+Minimalna poprawka ograniczona do auto-policy.ts, bez migracji, UI ani nowej kolejki:
+
+- PENDING/RUNNING nie są pobierane przez sender. ERROR także nie jest gotowy:
+  tekst pozostaje do jawnego review-only retry, nie oznacza supported=false.
+- Nie ma globalnej blokady sendera podczas researchu: gotowy B może być obsłużony,
+  gdy nowszy A nadal czeka na model.
+- Gdy review rozpocznie się już po wyborze lub przygotowaniu pakietu, końcowa
+  bramka nadal blokuje operację, ale sender odracza ją bez odwołania sesji,
+  anulowania review albo trwałego pominięcia wersji. Zachowany termin polityki
+  zapobiega intensywnemu ponawianiu.
+- COMPLETED z false/null pozostaje odrzuceniem wersji; kodowe REJECTED/NOT_RUN
+  i nieważny materiał DRAFT_MATERIAL_STALE także nie wstrzymują całej sesji.
+  Nie dodano automatycznego ponawiania negatywnych kontroli ani supported=true.
+- draftMaterialIssues, kontrola wersji/kontekstu/źródeł/profilu/kontaktu/CV,
+  rezerwacje, deduplikacja i ostatnie sprawdzenie uprawnienia przed POST zachowane.
+
+12 nowych testów sprawdza: RUNNING → ten sam tekst/wersja/hash → dokładnie jedna
+fikcyjna wysyłka po pozytywnym review bez drugiego DRAFT lub ręcznej zgody na mail;
+gotowy B obok A; PENDING; ERROR i jawny review-only retry; COMPLETED false i null
+bez retry; pozytywną odpowiedź providera po Stop; edycję i zmianę źródeł w toku;
+review rozpoczynające się po wyborze i na QUEUED przed rezerwacją; kodowe odrzucenie.
+Dwie równoległe próby sendera dają jeden POST/rezerwację. 20 dodatkowych wywołań
+przed odroczonym terminem nie odczytuje historii ani nie wykonuje POST.
+
+Testy celowane: 24/24 PASS (12 nowych + research-materials). Pełny npm run check:
+typecheck/build PASS, 350/350 backend, 12/12 performance Stop, 7/7 UI. Istniejące
+testy AUTO_POLICY także PASS w pełnym zestawie. git diff --check PASS.
+To testy fixture na MacBooku, nie publiczny research, replay ani domowy Windows smoke.
+CI końcowego SHA zostanie sprawdzone po pushu i wskazane w raporcie końcowym.
+
 ## Diagnostyka i zachowanie materiałów — runda po fb8151e
 
 Punkt wyjścia fb8151e, czysty codex/local-windows-pilot, git fetch origin i zgodność

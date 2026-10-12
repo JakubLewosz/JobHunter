@@ -43,7 +43,8 @@ type Operation = {
 };
 export function autoErrorDecision(
   code: string,
-): 'company' | 'draft' | 'read-retry' | 'sender' | 'session' {
+): 'company' | 'draft' | 'read-retry' | 'review-wait' | 'sender' | 'session' {
+  if (code === 'DRAFT_MATERIAL_UNVERIFIED') return 'review-wait';
   if (
     [
       'GMAIL_CONTACT_HISTORY',
@@ -71,6 +72,7 @@ export function autoErrorDecision(
       'UNVERIFIED_QUOTE',
       'INVALID_RECIPIENT',
       'MIME_CHANGED',
+      'DRAFT_MATERIAL_STALE',
     ].includes(code)
   )
     return 'draft';
@@ -679,6 +681,27 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     );
     return hash(JSON.stringify({ opportunity: d.opportunity_id, contact: c }));
   }
+  private awaitingDraftReview(d: Row) {
+    const material = this.store.one(
+      'SELECT review_status FROM research_draft_materials WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    );
+    // ERROR needs an explicit review-only retry, not rejection or automatic regeneration.
+    return !!material && ['PENDING', 'RUNNING', 'ERROR'].includes(material.review_status);
+  }
+  private dispatchErrorDecision(code: string, op?: Operation) {
+    // A final gate may observe a review started after selection. Never revoke it.
+    if (code === 'DRAFT_MATERIAL_UNVERIFIED' && op) {
+      const d = this.store.one(
+        'SELECT * FROM drafts WHERE id=? AND version=?',
+        op.draftId,
+        op.draftVersion,
+      );
+      if (!d || !this.awaitingDraftReview(d)) return 'draft';
+    }
+    return autoErrorDecision(code);
+  }
   private selected(op: Operation) {
     if (op.sessionId !== this.sessionId || op.epoch !== this.controlEpoch)
       throw new DomainError('SESSION_STOPPED', 'Uprawnienie wybranej operacji zostało odwołane.');
@@ -785,6 +808,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
             (d) =>
               d.status !== 'SENT' &&
               this.inScope(d) &&
+              !this.awaitingDraftReview(d) &&
               !this.store.get(`autoSkipped:${d.id}:${d.version}`, false),
           );
       if (!queued && !candidate) {
@@ -855,7 +879,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       else if (result?.status === 'FAILED_NOT_SENT') this.wait('GMAIL_SEND_BLOCKED');
       else if (result?.status === 'BLOCKED') {
         const reason = this.store.get<string>('gmailLastError', 'GMAIL_SEND_BLOCKED');
-        const decision = autoErrorDecision(reason);
+        const decision = this.dispatchErrorDecision(reason, operation);
         if (decision === 'company' || decision === 'draft')
           this.skip(
             operation,
@@ -863,19 +887,26 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
             'Kontrola przed wysyłką zablokowała tę wersję; nie wykonano POST.',
           );
         else if (decision === 'read-retry') this.readRetry(operation, reason);
+        else if (decision === 'review-wait') this.store.set('autoSenderReason', reason);
         else this.wait(reason);
       }
       if (this.quotaIssues().length) this.wait(this.quotaIssues()[0]);
     } catch (e) {
       const code = e instanceof DomainError ? e.code : 'AUTO_ERROR';
       if (epoch !== this.controlEpoch || this.state().paused || this.state().stopped) return;
-      const decision = autoErrorDecision(code);
+      const decision = this.dispatchErrorDecision(code, operation);
       if (operation && (decision === 'company' || decision === 'draft')) {
         this.skip(
           operation,
           code,
           e instanceof DomainError ? e.message : 'Niepewna wersja szkicu.',
         );
+        this.store.set(
+          'autoNextSendAt',
+          iso(new Date(this.clock().getTime() + p.sendIntervalSeconds * 1000)),
+        );
+      } else if (decision === 'review-wait') {
+        this.store.set('autoSenderReason', code);
         this.store.set(
           'autoNextSendAt',
           iso(new Date(this.clock().getTime() + p.sendIntervalSeconds * 1000)),
