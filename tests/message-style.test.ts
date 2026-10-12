@@ -358,7 +358,11 @@ test('drobny tuning języka: bezpośrednie nawiązanie, neutralny projekt, odmia
   assert.match(prompt, /Na Państwa stronie zwróciłem uwagę/);
   assert.match(prompt, /Nie używaj domyślnie słowa demo/);
   assert.match(prompt, /Nie sugeruj wdrożenia produkcyjnego/);
-  assert.match(prompt, /Nazywam się Jakub Lewosz, z osobą/);
+  assert.match(prompt, /Nazywam się \[imię i nazwisko\], z osobą/);
+  assert.match(
+    prompt,
+    /Nazwa szkoły, miejscowość i ostatnia klasa wymagają osobnych zatwierdzonych faktów/,
+  );
   assert.match(prompt, /Kandydatura – \[rzeczywisty tytuł stanowiska\]/);
   assert.match(prompt, /tylko w zakresie zatwierdzonych faktów/);
   assert.match(prompt, /bez z pasją/);

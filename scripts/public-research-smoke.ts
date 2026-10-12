@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   createPublicDiagnostic,
   approvedDiagnosticMaterials,
+  diagnosticOutcome,
 } from '../apps/server/src/research/diagnostic.js';
 import { DomainError } from '../apps/server/src/util.js';
 
@@ -31,14 +32,14 @@ try {
   );
   console.log(JSON.stringify({ status: run, ...diagnostic.summary() }, null, 2));
   if (run?.status !== 'COMPLETED') process.exitCode = 3;
-  console.log('Wyniki diagnostyczne poza repo:', dir);
 } catch (e) {
+  const code = e instanceof DomainError ? e.code : 'DIAGNOSTIC_FAILED';
   console.log(
     JSON.stringify(
       {
-        status: 'BLOCKED_EXTERNAL',
-        code: e instanceof DomainError ? e.code : 'DIAGNOSTIC_FAILED',
         ...diagnostic.summary(),
+        outcome: diagnosticOutcome(code),
+        error: code,
       },
       null,
       2,
@@ -47,6 +48,7 @@ try {
   process.exitCode = 2;
 } finally {
   clearTimeout(deadline);
+  console.log('Wyniki diagnostyczne poza repo:', dir);
   diagnostic.service.control('stop');
   await diagnostic.service.stopWorker();
   diagnostic.store.close();

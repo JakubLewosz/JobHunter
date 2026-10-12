@@ -17,8 +17,15 @@ domowego Windowsa. PRIVATE_GIT pozostaje opcjonalny, odłożony. Brak origin nie
       regresje, dwa procesy i restart/backup na syntetycznych danych.
 - [x] Adapter diagnostyczny bez Gmaila i jedna ograniczona próba: 5 firm/5 stron,
       FAILED_EXTRACTION przez schemat CLI, 0 szkiców. Schemat poprawiony i natywnie
-      sprawdzony na danych syntetycznych; nie powtarzano publicznej próby. Pełny wynik
-      researchu nadal do potwierdzenia na Windowsie, gotowe smoke:public / --approved-profile.
+      sprawdzony na danych syntetycznych. Późniejsze rzeczywiste powtórzenie: 5 kandydatów,
+      9 stron, 5 ekstrakcji, 4 kontakty GENERAL, 1 zapisany szkic z review=true. Całość
+      INCOMPLETE: błędy DRAFT/SEMANTIC_REVIEW i kontrola technologii. Szczegóły TEST_REPORT.
+- [x] Regresje i minimalna poprawka sklejania etykiety Email z adresem; parser v2,
+      ponowny odczyt cache v0/v1, całkowicie syntetyczny szablon diagnostyczny i brak
+      narzuconej tożsamości/szkoły w prompcie; raport limitu zapisanego przez worker.
+- [ ] Świeży publiczny smoke po parserze v2/szablonie: limit dwóch prób tego zlecenia
+      wykorzystany. Nadal nieweryfikowane powody natywnych CODEX_FAILED i odrzucona
+      deklaracja technologii. Rzeczywisty profil i domowy Windows wymagają osobnej próby.
 - [x] Dokumentacja A/B/C, końcowy check **322 backend/7 UI**, 6 soak, diff check,
       przegląd kodu i skan 61 plików bez sekretów/prywatnych artefaktów.
 

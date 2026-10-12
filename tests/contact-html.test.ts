@@ -57,6 +57,34 @@ test('real HTML parser → public source → qualification: unrelated sales sect
     false,
   );
 });
+test('HTML: an inline email label cannot merge into the literal mailbox or lose its purpose', async () => {
+  const email = 'hello@fixture.example.test';
+  for (const tag of ['a', 'span']) {
+    const html = `<div><span>Email</span><${tag}>${email}</${tag}></div>`;
+    for (const variant of [html, html.replace(/></g, '>\n<')]) {
+      const result = await htmlDecision(variant, email);
+      assert.match(result.source.text, /Email\s+hello@fixture\.example\.test/);
+      assert.equal(result.analysis.contact.email, email);
+      assert.equal(result.analysis.contact.kind, 'GENERAL');
+      assert.equal(result.decision.allowed, true);
+    }
+    assert.equal(
+      (await htmlDecision(`<div><span>Sprzedaż</span><${tag}>${email}</${tag}></div>`, email))
+        .decision.allowed,
+      false,
+    );
+  }
+  assert.equal(
+    (await htmlDecision('<a href="mailto:hello@fixture.example.test">Napisz do nas</a>', email))
+      .decision.allowed,
+    false,
+  );
+  assert.equal(
+    (await htmlDecision('<span>Email</span><a>nothello@fixture.example.test</a>', email)).decision
+      .allowed,
+    false,
+  );
+});
 test('HTML: Sales heading above biuro remains bound to that mailbox', async () => {
   assert.equal(
     (
@@ -203,44 +231,45 @@ for (const changed of [
     );
     assert.equal(f.store.one('SELECT reason_code FROM auto_skips')?.reason_code, 'STALE_EVIDENCE');
   });
-test('old public cache without structural proof is re-read, versioned and cannot authorize a contact', async (t) => {
-  const f = await setup(t, true, false, false, true);
-  const html = '<section>Kontakt ogólny ' + mailbox + '</section>';
-  const read = new PublicSourceReader({
-    resolve: async () => [{ address: '93.184.216.34', family: 4 }] as any,
-    transport: async () => ({ status: 200, contentType: 'text/html', body: activity + html }),
+for (const previousVersion of [0, 1])
+  test(`old public cache v${previousVersion} is re-read, versioned and cannot authorize a contact`, async (t) => {
+    const f = await setup(t, true, false, false, true);
+    const html = '<section>Kontakt ogólny ' + mailbox + '</section>';
+    const read = new PublicSourceReader({
+      resolve: async () => [{ address: '93.184.216.34', family: 4 }] as any,
+      transport: async () => ({ status: 200, contentType: 'text/html', body: activity + html }),
+    });
+    f.reader.read = read.read.bind(read);
+    const fresh = await read.read('https://fixture.example.test');
+    const old = f.service.saveSource({
+      ...fresh,
+      parser_version: previousVersion,
+      address_contexts: previousVersion ? fresh.address_contexts : undefined,
+      content_hash: hash(JSON.stringify({ parserVersion: previousVersion, body: activity + html })),
+      text: fresh.text.replace(/\s+/g, ' '),
+    });
+    const runner = new FixtureRunner();
+    runner.prospect = true;
+    const a = (
+      await runner.run(
+        'Wydobądź firmę Dane: ' + JSON.stringify([{ id: old.id, url: old.final_url }]),
+        analysisSchema,
+      )
+    ).value;
+    a.contact = {
+      email: mailbox,
+      kind: 'GENERAL',
+      proof: { sourceId: old.id, quote: mailbox, explanation: 'Stary literalny dowód.' },
+    };
+    assert.equal(contactEligibility(validateAnalysis(a, [old]), [old]).allowed, false);
+    const refreshed = await f.service.readSource(old.original_url);
+    assert.notEqual(refreshed.id, old.id);
+    assert.equal(refreshed.parser_version, 2);
+    assert.equal(
+      f.store.one('SELECT parser_version FROM research_sources WHERE id=?', old.id)?.parser_version,
+      previousVersion,
+    );
   });
-  f.reader.read = read.read.bind(read);
-  const fresh = await read.read('https://fixture.example.test');
-  const old = f.service.saveSource({
-    ...fresh,
-    parser_version: 0,
-    address_contexts: undefined,
-    content_hash: hash(activity + html),
-    text: fresh.text.replace(/\s+/g, ' '),
-  });
-  const runner = new FixtureRunner();
-  runner.prospect = true;
-  const a = (
-    await runner.run(
-      'Wydobądź firmę Dane: ' + JSON.stringify([{ id: old.id, url: old.final_url }]),
-      analysisSchema,
-    )
-  ).value;
-  a.contact = {
-    email: mailbox,
-    kind: 'GENERAL',
-    proof: { sourceId: old.id, quote: mailbox, explanation: 'Stary literalny dowód.' },
-  };
-  assert.equal(contactEligibility(validateAnalysis(a, [old]), [old]).allowed, false);
-  const refreshed = await f.service.readSource(old.original_url);
-  assert.notEqual(refreshed.id, old.id);
-  assert.equal(refreshed.parser_version, 1);
-  assert.equal(
-    f.store.one('SELECT parser_version FROM research_sources WHERE id=?', old.id)?.parser_version,
-    0,
-  );
-});
 test('HTML: 2000-address container is parsed once per context and preserves its labels', (t) => {
   const html =
     '<footer>' +

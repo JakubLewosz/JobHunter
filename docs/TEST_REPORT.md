@@ -1,6 +1,97 @@
 # Weryfikacja — 12 października 2026
 
+## Powtórzenie publicznego researchu po strictOutputSchema
+
+Punkt wyjścia **a32d843**, codex/local-windows-pilot. git fetch origin wykonany;
+HEAD zgodny z upstream (0/0), checkout czysty. Zachowano bieżącą gałąź. Natywny
+Codex CLI **0.162.0-alpha.17.2**, istniejące logowanie ChatGPT. Bez płatnego API,
+zmiany konfiguracji/uprawnień lub osłabienia izolacji. Domyślne smoke:public tworzy
+nowy katalog diagnostyczny z zatwierdzonym wyłącznie syntetycznym profilem.
+
+W tym zleceniu wykonano dokładnie **dwie** rzeczywiste próby, każdą z limitem
+5 firm / 15 min, na odrębnej bazie. Pierwsza zatrzymana na SEARCH / CODEX_FAILED:
+0 kandydatów/stron/ekstrakcji/kontaktów/szkiców. Probe modelu i web search PASS,
+ale właściwe wyszukiwanie bez wyniku. Adapter zachował tylko ogólny kod; pierwotna
+przyczyna CLI nieustalona. Nie przypisano jej schematowi, loginowi ani limitowi.
+
+Druga próba: właściwy research 7 min 24,7 s, także z probe poniżej 15 min.
+
+| Etap                                        | Rzeczywisty wynik drugiej próby                                  |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| Kandydaci                                   | 5                                                                |
+| HTML PUBLIC_HTTP / HTTP 200 / READ          | 9 stron                                                          |
+| Ekstrakcje po schemacie i walidacji cytatów | 5 zakończonych                                                   |
+| Kwalifikacje                                | 5 zakończonych, 4 dopuszczone kontakty GENERAL / COMPANY_INQUIRY |
+| Generowanie                                 | 3 poprawne odpowiedzi DRAFT, 1 błąd wykonania DRAFT              |
+| Kontrola kodowa szkiców                     | 2 PASS, 1 UNSUPPORTED_TECHNOLOGY                                 |
+| Kontrola semantyczna                        | 1 supported=true/issues=[], 1 CODEX_FAILED                       |
+| Zapisane szkice                             | 1 NEEDS_REVIEW                                                   |
+| Send attempts / outbox / approvals          | 0 / 0 / 0                                                        |
+
+**Wynik całości INCOMPLETE**, run PAUSED / ITEMS_NEED_REVIEW. Nie jest to pełny
+PASS wszystkich kandydatów. Zapisany szkic przeszedł cały rzeczywisty proces:
+search → publiczny HTML → ekstrakcja → kwalifikacja → szkic → kontrola kodowa
+→ osobny semantyczny review. Ponowny lokalny checkDraft na niezmienionej treści
+z odczytanej read-only bazy także PASS: 8 claims, 6 factIds, 1 evidenceId.
+Nie potwierdzono rekrutacji lub warunków współpracy; szkic pyta, nie obiecuje
+dopasowania. Nie przenosi do profilu technologii firmy ani produkcyjnych wdrożeń.
+Szkic ma 74 słowa; zachowano ostrzeżenie o krótszym tekście zamiast wypełniaczy.
+
+Przyczyny niezapisania pozostałych szkiców, w kolejności przetwarzania:
+
+- DRAFT / CODEX_FAILED: brak poprawnie zakończonego wywołania modelu. Dokładny
+  surowy komunikat nie był zachowywany; przyczyna natywnego błędu nieustalona.
+- SEMANTIC_REVIEW / CODEX_FAILED: generowanie i kontrola kodowa przeszły, osobny
+  review nie zakończył się poprawnie. research_items przechowuje etap DRAFT,
+  dokładniejszy etap potwierdza model_calls. Treść nie została utrwalona.
+- QUALIFY / odrzucenie literalnego adresu: parser v1 skleił etykietę Email z
+  adresem. Regex traktował etykietę jako część adresu; analiza usunęła kontakt,
+  a strukturalny kontekst strony był pusty. To błąd parsera, nie dowód, że adres
+  miał przeznaczenie sprzedażowe. Nie dopuszczono go ręcznie dla uzyskania szkicu.
+- DRAFT / UNSUPPORTED_TECHNOLOGY: kod nie potwierdził technologii w deklaracji
+  CANDIDATE we wskazanych factIds. Nie poluzowano bramki. Odrzuconej treści/nazwy
+  technologii nie zachowano; bez niej nie można wykluczyć false positive.
+
+Odtworzone FAIL → PASS na fikcyjnych danych: zlepiona etykieta/adres inline oraz
+diagnostyczny szablon zachowujący szkołę/miasto/portfolio z bazowego profilu.
+Parser v2 oddziela widoczne adresy w elementach inline, zachowuje etykiety i
+blokady sprzedaży/sprzeczności; sam href nie potwierdza adresu, a fragment innego
+adresu nadal jest odrzucany. Cache v0/v1 wymaga ponownego odczytu i nowej wersji
+źródła; poprzednie rekordy/MIME nie są przepisywane. Read/cache i ostatnia kontrola
+źródeł używają tej samej stałej wersji. Pierwszy test v1 wykrył stałe `=== 1`
+w cache; zastąpiono je wspólną wersją i powtórzono regresję.
+
+Szablon diagnostyczny jest całkowicie syntetyczny, a instrukcja pierwszego akapitu
+bierze tożsamość/edukację tylko z zatwierdzonych faktów, bez stałego nazwiska/szkoły.
+Zapisany rzeczywisty szkic już wcześniej pominął niepotwierdzone dane ze wzoru.
+Raport smoke zawiera liczniki ekstrakcji/kwalifikacji i osobne agregaty błędów
+modelu/kandydatów. Regresja odtwarza zapisany przez worker limit: BLOCKED_EXTERNAL
+z etapem/kodem, mimo braku wyjątku z tick. Nieznany CODEX_FAILED lub błędny schemat
+nie są automatycznie oznaczane jako limit/brak logowania.
+
+**Nie wykonano trzeciej publicznej próby.** Wyniki liczbowe dotyczą parsera v1 i
+szablonu użytego podczas drugiej próby; świeży publiczny odczyt odrzuconej strony
+po parserze v2 i publiczna generacja po poprawce szablonu pozostają nieweryfikowane.
+Nie zastąpiono ich testem offline. Również ACTIVE/OPEN i kontakt RECRUITMENT nie mają
+pozytywnego rzeczywistego przypadku w tym przebiegu. Dalszy smoke wymaga osobnego
+zlecenia lub wykonania przez użytkownika na domowym Windowsie.
+
+Testy celowane **101/101 PASS**. Końcowy npm run check: **326/326 backend, 7/7 UI**,
+typecheck/build PASS na macOS arm64 / Node v24.11.0. Backend 111,6 s, UI 33,7 s.
+Duży HTML 2000 adresów: 88,8 ms w pełnym check, bez zwiększenia progów. git diff
+--check PASS. CI nowego SHA jest sprawdzane po pushu, nie zastępowane wcześniejszym CI.
+
+Pełne pięć analiz i jedyny zapisany, niezmieniony szkic pokazano w prywatnym pliku
+poza repo. Publiczny raport nie zawiera firm/adresów, surowych stron, pełnych wyników
+lub prywatnych ścieżek. **Zero** inicjalizacji/odczytów Gmaila, send/SELF_TEST, zmian
+prywatnej bazy/runtime/materiałów/CV/historii/liczników, repo danych lub zakupów.
+Nie zatrzymano aplikacji użytkownika. Domowy Windows, jego zatwierdzony profil i
+rzeczywista poczta nadal wymagają odrębnych prób; CI offline nie jest takim pilotem.
+
 ## LOCAL_ONLY i domowy Windows
+
+Poniższe sekcje zachowują wcześniejszą weryfikację a32d843; aktualne powtórzenie
+publiczne i końcowe liczniki są powyżej.
 
 Pobrano aktualne refy GitHub; main 4e6b864 był o 5 commitów za overnight 810b860.
 Czysty lokalny checkout, nowa gałąź codex/local-windows-pilot. Nie znaleziono aktywnego

@@ -17,6 +17,19 @@ type Materials = {
   template: string;
   facts: Record<string, string>;
 };
+export function diagnosticOutcome(code: string | null) {
+  return code &&
+    [
+      'CODEX_LOGIN',
+      'CODEX_LIMIT',
+      'CLI_MISSING',
+      'CLI_START',
+      'CODEX_TIMEOUT',
+      'SEARCH_UNAVAILABLE',
+    ].includes(code)
+    ? 'BLOCKED_EXTERNAL'
+    : 'FAILED';
+}
 export function approvedDiagnosticMaterials(base: string): Materials {
   workstationRuntime(join(base, 'research-only')).assertNative();
   const db = new Database(join(base, 'research-only', 'jobhunter.sqlite'), {
@@ -109,6 +122,20 @@ export function createPublicDiagnostic(
     elektroscan:
       'FixturePDF: fikcyjny lokalny projekt analizy dokumentów PDF, bez wdrożenia produkcyjnego.',
   };
+  const syntheticTemplate = `Dzień dobry,
+
+Nazywam się Alex Testowy i jestem fikcyjnym uczniem technikum programistycznego. Szukam regularnej, płatnej współpracy programistycznej.
+
+[Konkretny fakt o firmie i jeden pasujący projekt wyłącznie z zatwierdzonych faktów fikcyjnego profilu.]
+
+Jestem dostępny w pełni zdalnie, około 20 godzin tygodniowo, głównie po lekcjach.
+
+[Jedno krótkie pytanie o możliwość takiej współpracy.]
+
+GitHub: https://github.com/FixtureExample
+
+Pozdrawiam
+Alex Testowy`;
   const p = service.profile();
   if (options.materials && p.facts.some((f) => !options.materials!.facts[f.fact_key])) {
     store.close();
@@ -121,8 +148,7 @@ export function createPublicDiagnostic(
       'Fikcyjny kandydat: płatna zdalna współpraca około 20 godzin po lekcjach.',
     hours_approx: options.materials?.hoursApprox ?? 20,
     version: p.version,
-    message_template:
-      options.materials?.template ?? p.message_template.replaceAll('Jakub Lewosz', 'Alex Testowy'),
+    message_template: options.materials?.template ?? syntheticTemplate,
     facts: p.facts.map((f) => ({
       id: f.id,
       content:
@@ -134,6 +160,7 @@ export function createPublicDiagnostic(
   store.set('diagnosticOnly', true);
   store.exec('UPDATE campaigns SET max_candidates=? WHERE id=?', maximum, service.campaignId);
   const summary = () => {
+    const run = store.one('SELECT status,stage,error FROM runs ORDER BY started_at DESC LIMIT 1');
     const decisions = store.all('SELECT * FROM research_items').map((item) => {
       if (typeof item.analysis !== 'string' || !item.analysis.startsWith('{'))
         return { allowed: false, reason: item.error ?? item.status };
@@ -148,13 +175,31 @@ export function createPublicDiagnostic(
     for (const decision of decisions.filter((r) => !r.allowed))
       skipped[decision.reason] = (skipped[decision.reason] ?? 0) + 1;
     return {
+      outcome:
+        run?.status === 'COMPLETED'
+          ? 'COMPLETED'
+          : run?.error
+            ? diagnosticOutcome(run.error)
+            : run
+              ? 'INCOMPLETE'
+              : 'NOT_STARTED',
+      stage: run?.stage ?? null,
+      error: run?.error ?? null,
       synthetic: !options.materials,
       mailDisabled: true,
       firms: decisions.length,
       pagesRead: store.one("SELECT count(*) n FROM research_sources WHERE status='READ'")!.n,
+      extractionsCompleted: store.one('SELECT count(*) n FROM research_extractions')!.n,
+      qualificationsCompleted: store.one('SELECT count(*) n FROM research_qualifications')!.n,
       contactsQualified: decisions.filter((r) => r.allowed).length,
       drafts: service.draftRows().length,
       skipped,
+      itemErrors: store.all(
+        "SELECT stage,error AS code,count(*) AS count FROM research_items WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",
+      ),
+      modelErrors: store.all(
+        "SELECT stage,error AS code,count(*) AS count FROM model_calls WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",
+      ),
       reviews: service.draftRows().map((d) => JSON.parse(d.semantic_review)),
       attempts: store.one('SELECT count(*) n FROM send_attempts')!.n,
       outbox: store.one('SELECT count(*) n FROM outbox')!.n,

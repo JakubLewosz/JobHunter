@@ -32,9 +32,15 @@ i kontaktów oraz równoległym odświeżaniem. Rozróżnia receipt/revoke/infli
 Odtworzono wielosekundowe opóźnienie dashboardu i usunięto N+1 oraz pełną historię z jego
 normalnego odczytu. Wyniki pomiarów w TEST_REPORT, bez obietnicy czasu na każdym sprzęcie.
 
-Publiczna próba: 5 firm/5 stron, bez szkiców przez odrzucony schemat CLI. Poprawka
-schematu sprawdzona natywnym Codexem na danych syntetycznych; publicznej próby nie
-powtarzano. Brak prawdziwej poczty/SELF_TEST, odczytu skrzynki lub zmian prywatnego runtime.
+Publiczna próba po poprawce schematu faktycznie powtórzona: 5 kandydatów/9 stron,
+5 ekstrakcji/4 kontakty GENERAL/1 zapisany szkic z review=true. Całość INCOMPLETE:
+błędy wykonania DRAFT i SEMANTIC_REVIEW oraz UNSUPPORTED_TECHNOLOGY, bez poluzowania
+kwalifikacji. Jedno odrzucenie ujawniło sklejenie etykiety Email/adresu w parserze.
+Minimalne poprawki: parser v2 z ponownym odczytem cache v0/v1, syntetyczny szablon,
+tożsamość/edukacja wyłącznie z zatwierdzonych faktów, dokładniejsze agregaty smoke.
+326 backend/7 UI PASS macOS. Limit dwóch prób wykorzystany; publiczna ścieżka po
+nowej poprawce parsera/szablonu nie była ponawiana. Dokładne granice TEST_REPORT.
+Brak prawdziwej poczty/SELF_TEST, odczytu skrzynki lub zmian prywatnego runtime.
 
 Pozostaje: diagnostyka i potwierdzenie oryginalnej historii na Windowsie, konfiguracja
 lokalnej instalacji/materiałów/CV/konta/polityki, publiczny smoke bez Gmaila z zatwierdzonymi

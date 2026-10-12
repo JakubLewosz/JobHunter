@@ -1,6 +1,6 @@
 import { parseDocument } from 'htmlparser2';
 
-export const parserVersion = 1;
+export const parserVersion = 2;
 const emailPattern = /[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}/giu;
 const emails = (text: string) => [...text.matchAll(emailPattern)].map((m) => m[0].toLowerCase());
 type Node = ReturnType<typeof parseDocument>['children'][number];
@@ -84,7 +84,13 @@ export function parsePublicHTML(html: string) {
     if (!('children' in node) || ('name' in node && ignored.has(node.name))) return '';
     if ('name' in node && node.name === 'br') return '\n';
     const value = node.children.map((child) => render(child, depth + 1)).join('');
-    const text = 'name' in node && blocks.has(node.name) ? '\n' + value + '\n' : value;
+    // Inline labels and visible mailboxes remain separate literal tokens, even in minified HTML.
+    const text =
+      'name' in node && blocks.has(node.name)
+        ? '\n' + value + '\n'
+        : 'name' in node && emails(value).length
+          ? ' ' + value + ' '
+          : value;
     texts.set(node, text);
     return text;
   };

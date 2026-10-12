@@ -32,6 +32,7 @@ import {
   compact,
   type Analysis,
 } from './contracts.js';
+import { parserVersion } from './html.js';
 
 export interface SearchProvider {
   search(
@@ -415,7 +416,10 @@ export class ResearchJobHunter extends JobHunter {
       normalized,
       iso(new Date(this.clock().getTime() - 24 * 3600000)),
     );
-    if (existing && (existing.method !== 'PUBLIC_HTTP' || existing.parser_version === 1))
+    if (
+      existing &&
+      (existing.method !== 'PUBLIC_HTTP' || existing.parser_version === parserVersion)
+    )
       return existing as Source;
     let source = await this.reader.read(normalized, signal);
     if (['TIMEOUT', 'FETCH_FAILED'].includes(source.status)) {
@@ -480,7 +484,7 @@ export class ResearchJobHunter extends JobHunter {
       );
       if (
         checked &&
-        (source.method !== 'PUBLIC_HTTP' || source.parser_version === 1) &&
+        (source.method !== 'PUBLIC_HTTP' || source.parser_version === parserVersion) &&
         this.clock().getTime() - Date.parse(source.fetched_at) <= 86400000
       )
         continue;
