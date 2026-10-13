@@ -1,5 +1,38 @@
 # Zadania
 
+## Runda samodzielnego researchu — 13 października, zakończony zakres
+
+- [x] Czysty checkout, brak aktywnego backendu, fetch/fast-forward do 646de0d;
+      zachowane nowsze poprawki i historia. Publiczny kod f59ccb8.
+- [x] Regresje języka zaproszenia, future OPEN, osobnego zapytania przy REJECTED
+      oferty i literalnej nawigacji mimo maila w stopce; ogólne poprawki bez domeny.
+- [x] 2–3 funkcje zamiast stacku, orientacyjnie 110–170 bez minimum/bramki długości.
+      Pełne zatwierdzone fakty zachowane. BizCode 150→91, OKE 143→117, ApiFamily 151→85.
+- [x] Faktyczny QueryPlanner → web search → worker: 4 kierunki, 15 nowych unikatowych
+      firm + 1 powtórna analiza, 10 literalnych kontaktów i 7 aktualnych szkiców po
+      kontroli. Osobno 4/4 pozytywne kontrole, w tym Transparent Data RECRUITMENT/OPEN.
+- [x] Jeden trwały budżet: 27.16 min / 80 HTTP czytnika / 50 modeli, w tym probe/search
+      i wszystkie kontrole. 12 akcji web search; wewnętrzne HTTP dostawcy nie są ujawniane
+      przez CLI. Bez zerowania, ręcznych interwencji podczas publicznego procesu i maili.
+- [x] Zachowany GOTOMA DRAFT_MATERIAL_STALE: bramka blokowała, licznik zawyżał.
+      Po Stop fixture FAIL→PASS, wspólna draftMaterialIssues, końcowy kod 835a6d5.
+      Offline replay na spójnej kopii: cykl 4 checkedDrafts 2→1; publiczna chronologia
+      i oryginalna baza bez zmian. Nie ponawiano publicznego procesu na późniejszym kodzie.
+- [x] Końcowy macOS check 410 backend / 12 performance / 15 UI, typecheck/build/diff
+      check PASS. Wcześniejsze FAIL i niewyjaśniony historyczny Stop CI są w TEST_REPORT.
+- [x] Kompletny pakiet i audyt wersji/ID/hash/linków/CSV/sekretów, istniejący eksport.
+      [Pełny raport](research-review/2026-10-13_12-02_9c7ca137_macos_autonomous/README.md),
+      status PARTIAL: jeden zachowany nieaktualny szkic, bez błędów modeli/HTTP.
+
+Publikację zdalnego SHA, obecność plików i stan CI finalnego commitu potwierdzamy
+po rzeczywistym pushu w końcowej odpowiedzi; przygotowany commit nie jest dowodem pushu.
+Nie rozpoczynamy kolejnej szerokiej rundy. Jeśli użytkownik wróci do GOTOMA, dokładny
+następny krok to normalna ponowna analiza z zapisanej działalności i kontrola nowej
+wersji/bindingu, bez ręcznego dopisania inquiryBasis; obecny materiał pozostaje zablokowany.
+Domowy Windows wymaga późniejszej świadomej procedury nowej albo istniejącej instalacji
+w URUCHOMIENIE_RANO, CV/materiałów, CA/czytnika, konta/uprawnień i pilotażu. Niczego tam
+nie inicjalizowano. Prywatny runtime/Gmail/CV/OAuth/liczniki bez zmian; rzeczywiste maile 0.
+
 ## Wynik 13 października 2026 — publiczna diagnostyka MacBooka
 
 - [x] Osobny managed checkout od `2aa3a1e`, DEVELOPMENT i nowa diagnostyczna baza poza repo.
@@ -26,17 +59,18 @@
 
 Publikacja 15198a6 potwierdzona: SHA i README/FIRMY/WIADOMOSCI w GitHubie.
 CI 15198a6: Windows PASS, macOS backend PASS i performance Stop 11/12 FAIL.
+
 - [ ] Poza zakończonym researchem: profilować zimny odbiór Stop przy 10035 firmach
       i trzech odświeżeniach w hosted macOS/Node 24.19; 1458,72 ms > 1000 ms, bez
       zmiany progu. Rerun przez integrację odmówiony HTTP 403.
-Końcowy commit dokumentacji ma ten sam kod runtime; jego CI sprawdzamy po pushu.
-Pozostaje na domowym Windowsie: uruchomić `node --use-system-ca --import tsx
+      Końcowy commit dokumentacji ma ten sam kod runtime; jego CI sprawdzamy po pushu.
+      Pozostaje na domowym Windowsie: uruchomić `node --use-system-ca --import tsx
 scripts/reader-preflight.ts`, osobno sprawdzić istniejącą historię/marker/CV/Gmail/politykę
-według URUCHOMIENIE_RANO. MacBook i izolowane CI nie potwierdzają tej konfiguracji.
-Nie rozpoczynać następnej szerokiej rundy; uwagę jakościową stanowią długie opisy stacku
-w części szkiców mimo poprawnego doboru. Payarto nadal wymaga pełniejszego oficjalnego
-źródła; Merixstudio wymaga osobnego procesu pytania bez CV, jeśli użytkownik go zechce.
-Zero rzeczywistych maili/SELF_TEST, odczytów Gmaila i zmian OAuth/liczników/produkcji.
+      według URUCHOMIENIE_RANO. MacBook i izolowane CI nie potwierdzają tej konfiguracji.
+      Nie rozpoczynać następnej szerokiej rundy; uwagę jakościową stanowią długie opisy stacku
+      w części szkiców mimo poprawnego doboru. Payarto nadal wymaga pełniejszego oficjalnego
+      źródła; Merixstudio wymaga osobnego procesu pytania bez CV, jeśli użytkownik go zechce.
+      Zero rzeczywistych maili/SELF_TEST, odczytów Gmaila i zmian OAuth/liczników/produkcji.
 
 ## Publiczny research i publikacja — 12 października 2026
 

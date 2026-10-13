@@ -1,3 +1,60 @@
+# Runda samodzielnego researchu — 13 października 2026
+
+macOS arm64, Node v24.11.0. Publiczna próba: f59ccb8; końcowy kod: 835a6d5; wyłącznie fikcyjni odbiorcy, katalogi
+tymczasowe i lokalne repo Git w testach. `npm run check`: **410/410 backend,
+12/12 performance, 15/15 UI**, typecheck/build PASS. `git diff --check` PASS.
+
+Odtworzenie na poprzednim kodzie: 3 FAIL / 4 PASS — zaproszenie „chcesz do nas
+dołączyć”, future OPEN bez bieżącego wakatu, REJECTED oferty z dopuszczonym
+osobnym zapytaniem w planerze. Osobny test nawigacji: FAIL przed poprawką (mailbox
+na stronie nie może uniemożliwić odczytu literalnego linku kariery). Po zmianach
+celowane 44/44 oraz integracyjne 20/20 i późniejsze 9/9 PASS. Jeden pośredni wynik
+43/44 wynikał z testowego literalnego tytułu PHP/Laravel, który prawidłowo wybierał
+FixDesk; fixture zmieniono na Junior Developer, aby badała działalność API bez
+trafnego tytułu. Nie zmieniano selektora projektu dla tej asercji.
+
+Pierwszy pełny check: 408/409 backend, 1 FAIL — `research.test.ts` wymagał starej
+instrukcji 150–220 słów. Dostosowano oczekiwanie do nowej preferencji, bez zmiany
+bramek prawdziwości. Performance/build/UI nie wykonano w tym przerwanym check.
+Końcowy check uruchomiono po tej poprawce; testy zachowano, bez skip lub poluzowania
+zabezpieczeń. Długość sama nie tworzy NEEDS_REVIEW; profil/fakty/technologie nadal
+podlegają kontroli. Pełne opisy projektów pozostają w kontekście generatora/review.
+
+Stop końcowego check: max request_received 613.01 ms w pełnym zestawie;
+large-history odwołanie po odbiorze 0.18 ms.
+Trzy izolowane large-history: 308.23 / 266.82 / 208.92 ms.
+Brak nowych POST po Stop PASS. Nie zmieniono progów; trzy iteracje są stałą częścią
+check, bez powtarzania aż do PASS. Historyczny CI macOS 15198a6 z odbiorem 1458.72 ms
+pozostaje niewyjaśniony. Oba udane check tej rundy nie ustalają jego przyczyny.
+
+Współpraca etapów: zachowane istniejące auto-review-concurrency (RUNNING, retry
+samego review, utrzymanie hash/wersji, Stop i spóźniony wynik), research/restart,
+local-only/CV/sender/concurrency i soak. Nowy test planner→worker przechodzi przez
+nieudaną witrynę, duplikaty i pusty kierunek; zachowuje badania/planer po restarcie,
+bez outbox/attempts/approval/auto-session. UI auto.spec potwierdza pracę backendu po
+zamknięciu karty. Nowy cykl diagnostyczny używa publicznego workera, bez sendera.
+
+Po zamknięciu publicznej części odtworzono dodatkowy błąd metryki: positive review
+z DRAFT_MATERIAL_STALE dawał checkedDrafts=1 zamiast 0. Bramka wysyłki już blokowała
+materiał; poprawka dotyczy licznika i eksportu, używa istniejącej draftMaterialIssues.
+Regresja 4 PASS / 1 FAIL przed, 19/19 integracyjnych PASS po. Pierwsza wersja fixture
+użyła zwykłego AUTO ResearchJobHunter bez auto_run_scope i nie utworzyła szkicu;
+zmieniono ją na rzeczywisty createPublicDiagnostic przed odtworzeniem 1 != 0.
+
+Replay na spójnej read-only kopii zamkniętej diagnostyki (normalne metody planera,
+0 HTTP / 0 modeli): cykl 4 daje checkedDrafts 2 → 1. Bieżący końcowy snapshot cyklu 3
+ma 2 zamiast historycznych 3: GOTOMA była wcześniej sprawdzona, potem binding się
+zmienił. Nie przepisano publicznego przebiegu lub oryginalnej bazy. Hashe plików
+replay odpowiadają 835a6d5; publiczna próba nie była ponawiana na późniejszym kodzie.
+Końcowy pełny check na tych zmianach: 410 backend / 12 performance / 15 UI PASS,
+typecheck/build/diff check; wcześniejszy check na f59ccb8 miał 409/12/15 PASS.
+
+Publiczna próba i CI finalnego SHA są raportowane osobno w nowym research-review.
+Windows w tej rundzie lokalnie nie uruchomiony. Hosted CI nie potwierdza domowej
+instalacji, Gmaila, dostarczalności ani całodziennej pracy. Prawdziwe maile: **0**.
+
+---
+
 # Weryfikacja — 12 października 2026
 
 ## 13 października 2026 — MacBook: research bez poczty
@@ -412,20 +469,20 @@ Dokładnie dwie próby tej rundy, osobne nowe dane, profil syntetyczny, każda <
 i ≤5 firm. Pierwsza istniejącym npm run smoke:public, druga celowo 1 wcześniej
 odrzucona firma: świeży HTTP strony i kontaktu, bez powtarzania wyszukiwania.
 
-| Wynik | Próba 1: search/HTTP | Próba 2: celowany świeży HTTP |
-| --- | ---: | ---: |
-| Kandydaci/firmy | 5 | 1 |
-| Strony READ | 6 | 2 |
-| Zakończone ekstrakcje | 5 | 1 |
-| Dopuszczone kontakty GENERAL | 4 | 1 |
-| Wygenerowane i zachowane wersje | 4 | 1 |
-| Odrzucenia kontaktu | 1 | 0 |
-| Odrzucenia kodowe szkicu | 0 | 0 |
-| Poprawnie wykonane review z false | 2 | 0 |
-| Błędy wykonania review | 0 | 0 |
-| Szkice po pełnej kontroli treści | 2 | 1 |
-| Niezweryfikowane / niedopuszczone przez review | 2 | 0 |
-| Attempts / outbox | 0 / 0 | 0 / 0 |
+| Wynik                                          | Próba 1: search/HTTP | Próba 2: celowany świeży HTTP |
+| ---------------------------------------------- | -------------------: | ----------------------------: |
+| Kandydaci/firmy                                |                    5 |                             1 |
+| Strony READ                                    |                    6 |                             2 |
+| Zakończone ekstrakcje                          |                    5 |                             1 |
+| Dopuszczone kontakty GENERAL                   |                    4 |                             1 |
+| Wygenerowane i zachowane wersje                |                    4 |                             1 |
+| Odrzucenia kontaktu                            |                    1 |                             0 |
+| Odrzucenia kodowe szkicu                       |                    0 |                             0 |
+| Poprawnie wykonane review z false              |                    2 |                             0 |
+| Błędy wykonania review                         |                    0 |                             0 |
+| Szkice po pełnej kontroli treści               |                    2 |                             1 |
+| Niezweryfikowane / niedopuszczone przez review |                    2 |                             0 |
+| Attempts / outbox                              |                0 / 0 |                         0 / 0 |
 
 Tabeli nie przepisano po replay: pierwsze dwa false były realnymi wynikami i nie
 liczyły się jako szkice po kontroli. Ich późniejsze 2 PASS należą do replay, nie
@@ -625,12 +682,12 @@ Realny serwer Fastify na osobnym porcie, prawdziwe żądania HTTP/sesja/CSRF; fi
 usługi. Od t0 wysłania Stop mierzymy odebranie request przez Node, odwołanie prawa do
 nowego POST i odpowiedź. Fikcyjny POST już przyjęty kończy się niezależnie po 350 ms.
 
-| Obciążenie | Odebranie Stop | Odwołanie prawa | Odpowiedź | Zakończenie przyjętego POST |
-| --- | ---: | ---: | ---: | ---: |
-| Powolny publiczny read | 31,99 ms | 33,43 ms | 37,70 ms | brak |
-| Powolny model | 27,96 ms | 28,13 ms | 31,58 ms | brak |
-| 10 000 firm i kontaktów + 3 równoległe odświeżenia | 443,07 ms | 443,36 ms | 444,39 ms | brak |
-| Przyjęty fikcyjny POST | 24,43 ms | 24,58 ms | 28,38 ms | 350,85 ms |
+| Obciążenie                                         | Odebranie Stop | Odwołanie prawa | Odpowiedź | Zakończenie przyjętego POST |
+| -------------------------------------------------- | -------------: | --------------: | --------: | --------------------------: |
+| Powolny publiczny read                             |       31,99 ms |        33,43 ms |  37,70 ms |                        brak |
+| Powolny model                                      |       27,96 ms |        28,13 ms |  31,58 ms |                        brak |
+| 10 000 firm i kontaktów + 3 równoległe odświeżenia |      443,07 ms |       443,36 ms | 444,39 ms |                        brak |
+| Przyjęty fikcyjny POST                             |       24,43 ms |        24,58 ms |  28,38 ms |                   350,85 ms |
 
 Odtworzony wcześniejszy FAIL: 10 000 firm i 3 odświeżenia dashboardu dały 3269,64 ms
 do odebrania Stop. Usunięto N+1 historii i pełną historię z normalnego dashboardu.

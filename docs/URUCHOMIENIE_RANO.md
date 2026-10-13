@@ -21,37 +21,57 @@ Domyślnie DEVELOPMENT/DEMO i osobne dane JobHunter-development/demo, bez natywn
 
 ## B. Domowy Windows
 
-Najpierw właściwe miejsce danych. GitHub nie przenosi historii:
+### Wybierz stan instalacji, zanim zmienisz kod
 
-```powershell
-npm run history:local -- doctor "$env:LOCALAPPDATA\JobHunter"
-```
+Decyzja dla tego projektu: nowa lokalna instalacja na domowym Windowsie, Fingoweb
+wykluczony, świadomy jednorazowy wyjątek dla pozostałych dawnych ręcznych zgłoszeń.
+Nie przenosimy testowej bazy z Maca i nie kompletujemy 33 nazw. W tej rundzie
+nie wykonano inicjalizacji, importu, Gmaila ani Start na Windowsie.
 
-Diagnostyka jest tylko do odczytu: katalog, integralność, liczby firm/kontaktów/aliasów/ręcznych rekordów/blokad/prób/rezerwacji i niepewnych prób. Nie publikuje treści. Liczby nie dowodzą kompletności; brak bazy nie tworzy nowej. Sprawdź również Maca, jeśli nie wiadomo, gdzie jest oryginał. Nie resetuj historii, liczników lub SEND_UNKNOWN.
+**Nowa instalacja bez bazy:** brak SQLite oznacza nową instalację, a nie utratę
+historii do odtworzenia. Nie ma jeszcze bazy do backupu. Pobierz wybraną wersję
+kodu do nieaktywnego checkoutu, wykonaj `npm ci`, `npm run build`, `npm run doctor`.
+Następnie użytkownik wykonuje poniższą jawną procedurę nowej historii, z lokalnym
+CSV obejmującym Fingoweb i potwierdzonym wyjątkiem. Materiały pozostają DRAFT do
+osobnego zatwierdzenia. Macowy raport/snapshot nie zatwierdza PDF na Windowsie.
 
-Jeżeli wcześniejsze kontakty są tylko na Macu: po Stop i zamknięciu tamtego backendu zrób `history:local backup KATALOG_BAZOWY`. Dla starszego schematu odtwórz prywatną kopię do `KOPIA_BAZOWA/research-only` przez `history:local restore-copy KATALOG_BAZOWY BACKUP KOPIA_BAZOWA/research-only`, a następnie wykonaj `history:local export KOPIA_BAZOWA PRYWATNY_PLIK_POZA_REPO`. Oryginał pozostaje bez zmian; kopia może przejść migracje. Przenieś sam minimalny eksport prywatnie, np. nośnikiem, bez GitHuba. Na Windowsie utwórz tylko katalog bazowy, potem `npm run history:local -- import KATALOG_BAZOWY PRYWATNY_PLIK --confirm-private-import`. To istniejący addytywny format: blokady, próby/shared records i liczniki, bez materiałów/CV/poświadczeń/zgody na send. Sprawdź diagnostykę i kompletność. PRIVATE_GIT wymaga wcześniej domkniętej opublikowanej historii; niepewny stan drugiego urządzenia blokuje zmianę. Nie wykonywano tych operacji na prywatnych danych w tej sesji.
+**Istniejąca instalacja:** Stop w panelu → zakończenie rozpoczętych operacji →
+zakończenie backendu → read-only doctor i spójny backup → wybrana wersja kodu →
+zależności/build/doctor → backend bez aktywnej zgody na wysyłkę. Zachowaj ten sam
+katalog `research-only`, materiały, liczniki, shared records i blokady. Nie twórz
+nowej bazy jako sposobu aktualizacji. `npm run history:local -- doctor KATALOG`
+nie tworzy brakującej bazy. `history:local backup KATALOG` używa spójnej operacji
+SQLite z WAL, poza repo. Nie kopiuj samego aktywnego pliku SQLite.
 
-Po sprawdzeniu pełnej istniejącej historii, przy zamkniętym backendzie:
+Wybieraj wersję z wynikami testów i jej SHA; push sam nie wdraża backendu.
+Nie kopiuj `node_modules` ani markerów WORKSTATION między systemami. Jeśli lokalne
+zmiany uniemożliwiają fast-forward, zachowaj je i ustal wersję w osobnym checkoutcie.
+Bez automatycznego pull/restart, autostartu i zmiany zasilania.
 
-```powershell
-npm run history:local -- backup "$env:LOCALAPPDATA\JobHunter"
-npm run history:local -- configure "$env:LOCALAPPDATA\JobHunter" --confirm-existing-history --single-workstation
-$env:JOBHUNTER_RUNTIME = 'WORKSTATION'
-$env:JOBHUNTER_MODE = 'AUTO_POLICY'
-# JOBHUNTER_DATA_DIR, jeśli dotychczasowe dane są w innym katalogu.
-.\scripts\start.ps1
-```
+Po pobraniu kodu nadal sprawdź na domowym komputerze:
 
-workstation.json jest lokalny, poza repo, nie kopiowany między komputerami. Nie daje aktywnej zgody na send. Backend jest zatrzymany. Osobiste tryby współdzielą research-only. Już skonfigurowany PRIVATE_GIT zostaje do jawnej zmiany w Ustawieniach: Stop, brak niepewnych prób, zamknięty opublikowany stan i zgodność historii. Zmiana nie kasuje danych.
+1. Właściwy katalog i rzeczywisty stan nowej albo istniejącej instalacji.
+2. Zatwierdzone fakty, dokładny PDF/CV, materiały i ich wersje.
+3. Node 24, SQLite, lokalny doctor, Codex/login i odczyt publicznych stron z właściwym CA.
+   Macowy `--use-system-ca` nie potwierdza magazynu Windowsa; nie wyłączaj TLS.
+4. Właściwe konto i uprawnienia Gmaila, dopiero w późniejszej świadomej konfiguracji.
+5. Backend uruchomiony bez zgody sesji; później świadomy pilotaż przez Start.
+   3–5 maili i odstęp kilku minut to sugestia pilotażu, nie limit produktu.
 
-1. Sprawdź wcześniejsze kontakty i blokady; pustej bazy nie uznawaj za kompletną.
-2. Sprawdź fakty/projekty/CV, bieżącego nadawcę i politykę. Bez automatycznej zmiany konta. Połączenia tylko świadomie według GMAIL_SETUP; Codex/search mają osobne testy. Brak loginu/limitu nie upoważnia do paid API lub full access.
-3. Najpierw krótki publiczny research bez poczty. `npm run smoke:public -- --approved-profile KATALOG_BAZOWY` na skonfigurowanym Windowsie kopiuje wyłącznie wcześniej zatwierdzone materiały do nowego katalogu diagnostycznego, tylko do odczytu oryginału. Używa parsera, kwalifikacji i drafting AUTO; bez Gmaila/CV bajtów, zgód/outbox lub przyszłej kolejki produkcyjnej. Maksymalnie 5 firm/15 minut. Domyślne smoke:public używa profilu syntetycznego. RESEARCH_ONLY nadal służy pracy bez wysyłki z tą samą lokalną historią.
-4. Obejrzyj cytaty, etykiety kontaktów, kilka treści i powody pominięcia. Zamknij RESEARCH_ONLY, wróć do AUTO. Historia i niezmieniona polityka pozostają, sesja nie.
-5. Dopiero później samodzielnie Start. Pierwszy pilotaż może mieć 3–5 maili i kilkuminutowy odstęp. To sugestia pierwszej próby, nie limit produktu lub akceptacja pojedynczych maili. Tego punktu nie wykonano w developmentcie.
-6. Po ocenie pilotażu przejdź do dłuższej sesji bez małego limitu, w kontrolowanym tempie do Stop lub problemu wymagającego reakcji.
+`smoke:public` pozostaje małym testem: do 5 firm/15 minut, domyślnie syntetyczny.
+Na skonfigurowanym Windowsie `--approved-profile KATALOG_BAZOWY` kopiuje tylko
+zatwierdzone materiały do nowego katalogu diagnostycznego, bez PDF/Gmaila/send.
+Duży harness `public-autonomous-review.ts` jest osobną jawną diagnostyką, bez prawa
+późniejszej wysyłki. Domeny badane wcześniej nie są dowodem wcześniejszych maili.
 
-### Nowa historia i ręczne kontakty — procedura do zatwierdzenia
+Jeżeli **wiadomo**, że istnieje oryginalna historia na innym komputerze, zachowaj ją
+prywatnie i użyj read-only doctor/backup oraz addytywnego eksportu/importu z HISTORY_SYNC.
+To ścieżka dla rzeczywistej istniejącej historii, nie obowiązek poszukiwania bazy
+przy uzgodnionej nowej instalacji. PRIVATE_GIT pozostaje opcjonalny; LOCAL_ONLY nie
+wymaga prywatnego origin. Już skonfigurowanego PRIVATE_GIT nie zmieniaj bez Stop,
+jawnej decyzji i zgodności pełnego opublikowanego stanu; nie omijaj SEND_UNKNOWN.
+
+### Nowa historia i ręczne kontakty — późniejsze jawne wykonanie na Windowsie
 
 Decyzja użytkownika z 12 października: JobHunter nie wysyłał wcześniej wiadomości
 do firm, a SELF_TEST były próbami testowymi, nie aplikacjami. Wybrano nową lokalną
@@ -149,13 +169,13 @@ $env:JOBHUNTER_MODE = 'RESEARCH_ONLY'
 
 Znaczenie kolumn istniejącego CSV:
 
-| Kolumna | Co wpisać |
-| --- | --- |
-| company | Rzeczywista nazwa firmy; wymagane. |
-| status | CONTACTED dla wcześniejszego kontaktu; wymagane. |
-| domain | Potwierdzona domena firmy bez https:// i ścieżki, albo puste. |
-| email | Dokładny adres, na który wcześniej pisano, albo puste. |
-| date | Znana data wcześniejszego kontaktu, albo puste. |
+| Kolumna | Co wpisać                                                     |
+| ------- | ------------------------------------------------------------- |
+| company | Rzeczywista nazwa firmy; wymagane.                            |
+| status  | CONTACTED dla wcześniejszego kontaktu; wymagane.              |
+| domain  | Potwierdzona domena firmy bez https:// i ścieżki, albo puste. |
+| email   | Dokładny adres, na który wcześniej pisano, albo puste.        |
+| date    | Znana data wcześniejszego kontaktu, albo puste.               |
 
 CONTACTED zwykle blokuje nowy pierwszy kontakt; jawny wyjątek dla dawnych
 zgłoszeń może dopuścić jeden kontakt. Fingoweb pozostaje wykluczony. CSV nie tworzy send_attempts ani

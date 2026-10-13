@@ -195,7 +195,7 @@ const rows: any[] = budget.identities.map((domain: string) => {
       : 'nieznany',
     business:
       analysis?.inquiryBasis?.quote || analysis?.companyActivities?.length
-        ? 'Dowód źródłowy: ' +
+        ? 'Zweryfikowane fragmenty (mapowanie w ZRODLA): ' +
           (
             analysis.inquiryBasis?.quote ??
             analysis.companyActivities.map((p: any) => p.quote).join(' ')
@@ -378,6 +378,17 @@ const counts = {
     (v) => v.review_status === 'COMPLETED' && v.review.supported === false,
   ).length,
   unverified_versions: versions.filter((v) => !v.checked).length,
+  rejected_offers: rows.filter((r) => r.offerDecision === 'REJECTED').length,
+  explicitly_refused_company_contacts: rows.filter((r) =>
+    /Firma odmawia|Odmowa firmy|Ogólnofirmowa odmowa/.test(
+      r.qualifications.at(-1)?.reasons?.[0] ?? '',
+    ),
+  ).length,
+  missing_contact_or_inquiry_basis: rows.filter((r) =>
+    /Niepotwierdzone lub wykluczone|Brak osobnego dowodu/.test(
+      r.qualifications.at(-1)?.reasons?.[0] ?? '',
+    ),
+  ).length,
   rejected_firms: rows.filter((r) => r.analysis && r.qualifications.at(-1)?.decision === 'REJECTED')
     .length,
   historical_rejected_firm_decisions: rows.filter(
@@ -467,6 +478,8 @@ const header = [
   'http_requests',
   'intencja_kontaktu',
   'formy_firmy_cytat',
+  'analizy_w_tej_rundzie',
+  'uwagi_kanalu_i_danych',
 ];
 write(
   'FIRMY.csv',
@@ -498,6 +511,8 @@ write(
           r.requests,
           r.qualifications.at(-1)?.decision ?? 'UNVERIFIED',
           r.analysis?.conditions.contract.quote ?? 'Brak wymienionych form w zapisanym dowodzie',
+          r.items.length,
+          (r.analysis?.warnings ?? []).join('; '),
         ]
           .map(cell)
           .join(','),
@@ -662,6 +677,14 @@ errors +=
     .map((r) => `- ${r.company_id} (${r.domain}): ${md(r.skip)}.`)
     .join('\n') +
   '\n\nNiepoprawne/niepewne szkice nie zostały zatwierdzone. Brak szkicu nie jest odrzuceniem treści. Dawne CODEX_FAILED nie były ponownie diagnozowane.\n';
+if (autonomous)
+  errors =
+    '# Błędy wykonania i wyniki merytoryczne\n\n## Wykonanie publiczne\n\n0 błędów modeli, 0 nieudanych odczytów i 0 błędów walidacji ekstrakcji. Publiczny worker ukończył cztery cykle i cztery kontrole bez interwencji. Nie ma ślepego retry. Błędy/asercje fixture oraz pierwszy przerwany check są w [TEST_REPORT](../../TEST_REPORT.md), nie są błędami publicznego dostawcy.\n\n## Nieaktualny materiał i metryka\n\nGOTOMA została przeanalizowana dwukrotnie. Pierwszy szkic przeszedł kontrolę treści. Druga analiza OPEN zachowała brak bieżących ogłoszeń, ale nie dostarczyła inquiryBasis dla adresu GENERAL. Nie wolno zapełnić tego pola ręcznie. Oryginalny szkic pozostał w historii z supported=true; materialBinding zmienił się, więc DRAFT_MATERIAL_STALE blokuje aktualne użycie. Eksport nie liczy go jako aktualnie sprawdzonego. To brak aktualnego materiału, nie odmowa firmy i nie błąd wysyłki.\n\nPlaner początkowo liczył taki szkic na podstawie code PASS/review true. Po Stop fixture odtworzył 1 zamiast 0; poprawka używa tej samej draftMaterialIssues co bramka. Replay na osobnej spójnej kopii, bez modeli/HTTP: cykl 4 checkedDrafts 2 → 1. Publiczne zdarzenia f59ccb8 nie są przepisywane; nowy kod 835a6d5 jest sprawdzony offline.\n\n## Pominięcia, nie odmowy wszystkich firm\n\n' +
+    rows
+      .filter((r) => r.skip)
+      .map((r) => `- ${r.company_id} (${r.domain}): ${md(r.skip)}.`)
+      .join('\n') +
+    '\n\nTake Group: niedopasowanie pełnego etatu/9–17 dotyczy oferty; brak literalnego maila jest osobnym problemem. Source [email protected] nie jest odgadniętym adresem. Pozostałe nieznane lub brakujące kontakty/podstawa pozostają brakami danych, nie dowodem odmowy współpracy. React Poland udostępnia kanał formularza z CV; obecny proces nie obsługuje tej czynności. GENERAL hello@ nie jest potwierdzonym adresem do aplikacji z CV. Bez nowego systemu formularzy lub pytań bez CV. Brak wakatu sam nie wygasza OPEN.\n\nW tej próbie 8 firm ma końcową decyzję kontaktową REJECTED (kodowa niedopuszczalność/brak danych); nie oznacza to 8 potwierdzonych odmów firmy. Wszystkie powody i zakres OFFER/COMPANY są w CSV. Pozytywne szkice nie udzielają zgody na wysyłkę.\n';
 write('BLEDY.md', errors);
 const timeline = events.map((e) => {
   const enriched = {
@@ -698,6 +721,21 @@ for (const call of tables.model_calls) {
       null,
     source_kind: 'MODEL_RECORDED_IN_DATABASE',
     code: call.error,
+  });
+}
+if (autonomous && existsSync(join(dir, 'metrics-replay.json'))) {
+  const replay = read('metrics-replay.json');
+  timeline.push({
+    timestamp: replay.timestamp,
+    session_id: budget.sessionId,
+    stage: 'METRICS_REPLAY',
+    outcome: 'COMPLETED',
+    during_public_run: false,
+    original_database_unchanged: replay.original_database_unchanged,
+    public_code: replay.public_code_commit,
+    verified_replay_code: replay.verified_code_commit,
+    model_calls: 0,
+    http: 0,
   });
 }
 write(
@@ -831,6 +869,17 @@ if (autonomous) {
     if (latest)
       comparison += 'Po (nowa generacja):\n\n~~~text\n' + redact(latest.payload.body) + '\n~~~\n\n';
     else comparison += 'Nie dopisano nowego szkicu: ' + r.skip + '\n\n';
+    const observations: Record<string, string> = {
+      'bizcode.pl':
+        'Ocena redakcyjna: AutoRelay i nawiązanie do integracji SAP pozostały trafne. Zniknęła lista SQLAlchemy/Alembic/Docker/Actions, zostały webhooki, retry HTTP i historia. Jedna dostępność i pytanie; bez deklaracji własnej znajomości SAP. Nie dopisano doświadczenia lub produkcji.',
+      'oke.pl':
+        'Ocena redakcyjna: CodeFabric pozostał prototypem z lokalnymi modelami, planami i plikami. Skrócono listę bibliotek i czynności Codexa. Pochodzenie UKNF jest faktem praktyk, bez obietnicy oficjalnego produktu lub produkcyjnego wdrożenia. Jeden cel, dostępność i pytanie; związek firmy z AI pochodzi ze źródła, nie używania Codexa przez kandydata.',
+      'apifamily.pl':
+        'Ocena redakcyjna: zwykłe zapytanie bez wakatu zachowuje GENERAL. Usunięto powtórzenie płatnej regularnej współpracy i wyliczenie czynności Codexa. AutoRelay opisuje trzy funkcje; React/PostgreSQL są krótkim konkretem, bez dalszej listy stacku. Jedna dostępność i pytanie, bez wymyślonego naboru.',
+      'transparentdata.pl':
+        'Ocena: nowy szkic nawiązuje do API i danych, zawiera AutoRelay z HTTP/retry/historią. Nie wymyśla stanowiska, stawki lub godzin firmy; dostępność jest pytaniem. Nie ma wcześniejszego maila do porównania długości.',
+    };
+    comparison += (observations[r.domain] ?? '') + '\n\n';
     oldCopies += chunks.join('\n');
   }
   comparison +=
@@ -881,7 +930,7 @@ if (autonomous) {
       Object.entries(counts)
         .map(([k, v]) => `| ${k} | ${v} |`)
         .join('\n') +
-      '\n\nPreflight: ten sam PublicSourceReader i Node z --use-system-ca, bez zmian zaufania TLS lub SSRF. Domeny wcześniejszego raportu są pamięcią ALREADY_RESEARCHED, nie CONTACTED. Cykl z problemem zachowuje zadania; shared continuation stosuje istniejącą regułę AUTO dla pojedynczych błędów. Nie naprawiano ręcznie kolejki, decyzji, factIds ani projektów po rozpoczęciu.\n\nPrawdziwe maile **0**. DisabledMailProvider, brak gateway, Gmaila, zgód/send attempts/outbox/auto sessions. Brak zmian prywatnego runtime, nadawcy, OAuth, historii lub CV. To publiczny raport: kontakty firm mają publiczne źródła; prywatne dane osobiste w kopiach maili podlegają redakcji (zakres i hashe w MANIFEST). Nie publikujemy baz, sekretów, pełnych witryn lub toku rozumowania.\n\nNie jest to test dostarczalności ani gwarancja całodziennej pracy. Push nie wdraża domowego Windowsa. Pozostaje właściwy katalog i nowa/istniejąca instalacja, CV/materiały, CA/czytnik, konto/uprawnienia poczty i późniejszy świadomy pilotaż: [instrukcja Windows](../../URUCHOMIENIE_RANO.md).\n\n' +
+      '\n\nrejected_firms oznacza końcową kodową niedopuszczalność kontaktu, także z braku danych; nie liczbę potwierdzonych odmów firm. Oferta, rzeczywista odmowa i brak kontaktu/podstawy mają osobne liczniki.\n\nPreflight: ten sam PublicSourceReader i Node z --use-system-ca, bez zmian zaufania TLS lub SSRF. Domeny wcześniejszego raportu są pamięcią ALREADY_RESEARCHED, nie CONTACTED. Cykl z problemem zachowuje zadania; shared continuation stosuje istniejącą regułę AUTO dla pojedynczych błędów. Nie naprawiano ręcznie kolejki, decyzji, factIds ani projektów po rozpoczęciu.\n\nPrawdziwe maile **0**. DisabledMailProvider, brak gateway, Gmaila, zgód/send attempts/outbox/auto sessions. Brak zmian prywatnego runtime, nadawcy, OAuth, historii lub CV. To publiczny raport: kontakty firm mają publiczne źródła; prywatne dane osobiste w kopiach maili podlegają redakcji (zakres i hashe w MANIFEST). Nie publikujemy baz, sekretów, pełnych witryn lub toku rozumowania.\n\nNie jest to test dostarczalności ani gwarancja całodziennej pracy. Push nie wdraża domowego Windowsa. Pozostaje właściwy katalog i nowa/istniejąca instalacja, CV/materiały, CA/czytnik, konto/uprawnienia poczty i późniejszy świadomy pilotaż: [instrukcja Windows](../../URUCHOMIENIE_RANO.md).\n\n' +
       [
         'POROWNANIE.md',
         'FIRMY.csv',

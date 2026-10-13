@@ -1,0 +1,621 @@
+{
+  "format_version": 1,
+  "exporter_sha256": "dd8f265ce4d366bc01a1857f9f683e678f91af4bae5ffc85161683e5b22481be",
+  "checked_code_commit": "835a6d53bc3267c8fe29bd54c706bdacfc5415ce",
+  "session_id": "macos_autonomous",
+  "status": "PARTIAL",
+  "start": "2026-10-13T10:02:42.350Z",
+  "first_public_query": "2026-10-13T10:02:42.520Z",
+  "end": "2026-10-13T10:29:52.193Z",
+  "stop_reason": "BOUNDED_SCOPE_COMPLETED",
+  "code_versions": [
+    {
+      "batch_id": "autonomous-live-1",
+      "head": "f59ccb89f301d762ebd50c4eead8c758353c8116",
+      "dirty": false,
+      "source_hash": "18195be4ba26242cbd47434b30d53325f2f7435782f59c9636fad2f0269083b5",
+      "files": {
+        "apps/server/src/app.ts": "bfc2fa82ccd469cf5dd38a4b0302f264d3020b872c7d7d2a28a4e8634f3c6d39",
+        "apps/server/src/auto-policy.ts": "eea53490fbaad89c24bdae9f9ceb67aa2082b0f8ebf02070af1f88793d0e1aed",
+        "apps/server/src/backend-lock.ts": "1bd26203c0b44eb5191b3b83d2ea83a20d996e52264635fabce309e2567b8b5d",
+        "apps/server/src/backup.ts": "bb2ff63ff89039527f63bdeb599aad3dd92921d2542a9dd57ce11c9b4237c46d",
+        "apps/server/src/db.ts": "512f1fd9848414c6bc6463e43492172bfb98d23c600e6273faa342ee7f9e698b",
+        "apps/server/src/gmail/client.ts": "cd61ac3c3387c4e8ea7064ef39c43d48b66d38777e5a82413c7d59cd7e0aea58",
+        "apps/server/src/gmail/inspection.ts": "13605c14e6b8a739499493f0cbf0a88c23b0a1ffd83f2a433a8403d1beea1183",
+        "apps/server/src/gmail/mime.ts": "4877143c9364064d4333fe4ad88ea311637ca23824041a910b8dbe37512fcf90",
+        "apps/server/src/gmail/oauth.ts": "84ade60ab33d8b67678d8ee11f2b466407c10936f9e785129a776ec4a6f2b869",
+        "apps/server/src/gmail/reader.ts": "89c28418776a7bbcdc960adb370f367483babc61f7a63ede899aa152cd35fd47",
+        "apps/server/src/gmail/service.ts": "f6b8ff0af108d2f6505da2ffbc34759ca1e3a1c827fe574c954319d325a20a51",
+        "apps/server/src/history-sync.ts": "003fcafae75877866d2134b38c95c49c064308fd1bf982f6330898ac4d56b91c",
+        "apps/server/src/initialize-local.ts": "06394dc9c08d215de8ebba533feecf9b4a6cf2b209060cb298c8a786a8a16d21",
+        "apps/server/src/main.ts": "dfc095f1a429ef52ed8d0c750f4caf36ba1020dfb434d1e18302d31338a79c61",
+        "apps/server/src/prior-applications.ts": "6795156418cbc38bf57cee6ca742a636908de2637205f97bc9cd9bb8ee45fa19",
+        "apps/server/src/providers.ts": "141ab9c46f78075afead8c678dae1bb749f8f2a48ceb61b61d31e7b8793ce47a",
+        "apps/server/src/research/autonomous-diagnostic.ts": "1d4abd837099b7e1509dc9c50374a75b3c8fee00782428ec11f63ce990312ead",
+        "apps/server/src/research/codex.ts": "0ae58213be1d56c50b4b4ddf90393deb2a404c938e89d2efe3d0e6fb7a2f78da",
+        "apps/server/src/research/contracts.ts": "3b73992b6f1c36296d90a9c12eeb1e8d5d2f12a91df81718077db3b7e8600680",
+        "apps/server/src/research/diagnostic.ts": "dff36a6493966509931fcffdf07048e741612b1bb4eec49c7c16d43028efad38",
+        "apps/server/src/research/drafting.ts": "ed4869a3931d2d5d2d5a0dc6b384d6e86e78a2972e5810b5ec56be7aab31916a",
+        "apps/server/src/research/fetcher.ts": "a7c0ec930ffc99638453ea283ae524d956a40ec62cb8073c37385bb0d45b1293",
+        "apps/server/src/research/html.ts": "0d01c96cb7cb684dd2daacd463ca3abcf2ba5e19b5cdf95191270c65a62ed527",
+        "apps/server/src/research/message-policy.ts": "f23837746ac70d6da7f33222dfb49d05b242a30e28795b85d577338a43c14f3e",
+        "apps/server/src/research/query-planner.ts": "d8e9572d0e795b507bd2e46ef549152bd24a2148c649a830ee9d421fac6c290f",
+        "apps/server/src/research/review-session.ts": "7bd05754a6c180e2bbe8921f3dc316739317d95827e795b09b6b111b631012d3",
+        "apps/server/src/research/service.ts": "a21ae6d0a70f19545d66401adc9f327e3d501ae227e3af5a40b2d5cd193f06af",
+        "apps/server/src/runtime.ts": "bdef0228793a840efedeb0ad26026c6a5596ad7e1b1cc52fafd64087ecc0eaf7",
+        "apps/server/src/service.ts": "a3e8c66c406917bc17a413bc35953551a133c5c6aaae51773ed4b217faaca51e",
+        "apps/server/src/util.ts": "fed65f2085b07c0da803d506a9897830f560e79daff8fdf83858834fa01d11e8",
+        "packages/shared/types.ts": "8fe4a5dc12eafd1fcd33cc350bebec70a6c5d17daa8a0f6b35a1da6c29d1bd9c",
+        "scripts/public-autonomous-review.ts": "8e935f162de3d5b7d51afd368b4fa56ee2b5765679ab1e38991cb112de427260"
+      }
+    }
+  ],
+  "cli_version": "codex-cli 0.162.0-alpha.17.2",
+  "model": null,
+  "tokens": null,
+  "cv_sha256": null,
+  "profile_provenance": {
+    "commit": "2aa3a1eef3fdbb1939adc6e710d80a76badb945c",
+    "path": "docs/research-review/2026-10-12_23-29_windows-01a1313a/PROFIL_UZYTY.md",
+    "sha256": "33bfb08dcad605c9517f85975fc0f65fc41073908775339ed7418961fa9c5c86",
+    "kind": "PUBLIC_APPROVED_SNAPSHOT",
+    "cvVerifiedInThisRun": false
+  },
+  "cvVerifiedInThisRun": false,
+  "profile_sha256": "3817835bb7085117c43d437e5ec3e5d32f88867723f35eff47a813e32289bec8",
+  "counts": {
+    "unique_requested_pages": 80,
+    "unique_read_pages": 75,
+    "repeat_http_requests": 0,
+    "new_firms_started": 15,
+    "new_firms_analyzed": 15,
+    "controls_analyzed": 4,
+    "technically_blocked_firms": 0,
+    "versions_with_selected_project": 12,
+    "versions_mentioning_selected_project": 12,
+    "proposed_identities": 19,
+    "analyzed_unique_firms": 19,
+    "index_rows": 19,
+    "http_requests": 80,
+    "fresh_reads_retained": 75,
+    "extraction_calls": 20,
+    "extractions_completed": 20,
+    "qualifications_completed": 19,
+    "public_contacts_literal": 14,
+    "contacts_qualified": 11,
+    "retained_versions": 12,
+    "fully_checked_drafts": 11,
+    "code_rejected_versions": 0,
+    "historical_code_rejections": 0,
+    "extraction_validation_errors": 0,
+    "semantic_rejected_versions": 0,
+    "unverified_versions": 1,
+    "rejected_offers": 1,
+    "explicitly_refused_company_contacts": 0,
+    "missing_contact_or_inquiry_basis": 8,
+    "rejected_firms": 8,
+    "historical_rejected_firm_decisions": 8,
+    "source_failures_retained": 0,
+    "model_errors": 0,
+    "model_calls_total": 50,
+    "model_calls_assigned_to_companies": 44,
+    "web_search_actions": 12,
+    "duplicates": 1,
+    "already_researched_leads": 0,
+    "replay_batches": 0,
+    "real_sends": 0,
+    "outbox": 0,
+    "send_attempts": 0,
+    "send_approvals": 0,
+    "active_auto_sessions": 0
+  },
+  "discovery": {
+    "directions": 4,
+    "new_firms_started": 15,
+    "new_firms_analyzed": 15,
+    "literal_contacts": 10,
+    "eligible_contacts": 7,
+    "latest_checked_drafts": 7,
+    "duplicates": 1,
+    "stale_drafts": 1,
+    "all_versions": 8,
+    "technical_item_errors": 0,
+    "manual_interventions": 0
+  },
+  "manual_interventions": 0,
+  "limits": {
+    "milliseconds": 5400000,
+    "firms": 24,
+    "checkedDrafts": 24,
+    "models": 100,
+    "http": 180
+  },
+  "redactions": [],
+  "missing_data": [],
+  "limitations": [
+    "Jawna ograniczona diagnostyka publicznej części; 0 poczty, nie próba całodzienna",
+    "Nieznane warunki nie są dowodem elastyczności",
+    "Nie sprawdzono Gmaila lub produkcyjnej historii",
+    "Model nie ujawnił wersji; brak pełnych danych tokenów dla audytu"
+  ],
+  "tests": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node": "v24.11.0",
+    "code_commit": "835a6d53bc3267c8fe29bd54c706bdacfc5415ce",
+    "command": "npm run check",
+    "status": "PASS",
+    "typecheck": "PASS",
+    "backend": {
+      "passed": 410,
+      "failed": 0,
+      "duration_ms": 104655.987917
+    },
+    "performance": {
+      "passed": 12,
+      "failed": 0,
+      "measurements": [
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 29.35,
+          "rightsRevokedMs": 29.96,
+          "responseMs": 33.21,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 26.71,
+          "rightsRevokedMs": 26.85,
+          "responseMs": 30.58,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 613.01,
+          "rightsRevokedMs": 613.19,
+          "responseMs": 614.17,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 32.21,
+          "historyRows": 10035,
+          "historyBytes": 7588819,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 16.38,
+          "rightsRevokedMs": 16.5,
+          "responseMs": 17.91,
+          "inflightFinishedMs": 351.67,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 17.19,
+          "rightsRevokedMs": 17.71,
+          "responseMs": 20.29,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 12.94,
+          "rightsRevokedMs": 13.05,
+          "responseMs": 15.84,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 308.23,
+          "rightsRevokedMs": 308.39,
+          "responseMs": 310.07,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 20.01,
+          "historyRows": 10035,
+          "historyBytes": 7588819,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 13.9,
+          "rightsRevokedMs": 13.99,
+          "responseMs": 15.13,
+          "inflightFinishedMs": 350.65,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 13.97,
+          "rightsRevokedMs": 14.08,
+          "responseMs": 16.53,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 11.69,
+          "rightsRevokedMs": 11.76,
+          "responseMs": 14.23,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 266.82,
+          "rightsRevokedMs": 266.93,
+          "responseMs": 269,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 19.75,
+          "historyRows": 10035,
+          "historyBytes": 7588819,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 12.83,
+          "rightsRevokedMs": 12.89,
+          "responseMs": 14.02,
+          "inflightFinishedMs": 350.7,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 13.43,
+          "rightsRevokedMs": 13.49,
+          "responseMs": 15.81,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 11.15,
+          "rightsRevokedMs": 11.21,
+          "responseMs": 13.63,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 208.92,
+          "rightsRevokedMs": 209.03,
+          "responseMs": 210.91,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 18.16,
+          "historyRows": 10035,
+          "historyBytes": 7588819,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 12.52,
+          "rightsRevokedMs": 12.59,
+          "responseMs": 13.69,
+          "inflightFinishedMs": 349.48,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        }
+      ],
+      "thresholds_changed": false
+    },
+    "build": "PASS",
+    "ui": {
+      "passed": 15,
+      "failed": 0,
+      "duration_seconds": 35.6
+    },
+    "baseline_reproductions": {
+      "invitation_open_planner": {
+        "passed": 4,
+        "failed": 3
+      },
+      "navigation": {
+        "passed": 1,
+        "failed": 1
+      }
+    },
+    "earlier_failures": [
+      {
+        "stage": "targeted",
+        "passed": 43,
+        "failed": 1,
+        "reason": "Fixture still contained a verified PHP/Laravel title; selector correctly chose FixDesk. Changed fixture title to Junior Developer to isolate company activity."
+      },
+      {
+        "stage": "first npm run check",
+        "passed": 408,
+        "failed": 1,
+        "reason": "Old prompt assertion 150–220 in research.test.ts; updated to current editorial preference. Other stages not run after backend failure."
+      },
+      {
+        "stage": "initial stale-metric fixture setup",
+        "reason": "Plain AUTO ResearchJobHunter lacked diagnostic auto_run_scope; fixture switched to createPublicDiagnostic before reproducing the actual 1 != 0 assertion."
+      }
+    ],
+    "integration_checks": {
+      "initial": {
+        "passed": 20,
+        "failed": 0
+      },
+      "final_preflight": {
+        "passed": 9,
+        "failed": 0
+      }
+    },
+    "diff_check": "PASS",
+    "scope": "Fictional providers/recipients, temporary directories and local Git. No native Gmail/private runtime.",
+    "historical_stop_ci": "Prior macOS request-receipt delay remains unexplained; current PASS does not establish cause.",
+    "windows_local": "NOT_RUN",
+    "ci": "TO_BE_CHECKED_AFTER_FINAL_PUSH",
+    "public_code_commit": "f59ccb89f301d762ebd50c4eead8c758353c8116",
+    "postpublic_metrics_regression": {
+      "before": {
+        "passed": 4,
+        "failed": 1,
+        "failure": "checkedDrafts=1 for material-binding stale"
+      },
+      "after": {
+        "passed": 19,
+        "failed": 0
+      },
+      "public_probe_not_repeated": true,
+      "offline_replay_http": 0,
+      "offline_replay_models": 0,
+      "original_diagnostic_unchanged": true
+    }
+  },
+  "offline_metrics_replay": {
+    "timestamp": "2026-10-13T10:32:49.008Z",
+    "kind": "OFFLINE_METRICS_REPLAY_CURRENT_SNAPSHOT",
+    "public_code_commit": "f59ccb89f301d762ebd50c4eead8c758353c8116",
+    "replay_code_head": "f59ccb89f301d762ebd50c4eead8c758353c8116",
+    "replay_code_dirty": true,
+    "source_hashes": {
+      "apps/server/src/research/query-planner.ts": "004bfa88469bff58b4d7d3b8a1a49421d41c0356a4d3fc94a87a21c86ed9ab30",
+      "apps/server/src/research/autonomous-diagnostic.ts": "9c7cc83c991c9a85a18dec1b773032397572d43ac2a9e82923c59fce38904603",
+      "apps/server/src/auto-policy.ts": "2689282004b4d622769af92907e6d5b3d637d17931b6ca5d8798b953c05806ee",
+      "scripts/replay-planner-metrics.ts": "348507f0b352ae06fc24c3aee8b36e0c35911adfe877b604c088a9589ea31456"
+    },
+    "original_database_unchanged": true,
+    "original_database_sha256": "8692f3020c9c8585332c24807c394f2300dd4cf1633480659be263e16c2a289e",
+    "models": 0,
+    "http": 0,
+    "real_sends": 0,
+    "note": "Current final bindings, not historical success at each earlier cycle. Public events remain unchanged; stale GOTOMA was verified earlier and invalidated by later analysis.",
+    "cycles": [
+      {
+        "plan_id": "99d520e52fa3f1968efa5615bbc209d86bb5dadd4ad005b36a0f9550d5052fe2",
+        "query": "Firmy działające w Polsce; płatna regularna współpraca programistyczna, w pełni zdalnie około 20 godzin po lekcjach. Aplikacje, integracje, automatyzacje, dokumenty i narzędzia z modelami. Warunki nieznane są pytaniem. Wykluczenie Fingoweb. Bez wymogu wakatu i bez konkretnej formy umowy.\nPolska: software house’y, agencje internetowe, SaaS, aplikacje webowe, automatyzacje, API, integracje, narzędzia AI i przetwarzanie dokumentów. Szukaj szeroko we wszystkich tych dziedzinach; bez ograniczenia do PHP/Laravel. Mogą to być firmy bez ogłoszonego wakatu, do zapytania o współpracę.",
+        "original_metrics": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 0,
+            "codefabric": 0,
+            "elektroscan": 0
+          },
+          "newCompanies": 4,
+          "duplicates": 0,
+          "sourcesRead": 14,
+          "contacts": 0,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 0,
+          "checkedDrafts": 0,
+          "rejected": 1,
+          "missingData": 3,
+          "errors": []
+        },
+        "replay_current_snapshot": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 0,
+            "codefabric": 0,
+            "elektroscan": 0
+          },
+          "newCompanies": 4,
+          "duplicates": 0,
+          "sourcesRead": 14,
+          "contacts": 0,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 0,
+          "checkedDrafts": 0,
+          "rejected": 1,
+          "missingData": 3,
+          "errors": []
+        }
+      },
+      {
+        "plan_id": "c6c905b77c3779a2acb4c85096e7c0b13f3e3315ec149088f76abfe92c1528df",
+        "query": "Firmy działające w Polsce; płatna regularna współpraca programistyczna, w pełni zdalnie około 20 godzin po lekcjach. Aplikacje, integracje, automatyzacje, dokumenty i narzędzia z modelami. Warunki nieznane są pytaniem. Wykluczenie Fingoweb. Bez wymogu wakatu i bez konkretnej formy umowy.\nMałe i średnie zespoły produktowe oraz SaaS: aplikacje, narzędzia wewnętrzne, backend, integracje, automatyzacje i AI. Nowe firmy z publicznym kontaktem, także bez rekrutacji.",
+        "original_metrics": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 3,
+            "codefabric": 1,
+            "elektroscan": 1
+          },
+          "newCompanies": 4,
+          "duplicates": 0,
+          "sourcesRead": 14,
+          "contacts": 4,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 4,
+          "checkedDrafts": 4,
+          "rejected": 0,
+          "missingData": 0,
+          "errors": []
+        },
+        "replay_current_snapshot": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 3,
+            "codefabric": 1,
+            "elektroscan": 1
+          },
+          "newCompanies": 4,
+          "duplicates": 0,
+          "sourcesRead": 14,
+          "contacts": 4,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 4,
+          "checkedDrafts": 4,
+          "rejected": 0,
+          "missingData": 0,
+          "errors": []
+        }
+      },
+      {
+        "plan_id": "6da24fdce44cb8fb3cd150e9882c8b75f84857c07ac04b04c5b87b6d1dd43b61",
+        "query": "Firmy działające w Polsce; płatna regularna współpraca programistyczna, w pełni zdalnie około 20 godzin po lekcjach. Aplikacje, integracje, automatyzacje, dokumenty i narzędzia z modelami. Warunki nieznane są pytaniem. Wykluczenie Fingoweb. Bez wymogu wakatu i bez konkretnej formy umowy.\nAgencje cyfrowe i firmy tworzące aplikacje dla klientów: web, e-commerce, backend, API, automatyzacje i narzędzia AI. Szukaj różnych technologii i możliwości zapytania o współpracę.",
+        "original_metrics": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 3,
+            "codefabric": 1,
+            "elektroscan": 0
+          },
+          "newCompanies": 4,
+          "duplicates": 0,
+          "sourcesRead": 16,
+          "contacts": 3,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 3,
+          "checkedDrafts": 3,
+          "rejected": 0,
+          "missingData": 1,
+          "errors": []
+        },
+        "replay_current_snapshot": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 3,
+            "codefabric": 1,
+            "elektroscan": 0
+          },
+          "newCompanies": 4,
+          "duplicates": 0,
+          "sourcesRead": 16,
+          "contacts": 3,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 3,
+          "checkedDrafts": 2,
+          "rejected": 0,
+          "missingData": 1,
+          "errors": []
+        }
+      },
+      {
+        "plan_id": "e870165207de1e8e15aa8b306d96b02f53072c075d2c411bdf88ccb9fdce61dd",
+        "query": "Firmy działające w Polsce; płatna regularna współpraca programistyczna, w pełni zdalnie około 20 godzin po lekcjach. Aplikacje, integracje, automatyzacje, dokumenty i narzędzia z modelami. Warunki nieznane są pytaniem. Wykluczenie Fingoweb. Bez wymogu wakatu i bez konkretnej formy umowy.\nFirmy automatyzujące pracę biznesową, wdrażające integracje, webhooki, API, dokumenty/PDF, analizę obrazu i AI. Szukaj nowych zespołów z publicznym kontaktem.",
+        "original_metrics": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 1,
+            "codefabric": 0,
+            "elektroscan": 0
+          },
+          "newCompanies": 3,
+          "duplicates": 1,
+          "sourcesRead": 13,
+          "contacts": 1,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 1,
+          "checkedDrafts": 2,
+          "rejected": 0,
+          "missingData": 3,
+          "errors": []
+        },
+        "replay_current_snapshot": {
+          "topicCounts": {
+            "fixdesk": 0,
+            "autorelay": 1,
+            "codefabric": 0,
+            "elektroscan": 0
+          },
+          "newCompanies": 3,
+          "duplicates": 1,
+          "sourcesRead": 13,
+          "contacts": 1,
+          "matchedOffers": 0,
+          "openApplications": 0,
+          "companyInquiries": 1,
+          "checkedDrafts": 1,
+          "rejected": 0,
+          "missingData": 3,
+          "errors": []
+        }
+      }
+    ],
+    "verified_code_commit": "835a6d53bc3267c8fe29bd54c706bdacfc5415ce"
+  },
+  "files": {
+    "BLEDY.md": "ff3476116036b66fa20ac8d978dc1915bed8575a135c1a4d897d3673ab61206e",
+    "FIRMY.csv": "21e0e13e79022535143f63f6c5888034a3a72f6e16b572efc4fd1a1f16540d3d",
+    "POROWNANIE.md": "d52b202555ce57e639c31e5d9d8e556cee11bfdd0107d572e79d6a3e9dbb009a",
+    "PROFIL_UZYTY.md": "73184f14e86aec11209b64f3938975272a0abff5627b2532dbcd1aeb6fcbd25b",
+    "PRZEBIEG.jsonl": "f689c7646ee64898ac6ecca113f5c83e1b370b1890e1e99f88cd4aa3f4ebaeac",
+    "README.md": "7556f192330afd4a5ec28d80f48d6728ecfe86b749a020d9102687ce644ea8de",
+    "WIADOMOSCI.md": "78b140a2f10273f74b96b48c022b04f27f0325c9de756f12406100e7c5644901",
+    "ZRODLA.md": "2e62b6e5ded7a0728311b8d2dfa9a71a91792f90d68e973cb75f812ef5bb9639",
+    "MANIFEST.json": null
+  },
+  "self_hash_note": "Hash własnego manifestu pominięty, aby uniknąć rekursji; plik jest w wykazie. Pozostałe hashe dotyczą bajtów UTF-8."
+}
