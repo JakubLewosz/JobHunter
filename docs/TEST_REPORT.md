@@ -248,6 +248,62 @@ jest osobno autoryzowaną operacją, nie npm run check. Kod produktu i zależno�
 pozostają 6409e09; ostatni pełny fizyczny Windows check nadal 439/12/15 PASS.
 Stock opener wymaga osobnej poprawki z fikcyjnym URL; nie wymaga nowego OAuth.
 
+## Drugi SELF_TEST i powrót do pierwszego nadawcy
+
+Po osobnej konkretnej zgodzie użytkownika połączono drugie wskazane konto,
+tym samym lokalnym klientem Desktop i zakresami identity/send/readonly.
+Logowanie zakończone o 21:22:03 Europe/Warsaw; konto zgodne z oczekiwanym.
+Sam OAuth nie odczytał poczty i nie wysłał maila. Poprzednie połączenie zastąpiono
+lokalnie, bez kasowania historii testów lub cofania Google uprawnień innych kont.
+
+Nowy podgląd zachował identyczny temat, cały tekst i zatwierdzony PDF.
+Użytkownik osobno zatwierdził jedną drugą próbę i jej celowane potwierdzenie.
+Windows **21:25:11–21:25:13 Europe/Warsaw: SENT_CONFIRMED**; jeden nowy POST
+i rezerwacja. MIME zgodny z drugim zatwierdzonym podglądem, pierwsza próba
+i jej bajty/identyfikatory niezmienione. Odbiorca potwierdził **Odebrane**
+i prawidłowe otwarcie CV. Nie ustalono przyczyny różnicy folderu wobec pierwszego
+testu; nie jest to gwarancja dalszej dostarczalności.
+
+Końcowy doctor integrity=ok, attempts=2, usage=2, uncertain=0; spójny backup
+po drugim teście. Sender Stop, firmowe wiadomości 0, AUTO niewłączone.
+Trzy odłożone szkice i pierwotny raport ponownie porównane: bez zmian.
+
+Następna celowana publiczna kwalifikacja zapisała pierwszy cel jako
+COMPLETED/DRAFTS_READY i szkic wersji 1 na literalny kanał RECRUITMENT.
+Potem prywatny helper raportujący zapytał o nieistniejące research_items.draft_id
+i zakończył się przed drugim celem; bazowy generator i właściwa kwalifikacja
+nie zgłosiły błędu. Dane zachowane w SQLite, blokada profilu zwolniona, brak
+aktywnych runs lub kolejki; raport tej operacji wymaga odtworzenia z zapisanych
+danych, bez ponawiania kwalifikacji. Następnie częściowy raport odtworzono
+read-only z SQLite; drugiego celu nie uruchomiono. Pytanie o osobną zgodę na historię trzech
+firm nie zostało jeszcze rozstrzygnięte; nie wykonano odczytu ich poczty.
+
+Użytkownik następnie polecił wrócić do pierwszego nadawcy i wykonać jeden
+kolejny test do tego samego odbiorcy. Otworzono ponowne logowanie istniejącym
+klientem i wcześniej zatwierdzonymi zakresami, z kontrolą konkretnego konta.
+OAuth ukończony o **21:33:03 Europe/Warsaw**, konto zgodne; użytkownik także
+potwierdził zakończenie. Przygotowano nowy dokładny podgląd tej samej treści/CV.
+W odpowiedzi na pytanie o trzeci test użytkownik jawnie zmienił osobistego
+odbiorcę i polecił „wyślij teraz”. Podgląd poprzedniego odbiorcy pozostał niewysłany;
+istniejące setTestRecipient unieważniło jego warunki polityki. Przygotowano
+i pokazano nowy podgląd z dokładnie wskazanym odbiorcą, przy niezmienionym
+temacie/tekście/PDF. Polecenie użytkownika zapisano w prywatnym dowodzie zgody.
+
+**21:38:57–21:38:59 Europe/Warsaw: trzeci SELF_TEST SENT_CONFIRMED**,
+jedna nowa próba POST i rezerwacja, MIME zgodny z nowym zamrożonym podglądem.
+Istniejący reconcile potwierdził wyłącznie tę próbę w Wysłanych; bez historii
+firm lub innych wątków. Obie wcześniejsze próby i identyfikatory zachowane.
+Odbiorca zgłosił **Spam**, z poprawnie otwierającym się CV. Wynik porównawczy:
+dwa testy pierwszego nadawcy Spam, jeden drugiego Odebrane. Nie ustalono
+przyczyny i nie zmieniono generatora, materiałów, stylu lub transportu.
+
+Końcowy doctor **integrity=ok, attempts=3, usage=3, uncertain=0**; spójny backup
+po trzeciej wysyłce. Program Stop, sender paused, wykorzystanie 3/10 bez resetu,
+firmowe wiadomości 0, AUTO_POLICY niewłączone. Ręczna historia, suppressions
+i granica kampanii niezmienione. Trzy wcześniejsze odłożone wiadomości i hash
+oryginalnego raportu zachowane. Pilotaż czeka na decyzję po wynikach testów,
+osobny zakres historii firm i dokładne podglądy; kolejnej wysyłki nie zaplanowano.
+
 ---
 
 # Spójność dowodów — 13 października 2026

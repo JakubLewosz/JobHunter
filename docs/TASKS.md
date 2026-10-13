@@ -97,14 +97,35 @@
       Trzy zachowane szkice i hash pierwotnego raportu ponownie porównane: bez zmian.
 - [x] Odbiorca zgłosił Spam pierwszego SELF_TEST; otwarcie CV niepotwierdzone.
       Nie przypisano przyczyny generatorowi lub OAuth i nie zmieniono treści.
-- [ ] Dokładny następny krok: użytkownik wskazał zmianę na inne konkretne konto
-      i jedną kolejną próbę do tego samego osobistego odbiorcy. Przygotowano prywatny
-      adapter istniejącego connectGoogle z kontrolą właściwego konta; node --check PASS.
-      Czeka osobne pytanie o nowy OAuth identity/send/readonly z zastąpieniem lokalnego
-      nadawcy. Nie uruchamiać połączenia przed odpowiedzią. Potem nowy dokładny
-      SELF_TEST preview tej samej treści/CV i osobna zgoda przed wysyłką/potwierdzeniem
-      tej próby w Wysłanych. Zachować pierwszą próbę i rezerwację; bez resetu limitów.
-      Pilot trzech priorytetowych firm czeka na udany wynik testu; AUTO nadal wyłączone.
+- [x] Po osobnej zgodzie i ukończeniu logowania połączono drugie wskazane konto
+      tym samym klientem i zakresami. Nowy SELF_TEST preview zachował dokładny
+      temat/tekst/CV; użytkownik osobno zatwierdził drugą próbę i jej Wysłane.
+      Windows 21:25:11–21:25:13 Europe/Warsaw: SENT_CONFIRMED, jedna nowa próba
+      i rezerwacja, pierwsza zachowana. Odbiorca potwierdził Odebrane i poprawne CV.
+      Doctor integrity=ok, uncertain=0, spójny backup; wykorzystanie 2/10 bez resetu.
+- [x] Pilotaż rozpoczęto wyłącznie celowanym publicznym importem: BizCode
+      COMPLETED/DRAFTS_READY, kanał RECRUITMENT, zapisany szkic wersji 1.
+      Prywatny helper raportu zapytał o nieistniejące research_items.draft_id;
+      zakończył się po tym celu, bez dalszych firm. Dane w SQLite zachowane,
+      program zatrzymany; to błąd raportu operacyjnego, nie generatora.
+      Częściowy raport odtworzono read-only z zapisanych danych, bez reanalizy.
+      Pytanie o celowaną historię trzech firm pozostało bez odpowiedzi; nie czytano Gmaila.
+- [x] Na wyraźne polecenie powrót do pierwszego wskazanego konta istniejącym
+      klientem i wcześniej zatwierdzonymi zakresami. OAuth 21:33:03 Europe/Warsaw,
+      konto zgodne; użytkownik potwierdził zakończenie. Przygotowano nowy dokładny
+      preview tej samej treści/CV; użytkownik w odpowiedzi jawnie wskazał nowego
+      osobistego odbiorcę i polecił wysłać teraz. Poprzedni preview nie został wysłany.
+- [x] Nowy podgląd z dokładnie wskazanym odbiorcą pokazany i zamrożony;
+      jeden SELF_TEST 21:38:57–21:38:59 Europe/Warsaw, SENT_CONFIRMED.
+      Odbiorca zgłosił Spam, CV otwiera się poprawnie. Obie wcześniejsze próby
+      zachowane, tekst/temat/PDF identyczne, granica/historia/blokady bez zmian.
+      Doctor integrity=ok, attempts=3, usage=3/10, uncertain=0, spójny backup.
+      Program i sender Stop, firmowe wysyłki 0, AUTO_POLICY wyłączone.
+- [ ] Aktualny następny krok: ocena wyników dostarczalności i decyzja użytkownika
+      przed wznowieniem pilotażu lub następnym testem. Dwa testy pierwszego nadawcy
+      trafiły do Spamu, jeden drugiego do Odebranych; przyczyna nieustalona.
+      Nie zmieniać generatora ani resetować limitów. Pilot nadal wymaga osobnej
+      zgody na celowaną historię konkretnych firm i dokładnego przeglądu do 3 maili.
 - [ ] Poprawić stock opener helpera OAuth na Windowsie po wykazanym exit 1:
       oddzielna zmiana z fikcyjnym URL i regresją, po zakończeniu operacji/backupie.
       Nie ponawiać poprawnie zakończonego OAuth ani zmieniać scopes w ramach testów.
