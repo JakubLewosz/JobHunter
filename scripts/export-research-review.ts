@@ -184,10 +184,15 @@ const rows: any[] = budget.identities.map((domain: string) => {
     type: analysis
       ? (({ ACTIVE: 'A', OPEN: 'B', PROSPECT: 'C' } as any)[analysis.type] ?? 'nieznany')
       : 'nieznany',
-    business: analysis?.inquiryBasis?.quote
-      ? 'Dowód źródłowy: ' + analysis.inquiryBasis.quote.slice(0, 180)
-      : 'Działalność nieustalona w zapisanej analizie; ' +
-        (analysis ? 'udokumentowano ' + analysis.title : 'brak zweryfikowanej ekstrakcji'),
+    business:
+      analysis?.inquiryBasis?.quote || analysis?.companyActivities?.length
+        ? 'Dowód źródłowy: ' +
+          (
+            analysis.inquiryBasis?.quote ??
+            analysis.companyActivities.map((p: any) => p.quote).join(' ')
+          ).slice(0, 500)
+        : 'Działalność nieustalona w zapisanej analizie; ' +
+          (analysis ? 'udokumentowano ' + analysis.title : 'brak zweryfikowanej ekstrakcji'),
     email: analysis?.contact.email ?? 'brak potwierdzonego adresu',
     purpose: analysis?.contact.kind ?? 'UNKNOWN',
     source_ids: sourceIds,
@@ -391,7 +396,7 @@ const name = dateParts.replace(' ', '_').replace(':', '-') + '_' + budget.sessio
 const output = resolve('docs/research-review', name);
 mkdirSync(output, { recursive: true });
 const write = (name: string, text: string) =>
-  writeFileSync(join(output, name), redact(text), 'utf8');
+  writeFileSync(join(output, name), redact(text).replace(/\n+$/, '\n'), 'utf8');
 const header = [
   'company_id',
   'nazwa',
@@ -414,6 +419,8 @@ const header = [
   'decyzja_oferta',
   'model_calls',
   'http_requests',
+  'intencja_kontaktu',
+  'formy_firmy_cytat',
 ];
 write(
   'FIRMY.csv',
@@ -443,6 +450,8 @@ write(
           r.offerDecision,
           r.calls,
           r.requests,
+          r.qualifications.at(-1)?.decision ?? 'UNVERIFIED',
+          r.analysis?.conditions.contract.quote ?? 'Brak wymienionych form w zapisanym dowodzie',
         ]
           .map(cell)
           .join(','),
@@ -499,6 +508,9 @@ const sourceCompany = (source: any) =>
   rows.filter((r) => r.source_ids.includes(source.id)).map((r) => r.company_id);
 let sourceText =
   '# Źródła i mapowanie dowodów\n\nŚwieży PUBLIC_HTTP oznacza rzeczywisty odczyt parserem aplikacji. FETCH_FAILED nie potwierdza zawartości witryny. Trop z web search nie jest dowodem. Pierwsza partia sprzed użycia systemowego CA zachowuje pierwotne statusy; późniejsze odczyty są osobnymi źródłami. Nie udostępniamy pełnych kopii stron.\n\n';
+if (round)
+  sourceText =
+    '# Źródła i mapowanie dowodów\n\nPUBLIC_HTTP oznacza rzeczywisty odczyt parserem aplikacji w nowej sesji macOS. Błędy i niepełne treści nie dowodzą odmowy firmy. Preflight i firmy mają odrębne identyfikatory; dawne źródła Windowsa pozostają w poprzednim raporcie. Cytaty są ograniczone do informacji potrzebnych do kontroli, bez pełnych kopii stron.\n\n';
 for (const source of sources.values()) {
   const quotes: string[] = [];
   for (const row of rows.filter((r) => r.analysis && r.source_ids.includes(source.id))) {
@@ -757,8 +769,19 @@ if (round)
       '\n~~~\n',
     'utf8',
   );
+if (round)
+  writeFileSync(
+    join(output, 'README.md'),
+    readFileSync(join(output, 'README.md'), 'utf8') +
+      '\nUwagi jakościowe: nowe wersje BizCode i Tukano otrzymały AutoRelay; OKE otrzymało CodeFabric po świeżym odczycie usług AI. Pełne opisy i mapping są przy wersjach w WIADOMOSCI. Część tekstów, m.in. BizCode i WizzDev, wylicza zbyt obszerny stack zamiast krótkiego dowodu pracy; review zgodności nie rozstrzyga tej jakości. Nie poprawiano ich ręcznie. WizzDev: oferta nadal REJECTED, szkic ma intencję COMPANY_INQUIRY; adres rekrutera z oferty nie jest osobnym potwierdzeniem kanału otwartej aplikacji z CV. Merixstudio: tylko pytania, obecny proces z CV zablokowany. Payarto: odczyt zawiera nazwę bez wystarczającej działalności/kontaktu, a dawny tytuł pozostaje nieustalony.\n\nKod po kontroli: ' +
+      (process.env.JH_REVIEW_CODE_COMMIT ?? 'commit ustalany przy publikacji') +
+      '. CI finalnego commitu pakietu: [Actions](https://github.com/JakubLewosz/JobHunter/actions/workflows/offline-check.yml); wynik sprawdzany po pushu.\n',
+    'utf8',
+  );
 const manifest: any = {
   format_version: 1,
+  exporter_sha256: hash(readFileSync('scripts/export-research-review.ts')),
+  checked_code_commit: process.env.JH_REVIEW_CODE_COMMIT ?? null,
   session_id: budget.sessionId,
   status,
   start: budget.startedAt,

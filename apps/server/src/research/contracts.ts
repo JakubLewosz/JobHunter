@@ -260,7 +260,7 @@ export function contactUsage(v: Analysis, sources: Source[] = []) {
   )
     return 'QUESTIONS_ONLY';
   return v.contact.kind === 'RECRUITMENT'
-    ? 'RECRUITMENT_APPLICATION'
+    ? 'RECRUITMENT_CONTACT'
     : v.contact.kind === 'GENERAL'
       ? 'GENERAL_INQUIRY'
       : 'UNVERIFIED';

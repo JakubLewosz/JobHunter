@@ -1,5 +1,38 @@
 # Zadania
 
+## Wynik 13 października 2026 — publiczna diagnostyka MacBooka
+
+- [x] Osobny managed checkout od `2aa3a1e`, DEVELOPMENT i nowa diagnostyczna baza poza repo.
+- [x] Snapshot 9 zatwierdzonych faktów z opublikowanego PROFIL_UZYTY, zachowane ID/treści;
+      pochodzenie i hash, `cvVerifiedInThisRun=false`. Brak PDF i prywatnego runtime.
+- [x] Reader preflight, oczyszczone TLS/DNS/HTTP/timeout/limit, bounded retry i zatrzymanie
+      serii wspólnych awarii; reuse po końcowym URL, aktualnej wersji i parserze.
+- [x] Import zapisanych źródeł przez serwis, bez ręcznego przestawiania stage w SQLite.
+- [x] Dobór projektu z potwierdzonych usług/produktów; pełny opis i mapping dowodów
+      identyczne w generatorze/review. Ogólne reguły, fixture ze zmienionymi nazwami.
+- [x] Brak dopisanego zlecenia; pytanie versus CV; OFFER versus COMPANY; neutralny tytuł
+      OPEN/PROSPECT, zachowanie diagnostyki rzeczywiście niepotwierdzonego wakatu.
+- [x] Blokada otwarcia `diagnosticOnly` jako Gmail/WORKSTATION przed native transportem.
+- [x] Jedna sesja 08:10:30–08:44:05 Europe/Warsaw: 10 nowych firm + 6 kontroli,
+      69 HTTP / 68 różnych żądanych URL / 58 poprawnie odczytanych stron, 46 modeli.
+      13 nowych wersji, 11 różnych szkiców po pełnej kontroli; 7 nowych firm ze szkicem,
+      3 nowe pominięte. 4 nieudane odczyty, 2 błędy modeli zachowane i rozpoznane.
+- [x] AutoRelay rzeczywiście w nowych tekstach BizCode/Tukano, CodeFabric w OKE.
+      Stare wersje zachowane; nie poprawiano ręcznie tekstów eksportu.
+- [x] Końcowy macOS check: 403 backend, 12 performance Stop, 15 UI, typecheck/build;
+      21 celowanych regresji i diff check PASS.
+- [x] Publiczny pakiet UTF-8 z pełnymi tekstami, porównaniem i audytem liczb/odwołań.
+      [Raport](research-review/2026-10-13_08-10_macos-01a133d7/README.md).
+
+Publikację i CI finalnego SHA sprawdzamy po pushu, bez merge do main i deploymentu.
+Pozostaje na domowym Windowsie: uruchomić `node --use-system-ca --import tsx
+scripts/reader-preflight.ts`, osobno sprawdzić istniejącą historię/marker/CV/Gmail/politykę
+według URUCHOMIENIE_RANO. MacBook i izolowane CI nie potwierdzają tej konfiguracji.
+Nie rozpoczynać następnej szerokiej rundy; uwagę jakościową stanowią długie opisy stacku
+w części szkiców mimo poprawnego doboru. Payarto nadal wymaga pełniejszego oficjalnego
+źródła; Merixstudio wymaga osobnego procesu pytania bez CV, jeśli użytkownik go zechce.
+Zero rzeczywistych maili/SELF_TEST, odczytów Gmaila i zmian OAuth/liczników/produkcji.
+
 ## Publiczny research i publikacja — 12 października 2026
 
 - [x] Zgoda użytkownika na skorygowaną propozycję i oryginalny PDF; zgodność

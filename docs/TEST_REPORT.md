@@ -1,5 +1,56 @@
 # Weryfikacja — 12 października 2026
 
+## 13 października 2026 — MacBook: research bez poczty
+
+Bazowy `2aa3a1e`; osobny checkout, macOS darwin/arm64, Node v24.11.0,
+CLI 0.162.0-alpha.17.2 i istniejący login ChatGPT. Bez full access/API key.
+Pełny [pakiet](research-review/2026-10-13_08-10_macos-01a133d7/README.md)
+zapisów, wszystkich wersji i identyfikatorów; stary raport niezmieniony.
+
+Trzy mechanizmy odtworzone FAIL przed zmianą: brak projektu z opisu usług API,
+UNKNOWN dla pytania o dołączenie do zespołu i odmowa całej firmy z zakresu OFFER.
+Regresje po zmianie obejmują zmienione nazwy/domeny, negatywne AI/PDF, jawny/brak
+warunku umowy, obowiązkowy kanał/zakaz maila, neutralny tytuł i literalny ACTIVE,
+TLS bez retry storm, awarię jednego hosta i wspólną serię, transient retry, redirect/
+budżet/cache, nowszą zmienioną wersję źródła, mapping generator/review i blokadę
+snapshotowej bazy przed usługą Gmail nawet z WORKSTATION. Celowane: 21/21 PASS.
+Produkcyjne sprawdzanie PDF i wcześniejsze kontrole sendera/Stop zachowane.
+
+Końcowy `npm run check`: exit 0, typecheck/build PASS, **403/403 backend**
+(101291,04 ms), **12/12 performance Stop** (6269,41 ms), **15/15 UI** (35,4 s).
+Fikcyjni odbiorcy/providery, tymczasowe bazy i lokalne repozytoria Git; diff check PASS.
+Bez zwiększenia timeoutów lub progów. CI finalnego SHA sprawdzane po publikacji.
+
+Właściwy Node reader z procesowym --use-system-ca: 3/3 hosty preflight READ.
+Publiczna sesja 33,59 min, 69 faktycznych HTTP (w tym redirecty i 1 powtórzony URL),
+68 różnych żądanych URL, 58 różnych poprawnie odczytanych stron i 59 zapisanych READ.
+4 nieudane odczyty; brak dowodu awarii całego środowiska macOS. Początkowy BizCode
+EXTRACT przekroczył 120 s. Po usunięciu zduplikowanej wersji pakietu pojedyncze
+wznowienie checkpointu zakończyło się po 52,36 s; przyczyna timeoutu nie jest dowiedziona.
+Jedno review N-SOFT: CODEX_FAILED z oczyszczonym komunikatem „Selected model is at
+capacity”; późniejsze pojedyncze review identycznego payloadu PASS, bez zmiany modelu,
+tekstu lub faktów. Obydwa wcześniejsze błędy zachowane. 46 wywołań, bez zerowania budżetu.
+
+10 nowych firm po analizie: 7 szkiców po pełnych kontrolach, 3 pominięcia za brak
+właściwego kanału/dowodu. 6 kontroli: BizCode/OKE/Tukano/WizzDev ze szkicem,
+Merixstudio pytania rekrutacyjne bez zgody na CV, Payarto brak treści/kontaktu.
+Łącznie 13 zachowanych nowych wersji i 11 różnych szkiców po kontroli. Dwie dawne
+wersje z Windowsa są osobno oznaczone i nie liczone jako sukcesy tej sesji.
+
+AutoRelay w pełnym zatwierdzonym opisie dotarł do generatora BizCode/Tukano; CodeFabric
+do nowej wersji OKE po świeżym odczycie usług AI. Projekty występują w tekstach.
+Nie przypisano kandydatowi SAP, produkcji ani nowych projektów. Review PASS jest oceną
+zgodności, nie gwarancją jakości: część tekstów wylicza zbyt obszerny stack. Stylu nie
+przebudowano i nie poprawiono eksportu. Końcowy audyt skorygował dodatni licznik
+checkpointu z 9 do rzeczywiście zapisanych 11 kontroli przez ReviewBudget.recordChecked,
+bez zmiany HTTP/modeli/czasu lub wyników; zdarzenie w PRZEBIEG.
+
+Nie zweryfikowano PDF (`cvVerifiedInThisRun=false`), magazynu CA domowego Windowsa,
+Gmaila, prywatnej historii, gotowości wysyłek/dostarczalności ani pracy całodziennej.
+Snapshot zachowuje zawodowe fakty/ID i hash opublikowanej wersji. Diagnostyka ma zero
+approvals/outbox/send_attempts/auto sessions, DisabledMailProvider i brak gateway.
+Zero prawdziwych maili, SELF_TEST, odczytów skrzynki/OAuth lub zmian prywatnego runtime.
+
 ## Publiczny research na Windowsie — pakiet do weryfikacji
 
 Research 23:29–23:40 Europe/Warsaw, bazowy HEAD `a3bc37b`, dirty.
