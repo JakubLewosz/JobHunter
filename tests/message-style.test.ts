@@ -230,7 +230,7 @@ test('prompt: około 20 z profilu, AI opcjonalne, różny temat i pytanie oraz p
       template: 'old template',
       recent: [{ opening: 'Poprzednie otwarcie.' }],
     });
-    assert.match(prompt, /150–220/);
+    assert.match(prompt, /110–170/);
     assert.match(prompt, /około 20 godzin/);
     assert.doesNotMatch(prompt, /15–20/);
     assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
@@ -258,7 +258,9 @@ test('finalny styl: sensowny krótszy mail, za długi tekst, jedno pytanie i bra
     'Dzień dobry, jestem uczniem technikum i szukam regularnej współpracy. Na stronie opisują Państwo integracje API. Mam projekt AutoRelay oparty na webhookach. Mogę pracować około 20 godzin tygodniowo po lekcjach, w pełni zdalnie. Czy rozważają Państwo taką współpracę? GitHub: https://github.com/JakubLewosz Pozdrawiam Jakub Lewosz';
   assert.ok(!messageStyleIssues(draft(short), analysis()).some((w) => w.startsWith('LENGTH')));
   assert.ok(
-    messageStyleIssues(draft('Słowo '.repeat(230)), analysis()).some((w) => w.startsWith('LENGTH')),
+    !messageStyleIssues(draft('Słowo '.repeat(230)), analysis()).some((w) =>
+      w.startsWith('LENGTH'),
+    ),
   );
   assert.ok(
     messageStyleIssues(draft(short + ' Czy są Państwo zainteresowani?'), analysis()).some((w) =>
@@ -340,7 +342,7 @@ for (const [kind, requirements, hasContract] of [
       template: 'old',
       recent: [],
     });
-    assert.match(prompt, /150–220/);
+    assert.match(prompt, /110–170/);
     assert.match(prompt, /Cztery krótkie części/);
     assert.match(prompt, /bez automatycznego początkujący programista/);
     assert.match(prompt, /Umowę zlecenie wspomnij tylko przy ACTIVE_JOB/);

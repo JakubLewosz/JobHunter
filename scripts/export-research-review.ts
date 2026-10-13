@@ -14,6 +14,7 @@ const read = (file: string) => JSON.parse(readFileSync(join(dir, file), 'utf8'))
 const result = read('result.json'),
   budget = read('budget.json'),
   materials = read('materials-used.json');
+const autonomous = result.autonomous === true;
 const round = result.round === true;
 const privacy = existsSync(join(dir, 'redactions.json'))
   ? read('redactions.json')
@@ -179,7 +180,12 @@ const rows: any[] = budget.identities.map((domain: string) => {
       ? contactUsage(analysis, sourceIds.map((sid) => sources.get(sid)).filter(Boolean))
       : 'UNVERIFIED',
     offerDecision: analysis ? qualifyReal(analysis).decision : 'UNVERIFIED',
-    calls: tables.model_calls.filter((c) => items.some((i) => i.run_id === c.run_id)).length,
+    calls: autonomous
+      ? events.filter(
+          (e) =>
+            e.stage === 'MODEL_ATTRIBUTION' && e.outcome === 'STARTED' && e.identity === domain,
+        ).length
+      : tables.model_calls.filter((c) => items.some((i) => i.run_id === c.run_id)).length,
     requests: events.filter((e) => e.stage === 'HTTP' && domainOf(e.url) === domain).length,
     type: analysis
       ? (({ ACTIVE: 'A', OPEN: 'B', PROSPECT: 'C' } as any)[analysis.type] ?? 'nieznany')
@@ -253,6 +259,8 @@ const versions = tables.research_draft_materials.map((m) => {
     payload,
     context,
     company_id: d.company_id,
+    latest: d.version === m.version,
+    word_count: payload.body.trim().split(/\s+/).length,
     email: r.email ?? tables.contacts.find((c) => c.id === d.contact_id)?.email,
     review: r.semantic,
     warnings: r.warnings ?? [],
@@ -266,7 +274,12 @@ const checkHistory = existsSync(join(dir, 'checks-history.json'))
   ? read('checks-history.json')
   : [];
 for (const call of tables.model_calls.filter((c) => c.status === 'ERROR')) {
-  const item = tables.research_items.find((i) => i.run_id === call.run_id);
+  const attributed = events.find(
+    (e) => e.stage === 'MODEL_ATTRIBUTION' && e.call_id === call.id,
+  )?.identity;
+  const item = tables.research_items.find(
+    (i) => i.run_id === call.run_id && (!attributed || domainOf(i.url) === attributed),
+  );
   stageErrors.push({
     company_id:
       item?.company_id ??
@@ -341,7 +354,9 @@ const counts = {
     r.qualifications.some((q: any) => q.decision?.startsWith('READY_')),
   ).length,
   retained_versions: versions.length,
-  fully_checked_drafts: new Set(versions.filter((v) => v.checked).map((v) => v.draft_id)).size,
+  fully_checked_drafts: new Set(
+    versions.filter((v) => v.latest && v.checked).map((v) => v.draft_id),
+  ).size,
   code_rejected_versions: versions.filter((v) => v.code_status === 'REJECTED').length,
   historical_code_rejections: new Set(
     checkHistory
@@ -377,8 +392,9 @@ const counts = {
   send_approvals: 0,
   active_auto_sessions: 0,
 };
-const status =
-  result.outcome === 'BLOCKED_EXTERNAL'
+const status = autonomous
+  ? result.outcome
+  : result.outcome === 'BLOCKED_EXTERNAL'
     ? 'BLOCKED_EXTERNAL'
     : counts.analyzed_unique_firms
       ? 'PARTIAL'
@@ -462,7 +478,7 @@ write(
 let messages =
   '# Zachowane wiadomości\n\nWysyłki: 0. Są to rzeczywiste wyniki generatora; pozytywna kontrola nie udziela zgody na kontakt. Kopie publiczne nie są poprawiane stylistycznie.\n\n';
 for (const v of versions) {
-  messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version}\n\nOdbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Generacja: ${v.created_at}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
+  messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version} (${v.latest ? 'NAJNOWSZA' : 'starsza'})\n\nSłów: ${v.word_count}. Odbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Generacja: ${v.created_at}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
   for (const claim of v.payload.claims)
     messages += `| ${md(claim.text)} | ${claim.kind} | ${claim.factIds.join(', ')} | ${claim.evidenceIds.map((id: string) => id + ' → ' + (evidenceMap.get(id)?.source_id ?? 'BRAK')).join(', ')} |\n`;
   messages +=
@@ -508,7 +524,7 @@ const sourceCompany = (source: any) =>
   rows.filter((r) => r.source_ids.includes(source.id)).map((r) => r.company_id);
 let sourceText =
   '# Źródła i mapowanie dowodów\n\nŚwieży PUBLIC_HTTP oznacza rzeczywisty odczyt parserem aplikacji. FETCH_FAILED nie potwierdza zawartości witryny. Trop z web search nie jest dowodem. Pierwsza partia sprzed użycia systemowego CA zachowuje pierwotne statusy; późniejsze odczyty są osobnymi źródłami. Nie udostępniamy pełnych kopii stron.\n\n';
-if (round)
+if (round || autonomous)
   sourceText =
     '# Źródła i mapowanie dowodów\n\nPUBLIC_HTTP oznacza rzeczywisty odczyt parserem aplikacji w nowej sesji macOS. Błędy i niepełne treści nie dowodzą odmowy firmy. Preflight i firmy mają odrębne identyfikatory; dawne źródła Windowsa pozostają w poprzednim raporcie. Cytaty są ograniczone do informacji potrzebnych do kontroli, bez pełnych kopii stron.\n\n';
 for (const source of sources.values()) {
@@ -556,7 +572,7 @@ for (const source of sources.values()) {
     const context = JSON.parse(source.address_contexts ?? '[]').find(
       (c: any) => c.email.toLowerCase() === row.analysis.contact.email.toLowerCase(),
     );
-    sourceText += `Kontakt: **${row.analysis.contact.email}**, przeznaczenie **${row.purpose}**. Literalny kontekst adresu wskazany w analizie:\n\n> ${row.analysis.contact.proof.quote.slice(0, 220).replaceAll('\n', '\n> ')}\n\nKontekst parsera i cytat modelu kontrolowano osobno; nie zmieniamy UNKNOWN w RECRUITMENT podczas eksportu.\n\n`;
+    sourceText += `Kontakt: **${row.analysis.contact.email}**, przeznaczenie **${row.purpose}**. Literalny kontekst adresu wskazany w analizie:\n\n> ${row.analysis.contact.proof.quote.slice(0, 220).replaceAll('\n', '\n> ')}\n\nKontekst parsera (osobno od cytatu modelu):\n\n> ${context ? context.text.slice(0, 600).replaceAll('\n', '\n> ') : 'brak zachowanego kontekstu'}\n\n${context?.text.length > 600 ? '(Dosłowny początek kontekstu; dalsza część pominięta.)\n\n' : ''}Nie zmieniamy przeznaczenia przy eksporcie.\n\n`;
   }
 }
 sourceText +=
@@ -578,7 +594,7 @@ for (const e of events.filter((e) => ['LEADS_SAVED', 'SEARCH_CACHE_REPLAY'].incl
 write('ZRODLA.md', sourceText.replace(/[ \t]+$/gm, '').trimEnd() + '\n');
 write(
   'PROFIL_UZYTY.md',
-  (round
+  (round || autonomous
     ? '# Zatwierdzone materiały rzeczywiście użyte\n\nPochodzenie: publiczny snapshot zatwierdzonego profilu. cvVerifiedInThisRun=false; w tej próbie nie odczytano PDF.\n\n~~~json\n' +
       JSON.stringify(materials.provenance, null, 2) +
       '\n~~~\n\n'
@@ -593,7 +609,7 @@ let errors =
   '# Błędy i odrzucenia\n\n## Wykonanie\n\nPierwsza partia: wszystkie odczyty FETCH_FAILED. Kontrolny odczyt tej samej strony BizCode odtworzył UNABLE_TO_VERIFY_LEAF_SIGNATURE. Dla pozostałych wcześniejszych żądań szczegółowej przyczyny nie zapisano — nie przypisujemy im wstecz potwierdzonego kodu TLS. Node 24 obsługuje --use-system-ca; kontrolny odczyt z magazynem Windows dał 200/READ bez wyłączania TLS, DNS/SSRF lub sandboxa Codexa. Następna partia jest rzeczywistym ponowieniem rozpoczętych przypadków w niezerowanym budżecie.\n\n';
 errors +=
   'Mała poprawka kontroli linków: kropka kończąca zdanie w zatwierdzonym fakcie portfolio była porównywana jako część URL. Fixture odtworzył UNAPPROVED_LINK przed zmianą; po normalizacji wyłącznie końcowej interpunkcji test przechodzi, a inny docelowy URL pozostaje blokowany. Dwa zachowane teksty sprawdzono ponownie bez nowej generacji i bez zmiany faktów. Wyniki przed i po są jawne w historii kontroli.\n\n';
-if (round)
+if (round || autonomous)
   errors =
     '# Błędy i odrzucenia\n\nBłędy transportu, walidacji i wynik review są odrębne. Historycznego UNVERIFIED_TITLE Payarto nie rekonstruujemy: dawny payload nie został zachowany. Nowe błędy tytułu zachowują ograniczoną diagnostykę.\n\n';
 errors += checkHistory
@@ -631,7 +647,12 @@ const timeline = events.map((e) => {
   return enriched;
 });
 for (const call of tables.model_calls) {
-  const item = tables.research_items.find((i) => i.run_id === call.run_id);
+  const attributed = events.find(
+    (e) => e.stage === 'MODEL_ATTRIBUTION' && e.call_id === call.id,
+  )?.identity;
+  const item = tables.research_items.find(
+    (i) => i.run_id === call.run_id && (!attributed || domainOf(i.url) === attributed),
+  );
   timeline.push({
     timestamp: call.created_at,
     session_id: budget.sessionId,
@@ -753,6 +774,88 @@ if (round) {
       '\n',
   );
 }
+if (autonomous) {
+  const historical = 'docs/research-review/2026-10-13_08-10_macos-01a133d7';
+  const oldRows = parse(readFileSync(join(historical, 'FIRMY.csv'), 'utf8'), {
+    columns: true,
+  }) as any[];
+  const oldMessages = readFileSync(join(historical, 'WIADOMOSCI.md'), 'utf8');
+  const controls = rows.filter((r) => r.scope === 'CONTROL');
+  let comparison =
+    '# Porównanie wiadomości i mechanizmów\n\nPrzed: zapisany raport macOS, bez ponownego generowania historycznych tekstów. Po: świeże źródła kontrolne; żadnego ręcznego skracania maili. Fixture HTML jest rekonstrukcją opublikowanego cytatu, nie oryginalną stroną. Szczegóły walidacji i pomiarów offline: TEST_REPORT.\n\n';
+  let oldCopies = '';
+  for (const r of controls) {
+    const old = oldRows.find((b) => b.domena === r.domain);
+    const chunks = old
+      ? oldMessages
+          .split(/(?=^## )/m)
+          .filter((chunk) => chunk.startsWith('## ' + old.company_id + ' —'))
+      : [];
+    const before = chunks.at(-1)?.match(/~~~text\n([\s\S]*?)\n~~~/)?.[1];
+    const latest = versions.filter((v) => v.company_id === r.company_id && v.latest).at(-1);
+    comparison += `## ${r.name} (${r.domain})\n\nPrzed: kontakt ${old?.przeznaczenie ?? 'brak'}, wynik ${old?.wynik ?? 'brak'}, projekt ${old?.projekt ?? 'brak'}. Po: ${r.purpose}/${r.usage}, ${r.result}; oferta ${r.offerDecision}, decyzja kontaktowa ${r.qualifications.at(-1)?.decision ?? 'brak'}; projekt ${r.projects.join(', ') || 'brak'}.\n\nSłowa: ${before ? before.trim().split(/\s+/).length : 'brak historycznego maila'} → ${latest?.word_count ?? 'brak nowego maila'}. Status kontroli nowej wersji: ${latest?.checked ?? false}.\n\n`;
+    if (before) comparison += 'Przed (zapisany tekst):\n\n~~~text\n' + before + '\n~~~\n\n';
+    if (latest)
+      comparison += 'Po (nowa generacja):\n\n~~~text\n' + redact(latest.payload.body) + '\n~~~\n\n';
+    else comparison += 'Nie dopisano nowego szkicu: ' + r.skip + '\n\n';
+    oldCopies += chunks.join('\n');
+  }
+  comparison +=
+    '## Transparent Data: miejsce utraty przeznaczenia\n\nParser fixture zachowuje literalny adres i kontekst bez niezwiązanej sprzedaży. Przed poprawką validateAnalysis degraduje zaproponowany RECRUITMENT do UNKNOWN, bo whitelist nie rozpoznaje „chcesz do nas dołączyć? Napisz…”. Po poprawce rozpoznaje ten język także przy fikcyjnej firmie/adresie hello@. Dawny raw payload modelu nie jest w publicznym raporcie, więc nie dowodzimy, jaką pierwotną etykietę wybrał model. To odtworzenie wystarczającej przyczyny w kodzie, a świeża próba osobno sprawdza cały ciąg. Pytania nie dają prawa do CV, prefiks nie dowodzi przeznaczenia; zostaw CV jest oddzielnie rozpoznawane. Brak bieżącej roli nie wygasza OPEN; jawna odmowa nadal blokuje. Nie dodano wymogu zlecenia.\n\n';
+  comparison +=
+    '## Planer: test przed/po i rzeczywiste cykle\n\nFixture: oferta pozostaje REJECTED; osobne udokumentowane COMPANY_INQUIRY. Kontakty 0 → 1, matchedOffers=0, companyInquiries=1, rejected=0. Temat AutoRelay wynika z tej samej projectSelection co szkic, z literalnej działalności; brak trafnego tytułu/wymagań nie usuwa sygnału. Jedna firma/licznik mimo kolejnych wersji. Puste/duplikatowe wyniki zmieniają kierunek i zachowują cooldown; awaria czytnika nie zwiększa licznika wyczerpania rynku.\n\n~~~json\n' +
+    JSON.stringify(result.cycles, null, 2) +
+    '\n~~~\n';
+  write('POROWNANIE.md', comparison);
+  write(
+    'WIADOMOSCI.md',
+    messages +
+      '\n## Wersje historyczne kontrolnych firm\n\nPoniższe wersje pozostają historyczne, poza licznikami nowych wersji. Ich source/evidence IDs odnoszą się do [poprzedniego pakietu](../2026-10-13_08-10_macos-01a133d7/README.md). Zachowano tematy, treści, hashe i kontrole.\n\n' +
+      oldCopies,
+  );
+  const cycles = events.filter((e) => e.stage === 'PLANNER' && e.outcome === 'CYCLE_COMPLETED');
+  const newRows = rows.filter((r) => r.scope === 'NEW');
+  const newLatest = versions.filter(
+    (v) => v.latest && newRows.some((r) => r.company_id === v.company_id),
+  );
+  const discovery = {
+    directions: cycles.length,
+    new_firms_started: newRows.length,
+    new_firms_analyzed: newRows.filter((r) => r.analysis).length,
+    literal_contacts: newRows.filter((r) => r.analysis?.contact?.email).length,
+    eligible_contacts: newRows.filter((r) =>
+      r.qualifications.at(-1)?.decision?.startsWith('READY_'),
+    ).length,
+    latest_checked_drafts: newLatest.filter((v) => v.checked).length,
+    all_versions: versions.filter((v) => newRows.some((r) => r.company_id === v.company_id)).length,
+    technical_item_errors: newRows.flatMap((r) =>
+      r.items.filter((i: any) => ['ERROR', 'UNAVAILABLE'].includes(i.status)),
+    ).length,
+    manual_interventions: result.manualInterventions,
+  };
+  result.discovery = discovery;
+  write(
+    'README.md',
+    `# Samodzielny research JobHunter — ${name}\n\nWynik **${status}**, powód końca ${budget.stopReason}. Program sam wybierał kierunki przez QueryPlanner.next(), używał CodexSearchProvider i pełnego workera READ → EXTRACT → QUALIFY → DRAFT → SEMANTIC_REVIEW. Nowe firmy pochodzą z tych wyszukiwań. Kontrole są osobną grupą. Ręczne interwencje podczas publicznej pracy: **${result.manualInterventions}**.\n\n~~~json\n${JSON.stringify(discovery, null, 2)}\n~~~\n\nPoczątek publicznej części ${budget.firstPublicAt}, koniec ${budget.endedAt}, czas ${((Date.parse(budget.endedAt) - Date.parse(budget.firstPublicAt)) / 60000).toFixed(2)} min. DEVELOPMENT; osobne dane poza repo. Kod ${result.code.head}, dirty=${result.code.dirty}; hashe w MANIFEST. Zatwierdzony profil z ${materials.provenance.commit}; cvVerifiedInThisRun=false, bez PDF.\n\nLimity tej jawnej diagnostyki: 90 minut, 20 nowych firm i 4 kontrole, 180 bezpośrednich prób HTTP (redirect/retry/preflight wliczone), 100 wywołań modelu (probe/search/extract/draft/review wliczone), bez zerowania. Wybrany skończony zakres harnessu: do czterech cykli po cztery nowe firmy. Nie zmienia limitów produktu ani małego smoke. Wszystkie publiczne operacje tej rundy korzystają z jednego budżetu. Wewnętrzny ruch HTTP usługi web search nie jest ujawniany przez CLI; liczba jego akcji i zapytań jest w przebiegu, a ścisłej liczby transportowej po stronie dostawcy nie można zweryfikować.\n\n| Licznik (nowe + kontrolne) | Wynik |\n| --- | ---: |\n` +
+      Object.entries(counts)
+        .map(([k, v]) => `| ${k} | ${v} |`)
+        .join('\n') +
+      '\n\nPreflight: ten sam PublicSourceReader i Node z --use-system-ca, bez zmian zaufania TLS lub SSRF. Domeny wcześniejszego raportu są pamięcią ALREADY_RESEARCHED, nie CONTACTED. Cykl z problemem zachowuje zadania; shared continuation stosuje istniejącą regułę AUTO dla pojedynczych błędów. Nie naprawiano ręcznie kolejki, decyzji, factIds ani projektów po rozpoczęciu.\n\nPrawdziwe maile **0**. DisabledMailProvider, brak gateway, Gmaila, zgód/send attempts/outbox/auto sessions. Brak zmian prywatnego runtime, nadawcy, OAuth, historii lub CV. To publiczny raport: kontakty firm mają publiczne źródła; prywatne dane osobiste w kopiach maili podlegają redakcji (zakres i hashe w MANIFEST). Nie publikujemy baz, sekretów, pełnych witryn lub toku rozumowania.\n\nNie jest to test dostarczalności ani gwarancja całodziennej pracy. Push nie wdraża domowego Windowsa. Pozostaje właściwy katalog i nowa/istniejąca instalacja, CV/materiały, CA/czytnik, konto/uprawnienia poczty i późniejszy świadomy pilotaż: [instrukcja Windows](../../URUCHOMIENIE_RANO.md).\n\n' +
+      [
+        'POROWNANIE.md',
+        'FIRMY.csv',
+        'WIADOMOSCI.md',
+        'ZRODLA.md',
+        'PROFIL_UZYTY.md',
+        'BLEDY.md',
+        'PRZEBIEG.jsonl',
+        'MANIFEST.json',
+      ]
+        .map((f) => `- [${f}](${f})`)
+        .join('\n') +
+      '\n',
+  );
+}
 const exportedFiles = readdirSync(output).filter((f) => f !== 'MANIFEST.json');
 const batchMaterials = readdirSync(dir)
   .filter((f) => /^materials-used(?:-batch-\d+)?\.json$/.test(f))
@@ -760,7 +863,7 @@ const batchMaterials = readdirSync(dir)
 const tests = existsSync(join(dir, 'test-results.json'))
   ? read('test-results.json')
   : { status: 'NOT_YET_RUN' };
-if (round)
+if (round || autonomous)
   writeFileSync(
     join(output, 'README.md'),
     readFileSync(join(output, 'README.md'), 'utf8') +
@@ -803,10 +906,12 @@ const manifest: any = {
   tokens: null,
   cv_sha256: materials.cvHash ?? null,
   profile_provenance: materials.provenance ?? null,
-  cvVerifiedInThisRun: !round,
+  cvVerifiedInThisRun: materials.provenance?.cvVerifiedInThisRun ?? !round,
   proposal_sha256: materials.proposalHash,
   profile_sha256: events.find((e) => e.stage === 'MATERIALS')?.profile_hash,
   counts,
+  discovery: result.discovery ?? null,
+  manual_interventions: result.manualInterventions ?? null,
   limits: result.limits ?? {
     milliseconds: 4 * 3600000,
     firms: 30,
@@ -827,7 +932,9 @@ const manifest: any = {
   limitations: [
     round
       ? 'macOS DEVELOPMENT: nie sprawdzono magazynu CA/Gmaila/prywatnej historii domowego Windowsa'
-      : 'Pierwsza partia bez potwierdzonych źródeł',
+      : autonomous
+        ? 'Jawna ograniczona diagnostyka publicznej części; 0 poczty, nie próba całodzienna'
+        : 'Pierwsza partia bez potwierdzonych źródeł',
     'Nieznane warunki nie są dowodem elastyczności',
     'Nie sprawdzono Gmaila lub produkcyjnej historii',
     'Model nie ujawnił wersji; brak pełnych danych tokenów dla audytu',

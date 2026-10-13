@@ -727,7 +727,7 @@ test('research: brak dowodu dopasowania projektu pozwala na szkic bez projektu i
   assert.ok(draft);
   assert.doesNotMatch(draft.body, /FixDesk|AutoRelay|CodeFabric|ElektroScan/);
   const prompt = runner.prompts.find((p) => p.includes('Przygotuj indywidualny'))!;
-  assert.match(prompt, /150–220/);
+  assert.match(prompt, /110–170/);
   assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
   assert.doesNotMatch(prompt, /"key":"autorelay"/);
   assert.match(prompt, /Fakty nadal pochodzą tylko z profile.facts/);

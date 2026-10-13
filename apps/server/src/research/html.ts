@@ -177,3 +177,41 @@ export function parsePublicHTML(html: string) {
     parserVersion,
   };
 }
+
+// Follow only literal same-site navigation, never invented mailbox or guessed page paths.
+export function relevantPageLinks(html: string, base: string): string[] {
+  const root = parseDocument(html),
+    matches: { url: string; score: number }[] = [];
+  const text = (node: any): string =>
+    node.type === 'text' ? node.data : (node.children ?? []).map(text).join(' ');
+  const visit = (node: any, depth = 0) => {
+    if (depth > 128 || ['script', 'style', 'noscript', 'template'].includes(node.name)) return;
+    if (node.name === 'a' && node.attribs?.href) {
+      try {
+        const url = new URL(node.attribs.href, base);
+        url.hash = '';
+        const label = (text(node) + ' ' + url.pathname).toLowerCase();
+        if (
+          url.origin === new URL(base).origin &&
+          !url.search &&
+          !/privacy|cookie|polityk|regulamin|terms|login|sign.?in/.test(label)
+        ) {
+          const score = /career|karier|rekrut|join-us|jobs/.test(label)
+            ? 5
+            : /contact|kontakt/.test(label)
+              ? 4
+              : /services|usługi|offer|oferta|products|produkt/.test(label)
+                ? 3
+                : /about|o-nas|case-stud|realizac/.test(label)
+                  ? 2
+                  : 0;
+          if (score && !/\.(pdf|png|jpg|zip)$/i.test(url.pathname))
+            matches.push({ url: url.href, score });
+        }
+      } catch {}
+    }
+    for (const child of node.children ?? []) visit(child, depth + 1);
+  };
+  visit(root);
+  return [...new Set(matches.sort((a, b) => b.score - a.score).map((v) => v.url))].slice(0, 12);
+}

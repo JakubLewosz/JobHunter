@@ -1000,8 +1000,8 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       if (this.state().paused && !this.state().stopped) {
         const reason = this.state().status;
         if (reason === 'ITEMS_NEED_REVIEW') {
-          this.store.exec("UPDATE runs SET status='PARTIAL' WHERE status='PAUSED'");
-          this.store.set('paused', false);
+          this.continueAfterItemErrors();
+          this.queryPlanner.reconcile(this.policyConfig()!.scopeHash);
         } else this.wait(reason);
       }
     } catch (e) {

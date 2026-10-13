@@ -110,3 +110,62 @@ test('planner prioritizes an approved topic supported by productive qualified re
   assert.match(plan.query!, /przetwarzanie dokumentów PDF/);
   assert.doesNotMatch(plan.query!, /narzędzia LLM/);
 });
+
+test('planner measures documented company inquiry separately from rejected offer and shares project selector', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'jh-plan-inquiry-')),
+    store = new Store(dir);
+  const baseReader = new FixtureReader(),
+    baseRunner = new FixtureRunner();
+  const reader = {
+    read: async (url: string) => {
+      const s = await baseReader.read(url);
+      s.text += '\nJunior Developer. Tworzymy integracje API i automatyzacje.';
+      s.fragment = s.text;
+      return s;
+    },
+  };
+  const runner = {
+    inspect: () => baseRunner.inspect(),
+    run: async (prompt: string, schema: any, options?: any) => {
+      const r = await baseRunner.run(prompt, schema, options);
+      if (prompt.includes('Wydobądź firmę')) {
+        const a: any = r.value;
+        a.title = 'Junior Developer';
+        a.titleProof = { ...a.titleProof, quote: 'Junior Developer' };
+        a.conditions.remote.value = 'no';
+        a.conditions.remote.scope = 'OFFER';
+        a.inquiryBasis = {
+          sourceId: a.companyProof.sourceId,
+          quote: 'Tworzymy integracje API i automatyzacje.',
+          explanation: 'Separate company service.',
+        };
+        a.companyActivities = [a.inquiryBasis];
+        a.requirements = [];
+      }
+      return r;
+    },
+  };
+  const service = new ResearchJobHunter(store, { reader, runner });
+  t.after(() => {
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+  service.approveProfile();
+  await service.probe('search');
+  const planner = new QueryPlanner(store, () => new Date());
+  const policy = { scopeHash: 'inquiry-scope', searchScope: 'Polska' };
+  const plan = planner.next(policy, service.minimalProfile().facts);
+  await service.start(plan.query);
+  const run = store.one("SELECT * FROM runs WHERE status='QUEUED'")!;
+  planner.started(plan.id!, run.id);
+  await service.tick();
+  planner.reconcile(policy.scopeHash);
+  assert.equal(store.one('SELECT decision FROM opportunities')!.decision, 'REJECTED');
+  const metrics = JSON.parse(store.one('SELECT metrics FROM auto_query_plan')!.metrics);
+  assert.equal(metrics.contacts, 1);
+  assert.equal(metrics.matchedOffers, 0);
+  assert.equal(metrics.companyInquiries, 1);
+  assert.equal(metrics.rejected, 0);
+  assert.equal(metrics.topicCounts.autorelay, 1);
+  assert.equal(metrics.topicCounts.fixdesk, 0);
+});

@@ -1,7 +1,11 @@
 import { Store } from '../db.js';
+import { companyHistoryBlocks } from '../prior-applications.js';
 import { hash, iso } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import { dayQueries } from './service.js';
+import { contactEligibility, qualifyReal, validateAnalysis } from './contracts.js';
+import { projectSelection } from './drafting.js';
+import type { Source } from './fetcher.js';
 
 export const normalizeQuery = (query: string) =>
   query
@@ -68,23 +72,63 @@ export class QueryPlanner {
         codefabric: 0,
         elektroscan: 0,
       };
+      const allowed = new Map<string, string>(),
+        offers = new Set<string>(),
+        rejected = new Set<string>(),
+        missing = new Set<string>(),
+        checked = new Set<string>();
+      const facts = this.store.all(
+        "SELECT id,fact_key AS key,content,approval_status FROM candidate_facts WHERE approval_status='APPROVED'",
+      );
       for (const item of items) {
-        const q = item.opportunity_id
-          ? this.store.one(
-              'SELECT o.decision,r.details FROM opportunities o JOIN research_qualifications r ON r.opportunity_id=o.id WHERE o.id=?',
-              item.opportunity_id,
+        if (!item.analysis || !item.company_id || !item.opportunity_id) {
+          if (!['ERROR', 'UNAVAILABLE'].includes(item.status)) missing.add(item.id);
+          continue;
+        }
+        try {
+          const sources = this.store.all(
+            'SELECT * FROM research_sources WHERE id IN (SELECT value FROM json_each(?))',
+            item.source_ids,
+          ) as Source[];
+          const a = validateAnalysis(JSON.parse(item.analysis), sources);
+          const fit = qualifyReal(a),
+            contact = contactEligibility(a, sources);
+          const company = this.store.one('SELECT * FROM companies WHERE id=?', item.company_id)!;
+          if (fit.decision === 'READY_APPLICATION') offers.add(item.company_id);
+          if (companyHistoryBlocks(this.store, company)) continue;
+          if (contact.allowed) {
+            if (!allowed.has(item.company_id)) {
+              allowed.set(item.company_id, contact.intent);
+              // The same verified task selector used by drafting; no second title/stack matcher.
+              for (const p of projectSelection(facts, a).selected) topicCounts[p.fact.key]++;
+            }
+          } else if (
+            fit.decision === 'NEEDS_REVIEW' &&
+            /Niepotwierdzone|Brak osobnego|Sprzeczne/.test(contact.reason)
+          )
+            missing.add(item.company_id);
+          else rejected.add(item.company_id);
+          const draft = this.store.one(
+            'SELECT d.*,r.semantic_review,m.code_status,m.review_status FROM drafts d JOIN research_drafts r ON r.draft_id=d.id JOIN research_draft_materials m ON m.draft_id=d.id AND m.version=d.version WHERE d.opportunity_id=? ORDER BY d.version DESC LIMIT 1',
+            item.opportunity_id,
+          );
+          if (draft) {
+            const review = JSON.parse(draft.semantic_review);
+            if (
+              draft.code_status === 'PASS' &&
+              draft.review_status === 'COMPLETED' &&
+              review.supported === true &&
+              !review.issues.length
             )
-          : null;
-        if (!q?.decision.startsWith('READY_')) continue;
-        const a = JSON.parse(q.details),
-          context = [a.title, ...a.requirements.map((r: Row) => r.text)].join(' ');
-        for (const [key, pattern] of Object.entries({
-          fixdesk: /php|laravel/i,
-          autorelay: /integrac|webhook|\bapi\b/i,
-          codefabric: /\bllm\b|lokalne modele/i,
-          elektroscan: /pdf|dokument/i,
-        }))
-          if (pattern.test(context)) topicCounts[key]++;
+              checked.add(item.company_id);
+          }
+        } catch {
+          missing.add(item.id);
+        }
+      }
+      for (const key of allowed.keys()) {
+        rejected.delete(key);
+        missing.delete(key);
       }
       const metrics = {
         topicCounts,
@@ -94,16 +138,15 @@ export class QueryPlanner {
           "SELECT count(DISTINCT s.id) n FROM research_items i,json_each(i.source_ids) j JOIN research_sources s ON s.id=j.value WHERE i.run_id=? AND s.status='READ'",
           run.id,
         )!.n,
-        contacts: this.store.one(
-          "SELECT count(DISTINCT c.id) n FROM research_items i JOIN opportunities o ON o.id=i.opportunity_id JOIN contacts c ON c.id=o.contact_id WHERE i.run_id=? AND o.decision LIKE 'READY_%'",
-          run.id,
-        )!.n,
-        rejected: items.filter(
-          (i) =>
-            i.opportunity_id &&
-            this.store.one('SELECT decision FROM opportunities WHERE id=?', i.opportunity_id)
-              ?.decision === 'REJECTED',
+        contacts: allowed.size,
+        matchedOffers: offers.size,
+        openApplications: [...allowed.values()].filter((i) => i === 'OPEN_APPLICATION').length,
+        companyInquiries: [...allowed.values()].filter(
+          (i) => i === 'COMPANY_INQUIRY' || i === 'CONDITIONS_INQUIRY',
         ).length,
+        checkedDrafts: checked.size,
+        rejected: rejected.size,
+        missingData: missing.size,
         errors: items
           .filter((i) => ['ERROR', 'UNAVAILABLE'].includes(i.status))
           .map((i) => i.error),
@@ -115,7 +158,12 @@ export class QueryPlanner {
         row.id,
       );
       const key = `plannerEmpty:${scopeHash}`;
-      const empty = run.discovered === 0 ? this.store.get<number>(key, 0) + 1 : 0;
+      const technicalFailure = !!run.error || metrics.errors.length > 0;
+      const empty = technicalFailure
+        ? 0
+        : run.discovered === 0
+          ? this.store.get<number>(key, 0) + 1
+          : 0;
       this.store.set(key, empty);
       if (empty >= 3)
         this.store.set(

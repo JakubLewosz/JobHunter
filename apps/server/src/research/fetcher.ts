@@ -5,7 +5,7 @@ import { request as httpsRequest } from 'node:https';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 import { Readable } from 'node:stream';
 import { hash, id, iso, DomainError } from '../util.js';
-import { parsePublicHTML, parserVersion, addressContexts } from './html.js';
+import { parsePublicHTML, parserVersion, addressContexts, relevantPageLinks } from './html.js';
 
 export function publicIP(address: string): boolean {
   const ip = address.toLowerCase();
@@ -88,6 +88,7 @@ export type Source = {
 };
 export interface SourceReader {
   read(url: string, signal?: AbortSignal): Promise<Source>;
+  relatedURLs?(url: string): string[];
 }
 type Response = {
   status: number;
@@ -138,6 +139,10 @@ export class PublicSourceReader implements SourceReader {
         process.execArgv.includes('--use-system-ca') || process.env.NODE_USE_SYSTEM_CA === '1',
       sources,
     };
+  }
+  private navigation = new Map<string, string[]>();
+  relatedURLs(url: string) {
+    return this.navigation.get(url) ?? [];
   }
   private active = 0;
   private waiting: (() => void)[] = [];
@@ -264,7 +269,12 @@ export class PublicSourceReader implements SourceReader {
         }
         result.status = result.text ? 'READ' : 'EMPTY';
         if (result.status === 'READ') this.commonFailures.clear();
-        if (result.status === 'READ') this.options.onHTML?.(url.href, response.body);
+        if (result.status === 'READ') {
+          if (this.navigation.size >= 128)
+            this.navigation.delete(this.navigation.keys().next().value!);
+          this.navigation.set(url.href, relevantPageLinks(response.body, url.href));
+          this.options.onHTML?.(url.href, response.body);
+        }
         result.content_hash = hash(JSON.stringify({ parserVersion, body: response.body }));
         result.fragment = result.text.slice(0, 1200);
         break;

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Store } from '../db.js';
-import { ResearchJobHunter } from './service.js';
+import { ResearchJobHunter, type SearchProvider } from './service.js';
 import { DisabledMailProvider } from '../providers.js';
 import { ExecCodexRunner, type StructuredRunner } from './codex.js';
 import type { SourceReader } from './fetcher.js';
@@ -102,6 +102,7 @@ export function createPublicDiagnostic(
     runner?: StructuredRunner;
     reader?: SourceReader;
     maxCompanies?: number;
+    search?: SearchProvider;
     materials?: Materials;
   } = {},
 ) {
@@ -116,6 +117,7 @@ export function createPublicDiagnostic(
     mode: 'AUTO_POLICY',
     runner,
     reader: options.reader,
+    search: options.search,
   });
   if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service)
     throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');

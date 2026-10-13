@@ -52,7 +52,7 @@ import {
   type Analysis,
 } from './contracts.js';
 import { parserVersion } from './html.js';
-const analysisPolicyVersion = 3;
+const analysisPolicyVersion = 4;
 const researchInstructions =
   baseResearchInstructions +
   '\nZdalna obsługa klientów lub spotkania online nie potwierdzają zdalnej pracy kandydata. Ceny usług nie potwierdzają wynagrodzenia. Warunki zatrudnienia wymagają osobnych dowodów; inaczej pozostają unknown.';
@@ -2117,6 +2117,19 @@ export class ResearchJobHunter extends JobHunter {
                 if (/[^\s@]+@[^\s@]+\.[^\s@]+/.test(sources.at(-1)!.text)) break;
               }
             }
+            // Bounded literal navigation, also when an unrelated footer already has a mailbox.
+            const primary = sources[0];
+            for (const next of this.reader.relatedURLs?.(primary.final_url ?? item.url) ?? []) {
+              if (sources.length >= 5) break;
+              const u = publicURL(next);
+              if (
+                u.origin !== new URL(primary.final_url ?? item.url).origin ||
+                sources.some((s) => s.original_url === u.href || s.final_url === u.href)
+              )
+                continue;
+              sources.push(await this.readSource(u.href, signal));
+              signal.throwIfAborted();
+            }
             signal.throwIfAborted();
             this.store.exec(
               "UPDATE research_items SET source_ids=?,stage='EXTRACT',updated_at=? WHERE id=?",
@@ -2329,6 +2342,15 @@ export class ResearchJobHunter extends JobHunter {
       runId,
     );
     this.store.set('workerStatus', stage);
+  }
+  // Shared AUTO/public-diagnostic continuation: preserve failed items and release only this cycle.
+  // Explicit Pause/Stop/provider failures never pass this guard.
+  continueAfterItemErrors() {
+    if (this.researching || this.state().stopped || this.state().status !== 'ITEMS_NEED_REVIEW')
+      return false;
+    this.store.exec("UPDATE runs SET status='PARTIAL' WHERE status='PAUSED' AND error IS NULL");
+    this.store.set('paused', false);
+    return true;
   }
   retryItem(itemId: string) {
     if (this.researching) throw new DomainError('BUSY', 'Wstrzymaj pracę przed ponowieniem.');

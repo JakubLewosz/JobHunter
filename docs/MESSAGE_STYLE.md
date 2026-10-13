@@ -7,7 +7,7 @@ smoke:public ma nowy katalog diagnostyczny i technicznie brak Gmaila (URUCHOMIEN
 
 Aktualizacja z 8 października 2026 na podstawie schematu Jakuba. Zastępuje obowiązkowe AI na początku i schemat 80–130 słów.
 
-Aktualne drobne poprawki języka: naturalny mail programisty szukającego regularnej współpracy. Cztery części pozostają: kim jestem/cel → fakt o firmie i krótki opis jednego projektu → dostępność → pytanie, następnie GitHub i podpis. Standardowo 150–220 słów, bez pustych zdań i powtórzeń. Bez automatycznego „początkujący programista” w zakończeniu.
+Aktualne drobne poprawki języka: naturalny mail programisty szukającego regularnej współpracy. Cztery części pozostają: kim jestem/cel → fakt o firmie i krótki opis jednego projektu → dostępność → pytanie, następnie GitHub i podpis. Od 13 października orientacyjnie około 110–170 słów, bez obowiązkowego minimum i mechanicznego obcinania. Sama długość nie blokuje szkicu, firmy ani sesji. Jeden projekt w 1–2 rzeczowych zdaniach, 2–3 trafne funkcje lub umiejętności; technologie tylko, gdy pomagają ocenić dopasowanie. Pełny zatwierdzony opis pozostaje dostępny generatorowi i review. Krótszy kompletny mail jest lepszy niż powtarzanie celu, dostępności lub działalności firmy. Bez automatycznego „początkujący programista” w zakończeniu.
 
 Nawiązanie jest bezpośrednie: „Na Państwa stronie zwróciłem uwagę na…” lub „W ogłoszeniu zainteresowało mnie…”, zamiast relacji „Firma X tworzy…”. Projekty opisujemy neutralnie jako projekt, aplikację lub prototyp; słowo demo nie jest domyślne. Neutralna nazwa nie oznacza produkcji, która nadal wymaga dowodu. Poprawna odmiana, interpunkcja i szyk: „Nazywam się Jakub Lewosz”, „z osobą”. Tematy mają prosty format kandydatury z tytułem i nazwiskiem albo zapytania o współpracę z obszarem. Bez „z pasją”, „innowacyjnych rozwiązań” i innych marketingowych ozdobników.
 
@@ -38,7 +38,7 @@ Reguły wykrywają propozycje prezentacji, niepoparty status studenta, komercję
 
 Obce fakty/dowody i naruszenia prawdziwości pozostają blokowane. Pełna dyspozycyjność nie odpowiada profilowi po lekcjach. Walidacja zakresu odrzuca sztywne 20 h, kiedy zatwierdzony profil ma 15–20; dla obecnego profilu pozostaje około 20 zgodnie z osobną odpowiedzią użytkownika.
 
-Prezentacje portfolio, formalne otwarcia, sprzedażowe CTA, nadmiar słów, powtórzenia, tłumaczenie oczywistości dopasowania i umowa bez potwierdzenia dają uwagi stylistyczne oraz NEEDS_REVIEW, zamiast odrzucać merytorycznie poprawny szkic. Usunięto wzorce „To konkretny punkt wspólny”, „projekt pozostaje lokalnym demo”, „w odpowiedzi na Państwa zaproszenie” i „czy potrzebują Państwo pomocy”. Prawdziwy status demo/prototypu pozostaje częścią krótkiego opisu projektu. Umowa zlecenie tylko przy aktywnej ofercie wyraźnie ją potwierdzającej.
+Prezentacje portfolio, formalne otwarcia, sprzedażowe CTA, powtórzenia, tłumaczenie oczywistości dopasowania i umowa bez potwierdzenia dają uwagi stylistyczne oraz NEEDS_REVIEW, zamiast odrzucać merytorycznie poprawny szkic. Usunięto wzorce „To konkretny punkt wspólny”, „projekt pozostaje lokalnym demo”, „w odpowiedzi na Państwa zaproszenie” i „czy potrzebują Państwo pomocy”. Prawdziwy status demo/prototypu pozostaje częścią krótkiego opisu projektu. Umowa zlecenie tylko przy aktywnej ofercie wyraźnie ją potwierdzającej.
 
 Kontrola semantyczna zwraca true/false/null. Niepewność lub negatywna ocena zachowują NEEDS_REVIEW z problemami, bez zgody na wysyłkę. Problemy są zapisywane także przy supported=true.
 
