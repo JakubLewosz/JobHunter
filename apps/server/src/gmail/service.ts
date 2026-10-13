@@ -64,6 +64,11 @@ export class GmailJobHunter extends ResearchJobHunter {
       runtime?: Runtime;
     } = {},
   ) {
+    if (store.get('diagnosticOnly', false))
+      throw new DomainError(
+        'DIAGNOSTIC_MAIL_DISABLED',
+        'Baza diagnostyczna nie może uzyskać transportu ani uprawnień poczty.',
+      );
     super(store, {
       ...options,
       mode: options.mode === 'AUTO_POLICY' ? 'AUTO_POLICY' : 'APPROVAL_REQUIRED',

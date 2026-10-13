@@ -64,6 +64,23 @@ Configure nie tworzy bazy, nie zatwierdza materiałów/polityki i nie włącza s
 
 Sprawdź fakty/projekty, PDF, konto i zgody Gmaila, Codex/search oraz politykę kontaktów/tempa/limitów. GENERAL zachowuje GENERAL. Brak wakatu może uzasadniać zapytanie z dowodem działalności; nie udajemy dopasowania do oferty. Sprzedaż/faktury/RODO, odmowy firmy i wymagany kanał blokują kontakt.
 
+Publiczny przegląd może jawnie użyć opublikowanego, zatwierdzonego `PROFIL_UZYTY.md`
+przez `--snapshot-profile` i `--snapshot-commit` w `scripts/public-research-review.ts`.
+Ten wariant zapisuje pochodzenie/hash i `cvVerifiedInThisRun=false`, nie odczytuje PDF.
+Baza `diagnosticOnly` nie może zostać otwarta przez usługę Gmail, także w WORKSTATION.
+Produkcyjne zatwierdzanie CV nadal wymaga rzeczywistego PDF i zgodnego hasha.
+
+Krótka kontrola publicznego czytnika na macOS lub później na domowym Windowsie:
+
+```sh
+node --use-system-ca --import tsx scripts/reader-preflight.ts
+```
+
+Polecenie używa kilku niezależnych hostów, liczy redirecty/próby i nie otwiera bazy lub
+Gmaila. Flaga jest lokalna dla procesu; nie zmienia systemowego zaufania. PASS na macOS
+nie potwierdza magazynu CA Windowsa. Właściwy przegląd wykonuje preflight w tym samym
+procesie i konfiguracji co research, w swoim wspólnym budżecie.
+
 ## Lokalna historia
 
 `LOCAL_ONLY` jest domyślną strategią, niezależną od trybu pracy. AUTO działa bez repo historii i operacji Git w Start/bramkach/senderze/Stop/readiness. Kontakty, aliasy, blokady, próby i rezerwacje pozostają w SQLite. Jeden profil ma jeden backend także na różnych portach; utrata blokady lub niespójność blokuje send.

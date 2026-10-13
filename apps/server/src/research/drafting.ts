@@ -38,44 +38,108 @@ function projectScores(context: string): Record<string, number> {
       (/\bphp\b/.test(context) ? 6 : 0) +
       (/usterk|ticket|helpdesk/.test(context) ? 8 : 0),
     autorelay:
-      (/automatyzac|automation/.test(context) ? 8 : 0) +
-      (/integrac|integration|webhook|\bapi\b/.test(context) ? 5 : 0),
-    codefabric: /lokaln.*model|local.*model|\bllm\b|językow|language model/.test(context)
+      (/automatyzac|automation|(?:łącz|connect|exchange|wymian).{0,65}(?:system|dane|data)|(?:dane|data).{0,65}(?:przepływ|flows|automatycz)/.test(
+        context,
+      )
+        ? 8
+        : 0) + (/integrac|integration|webhook|\bapi\b/.test(context) ? 5 : 0),
+    codefabric: /lokaln.*model|local.*model|\bllm\b|model.{0,40}język|language model/.test(context)
       ? 14
-      : /\bagent|narzędzi.*\bai\b|\bai\b/.test(context)
+      : /agent.{0,40}(?:ai|llm)|narzędzi.{0,60}\bai\b|\bai\b.{0,60}(?:tool|narzędzi|model|agent)|private\s+ai\s+environment/.test(
+            context,
+          )
         ? 10
         : 0,
     elektroscan:
-      (/\bpdf\b|dokument|document/.test(context) ? 7 : 0) +
-      (/analiz.*obraz|image|vision|elektrycz/.test(context) ? 8 : 0),
+      (/(?:analiz|przetwarz|extract|process|recogn|ocr).{0,70}(?:\bpdf\b|dokument|document)|(?:dokument|document|\bpdf\b).{0,70}(?:analiz|process|extract|recogn)/.test(
+        context,
+      )
+        ? 7
+        : 0) +
+      (/analiz.{0,50}obraz|(?:image|obraz).{0,50}(?:analys|process|recogn|analiz)|computer vision|(?:plan|schemat).{0,30}elektrycz/.test(
+        context,
+      )
+        ? 8
+        : 0),
+  };
+}
+export function projectSelection(facts: Row[], analysis: Row, evidence: Row[] = []) {
+  const proofs = [
+    analysis.inquiryBasis,
+    ...(analysis.type === 'PROSPECT' ? [analysis.typeProof] : []),
+    ...(analysis.companyActivities ?? []),
+    ...(analysis.requirements ?? []),
+  ].filter(Boolean);
+  // Callers validate these proof objects against saved READ sources first. Match the quote, not a hypothesis.
+  const meaningful = proofs.filter(
+    (p) =>
+      p.sourceId &&
+      p.quote &&
+      !/privacy|regulamin|polityk.{0,20}prywat|cookie|download.{0,15}terms|ignore.{0,20}instructions|ignoruj.{0,20}instrukcj/iu.test(
+        p.quote,
+      ),
+  );
+  const contexts = meaningful.map((p) => ({
+    sourceId: p.sourceId,
+    quote: p.quote,
+    scores: projectScores(p.quote),
+    evidenceIds: evidence
+      .filter(
+        (e) =>
+          e.sourceId === p.sourceId &&
+          e.fragment
+            ?.normalize('NFKC')
+            .replace(/\s+/g, ' ')
+            .toLowerCase()
+            .includes(p.quote.normalize('NFKC').replace(/\s+/g, ' ').toLowerCase()),
+      )
+      .map((e) => e.id),
+  }));
+  // A vacancy title is useful only with its own verified literal proof.
+  if (analysis.titleProof?.sourceId && analysis.titleProof?.quote)
+    contexts.push({
+      sourceId: analysis.titleProof.sourceId,
+      quote: analysis.titleProof.quote,
+      scores: projectScores(analysis.titleProof.quote),
+      evidenceIds: evidence
+        .filter((e) => e.sourceId === analysis.titleProof.sourceId)
+        .map((e) => e.id),
+    });
+  const projects = facts.filter((f) => projectKeys.includes(f.key));
+  const ranked = projects
+    .map((f) => ({
+      fact: f,
+      score: Math.max(0, ...contexts.map((c) => c.scores[f.key] ?? 0)),
+      proofs: contexts.filter((c) => (c.scores[f.key] ?? 0) > 0).map(({ scores, ...p }) => p),
+    }))
+    .sort((a, b) => b.score - a.score);
+  const selected = ranked[0]?.score ? [ranked[0]] : [];
+  if (
+    ranked[1]?.score >= 7 &&
+    contexts.some(
+      (c) =>
+        c.scores[ranked[1].fact.key] >= 7 &&
+        c.scores[ranked[1].fact.key] > (c.scores[ranked[0].fact.key] ?? 0),
+    ) &&
+    contexts.some(
+      (c) =>
+        c.scores[ranked[0].fact.key] >= 7 &&
+        c.scores[ranked[0].fact.key] > (c.scores[ranked[1].fact.key] ?? 0),
+    )
+  )
+    selected.push(ranked[1]);
+  return {
+    considered: projects.map((f) => ({ factId: f.id, project: f.key })),
+    selected,
+    reason: !projects.length
+      ? 'NO_APPROVED_PROJECTS'
+      : !contexts.length
+        ? 'NO_COMPANY_EVIDENCE'
+        : !selected.length
+          ? 'NO_PROJECT_MATCH'
+          : 'VERIFIED_TASK_MATCH',
   };
 }
 export function relevantProjectFacts(facts: Row[], analysis: Row): Row[] {
-  const context = [analysis.title, ...(analysis.requirements ?? []).map((r: Row) => r.text)]
-    .join(' ')
-    .toLowerCase();
-  const scores = projectScores(context);
-  const projects = facts.filter((f) => projectKeys.includes(f.key as (typeof projectKeys)[number]));
-  const ranked = projects
-    .map((f) => ({ fact: f, score: scores[f.key] ?? 0 }))
-    .sort((a, b) => b.score - a.score);
-  // No demonstrated connection means no project paragraph.
-  if (!ranked[0]?.score) return [];
-  const selected = [ranked[0].fact];
-  // Two projects need separate, verified requirements with distinct strongest matches.
-  const requirementMatches = new Set(
-    (analysis.requirements ?? []).map(
-      (r: Row) =>
-        Object.entries(projectScores(r.text))
-          .filter(([, score]) => score >= 7)
-          .sort((a, b) => b[1] - a[1])[0]?.[0],
-    ),
-  );
-  if (
-    ranked[1]?.score >= 7 &&
-    requirementMatches.has(ranked[0].fact.key) &&
-    requirementMatches.has(ranked[1].fact.key)
-  )
-    selected.push(ranked[1].fact);
-  return selected;
+  return projectSelection(facts, analysis).selected.map((p) => p.fact);
 }

@@ -63,7 +63,7 @@ export class FixtureRunner implements StructuredRunner {
         companyURL: 'https://fixture.example.test',
         companyProof: proof('Fixture Company'),
         title: sources[0].url.includes('two') ? 'Oferta dwa' : 'Junior PHP Laravel',
-        titleProof: proof('Junior PHP Laravel'),
+        titleProof: proof(sources[0].url.includes('two') ? 'Oferta dwa' : 'Junior PHP Laravel'),
         type: 'ACTIVE',
         typeProof: proof('Rekrutacja otwarta do 31 grudnia 2026'),
         conditions: Object.fromEntries(

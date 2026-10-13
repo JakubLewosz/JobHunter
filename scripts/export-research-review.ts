@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import { parse } from 'csv-parse/sync';
 import { hash } from '../apps/server/src/util.js';
+import { contactUsage, qualifyReal } from '../apps/server/src/research/contracts.js';
+import { projectSelection } from '../apps/server/src/research/drafting.js';
 import { cleanDiagnostic } from '../apps/server/src/research/codex.js';
 
 const dir = resolve(process.argv[2] ?? '');
@@ -12,6 +14,7 @@ const read = (file: string) => JSON.parse(readFileSync(join(dir, file), 'utf8'))
 const result = read('result.json'),
   budget = read('budget.json'),
   materials = read('materials-used.json');
+const round = result.round === true;
 const privacy = existsSync(join(dir, 'redactions.json'))
   ? read('redactions.json')
   : { emails: [], phones: [] };
@@ -61,6 +64,7 @@ const tableNames = [
   'draft_approvals',
   'auto_sessions',
   'audit_events',
+  'app_state',
 ];
 for (const path of paths) {
   const db = new Database(join(path, 'jobhunter.sqlite'), { readonly: true, fileMustExist: true });
@@ -169,6 +173,14 @@ const rows: any[] = budget.identities.map((domain: string) => {
     name: analysis?.company ?? 'Nazwa niezweryfikowana',
     domain,
     url: last?.url ?? events.find((e) => e.stage === 'COMPANY' && e.identity === domain)?.url,
+    scope:
+      events.find((e) => e.stage === 'COMPANY' && e.identity === domain && e.scope)?.scope ?? 'NEW',
+    usage: analysis
+      ? contactUsage(analysis, sourceIds.map((sid) => sources.get(sid)).filter(Boolean))
+      : 'UNVERIFIED',
+    offerDecision: analysis ? qualifyReal(analysis).decision : 'UNVERIFIED',
+    calls: tables.model_calls.filter((c) => items.some((i) => i.run_id === c.run_id)).length,
+    requests: events.filter((e) => e.stage === 'HTTP' && domainOf(e.url) === domain).length,
     type: analysis
       ? (({ ACTIVE: 'A', OPEN: 'B', PROSPECT: 'C' } as any)[analysis.type] ?? 'nieznany')
       : 'nieznany',
@@ -276,9 +288,12 @@ for (const item of tables.research_items.filter((i) => i.status === 'ERROR')) {
     stage: item.stage,
     code: item.error,
     attempts: item.attempts,
+    validation: tables.app_state.find((s) => s.key === `extractionFailure:${item.id}`)?.value
+      ? JSON.parse(tables.app_state.find((s) => s.key === `extractionFailure:${item.id}`).value)
+      : null,
     reason:
       item.error === 'UNVERIFIED_TITLE'
-        ? 'Tytuł nie ma sprawdzonego literalnego cytatu w źródłach. Surowego niepoprawnego payloadu ekstrakcji nie zachowano.'
+        ? 'Tytuł nie ma sprawdzonego literalnego cytatu; ograniczona diagnostyka jest w validation, jeśli została zachowana.'
         : 'Szczegółowa przyczyna poza zapisanym kodem nieustalona.',
     impact:
       item.error === 'UNAPPROVED_LINK'
@@ -287,7 +302,27 @@ for (const item of tables.research_items.filter((i) => i.status === 'ERROR')) {
   });
 }
 const sourceFailures = [...sources.values()].filter((s) => s.status !== 'READ');
+const httpURLs = events.filter((e) => e.stage === 'HTTP').map((e) => e.url);
 const counts = {
+  unique_requested_pages: new Set(httpURLs).size,
+  unique_read_pages: new Set(
+    [...sources.values()]
+      .filter((s) => s.status === 'READ')
+      .map((s) => s.final_url ?? s.original_url),
+  ).size,
+  repeat_http_requests: httpURLs.length - new Set(httpURLs).size,
+  new_firms_started: rows.filter((r) => r.scope === 'NEW').length,
+  new_firms_analyzed: rows.filter((r) => r.scope === 'NEW' && r.analysis).length,
+  controls_analyzed: rows.filter((r) => r.scope === 'CONTROL' && r.analysis).length,
+  technically_blocked_firms: rows.filter((r) => !r.analysis).length,
+  versions_with_selected_project: versions.filter(
+    (v) => v.context.profile.projectSelection?.selected?.length,
+  ).length,
+  versions_mentioning_selected_project: versions.filter((v) =>
+    v.context.profile.projectSelection?.selected?.some((p: any) =>
+      new RegExp(p.fact.key, 'i').test(v.payload.body),
+    ),
+  ).length,
   proposed_identities: budget.identities.length,
   analyzed_unique_firms: new Set(rows.filter((r) => r.analysis).map((r) => r.company_id)).size,
   index_rows: rows.length,
@@ -315,21 +350,34 @@ const counts = {
     (v) => v.review_status === 'COMPLETED' && v.review.supported === false,
   ).length,
   unverified_versions: versions.filter((v) => !v.checked).length,
-  rejected_firms: rows.filter(
+  rejected_firms: rows.filter((r) => r.analysis && r.qualifications.at(-1)?.decision === 'REJECTED')
+    .length,
+  historical_rejected_firm_decisions: rows.filter(
     (r) => r.analysis && r.qualifications.some((q: any) => q.decision === 'REJECTED'),
   ).length,
   source_failures_retained: sourceFailures.length,
   model_errors: tables.model_calls.filter((c) => c.status === 'ERROR').length,
   model_calls_total: budget.models,
   duplicates: events.filter((e) => /DUPLICATE/.test(e.outcome)).length,
-  replay_batches: events.filter((e) => e.outcome === 'RESUME_EXISTING_ONLY').length,
+  replay_batches: events.filter((e) =>
+    [
+      'RESUME_EXISTING_ONLY',
+      'SINGLE_REPLAY_AFTER_PACKET_DEDUP',
+      'FINAL_CONTROL_CORRECTION',
+    ].includes(e.outcome),
+  ).length,
   real_sends: 0,
   outbox: 0,
   send_attempts: 0,
   send_approvals: 0,
   active_auto_sessions: 0,
 };
-const status = counts.analyzed_unique_firms ? 'PARTIAL' : 'BLOCKED_EXTERNAL';
+const status =
+  result.outcome === 'BLOCKED_EXTERNAL'
+    ? 'BLOCKED_EXTERNAL'
+    : counts.analyzed_unique_firms
+      ? 'PARTIAL'
+      : 'BLOCKED_EXTERNAL';
 const dateParts = new Intl.DateTimeFormat('sv-SE', {
   timeZone: 'Europe/Warsaw',
   year: 'numeric',
@@ -361,6 +409,11 @@ const header = [
   'powod_pominiecia',
   'draft_ids',
   'duplicate_of',
+  'zakres_proby',
+  'zakres_adresu',
+  'decyzja_oferta',
+  'model_calls',
+  'http_requests',
 ];
 write(
   'FIRMY.csv',
@@ -385,6 +438,11 @@ write(
           r.skip,
           r.draft_ids.join(';'),
           r.duplicate_of ?? '',
+          r.scope,
+          r.usage,
+          r.offerDecision,
+          r.calls,
+          r.requests,
         ]
           .map(cell)
           .join(','),
@@ -398,6 +456,16 @@ for (const v of versions) {
   messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version}\n\nOdbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Generacja: ${v.created_at}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
   for (const claim of v.payload.claims)
     messages += `| ${md(claim.text)} | ${claim.kind} | ${claim.factIds.join(', ')} | ${claim.evidenceIds.map((id: string) => id + ' → ' + (evidenceMap.get(id)?.source_id ?? 'BRAK')).join(', ')} |\n`;
+  messages +=
+    '\nDobór projektu faktycznie przekazany generatorowi i review:\n\n~~~json\n' +
+    JSON.stringify(
+      v.context.profile.projectSelection ?? { reason: 'OLD_SELECTOR_NO_AUDIT' },
+      null,
+      2,
+    ) +
+    '\n~~~\n\nGenerator otrzymał evidenceIds → sourceIds: ' +
+    v.context.evidence.map((e: any) => e.id + ' → ' + e.sourceId).join(', ') +
+    '\n\n';
   messages +=
     '\nHistoria kontroli tego samego tekstu (wcześniejszego odrzucenia nie nadpisujemy w raporcie):\n\n| Czas | Etap | Kod | Review | code_id |\n| --- | --- | --- | --- | --- |\n' +
     checkHistory
@@ -440,6 +508,7 @@ for (const source of sources.values()) {
       a.titleProof,
       a.typeProof,
       a.inquiryBasis,
+      ...(a.companyActivities ?? []),
       ...Object.values(a.conditions),
       ...a.requirements,
       a.contact.proof,
@@ -449,14 +518,14 @@ for (const source of sources.values()) {
   }
   const unique = [...new Set(quotes)];
   sourceText += `## ${source.id}\n\nFirmy: ${sourceCompany(source).join(', ') || 'brak przypisania — diagnostyka sieciowa lub przerwany odczyt'}.\n\nURL: [${source.original_url}](${source.original_url}). Końcowy URL: ${source.final_url ?? 'brak'}.\n\nTytuł: ${md(source.title || 'brak odczytanego tytułu')}. Czas: ${source.fetched_at}; metoda: ${source.method}; status: **${source.status}**; HTTP: ${source.http_status ?? 'null'}; parser: ${source.parser_version ?? 'null'}; błąd: ${source.error ?? 'brak'}.\n\n`;
-  let quoteBudget = 350;
+  let quoteBudget = 1000;
   for (const quote of unique) {
     if (quoteBudget <= 0) {
       sourceText +=
         'Pozostałe fragmenty pominięte z limitu krótkich cytatów; nie są przedstawiane jako opublikowane w całości.\n\n';
       break;
     }
-    const excerpt = quote.slice(0, Math.min(150, quoteBudget));
+    const excerpt = quote.slice(0, Math.min(260, quoteBudget));
     quoteBudget -= excerpt.length;
     sourceText +=
       '> ' +
@@ -497,7 +566,11 @@ for (const e of events.filter((e) => ['LEADS_SAVED', 'SEARCH_CACHE_REPLAY'].incl
 write('ZRODLA.md', sourceText.replace(/[ \t]+$/gm, '').trimEnd() + '\n');
 write(
   'PROFIL_UZYTY.md',
-  '# Zatwierdzone materiały rzeczywiście użyte\n\nUżytkownik zatwierdził zestaw do tej diagnostyki i publikacji. Hash PDF sprawdzono bez edycji; PDF pozostaje poza repo. Podczas ekstrakcji użyto poniższego zestawu; generator dostawał podzbiór projektów wybrany przez istniejący kod. Dokładne ID podzbioru są przy każdej wersji wiadomości. Dodatkowe aktywności CV nie zostały przekazane jako fakty.\n\n' +
+  (round
+    ? '# Zatwierdzone materiały rzeczywiście użyte\n\nPochodzenie: publiczny snapshot zatwierdzonego profilu. cvVerifiedInThisRun=false; w tej próbie nie odczytano PDF.\n\n~~~json\n' +
+      JSON.stringify(materials.provenance, null, 2) +
+      '\n~~~\n\n'
+    : '# Zatwierdzone materiały rzeczywiście użyte\n\nUżytkownik zatwierdził zestaw do tej diagnostyki i publikacji. Hash PDF sprawdzono bez edycji; PDF pozostaje poza repo. Podczas ekstrakcji użyto poniższego zestawu; generator dostawał podzbiór projektów wybrany przez istniejący kod. Dokładne ID podzbioru są przy każdej wersji wiadomości. Dodatkowe aktywności CV nie zostały przekazane jako fakty.\n\n') +
     `Cel: ${materials.materials.goal}\n\n| ID | Klucz | Dokładna treść |\n| --- | --- | --- |\n` +
     [...factMap].map(([id, f]: any) => `| ${id} | ${f.key} | ${md(f.content)} |`).join('\n') +
     '\n\n## Schemat i ograniczenia przekazane jako template\n\n~~~text\n' +
@@ -508,6 +581,9 @@ let errors =
   '# Błędy i odrzucenia\n\n## Wykonanie\n\nPierwsza partia: wszystkie odczyty FETCH_FAILED. Kontrolny odczyt tej samej strony BizCode odtworzył UNABLE_TO_VERIFY_LEAF_SIGNATURE. Dla pozostałych wcześniejszych żądań szczegółowej przyczyny nie zapisano — nie przypisujemy im wstecz potwierdzonego kodu TLS. Node 24 obsługuje --use-system-ca; kontrolny odczyt z magazynem Windows dał 200/READ bez wyłączania TLS, DNS/SSRF lub sandboxa Codexa. Następna partia jest rzeczywistym ponowieniem rozpoczętych przypadków w niezerowanym budżecie.\n\n';
 errors +=
   'Mała poprawka kontroli linków: kropka kończąca zdanie w zatwierdzonym fakcie portfolio była porównywana jako część URL. Fixture odtworzył UNAPPROVED_LINK przed zmianą; po normalizacji wyłącznie końcowej interpunkcji test przechodzi, a inny docelowy URL pozostaje blokowany. Dwa zachowane teksty sprawdzono ponownie bez nowej generacji i bez zmiany faktów. Wyniki przed i po są jawne w historii kontroli.\n\n';
+if (round)
+  errors =
+    '# Błędy i odrzucenia\n\nBłędy transportu, walidacji i wynik review są odrębne. Historycznego UNVERIFIED_TITLE Payarto nie rekonstruujemy: dawny payload nie został zachowany. Nowe błędy tytułu zachowują ograniczoną diagnostykę.\n\n';
 errors += checkHistory
   .filter((h: any) => h.stage === 'BEFORE_CODE_FIX_RECHECK' && h.code_error)
   .map((h: any) => '~~~json\n' + JSON.stringify(h, null, 2) + '\n~~~\n')
@@ -602,6 +678,69 @@ write(
       .join('\n') +
     '\n',
 );
+if (round) {
+  const historical = resolve('docs/research-review/2026-10-12_23-29_windows-01a1313a');
+  const before = parse(readFileSync(join(historical, 'FIRMY.csv'), 'utf8'), { columns: true });
+  let comparison =
+    '# Porównanie przypadków kontrolnych\n\nHistoryczny raport pozostaje niezmieniony. Fixture jest rekonstrukcją opublikowanych skróconych cytatów, nie dawnym HTML. Świeży odczyt ma nowe sourceIds i czas; nie dowodzi, że dawna strona była identyczna. Żadnej dawnej utraconej odpowiedzi nie odtwarzamy.\n\n';
+  for (const r of rows.filter((r) => r.scope === 'CONTROL')) {
+    const old = before.find((b: any) => b.domena === r.domain);
+    const selection = r.drafts.at(-1)
+      ? JSON.parse(r.drafts.at(-1).context_json).profile.projectSelection
+      : r.analysis
+        ? projectSelection(
+            [...factMap].map(([id, f]: any) => ({ id, ...f })),
+            r.analysis,
+            tables.evidence
+              .filter((e) => e.company_id === r.company_id)
+              .map((e) => ({ ...e, sourceId: evidenceMap.get(e.id)?.source_id })),
+          )
+        : null;
+    comparison += `## ${r.name} (${r.domain})\n\nPrzed: ${old?.wynik}; ${old?.powod_pominiecia || 'kontrole PASS'}. Projekt przed: ${old?.projekt}.\n\nTeraz: ${r.result}; decyzja oferty ${r.offerDecision}; kontakt ${r.purpose}/${r.usage}; ${r.skip || 'nowy tekst przeszedł kontrole'}. Warunki nieznane: ${r.unknown.join(', ')}.\n\nŹródła nowego wyniku: ${r.source_ids.join(', ')}. Nowa generacja: ${r.draft_ids.join(', ') || 'brak'}.\n\n~~~json\n${JSON.stringify(selection, null, 2)}\n~~~\n\n`;
+  }
+  comparison +=
+    'Mechanizmy: dobór z literalnych usług/produktów zamiast samego tytułu; brak preferencji umowy pozostaje unknown, nie zgodą na B2B; rekrutacyjne pytanie nie dopuszcza CV; OFFER nie jest odmową COMPANY; OPEN/PROSPECT nie potrzebuje wymyślonego wakatu. Payarto: utracona historyczna wartość tytułu pozostaje nieustalona. OKE: dawny opis usług nie był opublikowany, dlatego podstawą jest świeży odczyt.\n';
+  comparison +=
+    '\n## Zachowane etapy tej sesji\n\n| itemId | URL | etap | status | kod | typ | kontakt |\n| --- | --- | --- | --- | --- | --- | --- |\n' +
+    tables.research_items
+      .map((i) => {
+        const a = i.analysis?.startsWith('{') ? JSON.parse(i.analysis) : null;
+        return `| ${i.id} | ${i.url} | ${i.stage} | ${i.status} | ${i.error ?? 'brak'} | ${a?.type ?? 'brak'} | ${a?.contact?.kind ?? 'brak'} |`;
+      })
+      .join('\n') +
+    '\n';
+  write('POROWNANIE.md', comparison);
+  const historicalMessages = readFileSync(join(historical, 'WIADOMOSCI.md'), 'utf8').split(
+    '## Firmy bez szkicu',
+  )[0];
+  write(
+    'WIADOMOSCI.md',
+    messages +
+      '\n## Wersje historyczne — osobny raport, nie nowe generacje\n\nPoniższe dwie wersje zachowano bez zmiany; nie są w licznikach tej sesji.\n\n' +
+      historicalMessages,
+  );
+  write(
+    'README.md',
+    `# Publiczna diagnostyka macOS — ${name}\n\nStatus **${status}**, zakończenie zakresu: ${budget.stopReason}. ${budget.firstPublicAt}–${budget.endedAt} UTC; Europe/Warsaw = UTC+02:00. Czas publicznej części: ${((Date.parse(budget.endedAt) - Date.parse(budget.firstPublicAt)) / 60000).toFixed(2)} min.\n\nBazowy commit: ${result.code.head}; badania używały zmienionego kodu o hashach w MANIFEST. DEVELOPMENT, osobna diagnostyczna SQLite poza repo. Profil: publiczny zatwierdzony snapshot z ${materials.provenance.commit}; cvVerifiedInThisRun=false.\n\nPreflight wykonano tym samym PublicSourceReader i procesem Node ${process.version} z --use-system-ca. Oficjalna dokumentacja: [Node 24.11.0](https://nodejs.org/download/release/v24.11.0/docs/api/cli.html#--use-system-ca). Bez zmian magazynu certyfikatów lub ustawień konta.\n\n| Licznik | Wynik |\n| --- | ---: |\n` +
+      Object.entries(counts)
+        .map(([k, v]) => `| ${k} | ${v} |`)
+        .join('\n') +
+      '\n\nBudżet: 90 minut od pierwszej operacji publicznej, 150 HTTP (redirecty, retry i błędy wliczone), 80 modeli, 10 nowych firm i 6 wskazanych kontroli. Nie zerowano liczników. Dokumentacja Node i GitHub/code fetch to czynności developerskie poza publicznym researchem firm.\n\nHTTP i modele przypisano do każdej firmy w CSV. Liczba wersji po kontroli jest osobna od liczby wersji z trafnym projektem. Personalizacja nie oznacza szansy zatrudnienia. Dwie stare wiadomości w WIADOMOSCI mają status historyczny i nie są nowymi sukcesami.\n\nPróba używała opublikowanych tropów, bez uzupełniającego wyszukiwania. Nieznane warunki pozostają pytaniem; pominięcie i awaria techniczna są odrębne. Historyczne błędy TLS innych firm i dawny payload Payarto pozostają nieustalone.\n\nPrawdziwe maile **0**; DisabledMailProvider, brak gateway/Gmail, approvals/outbox/send_attempts/auto_sessions. Research nie nadaje CONTACTED ani prawa do późniejszej wysyłki. Nie odczytano prywatnego runtime, CV, skrzynki lub OAuth. Push nie wdraża kodu na Windowsie. Nie sprawdzono domowego magazynu certyfikatów, Gmaila, prywatnej historii, dostarczalności ani pracy całodziennej. Windows CI dotyczy wyłącznie fixture.\n\n' +
+      [
+        'POROWNANIE.md',
+        'FIRMY.csv',
+        'WIADOMOSCI.md',
+        'ZRODLA.md',
+        'PROFIL_UZYTY.md',
+        'BLEDY.md',
+        'PRZEBIEG.jsonl',
+        'MANIFEST.json',
+      ]
+        .map((f) => `- [${f}](${f})`)
+        .join('\n') +
+      '\n',
+  );
+}
 const exportedFiles = readdirSync(output).filter((f) => f !== 'MANIFEST.json');
 const batchMaterials = readdirSync(dir)
   .filter((f) => /^materials-used(?:-batch-\d+)?\.json$/.test(f))
@@ -609,6 +748,15 @@ const batchMaterials = readdirSync(dir)
 const tests = existsSync(join(dir, 'test-results.json'))
   ? read('test-results.json')
   : { status: 'NOT_YET_RUN' };
+if (round)
+  writeFileSync(
+    join(output, 'README.md'),
+    readFileSync(join(output, 'README.md'), 'utf8') +
+      '\n## Weryfikacja kodu\n\n~~~json\n' +
+      JSON.stringify(tests, null, 2) +
+      '\n~~~\n',
+    'utf8',
+  );
 const manifest: any = {
   format_version: 1,
   session_id: budget.sessionId,
@@ -630,11 +778,19 @@ const manifest: any = {
       .find(Boolean) ?? null,
   model: tables.model_calls.map((c) => c.model).find(Boolean) ?? null,
   tokens: null,
-  cv_sha256: materials.cvHash,
+  cv_sha256: materials.cvHash ?? null,
+  profile_provenance: materials.provenance ?? null,
+  cvVerifiedInThisRun: !round,
   proposal_sha256: materials.proposalHash,
   profile_sha256: events.find((e) => e.stage === 'MATERIALS')?.profile_hash,
   counts,
-  limits: { hours: 4, firms: 30, checked_drafts: 20, models: 120, http: 150 },
+  limits: result.limits ?? {
+    milliseconds: 4 * 3600000,
+    firms: 30,
+    checkedDrafts: 20,
+    models: 120,
+    http: 150,
+  },
   redactions: versions
     .filter((v) => v.redacted)
     .map((v) => ({
@@ -646,7 +802,9 @@ const manifest: any = {
     })),
   missing_data: missing,
   limitations: [
-    'Pierwsza partia bez potwierdzonych źródeł',
+    round
+      ? 'macOS DEVELOPMENT: nie sprawdzono magazynu CA/Gmaila/prywatnej historii domowego Windowsa'
+      : 'Pierwsza partia bez potwierdzonych źródeł',
     'Nieznane warunki nie są dowodem elastyczności',
     'Nie sprawdzono Gmaila lub produkcyjnej historii',
     'Model nie ujawnił wersji; brak pełnych danych tokenów dla audytu',
@@ -687,7 +845,8 @@ for (const file of readdirSync(output)) {
     throw new Error('PRIVATE_PATH_OR_SECRET');
 }
 for (const link of readFileSync(join(output, 'README.md'), 'utf8').matchAll(/\]\(([^)]+)\)/g))
-  if (!existsSync(join(output, link[1]))) throw new Error('BROKEN_REPORT_LINK');
+  if (!/^https?:/.test(link[1]) && !existsSync(join(output, link[1])))
+    throw new Error('BROKEN_REPORT_LINK');
 writeFileSync(
   join(dir, 'export-audit.json'),
   JSON.stringify(

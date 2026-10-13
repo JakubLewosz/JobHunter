@@ -713,6 +713,9 @@ test('research: brak dowodu dopasowania projektu pozwala na szkic bez projektu i
       const value = result.value as Analysis;
       value.title = 'Fixture Company';
       value.titleProof = value.companyProof;
+      value.typeProof.quote = 'Tworzymy aplikacje webowe';
+      value.inquiryBasis = null;
+      value.companyActivities = [];
       value.requirements = [];
     }
     return result;

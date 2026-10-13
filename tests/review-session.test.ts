@@ -167,6 +167,11 @@ test('TLS trust failure is explicit without persisting raw error or weakening tr
   });
   const source = await reader.read('https://fixture.example.test');
   assert.equal(source.status, 'TLS_UNTRUSTED');
-  assert.equal(source.error, 'TLS_UNTRUSTED');
+  assert.deepEqual(JSON.parse(source.error!), {
+    category: 'TLS',
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    stage: 'HTTP',
+    retryable: false,
+  });
   assert.doesNotMatch(JSON.stringify(source), /fixture-private-detail/);
 });

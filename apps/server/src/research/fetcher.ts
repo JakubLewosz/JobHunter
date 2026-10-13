@@ -96,7 +96,49 @@ type Response = {
   body: string;
   retryAfter?: string;
 };
+export type ReadFailure = {
+  category: 'TLS' | 'DNS' | 'TIMEOUT' | 'HTTP' | 'LIMIT' | 'CANCELLED' | 'NETWORK' | 'POLICY';
+  code: string;
+  stage: string;
+  retryable: boolean;
+};
+export function readFailure(source: Source): ReadFailure | null {
+  try {
+    const v = JSON.parse(source.error ?? 'null');
+    return v?.category ? v : null;
+  } catch {
+    return null;
+  }
+}
+export function retryableRead(source: Source) {
+  const failure = readFailure(source);
+  return failure ? failure.retryable : ['TIMEOUT', 'FETCH_FAILED'].includes(source.status);
+}
+const tlsCodes = new Set([
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'CERT_HAS_EXPIRED',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+]);
 export class PublicSourceReader implements SourceReader {
+  private commonFailures = new Map<string, Set<string>>();
+  private environmentFailure: string | null = null;
+  async preflight(
+    urls = ['https://nodejs.org/', 'https://example.com/', 'https://www.wikipedia.org/'],
+  ) {
+    const sources: Source[] = [];
+    for (const url of urls) sources.push(await this.read(url));
+    return {
+      ok: sources.filter((s) => s.status === 'READ').length >= 2 && !this.environmentFailure,
+      environmentFailure: this.environmentFailure,
+      node: process.version,
+      systemCA:
+        process.execArgv.includes('--use-system-ca') || process.env.NODE_USE_SYSTEM_CA === '1',
+      sources,
+    };
+  }
   private active = 0;
   private waiting: (() => void)[] = [];
   private backoff = new Map<string, number>();
@@ -131,13 +173,22 @@ export class PublicSourceReader implements SourceReader {
     this.active++;
     const timeout = AbortSignal.timeout(this.options.timeoutMs ?? 15000);
     const combined = signal ? AbortSignal.any([timeout, signal]) : timeout;
+    let stage = 'POLICY';
+    let failedHost = new URL(original).hostname;
     try {
+      if (this.environmentFailure)
+        throw new DomainError(
+          'READER_ENVIRONMENT',
+          'Podejrzenie wspólnej awarii czytnika; seria wstrzymana.',
+        );
       let url = new URL(original);
       for (let redirects = 0; ; redirects++) {
         combined.throwIfAborted();
         publicURL(url.href);
         if ((this.backoff.get(url.hostname) ?? 0) > Date.now())
           throw new DomainError('HTTP_429', 'Serwis ograniczył odczyty; spróbuj później.');
+        stage = 'DNS';
+        failedHost = url.hostname;
         const host = url.hostname.replace(/^\[|\]$/g, '');
         const resolving = isIP(host)
           ? Promise.resolve([{ address: host, family: isIP(host) }])
@@ -145,7 +196,9 @@ export class PublicSourceReader implements SourceReader {
         const addresses = await abortable(resolving, combined);
         if (!addresses.length || addresses.some((x) => !publicIP(x.address)))
           throw new DomainError('SSRF_BLOCKED', 'DNS wskazuje niepubliczny adres.');
+        stage = 'BUDGET';
         this.options.beforeRequest?.(url.href);
+        stage = 'HTTP';
         const response = await (this.options.transport ?? this.download.bind(this))(
           url,
           addresses[0].address,
@@ -178,8 +231,15 @@ export class PublicSourceReader implements SourceReader {
             : response.status === 404
               ? 'NOT_FOUND'
               : 'HTTP_ERROR';
+          result.error = JSON.stringify({
+            category: 'HTTP',
+            code: `HTTP_${response.status}`,
+            stage,
+            retryable: [408, 502, 503, 504].includes(response.status),
+          });
           break;
         }
+        stage = 'PARSE';
         if (
           !/^(text\/html|text\/plain|application\/xhtml\+xml)\b/i.test(response.contentType ?? '')
         )
@@ -203,6 +263,7 @@ export class PublicSourceReader implements SourceReader {
           break;
         }
         result.status = result.text ? 'READ' : 'EMPTY';
+        if (result.status === 'READ') this.commonFailures.clear();
         if (result.status === 'READ') this.options.onHTML?.(url.href, response.body);
         result.content_hash = hash(JSON.stringify({ parserVersion, body: response.body }));
         result.fragment = result.text.slice(0, 1200);
@@ -210,19 +271,44 @@ export class PublicSourceReader implements SourceReader {
       }
     } catch (error) {
       if (signal?.aborted) throw new DomainError('CANCELLED', 'Przerwano odczyt.');
-      result.status = timeout.aborted
+      const rawCode =
+        error instanceof DomainError ? error.code : (error as { code?: string })?.code;
+      const code = timeout.aborted
         ? 'TIMEOUT'
-        : error instanceof DomainError
-          ? error.code
-          : [
-                'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
-                'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
-                'CERT_HAS_EXPIRED',
-                'DEPTH_ZERO_SELF_SIGNED_CERT',
-              ].includes((error as { code?: string })?.code ?? '')
-            ? 'TLS_UNTRUSTED'
-            : 'FETCH_FAILED';
-      result.error = result.status; // Never persist raw errors that may contain credentials or private paths.
+        : /^[A-Z][A-Z0-9_]{0,70}$/.test(rawCode ?? '')
+          ? rawCode!
+          : 'FETCH_FAILED';
+      const category: ReadFailure['category'] = tlsCodes.has(code)
+        ? 'TLS'
+        : ['ENOTFOUND', 'EAI_AGAIN', 'EAI_FAIL'].includes(code)
+          ? 'DNS'
+          : code === 'TIMEOUT'
+            ? 'TIMEOUT'
+            : code.startsWith('HTTP_')
+              ? 'HTTP'
+              : /LIMIT|BUDGET/.test(code)
+                ? 'LIMIT'
+                : code === 'CANCELLED'
+                  ? 'CANCELLED'
+                  : error instanceof DomainError
+                    ? 'POLICY'
+                    : 'NETWORK';
+      result.status =
+        category === 'TLS' ? 'TLS_UNTRUSTED' : category === 'DNS' ? 'DNS_FAILED' : code;
+      result.error = JSON.stringify({
+        category,
+        code,
+        stage,
+        retryable: ['TIMEOUT', 'EAI_AGAIN', 'ECONNRESET', 'ETIMEDOUT', 'EPIPE'].includes(code),
+      } satisfies ReadFailure);
+      // Independent sites with the same failure suggest an environment problem, never a firm refusal.
+      if (['TLS', 'DNS', 'TIMEOUT', 'NETWORK'].includes(category)) {
+        const key = category + ':' + code;
+        const hosts = this.commonFailures.get(key) ?? new Set<string>();
+        hosts.add(failedHost.replace(/^www\./, ''));
+        this.commonFailures.set(key, hosts);
+        if (hosts.size >= 3) this.environmentFailure = key;
+      }
     } finally {
       this.active--;
       this.waiting.shift()?.();

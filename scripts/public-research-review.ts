@@ -11,12 +11,16 @@ import {
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { createPublicDiagnostic } from '../apps/server/src/research/diagnostic.js';
+import {
+  createPublicDiagnostic,
+  reopenPublicDiagnostic,
+} from '../apps/server/src/research/diagnostic.js';
 import { ExecCodexRunner, cleanDiagnostic } from '../apps/server/src/research/codex.js';
 import { PublicSourceReader, publicURL } from '../apps/server/src/research/fetcher.js';
 import {
   ReviewBudget,
   proposalMaterials,
+  snapshotMaterials,
   relevantPageLinks,
 } from '../apps/server/src/research/review-session.js';
 import { DomainError, hash } from '../apps/server/src/util.js';
@@ -25,7 +29,7 @@ import { JobHunter } from '../apps/server/src/service.js';
 const args = process.argv.slice(2);
 const argument = (key: string) => args[args.indexOf(key) + 1];
 if (
-  !args.includes('--profile') ||
+  !(args.includes('--profile') || args.includes('--snapshot-profile')) ||
   !args.includes('--session-dir') ||
   !args.includes('--approved-profile')
 )
@@ -43,6 +47,7 @@ closeSync(descriptor);
 const old = existsSync(join(dir, 'budget.json'))
   ? JSON.parse(readFileSync(join(dir, 'budget.json'), 'utf8'))
   : null;
+const continueRound = args.includes('--continue-round');
 const resumeExisting = args.includes('--resume-existing');
 const previousResults = readdirSync(dir).filter((f) => /^result-batch-\d+\.json$/.test(f)).length;
 if (old?.endedAt) {
@@ -61,7 +66,11 @@ if (old?.endedAt) {
 const sessionId =
   old?.sessionId ??
   (args.includes('--session-id') ? argument('--session-id') : randomUUID().slice(0, 8));
-const budget = new ReviewBudget(dir, sessionId, resumeExisting);
+const round = args.includes('--round-cases');
+const limits = round
+  ? { milliseconds: 90 * 60000, firms: 16, checkedDrafts: 16, models: 80, http: 150 }
+  : undefined;
+const budget = new ReviewBudget(dir, sessionId, resumeExisting || continueRound, limits);
 const batchId = 'live-' + (previousResults + 1 + (old?.endedAt ? 1 : 0));
 const walk = (path: string): string[] =>
   readdirSync(path, { withFileTypes: true }).flatMap((f) =>
@@ -134,7 +143,12 @@ const snapshot = () => {
   );
 };
 try {
-  const materials = proposalMaterials(argument('--profile'), true);
+  const materials = args.includes('--snapshot-profile')
+    ? snapshotMaterials(argument('--snapshot-profile'), {
+        commit: argument('--snapshot-commit'),
+        path: 'docs/research-review/2026-10-12_23-29_windows-01a1313a/PROFIL_UZYTY.md',
+      })
+    : proposalMaterials(argument('--profile'), true);
   writeFileSync(
     join(dir, 'materials-used.json'),
     JSON.stringify(
@@ -168,39 +182,75 @@ try {
       return source;
     },
   };
-  diagnostic = createPublicDiagnostic(join(dir, 'batch-' + Date.now()), {
-    materials: materials.materials,
-    runner: budget.wrap(new ExecCodexRunner()),
-    reader,
-  });
+  diagnostic = continueRound
+    ? reopenPublicDiagnostic(
+        readFileSync(join(dir, 'database-path.txt'), 'utf8').trim(),
+        budget.wrap(new ExecCodexRunner()),
+        reader,
+      )
+    : createPublicDiagnostic(join(dir, 'batch-' + Date.now()), {
+        materials: materials.materials,
+        runner: budget.wrap(new ExecCodexRunner()),
+        reader,
+      });
   writeFileSync(join(dir, 'database-path.txt'), diagnostic.store.dir);
   budget.event('MATERIALS', 'APPROVED', {
     profile_hash: diagnostic.service.minimalProfile().hash,
-    proposal_hash: materials.proposalHash,
-    cv_hash: materials.cvHash,
+    proposal_hash: 'proposalHash' in materials ? materials.proposalHash : null,
+    cv_hash: 'cvHash' in materials ? materials.cvHash : null,
+    provenance: 'provenance' in materials ? materials.provenance : null,
     facts: Object.keys(materials.materials.facts),
     code_id: codeId,
   });
   timer = setInterval(() => {
     if (budget.reason() === 'TIME_LIMIT') diagnostic?.service.control('stop');
   }, 1000);
-  if (!resumeExisting) await diagnostic.service.probe('search');
+  if (!resumeExisting && !continueRound) {
+    const preflight = await rawReader.preflight();
+    for (const source of preflight.sources) {
+      diagnostic.service.saveSource(source);
+      budget.event('PREFLIGHT_READ', source.status, {
+        source_id: source.id,
+        url: source.original_url,
+        code: source.error,
+      });
+    }
+    writeFileSync(join(dir, 'preflight.json'), JSON.stringify(preflight, null, 2));
+    budget.event('PREFLIGHT', preflight.ok ? 'PASS' : 'BLOCKED_ENVIRONMENT', {
+      node: preflight.node,
+      systemCA: preflight.systemCA,
+      environmentFailure: preflight.environmentFailure,
+    });
+    if (!preflight.ok)
+      throw new DomainError(
+        'READER_ENVIRONMENT',
+        'Preflight Node nie potwierdził działania czytnika.',
+      );
+    await diagnostic.service.probe(round ? 'codex' : 'search');
+  }
+  const planned = round ? JSON.parse(readFileSync(argument('--round-cases'), 'utf8')) : null;
+  if (planned && (planned.filter((c: any) => c.scope === 'NEW').length > 10 || planned.length > 16))
+    throw new Error('ROUND_SCOPE_LIMIT');
+
   const queries = [
     'Polskie software house’y i zespoły SaaS: backend, integracje API, webhooki i automatyzacje. Priorytet udokumentowane otwarte kandydatury, juniorzy lub płatne staże. Wybierz do 10 różnych firm działających w Polsce, każda z oficjalną stroną i odpowiednim kontaktem. Około 20 godzin zdalnie po lekcjach jest pytaniem, nie potwierdzonym warunkiem. Bez Fingoweb. Nie zgaduj emaili.',
     'Nowe polskie zespoły produktowe i software house’y: PDF, computer vision, narzędzia wewnętrzne, LLM i automatyzacja. Także uczciwe zapytanie bez wakatu, ale z podstawą w działalności i odpowiednim kanałem kontaktu. Do 10 oficjalnych różnych stron firm, bez Fingoweb i bez wcześniej sprawdzonych domen.',
     'Polska: małe i średnie firmy programistyczne tworzące SaaS, web/backend i integracje API. Udokumentowane otwarte kandydatury lub płatne staże, ewentualnie zapytanie o regularną zdalną współpracę około 20 godzin po lekcjach. Do 10 nowych firm. Bez Fingoweb. Wymagany formularz i senior full-time nie są pasującą ofertą.',
   ];
-  for (let qi = 0; qi < queries.length && !budget.reason(!resumeExisting); qi++) {
-    const leads = resumeExisting
-      ? JSON.parse(readFileSync(join(dir, `leads-${qi + 1}.json`), 'utf8'))
-      : await diagnostic.service.search.search(
-          queries[qi] + '\nJuż poddane analizie domeny: ' + budget.state.identities.join(', '),
-        );
+  for (let qi = 0; qi < (round ? 1 : queries.length) && !budget.reason(!resumeExisting); qi++) {
+    const leads = round
+      ? { urls: planned }
+      : resumeExisting
+        ? JSON.parse(readFileSync(join(dir, `leads-${qi + 1}.json`), 'utf8'))
+        : await diagnostic.service.search.search(
+            queries[qi] + '\nJuż poddane analizie domeny: ' + budget.state.identities.join(', '),
+          );
     if (!resumeExisting)
       writeFileSync(join(dir, `leads-${qi + 1}.json`), JSON.stringify(leads, null, 2));
     budget.event('SEARCH', resumeExisting ? 'SEARCH_CACHE_REPLAY' : 'LEADS_SAVED', {
       batch_id: batchId,
       query_number: qi + 1,
+      lead_origin: round ? 'PUBLISHED_PREVIOUS_REPORT' : 'WEB_SEARCH',
       candidates: leads.urls,
     });
     for (const lead of leads.urls) {
@@ -223,6 +273,29 @@ try {
         budget.event('LEAD', 'NEW_FIRM_FORBIDDEN_AFTER_LIMIT', { url: url.href });
         continue;
       }
+      if (continueRound && budget.state.identities.includes(domain)) {
+        const prior = diagnostic.store.one(
+          "SELECT * FROM research_items WHERE status='PENDING' AND url=?",
+          url.href,
+        );
+        if (prior) {
+          budget.event('CHECKPOINT', 'SINGLE_REPLAY_AFTER_PACKET_DEDUP', {
+            item_id: prior.id,
+            identity: domain,
+            code_id: codeId,
+          });
+          await diagnostic.service.start();
+          await diagnostic.service.tick();
+          snapshot();
+          const run = diagnostic.store.one('SELECT * FROM runs WHERE id=?', prior.run_id)!;
+          if (run.error)
+            throw new DomainError(
+              run.error,
+              'Ponowiona kontrola przekroczyła granicę; bez dalszej pętli.',
+            );
+        }
+        continue;
+      }
       if (!resumeExisting && !budget.company(domain)) {
         budget.event('LEAD', 'DUPLICATE_DOMAIN', { url: url.href, duplicate_of_domain: domain });
         continue;
@@ -232,14 +305,19 @@ try {
         url: url.href,
         identity: domain,
         code_id: codeId,
+        scope: lead.scope ?? 'NEW',
       });
       const primary = await diagnostic.service.readSource(url.href);
       const sources = [primary];
+      if (primary.status === 'READER_ENVIRONMENT')
+        throw new DomainError('READER_ENVIRONMENT', 'Wspólna awaria czytnika.');
       const extra = [
         ...new Set(
-          [lead.contactUrl, ...(links.get(primary.final_url ?? url.href) ?? [])].filter(
-            Boolean,
-          ) as string[],
+          [
+            lead.contactUrl,
+            ...(lead.extraUrls ?? []),
+            ...(links.get(primary.final_url ?? url.href) ?? []),
+          ].filter(Boolean) as string[],
         ),
       ];
       const categories = new Set<string>();
@@ -253,7 +331,7 @@ try {
         }
         if (
           u.hostname.replace(/^www\./, '') !== domain ||
-          sources.some((s) => s.original_url === u.href)
+          sources.some((s) => s.original_url === u.href || s.final_url === u.href)
         )
           continue;
         const category = /career|karier|rekrut|jobs|join-us/.test(u.pathname)
@@ -271,17 +349,22 @@ try {
         stopReason = budget.reason()!;
         break;
       }
-      const imported = await diagnostic.service.importURL(url.href, lead.contactUrl ?? undefined);
+      const readable = sources.filter((s) => s.status === 'READ');
+      if (!readable.some((s) => s.original_url === primary.original_url)) {
+        budget.event('COMPANY', 'TECHNICALLY_BLOCKED', {
+          identity: domain,
+          url: url.href,
+          scope: lead.scope,
+          reason: primary.error ?? primary.status,
+        });
+        continue;
+      }
+      const imported = diagnostic.service.importSavedSources(
+        url.href,
+        readable.map((s) => s.id),
+      );
       if (imported.queued) {
-        // The ordinary pipeline receives all the actual, saved public sources; no invented extraction/decision.
-        const merged = [
-          ...new Set([...sources.map((s) => s.id), ...imported.sources.map((s) => s.id)]),
-        ];
-        diagnostic.store.exec(
-          "UPDATE research_items SET source_ids=?,stage='EXTRACT' WHERE run_id=?",
-          JSON.stringify(merged),
-          imported.runId,
-        );
+        const merged = imported.sources.map((s) => s.id);
         await diagnostic.service.tick();
         snapshot();
         const run = diagnostic.store.one('SELECT * FROM runs WHERE id=?', imported.runId)!;
@@ -355,6 +438,7 @@ try {
     'CLI_START',
     'CODEX_TIMEOUT',
     'SEARCH_UNAVAILABLE',
+    'READER_ENVIRONMENT',
   ].includes(stopReason)
     ? 'BLOCKED_EXTERNAL'
     : 'PARTIAL';
@@ -378,7 +462,11 @@ try {
   budget.event('SESSION', outcome, { stop_reason: stopReason, code_id: codeId, real_sends: 0 });
   writeFileSync(
     join(dir, 'result.json'),
-    JSON.stringify({ outcome, stopReason, budget: budget.state, code, codeId }, null, 2),
+    JSON.stringify(
+      { outcome, stopReason, budget: budget.state, code, codeId, limits: budget.limits, round },
+      null,
+      2,
+    ),
   );
   unlinkSync(lock);
   console.log(JSON.stringify({ outcome, stopReason, sessionId, budget: budget.state }));

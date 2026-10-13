@@ -93,7 +93,7 @@ export function reopenPublicDiagnostic(
     store.close();
     throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
   }
-  return { store, service };
+  return { store, service, summary: () => publicDiagnosticSummary(store, service) };
 }
 
 export function createPublicDiagnostic(
@@ -183,73 +183,74 @@ Alex Testowy`;
   });
   service.approveProfile();
   store.set('diagnosticOnly', true);
+  store.set('diagnosticSynthetic', !options.materials);
   store.exec('UPDATE campaigns SET max_candidates=? WHERE id=?', maximum, service.campaignId);
-  const summary = () => {
-    const run = store.one('SELECT status,stage,error FROM runs ORDER BY started_at DESC LIMIT 1');
-    const decisions = store.all('SELECT * FROM research_items').map((item) => {
-      if (typeof item.analysis !== 'string' || !item.analysis.startsWith('{'))
-        return { allowed: false, reason: item.error ?? item.status };
-      try {
-        const sources = service.sourcesFor(item);
-        return contactEligibility(validateAnalysis(JSON.parse(item.analysis), sources), sources);
-      } catch {
-        return { allowed: false, reason: 'Niepotwierdzony wynik analizy źródła.' };
-      }
-    });
-    const skipped: Record<string, number> = {};
-    for (const decision of decisions.filter((r) => !r.allowed))
-      skipped[decision.reason] = (skipped[decision.reason] ?? 0) + 1;
-    const drafts = service.draftRows();
-    const fullyChecked = drafts.filter((d) => {
-      const review = JSON.parse(d.semantic_review);
-      return (
-        review.supported === true && !review.issues.length && !service.draftMaterialIssues(d).length
-      );
-    });
-    return {
-      outcome:
-        run?.status === 'COMPLETED'
-          ? 'COMPLETED'
-          : run?.error
-            ? diagnosticOutcome(run.error)
-            : run
-              ? 'INCOMPLETE'
-              : 'NOT_STARTED',
-      stage: run?.stage ?? null,
-      error: run?.error ?? null,
-      synthetic: !options.materials,
-      mailDisabled: true,
-      firms: decisions.length,
-      pagesRead: store.one("SELECT count(*) n FROM research_sources WHERE status='READ'")!.n,
-      extractionsCompleted: store.one('SELECT count(*) n FROM research_extractions')!.n,
-      qualificationsCompleted: store.one('SELECT count(*) n FROM research_qualifications')!.n,
-      contactsQualified: decisions.filter((r) => r.allowed).length,
-      drafts: service.draftRows().length,
-      generatedVersions: store.one(
-        "SELECT count(*) n FROM model_calls WHERE stage='DRAFT' AND status='OK'",
-      )!.n,
-      validationRejections: store.one(
-        "SELECT count(*) n FROM research_draft_materials WHERE code_status='REJECTED'",
-      )!.n,
-      semanticRejections: drafts.filter((d) => JSON.parse(d.semantic_review).supported === false)
-        .length,
-      reviewExecutionErrors: store.one(
-        "SELECT count(*) n FROM model_calls WHERE stage IN ('SEMANTIC_REVIEW','VERIFY_DRAFT') AND status='ERROR'",
-      )!.n,
-      draftsFullyChecked: fullyChecked.length,
-      draftsUnverified: drafts.length - fullyChecked.length,
-      diagnosticsDirectory: store.get('modelDiagnosticsDirectory', null),
-      skipped,
-      itemErrors: store.all(
-        "SELECT stage,error AS code,count(*) AS count FROM research_items WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",
-      ),
-      modelErrors: store.all(
-        "SELECT stage,error AS code,count(*) AS count FROM model_calls WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",
-      ),
-      reviews: service.draftRows().map((d) => JSON.parse(d.semantic_review)),
-      attempts: store.one('SELECT count(*) n FROM send_attempts')!.n,
-      outbox: store.one('SELECT count(*) n FROM outbox')!.n,
-    };
+  return { service, store, summary: () => publicDiagnosticSummary(store, service) };
+}
+export function publicDiagnosticSummary(store: Store, service: ResearchJobHunter) {
+  const run = store.one('SELECT status,stage,error FROM runs ORDER BY started_at DESC LIMIT 1');
+  const decisions = store.all('SELECT * FROM research_items').map((item) => {
+    if (typeof item.analysis !== 'string' || !item.analysis.startsWith('{'))
+      return { allowed: false, reason: item.error ?? item.status };
+    try {
+      const sources = service.sourcesFor(item);
+      return contactEligibility(validateAnalysis(JSON.parse(item.analysis), sources), sources);
+    } catch {
+      return { allowed: false, reason: 'Niepotwierdzony wynik analizy źródła.' };
+    }
+  });
+  const skipped: Record<string, number> = {};
+  for (const decision of decisions.filter((r) => !r.allowed))
+    skipped[decision.reason] = (skipped[decision.reason] ?? 0) + 1;
+  const drafts = service.draftRows();
+  const fullyChecked = drafts.filter((d) => {
+    const review = JSON.parse(d.semantic_review);
+    return (
+      review.supported === true && !review.issues.length && !service.draftMaterialIssues(d).length
+    );
+  });
+  return {
+    outcome:
+      run?.status === 'COMPLETED'
+        ? 'COMPLETED'
+        : run?.error
+          ? diagnosticOutcome(run.error)
+          : run
+            ? 'INCOMPLETE'
+            : 'NOT_STARTED',
+    stage: run?.stage ?? null,
+    error: run?.error ?? null,
+    synthetic: store.get('diagnosticSynthetic', true),
+    mailDisabled: true,
+    firms: decisions.length,
+    pagesRead: store.one("SELECT count(*) n FROM research_sources WHERE status='READ'")!.n,
+    extractionsCompleted: store.one('SELECT count(*) n FROM research_extractions')!.n,
+    qualificationsCompleted: store.one('SELECT count(*) n FROM research_qualifications')!.n,
+    contactsQualified: decisions.filter((r) => r.allowed).length,
+    drafts: service.draftRows().length,
+    generatedVersions: store.one(
+      "SELECT count(*) n FROM model_calls WHERE stage='DRAFT' AND status='OK'",
+    )!.n,
+    validationRejections: store.one(
+      "SELECT count(*) n FROM research_draft_materials WHERE code_status='REJECTED'",
+    )!.n,
+    semanticRejections: drafts.filter((d) => JSON.parse(d.semantic_review).supported === false)
+      .length,
+    reviewExecutionErrors: store.one(
+      "SELECT count(*) n FROM model_calls WHERE stage IN ('SEMANTIC_REVIEW','VERIFY_DRAFT') AND status='ERROR'",
+    )!.n,
+    draftsFullyChecked: fullyChecked.length,
+    draftsUnverified: drafts.length - fullyChecked.length,
+    diagnosticsDirectory: store.get('modelDiagnosticsDirectory', null),
+    skipped,
+    itemErrors: store.all(
+      "SELECT stage,error AS code,count(*) AS count FROM research_items WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",
+    ),
+    modelErrors: store.all(
+      "SELECT stage,error AS code,count(*) AS count FROM model_calls WHERE status='ERROR' GROUP BY stage,error ORDER BY stage,error",
+    ),
+    reviews: service.draftRows().map((d) => JSON.parse(d.semantic_review)),
+    attempts: store.one('SELECT count(*) n FROM send_attempts')!.n,
+    outbox: store.one('SELECT count(*) n FROM outbox')!.n,
   };
-  return { service, store, summary };
 }

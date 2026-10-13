@@ -15,6 +15,7 @@ export const reviewLimits = {
   http: 150,
 };
 export class ReviewBudget {
+  readonly limits: typeof reviewLimits;
   readonly state: {
     sessionId: string;
     startedAt: string;
@@ -24,6 +25,7 @@ export class ReviewBudget {
     identities: string[];
     checkedDrafts: number;
     checkedDraftIds?: string[];
+    limits?: typeof reviewLimits;
     endedAt: string | null;
     stopReason: string | null;
   };
@@ -31,6 +33,7 @@ export class ReviewBudget {
     readonly dir: string,
     sessionId: string,
     resumeExisting = false,
+    limits?: typeof reviewLimits,
   ) {
     const path = join(dir, 'budget.json');
     this.state = existsSync(path)
@@ -46,6 +49,10 @@ export class ReviewBudget {
           endedAt: null,
           stopReason: null,
         };
+    if (limits && this.state.limits && JSON.stringify(limits) !== JSON.stringify(this.state.limits))
+      throw new Error('SESSION_LIMITS_MISMATCH');
+    this.limits = this.state.limits ?? limits ?? reviewLimits;
+    this.state.limits = this.limits;
     if (this.state.sessionId !== sessionId || (this.state.endedAt && !resumeExisting))
       throw new Error('SESSION_MISMATCH_OR_ALREADY_ENDED');
     this.state.checkedDraftIds ??= Array.from(
@@ -79,13 +86,13 @@ export class ReviewBudget {
   reason(newFirm = false): string | null {
     if (
       this.state.firstPublicAt &&
-      Date.now() - Date.parse(this.state.firstPublicAt) >= reviewLimits.milliseconds
+      Date.now() - Date.parse(this.state.firstPublicAt) >= this.limits.milliseconds
     )
       return 'TIME_LIMIT';
-    if (this.state.models >= reviewLimits.models) return 'MODEL_LIMIT';
-    if (this.state.http >= reviewLimits.http) return 'HTTP_LIMIT';
-    if (newFirm && this.state.identities.length >= reviewLimits.firms) return 'FIRM_LIMIT';
-    if (newFirm && this.state.checkedDrafts >= reviewLimits.checkedDrafts)
+    if (this.state.models >= this.limits.models) return 'MODEL_LIMIT';
+    if (this.state.http >= this.limits.http) return 'HTTP_LIMIT';
+    if (newFirm && this.state.identities.length >= this.limits.firms) return 'FIRM_LIMIT';
+    if (newFirm && this.state.checkedDrafts >= this.limits.checkedDrafts)
       return 'CHECKED_DRAFT_LIMIT';
     return null;
   }
@@ -99,9 +106,9 @@ export class ReviewBudget {
   assertModel() {
     const reason =
       this.state.firstPublicAt &&
-      Date.now() - Date.parse(this.state.firstPublicAt) >= reviewLimits.milliseconds
+      Date.now() - Date.parse(this.state.firstPublicAt) >= this.limits.milliseconds
         ? 'TIME_LIMIT'
-        : this.state.models >= reviewLimits.models
+        : this.state.models >= this.limits.models
           ? 'MODEL_LIMIT'
           : null;
     if (reason) throw new DomainError('RESEARCH_BUDGET', reason);
@@ -224,6 +231,56 @@ export function proposalMaterials(
     proposal: p,
     proposalHash: hash(raw),
     cvHash,
+  };
+}
+
+// Explicit diagnostic input: public approved snapshot only, never a CV/material approval in WORKSTATION.
+export function snapshotMaterials(path: string, provenance: { commit: string; path: string }) {
+  if (!/^[a-f0-9]{40}$/.test(provenance.commit)) throw new Error('SNAPSHOT_COMMIT_REQUIRED');
+  const raw = readFileSync(path, 'utf8');
+  const rows = raw
+    .split('\n')
+    .filter((l) => l.startsWith('| fact-'))
+    .map((l) =>
+      l
+        .split('|')
+        .slice(1, -1)
+        .map((v) => v.trim()),
+    );
+  const keys = [
+    'identity',
+    'education',
+    'availability',
+    'contract',
+    'ai',
+    'portfolio',
+    'autorelay',
+    'codefabric',
+    'elektroscan',
+  ];
+  if (
+    rows.length !== 9 ||
+    keys.some((k) => rows.filter((r) => r[1] === k && r[0] === 'fact-' + k && r[2]).length !== 1)
+  )
+    throw new Error('SNAPSHOT_FACTS_REQUIRED');
+  const template = raw.match(/~~~text\n([\s\S]*?)\n~~~/)?.[1];
+  const goal = raw.match(/^Cel: (.+)$/m)?.[1];
+  if (!template || !goal) throw new Error('SNAPSHOT_TEMPLATE_REQUIRED');
+  return {
+    materials: {
+      name: rows.find((r) => r[1] === 'identity')![2].replace(/\.$/, ''),
+      goal,
+      hoursApprox: 20,
+      facts: Object.fromEntries(rows.map((r) => [r[1], r[2]])),
+      template,
+    },
+    factIds: rows.map((r) => r[0]),
+    provenance: {
+      ...provenance,
+      sha256: hash(raw),
+      kind: 'PUBLIC_APPROVED_SNAPSHOT',
+      cvVerifiedInThisRun: false,
+    },
   };
 }
 
