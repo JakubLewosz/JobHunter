@@ -333,7 +333,7 @@ export function contactPurposeAllowed(v: Analysis, sources: Source[]) {
   );
 }
 export type InquiryBasisSelection = {
-  policyVersion: 1;
+  policyVersion: 2;
   field: 'inquiryBasis' | 'companyActivities' | 'typeProof';
   proof: { sourceId: string; quote: string; explanation: string };
   sourceVersion: { id: string; contentHash: string; parserVersion: number; fetchedAt: string };
@@ -398,7 +398,7 @@ export function resolveInquiryBasis(
       context = compact(source.title + ' ' + new URL(source.final_url).pathname);
     if (
       /privacy|regulamin|polityk.{0,20}prywat|terms|warunki korzystania/.test(context) ||
-      /regulamin|privacy|warunki korzystania|terms of|ignoruj|ignore.{0,30}instruction|agent.{0,30}(?:poleceni|instruction)|nasz klient (?:jest|tworzy)|klient.{0,70}(?:tworzy|rozwija)|(?:client|customer).{0,70}(?:creates|develops)|our client|wymagania|requirements|kandydat.{0,30}(?:zna|musi)|you must|doświadczeni.{0,25}(?:komerc|wymag)/.test(
+      /regulamin|privacy|warunki korzystania|terms of|ignoruj|ignore.{0,30}instruction|agent.{0,30}(?:poleceni|instruction)|nasz klient (?:jest|tworzy)|klient.{0,70}(?:tworzy|rozwija)(?=\s|$|[.,;])|(?:client|customer).{0,70}(?:creates|develops)|our client|wymagania|requirements|kandydat.{0,30}(?:zna|musi)|you must|doświadczeni.{0,25}(?:komerc|wymag)/.test(
         quote,
       )
     )
@@ -411,9 +411,12 @@ export function resolveInquiryBasis(
       /tworzymy|tworzy|projektujemy|projektuje|rozwijamy|rozwija|budujemy|buduje|piszemy|łączymy|we (?:build|develop|create)|dedykowane aplikacje|custom (?:software|applications)|nasz produkt|własny produkt|usługi programistyczne/.test(
         quote,
       );
-    if (!activity || !provider) continue;
+    const ownServicePage =
+      /usług|uslug|oferta|offer|service|products|mvp/.test(context) &&
+      !/career|karier|jobs|rekrut|vacanc/.test(context);
+    if (!activity || (!provider && !ownServicePage)) continue;
     return {
-      policyVersion: 1,
+      policyVersion: 2,
       field: candidate.field,
       proof: { sourceId: source.id, quote: p.quote!, explanation: p.explanation },
       sourceVersion: {

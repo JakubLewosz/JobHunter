@@ -53,7 +53,7 @@ import {
   type Analysis,
 } from './contracts.js';
 import { parserVersion } from './html.js';
-const analysisPolicyVersion = 5;
+const analysisPolicyVersion = 6;
 const researchInstructions =
   baseResearchInstructions +
   '\nZdalna obsługa klientów lub spotkania online nie potwierdzają zdalnej pracy kandydata. Ceny usług nie potwierdzają wynagrodzenia. Warunki zatrudnienia wymagają osobnych dowodów; inaczej pozostają unknown.';

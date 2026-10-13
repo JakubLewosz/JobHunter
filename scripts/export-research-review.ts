@@ -14,7 +14,8 @@ const read = (file: string) => JSON.parse(readFileSync(join(dir, file), 'utf8'))
 const result = read('result.json'),
   budget = read('budget.json'),
   materials = read('materials-used.json');
-const autonomous = result.autonomous === true;
+const consistency = result.consistency === true;
+const autonomous = result.autonomous === true || consistency;
 const round = result.round === true;
 const privacy = existsSync(join(dir, 'redactions.json'))
   ? read('redactions.json')
@@ -96,6 +97,17 @@ const domainOf = (url: string) => {
     return 'nieznane';
   }
 };
+const previouslyResearched = consistency
+  ? new Set(
+      parse(
+        readFileSync(
+          'docs/research-review/2026-10-13_12-02_9c7ca137_macos_autonomous/FIRMY.csv',
+          'utf8',
+        ),
+        { columns: true },
+      ).map((r: any) => r.domena),
+    )
+  : new Set();
 const rows: any[] = budget.identities.map((domain: string) => {
   const items = tables.research_items.filter((i) => domainOf(i.url) === domain);
   const completed = items.filter((i) => i.company_id && i.analysis?.startsWith('{'));
@@ -178,7 +190,12 @@ const rows: any[] = budget.identities.map((domain: string) => {
     domain,
     url: last?.url ?? events.find((e) => e.stage === 'COMPANY' && e.identity === domain)?.url,
     scope:
-      events.find((e) => e.stage === 'COMPANY' && e.identity === domain && e.scope)?.scope ?? 'NEW',
+      consistency &&
+      previouslyResearched.has(domain) &&
+      !['gotoma.pl', 'prodaut.pl'].includes(domain)
+        ? 'ALREADY_RESEARCHED'
+        : (events.find((e) => e.stage === 'COMPANY' && e.identity === domain && e.scope)?.scope ??
+          'NEW'),
     usage: analysis
       ? contactUsage(analysis, sourceIds.map((sid) => sources.get(sid)).filter(Boolean))
       : 'UNVERIFIED',
@@ -269,6 +286,8 @@ const versions = tables.research_draft_materials.map((m) => {
     review: r.semantic,
     warnings: r.warnings ?? [],
     material_issues: r.materialIssues ?? [],
+    revision_origin: context.origin ?? 'GENERATED_DRAFT',
+    previous_version: context.previousVersion ?? null,
     checked,
     original_text_hash: hash(original),
     exported_text_hash: hash(exported),
@@ -449,7 +468,10 @@ const dateParts = new Intl.DateTimeFormat('sv-SE', {
 const name =
   dateParts.replace(' ', '_').replace(':', '-') +
   '_' +
-  (autonomous ? hash(budget.startedAt).slice(0, 8) + '_macos_autonomous' : budget.sessionId);
+  (autonomous
+    ? hash(budget.startedAt).slice(0, 8) +
+      (consistency ? '_macos_consistency' : '_macos_autonomous')
+    : budget.sessionId);
 const output = resolve('docs/research-review', name);
 mkdirSync(output, { recursive: true });
 const write = (name: string, text: string) =>
@@ -523,7 +545,7 @@ write(
 let messages =
   '# Zachowane wiadomości\n\nWysyłki: 0. Są to rzeczywiste wyniki generatora; pozytywna kontrola nie udziela zgody na kontakt. Kopie publiczne nie są poprawiane stylistycznie.\n\n';
 for (const v of versions) {
-  messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version} (${v.latest ? 'NAJNOWSZA' : 'starsza'})\n\nSłów: ${v.word_count}. Odbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Generacja: ${v.created_at}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings, material_issues: v.material_issues }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
+  messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version} (${v.latest ? 'NAJNOWSZA' : 'starsza'})\n\nSłów: ${v.word_count}. Odbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Zapis: ${v.created_at}. Pochodzenie: ${v.revision_origin}; poprzednia wersja: ${v.previous_version ?? 'brak'}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings, material_issues: v.material_issues }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
   for (const claim of v.payload.claims)
     messages += `| ${md(claim.text)} | ${claim.kind} | ${claim.factIds.join(', ')} | ${claim.evidenceIds.map((id: string) => id + ' → ' + (evidenceMap.get(id)?.source_id ?? 'BRAK')).join(', ')} |\n`;
   messages +=
@@ -636,6 +658,18 @@ for (const e of events.filter((e) => ['LEADS_SAVED', 'SEARCH_CACHE_REPLAY'].incl
       .join('\n') +
     '\n\n';
 }
+if (consistency) {
+  sourceText += '\n## Wybór podstawy zapytania przez kod\n\n';
+  for (const state of tables.app_state.filter((s) => s.key.startsWith('inquiryBasisSelection:')))
+    sourceText +=
+      '~~~json\n' +
+      JSON.stringify(
+        { item_id: state.key.split(':')[1], selection: JSON.parse(state.value) },
+        null,
+        2,
+      ) +
+      '\n~~~\n\n';
+}
 write('ZRODLA.md', sourceText.replace(/[ \t]+$/gm, '').trimEnd() + '\n');
 write(
   'PROFIL_UZYTY.md',
@@ -721,6 +755,33 @@ for (const call of tables.model_calls) {
       null,
     source_kind: 'MODEL_RECORDED_IN_DATABASE',
     code: call.error,
+  });
+}
+if (consistency) {
+  for (const record of tables.audit_events.filter((e) =>
+    /RESEARCH_RESULT_REUSED|INQUIRY_BASIS_SELECTED|DRAFT_CONTEXT_REVISED|DRAFT_REPAIR|ANALYSIS_SUPERSEDED/.test(
+      e.action,
+    ),
+  ))
+    timeline.push({
+      timestamp: record.created_at,
+      session_id: budget.sessionId,
+      stage: record.action,
+      outcome: 'RECORDED',
+      entity_id: record.entity_id,
+      source_kind: 'APPLICATION_AUDIT',
+      details: record.details,
+    });
+  const diagnosis = read('diagnosis-replay.json');
+  timeline.push({
+    timestamp: budget.startedAt,
+    session_id: budget.sessionId,
+    stage: 'OFFLINE_REPLAY',
+    outcome: 'FIXTURE_REVIEW_ONLY',
+    real_http: 0,
+    real_model_calls: 0,
+    fixture_calls: diagnosis.fixtureCalls,
+    original_database_unchanged: diagnosis.originalDatabaseUnchanged,
   });
 }
 if (autonomous && existsSync(join(dir, 'metrics-replay.json'))) {
@@ -946,6 +1007,184 @@ if (autonomous) {
       '\n',
   );
 }
+if (consistency) {
+  const diagnosis = read('diagnosis-replay.json');
+  const snapshots = read('consistency-snapshots.json');
+  const restart = read('restart-check.json');
+  const postBasis = existsSync(join(dir, 'post-public-basis-check.json'))
+    ? read('post-public-basis-check.json')
+    : null;
+  const blockedCache = existsSync(join(dir, 'blocked-cache-check.json'))
+    ? read('blocked-cache-check.json')
+    : null;
+  const allStates = (id: string) =>
+    snapshots.map((s: any, n: number) => ({
+      step: n + 1,
+      at: s.at,
+      row: s.rows.find((r: any) => r.draft_id === id) ?? null,
+    }));
+  let comparison =
+    '# Spójność dowodów, reanalizy i materiałów\n\nRodzaje dowodów są odrębne: oryginalne zapisane zwalidowane analizy/teksty źródeł; deterministyczne fixture; offline replay na spójnej kopii z jawnie fikcyjnym reviewerem; świeży PUBLIC_HTTP i rzeczywisty Codex tej rundy. Surowe odpowiedzi CLI i oryginalny HTML dawnych odczytów nie były zachowane; nie przedstawiamy rekonstrukcji jako odzyskanych oryginałów. Oryginalnej bazy ani historycznych raportów nie zmieniono.\n\n';
+  for (const c of diagnosis.cases) {
+    const current = rows.find((r) => r.domain === c.domain);
+    comparison += `## ${c.domain}\n\nPrzed: ${c.domain === 'gotoma.pl' ? 'pierwszy szkic miał pozytywną kontrolę, druga ekstrakcja zgubiła inquiryBasis' : 'istniało poprawne inquiryBasis, ale PROSPECT wybierał typeProof bez pasującej reguły językowej'}.\n\n`;
+    if (c.binding)
+      comparison +=
+        'Dokładnie odtworzono stary hash: ' +
+        c.binding.oldHashExactlyReconstructed +
+        '. Zmieniły się qualification i sources; zestaw wersji źródeł był identyczny, kolejność kontakt/kariera inna. Wyszukiwarka zwróciła ponownie ten sam root URL, z innym contactUrl. Cache porównywał JSON source_ids w kolejności, więc uruchomił EXTRACT; zapis kwalifikacji nadpisał dane, a generate zakończyło się przed naprawą, bo kontakt stał się REJECTED. materialBinding zablokował nieaktualny pakiet prawidłowo. Nie zmienił się tekst witryny w użytym cache.\n\n';
+    comparison +=
+      'Oryginalne zachowane analizy i znaczące różnice (bez pełnych witryn):\n\n~~~json\n' +
+      JSON.stringify(
+        {
+          kind: c.kind,
+          analyses: c.analyses,
+          binding: c.binding ?? null,
+          selected_from_saved_proofs: c.selectedCurrentBasis,
+        },
+        null,
+        2,
+      ) +
+      '\n~~~\n\n';
+    comparison +=
+      'Replay: ' +
+      JSON.stringify(c.afterReplay) +
+      '. Jest to kontrola kodowa z fikcyjnym reviewerem, nie rzeczywisty semantyczny PASS.\n\n';
+    comparison += `Świeża próba: ${current?.result}; ${current?.purpose}/${current?.usage}; aktualna decyzja ${current?.qualifications.at(-1)?.decision ?? 'brak'}; powód ${current?.skip || 'kontrole zakończone'}. To nowy odczyt i nie dowodzi identyczności dawnej strony.\n\n`;
+    if (current)
+      for (const v of versions.filter((v) => v.company_id === current.company_id))
+        comparison += `Materiał ${v.draft_id}:${v.version}: ${v.revision_origin}, poprzednia wersja ${v.previous_version ?? 'brak'}, textHash ${v.original_text_hash}, checked ${v.checked}.\n\n~~~json\n${JSON.stringify(allStates(v.draft_id), null, 2)}\n~~~\n\n`;
+  }
+  comparison +=
+    '## Utrzymanie siedmiu wcześniejszych materiałów i restart\n\nPełne konteksty istnieją w znanej dawnej diagnostyce. Sprawdzono faktycznie wszystkie siedem wcześniej aktualnych materiałów na spójnej kopii przed i po dwóch cyklach oraz po restarcie. To nie jest ponowne zewnętrzne review tych siedmiu maili. Ich teksty i wersje nie zmieniły się. GOTOMA dostała rewizję tego samego tekstu; PRODAUT pierwszy szkic w fixture replay. Koszt offline: 0 HTTP, 0 rzeczywistych modeli; ' +
+    diagnosis.fixtureCalls +
+    ' wywołania fixture (' +
+    diagnosis.fixtureDraftCalls +
+    ' DRAFT, ' +
+    diagnosis.fixtureReviewCalls +
+    ' review).\n\n~~~json\n' +
+    JSON.stringify(
+      {
+        before: diagnosis.before,
+        after: diagnosis.after,
+        restart: diagnosis.restartRows,
+        original_unchanged: diagnosis.originalDatabaseUnchanged,
+      },
+      null,
+      2,
+    ) +
+    '\n~~~\n\n';
+  comparison +=
+    '## Nowe cykle i celowy powrót w publicznym harnessie\n\nBrak ręcznej listy nowych firm. Po trzech kierunkach normalny import wraca do obu kontroli; reuse nie jest nowym odkryciem. Nie wymuszono odczytu ani dodatkowej ekstrakcji, jeśli aktualne dane wystarczały. Wszystkie rewizje zachowują własną kontrolę; stary supported=true nie daje bieżącej gotowości.\n\n~~~json\n' +
+    JSON.stringify(
+      {
+        cycles: result.cycles,
+        repeat_events: events.filter((e) => e.stage === 'REPEAT_CONTROL'),
+        snapshots,
+        restart,
+      },
+      null,
+      2,
+    ) +
+    '\n~~~\n';
+  comparison +=
+    '\n## Granice rzeczywistej próby\n\nTrzecie wyszukiwanie CODEX_TIMEOUT: publiczna próba przerwana, bez retry, zmiany timeoutu lub mocków udających odpowiedź. Celowy powrót nie nastąpił wewnątrz publicznego loopa. Po Stop wykonano oddzielny cache-only replay na spójnej kopii: transport i model rzucają błąd przy próbie użycia, nie zwracają fikcyjnego PASS; zachowano rzeczywiste wcześniejsze verdicts i sprawdzono aktualne bindingi. Zero nowych HTTP/modeli.\n\nHarness 7803b9d pamiętał raport 08:10, nie pełny raport 12:02. Sprint0 był już badany wcześniej: jest ALREADY_RESEARCHED, nie nową firmą. To korekta klasyfikacji eksportu oparta na zapisanym poprzednim indeksie, nie zmiana bazy/kwalifikacji. Po publicznym Stop pamięć przyszłych uruchomień rozszerzono o oba raporty; poprawka nie została ponownie sprawdzona nowym publicznym szukaniem.\n\n~~~json\n' +
+    JSON.stringify(blockedCache, null, 2) +
+    '\n~~~\n';
+  comparison +=
+    '\n## Korekta znaczenia dowodu po publicznym Stop — tylko offline\n\nW publicznym kodzie 7803b9d Sprint0 odrzucono przez zbyt szeroki wzorzec obcego klienta: fraza o własnym wdrożeniu w infrastrukturze klienta została błędnie objęta regułą. TwójSoftware miał zweryfikowany opis usługi w formie rzeczownikowej, ale helper wymagał czasownika wykonawcy. To były błędy reguły, nie rzeczywisty brak dowodów. Dwa przypadki odtworzono na dokładnym helperze z 7803b9d (2 FAIL) i na fixture ze zmienionymi nazwami. Helper v2 rozróżnia trzecią osobę klienta od własnej pracy i dopuszcza rzeczownikowy opis na potwierdzonej stronie usług. Regulamin/obcy klient/wymagania wakatu nadal nie wystarczają. Polityka ekstrakcji v6 wymaga normalnej ponownej kwalifikacji zgodności starych zapisów, bez masowego przeliczania hashy.\n\nKontrola read-only tych samych źródeł po poprawce nie tworzy wiadomości ani nie zastępuje brakującego publicznego PASS. Aktualna kwalifikacja kontraktowa dopuszcza Sprint0/TwójSoftware; w bazie i CSV pozostają pierwotne decyzje publicznego kodu. Prawdziwy brak literalnego adresu Assistron nadal blokuje.\n\n~~~json\n' +
+    JSON.stringify(postBasis, null, 2) +
+    '\n~~~\n';
+  comparison +=
+    '\n## Mechanizm i regresje\n\nJedna resolveInquiryBasis: poprawne inquiryBasis → zweryfikowane companyActivities → odpowiedni typeProof PROSPECT. Weryfikacja literalności, nazwy i oficjalnego hosta, wieku, wersji/parsera oraz znaczenia działalności; regulamin, obcy klient i wymagania wakatu nie wystarczają. Kanał/odmowa/konflikt są sprawdzane niezależnie i mają pierwszeństwo. Reuse policy v1 dowodzi identyczności lub podzbioru pełnego aktualnego pakietu i zachowuje jego źródłowy porządek; nie usuwa pól z materialBinding. Nowy kontekst oznacza nową wersję materiału i nowe review. Próba jest trwale ograniczona do jednej na firmę/profil/scope/zestaw wersji wejścia. Starsza operacja nie nadpisuje nowszej kwalifikacji; hold i STALE blokują użycie, bez zatrzymywania firmy B.\n';
+  write('POROWNANIE.md', comparison);
+  write(
+    'WIADOMOSCI.md',
+    messages +
+      '\n## Historyczny materiał GOTOMA (osobny stary kontekst)\n\nNie jest to aktualny nowy wynik ani nowa generacja. Dokładny zachowany temat i tekst z oryginalnej diagnostyki:\n\nTemat: **' +
+      diagnosis.cases[0].draft.subject +
+      '**\n\n~~~text\n' +
+      diagnosis.cases[0].draft.body +
+      '\n~~~\n\nHash: ' +
+      diagnosis.cases[0].draft.originalTextHash +
+      '; stary contextHash: ' +
+      diagnosis.cases[0].draft.contextHash +
+      '.\n',
+  );
+  write(
+    'BLEDY.md',
+    '# Błędy, braki i uzasadnione blokady\n\nBłąd historyczny GOTOMA: utrata przypisania istniejącego dowodu i niepotrzebny cache miss przez kolejność, nie dowód zmiany witryny. PRODAUT: wybór niewłaściwego pola i niedopasowana reguła znaczenia; źródło/host/literalny kontakt były poprawne. Szczegóły z rzeczywistych zapisów w POROWNANIE.\n\nFixture i check miały pośrednie FAIL: cache/missing basis, regulamin, trwale ograniczone review, backlog DRAFT, błędny zegar danych fixture oraz liczenie kolejnych review jako nowych szkiców. Przyczyny i poprawki w TEST_REPORT; nie usuwano testów lub progów. Starszy niestabilny Stop CI pozostaje niewyjaśniony.\n\n## Wykonanie publiczne\n\n' +
+      JSON.stringify(
+        {
+          itemErrors: tables.research_items
+            .filter((i) => i.status === 'ERROR')
+            .map((i) => ({ id: i.id, stage: i.stage, code: i.error })),
+          modelErrors: tables.model_calls
+            .filter((c) => c.status === 'ERROR')
+            .map((c) => ({ id: c.id, stage: c.stage, code: c.error })),
+          sourceFailures: sourceFailures.map((s) => ({
+            id: s.id,
+            url: s.original_url,
+            status: s.status,
+            error: s.error,
+          })),
+        },
+        null,
+        2,
+      ) +
+      '\n\n## Końcowe braki/ograniczenia\n\n' +
+      rows
+        .filter((r) => r.skip)
+        .map((r) => `- ${r.domain}: ${r.skip}`)
+        .join('\n') +
+      '\n\nSprint0/TwójSoftware: pierwotna odmowa kwalifikacji była błędem zbyt wąskiej reguły, mimo zweryfikowanych fragmentów; po Stop poprawiono ją offline i nie podmieniono decyzji w oryginalnej bazie. Assistron: adres [email protected] nie daje literalnego emaila. Brak danych/nieobsługiwany kanał nie są automatycznie odmową firmy. Wykluczenia, pytania bez prawa do CV, formularz wymagany, konflikty i rzeczywista zmiana nadal blokują. Nie ma intensywnej pętli naprawiania; nie dodano formularzy lub follow-upów.\n',
+  );
+  const discovery = {
+    directions: result.cycles.length,
+    new_companies: rows.filter((r) => r.scope === 'NEW').length,
+    new_literal_contacts: rows.filter((r) => r.scope === 'NEW' && r.analysis?.contact.email).length,
+    new_current_checked: versions.filter(
+      (v) =>
+        v.latest &&
+        v.checked &&
+        rows.some((r) => r.scope === 'NEW' && r.company_id === v.company_id),
+    ).length,
+    controls: rows
+      .filter((r) => r.scope === 'CONTROL')
+      .map((r) => ({ domain: r.domain, result: r.result })),
+    previously_researched_revisits: rows.filter((r) => r.scope === 'ALREADY_RESEARCHED').length,
+    completed_cycles: result.cycles.filter((c: any) => c.run?.status === 'COMPLETED').length,
+    blocked_cycles: result.cycles.filter((c: any) => c.run?.error).length,
+    versions: versions.length,
+    current_checked: counts.fully_checked_drafts,
+    repeat_checks: events
+      .filter((e) => e.stage === 'REPEAT_CONTROL')
+      .map((e) => ({ domain: e.identity, model_calls_delta: e.model_calls_delta })),
+    manual_interventions: result.manualInterventions,
+  };
+  result.discovery = discovery;
+  write(
+    'README.md',
+    `# Spójność researchu JobHunter — ${name}\n\nStatus **${status}**. Dwie kontrole i dwa cykle ukończono; trzecie wyszukiwanie zakończyło się CODEX_TIMEOUT. Celowy powrót wykonano dopiero po Stop jako osobny cache-only replay na spójnej kopii, bez transportu/modelu i bez fikcyjnych verdictów. Pamięć harnessu pominęła ostatni indeks: Sprint0 raportujemy jako wcześniej badaną firmę, nie nowe odkrycie. Po publicznym Stop poprawiono też dwie zbyt wąskie reguły znaczenia dowodu (Sprint0 i TwójSoftware); ich aktualna kwalifikacja jest sprawdzona wyłącznie offline, bez nowych maili lub publicznego powtórzenia. Wynik gotowości jest sprawdzony ponownie po dalszych cyklach i po restarcie; stare pozytywne review nie zastępuje aktualnego pakietu.\n\n~~~json\n${JSON.stringify(discovery, null, 2)}\n~~~\n\nPubliczna próba używała kodu ${result.code.head}, dirty=${result.code.dirty}; dokładne hashe w MANIFEST. Diagnoza korzystała wyłącznie ze znanej poprzedniej diagnostyki, oryginał pozostał read-only. Dokładnie odtworzono dawny hash GOTOMA: zmieniły się qualification i sources (kolejność), wersje danych nie zmieniły się. PRODAUT ignorowała poprawne inquiryBasis. Poprawka wybiera już zweryfikowany dowód, ogranicza zbędne reanalizy i wersjonuje rewalidację tego samego tekstu z nowym pakietem. Bramka STALE pozostaje. Styl i algorytm wyboru kierunków nie zostały przebudowane.\n\nBudżet wspólny: 60 min / 120 HTTP czytnika / 60 modeli / 2 kontrole + do 6 nowych firm. Rzeczywiście ${((Date.parse(budget.endedAt) - Date.parse(budget.firstPublicAt)) / 60000).toFixed(2)} min, ${budget.http} HTTP, ${budget.models} modeli. Pierwsza publiczna operacja ${budget.firstPublicAt}, koniec ${budget.endedAt}; UTC, nazwa katalogu według Europe/Warsaw. Preflight/probe/search/extract/DRAFT/review/redirect/retry są wliczone, bez zerowania. Reuse/replay i źródła świeże są oznaczone oddzielnie. Wewnętrzne HTTP wyszukiwarki nie są ujawniane przez CLI.\n\n| Licznik | Wynik |\n| --- | ---: |\n` +
+      Object.entries(counts)
+        .map(([k, v]) => `| ${k} | ${v} |`)
+        .join('\n') +
+      '\n\nDEVELOPMENT; osobna diagnostyka i DisabledMailProvider, bez gateway/Gmaila. Prawdziwe maile/SELF_TEST **0**, outbox/approvals/send attempts/auto sessions **0**. Profil: dokładny snapshot z 2aa3a1e, cvVerifiedInThisRun=false, bez PDF. Prywatne dane/runtime/historia/OAuth/nadawca bez zmian. Raport jest publiczny, bez baz/WAL/backupów/sekretów/pełnych witryn/surowych logów; redakcje podpisu i hashe są w MANIFEST.\n\nNie sprawdzono domowej instalacji Windows ani Gmaila/dostarczalności; hosted CI i fixture nie są takim sprawdzeniem. Push nie wdraża i nie wznawia sendera.\n\n' +
+      [
+        'POROWNANIE.md',
+        'FIRMY.csv',
+        'WIADOMOSCI.md',
+        'ZRODLA.md',
+        'PROFIL_UZYTY.md',
+        'BLEDY.md',
+        'PRZEBIEG.jsonl',
+        'MANIFEST.json',
+      ]
+        .map((f) => `- [${f}](${f})`)
+        .join('\n') +
+      '\n',
+  );
+}
 const exportedFiles = readdirSync(output).filter((f) => f !== 'MANIFEST.json');
 const batchMaterials = readdirSync(dir)
   .filter((f) => /^materials-used(?:-batch-\d+)?\.json$/.test(f))
@@ -1030,6 +1269,25 @@ const manifest: any = {
     'Model nie ujawnił wersji; brak pełnych danych tokenów dla audytu',
   ],
   tests,
+  post_public_basis_check:
+    consistency && existsSync(join(dir, 'post-public-basis-check.json'))
+      ? read('post-public-basis-check.json')
+      : null,
+  blocked_cache_check:
+    consistency && existsSync(join(dir, 'blocked-cache-check.json'))
+      ? read('blocked-cache-check.json')
+      : null,
+  consistency_replay: consistency
+    ? {
+        kind: 'OFFLINE_WITH_FIXTURE_REVIEWER',
+        real_http: 0,
+        real_model_calls: 0,
+        fixture_calls: read('diagnosis-replay.json').fixtureCalls,
+        original_database_unchanged: true,
+      }
+    : null,
+  consistency_snapshots: consistency ? read('consistency-snapshots.json') : null,
+  restart_check: consistency ? read('restart-check.json') : null,
   offline_metrics_replay: existsSync(join(dir, 'metrics-replay.json'))
     ? read('metrics-replay.json')
     : null,

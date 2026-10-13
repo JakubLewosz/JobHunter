@@ -426,3 +426,29 @@ test('firm A under reanalysis is held while ready firm B remains dispatchable on
   await work;
   assert.equal(f.gateway.posts.filter((p) => p.recipient === a.email).length, 0);
 });
+
+test('company first-person work for client infrastructure is not a foreign-client claim', () => {
+  const { source, analysis, proof } = consistencyCase();
+  const quote =
+    'Budujemy systemy AI, wdrażamy modele lokalnie w infrastrukturze klienta, szkolimy zespoły i tworzymy dedykowane CRM-y oraz integracje.';
+  source.text += '\n' + quote;
+  assert.equal(
+    resolveInquiryBasis(validateAnalysis({ ...analysis, inquiryBasis: proof(quote) }, [source]), [
+      source,
+    ])?.proof.quote,
+    quote,
+  );
+});
+test('owned service-page noun phrase can describe software work without an artificial provider verb', () => {
+  const { source, analysis, proof } = consistencyCase();
+  const quote = 'Integracje modeli językowych i automatyzacje oparte na konkretnym procesie.';
+  source.text += '\n' + quote;
+  source.title = 'Usługi — Fixture Company';
+  source.final_url = 'https://fixture.example.test/uslugi';
+  assert.equal(
+    resolveInquiryBasis(validateAnalysis({ ...analysis, inquiryBasis: proof(quote) }, [source]), [
+      source,
+    ])?.proof.quote,
+    quote,
+  );
+});

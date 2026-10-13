@@ -61,10 +61,19 @@ writeFileSync(
   JSON.stringify({ ...materials, code, codeId, sessionId, batchId: 'autonomous-live-1' }, null, 2),
 );
 writeFileSync(join(dir, 'redactions.json'), JSON.stringify({ emails: [], phones: [] }));
-const prior = parse(
-  readFileSync('docs/research-review/2026-10-13_08-10_macos-01a133d7/FIRMY.csv', 'utf8'),
-  { columns: true },
-) as any[];
+const prior = [
+  ...(parse(
+    readFileSync('docs/research-review/2026-10-13_08-10_macos-01a133d7/FIRMY.csv', 'utf8'),
+    { columns: true },
+  ) as any[]),
+  ...(parse(
+    readFileSync(
+      'docs/research-review/2026-10-13_12-02_9c7ca137_macos_autonomous/FIRMY.csv',
+      'utf8',
+    ),
+    { columns: true },
+  ) as any[]),
+].filter((row, index, all) => all.findIndex((r) => r.domena === row.domena) === index);
 const known = new Set(prior.map((r) => r.domena));
 const domainOf = (u: string) => new URL(u).hostname.replace(/^www\./, '').toLowerCase();
 const leads = new Map<string, { scope: string; url: string }>();
@@ -384,16 +393,14 @@ try {
       },
     },
   );
-  const restartRows = restarted.service
-    .draftRows()
-    .map((row) => ({
-      draft_id: row.id,
-      company_id: row.company_id,
-      version: row.version,
-      text_hash: hash(row.subject + '\n' + row.body),
-      supported: JSON.parse(row.semantic_review).supported,
-      issues: restarted.service.draftMaterialIssues(row),
-    }));
+  const restartRows = restarted.service.draftRows().map((row) => ({
+    draft_id: row.id,
+    company_id: row.company_id,
+    version: row.version,
+    text_hash: hash(row.subject + '\n' + row.body),
+    supported: JSON.parse(row.semantic_review).supported,
+    issues: restarted.service.draftMaterialIssues(row),
+  }));
   const restart = {
     state: restarted.service.state(),
     rows: restartRows,
