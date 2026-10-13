@@ -39,11 +39,18 @@
       i granica kampanii bez zmian; native Gmail nieinicjalizowany, outbox/próby 0.
 - [x] Nowy pełny check Windows po poprawce zakresu PASS, exit 0:
       439 backend / 12 performance Stop / 15 UI, typecheck/build.
-- [ ] Sprawdzić wychodzące pliki i commit/push kodu; następnie uruchomić panel
-      WORKSTATION/RESEARCH_ONLY z magazynem CA Windows i jawnym katalogiem danych,
-      pozostawiając pracę zatrzymaną do przeglądu profilu/CV przez użytkownika.
-- [ ] Potem profil/CV DRAFT do przeglądu w panelu; publiczny smoke z zatwierdzonym
-      profilem do 5 firm/15 minut. Gmail/status po konfiguracji; OAuth/read,
+- [x] Wychodzące 7 plików sprawdzone, commit/push `6409e09`, zdalny ref zgodny.
+      Doctor WORKSTATION/RESEARCH_ONLY PASS, jawny katalog i system CA.
+      Standardowy helper uruchomił backend/panel; health=ok, stopped=true.
+      Odczyt SQLite po starcie: 9 DRAFT, 1 DEFERRED, CV niezatwierdzone,
+      Fingoweb zablokowany, próby/outbox/usage/auto sessions 0.
+- [ ] Użytkownik przegląda i zatwierdza profil oraz CV w „Moje materiały”;
+      konkretne pytanie przedstawiono. Zostawić program zatrzymany. Po odpowiedzi
+      sprawdzić prawdziwe approved_at obu zasobów read-only i dopiero wtedy
+      jeden approved-profile smoke do 5 firm/15 minut. Jeśli panel niewidoczny,
+      wyjaśnić sposób otwarcia; nie przenosić tokenu dostępu bez jawnej zgody.
+- [ ] Publiczny smoke z zatwierdzonym profilem do 5 firm/15 minut;
+      zachować prywatny raport i pokazać pełne wiadomości. Gmail/status po diagnostyce; OAuth/read,
       SELF_TEST oraz pilotaż do 3 firm wymagają osobnych decyzji. Wysyłki 0.
 
 ## Spójność dowodów — 13 października 2026

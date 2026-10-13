@@ -87,6 +87,24 @@ stopped=true, outbox/send attempts 0, Gmail/model/HTTP technicznie wyłączone
 w helperze przygotowującym materiały. Backend czeka na końcowy build/check
 i świadomy przegląd materiałów w panelu RESEARCH_ONLY.
 
+Po sprawdzeniu 7 wychodzących plików kod opublikowano jako `6409e09`;
+zdalny ref zweryfikowany, checkout czysty. Bez prywatnych plików w commicie.
+Doctor WORKSTATION/RESEARCH_ONLY PASS; standardowy start.ps1 uruchomił zatrzymany
+backend na loopback i otworzył domyślną przeglądarkę. NODE_USE_SYSTEM_CA=1 tylko
+w środowisku tego procesu, bez ustawień zasilania/autostartu lub zmiany systemu.
+Health PASS. Snapshot działającej SQLite wyłącznie do odczytu potwierdza
+9 DRAFT, odłożony projekt DEFERRED, niezatwierdzone CV i nienaruszoną granicę;
+stopped/paused/gmailSenderPaused=true, próby/outbox/usage/auto sessions 0.
+Pierwszy sandboxowy odczyt aktywnego WAL miał CANTOPEN; host read-only PASS.
+Nie wykonywano migracji lub naprawy aktywnej bazy.
+
+Nie potwierdzono wizualnie prywatnego panelu przez automat: dostępna przeglądarka
+automatyzacji nie miała tej karty. Automatyczny reviewer odrzucił transfer
+lokalnego tokenu do panelu Codex z powodu braku jawnej zgody na ten konkretny
+odbiornik; tokenu nie odczytano w odrzuconej operacji ani nie obchodzono blokady.
+Przegląd/akceptacja materiałów w domyślnej przeglądarce pozostają po stronie
+użytkownika. Gmail, real-profile smoke, SELF_TEST i pilot niewykonane; wysyłki 0.
+
 ---
 
 # Spójność dowodów — 13 października 2026
