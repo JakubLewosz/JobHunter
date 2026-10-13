@@ -1,3 +1,52 @@
+# Nocny RESEARCH_ONLY — uruchomienie, 13/14 października 2026
+
+Po wyraźnym poleceniu użytkownika przygotowano jedną 8-godzinną próbę bez
+Gmaila/wysyłki. Rzeczywisty Windows: istniejący doctor PASS, build gotowy,
+history:local doctor integrity=ok, 3 wcześniejsze SELF_TEST i rezerwacje,
+uncertain=0. Spójny backup przed zmianą trybu. Zatwierdzone 9 faktów i profil.
+
+Istniejący ResearchJobHunter.probe('search') na tej instalacji: PASS,
+ukończony **22:23:58 Europe/Warsaw**. Potwierdzone narzędzie web_search, kontrolowane
+zapytanie o Node.js releases i oficjalny wynik; nie używano danych profilu
+w probe. Search capability READY z fingerprintem obecnego CLI. Nie czytano
+poczty ani magazynu Google, nie ponawiano OAuth.
+
+Prywatny bootstrap używa niezmienionego createApp/ResearchJobHunter i
+standardowych blokad/loopback/panelu obecnego builda. Dodaje wyłącznie
+autoryzowany startDay(8) i raport operacyjny poza repo; kod produktu,
+zależności, styl oraz generator niezmienione. RESEARCH_ONLY, WORKSTATION,
+system CA, DisabledMailProvider i brak Gmail gateway. Nie pobierano lub
+przekazywano tokenu panelu do Codexa; panel otwarto standardowym open.mjs.
+
+Polityka wykonywania poleceń odrzuciła komendę ukrytego Start-Process
+przed wykonaniem (`blocked by policy`, brak szczegółowego powodu). Kontrolowane
+uruchomienie w utrzymywanej sesji terminala przeszło; bez eskalacji, zmiany
+ustawień zasilania, autostartu lub automatycznego restartu.
+
+Rzeczywisty Start **13 października 22:32:16 Europe/Warsaw**, planowany deadline
+**14 października 06:32:16**, do 8 małych cykli około raz na godzinę. Health=ok,
+mode=RESEARCH_ONLY, proces żywy. Początkowa kontrola: active=true, EXTRACT,
+10 kandydatów, 10 zapisanych publicznych źródeł, jedna firma/jeden nowy szkic,
+4 wywołania modelu i 0 zapisanych błędów. To snapshot początku, nie wynik nocy.
+
+Raport TXT/JSON i status aktualizowane co 30 s poza repo. Zawierają firmy,
+kandydatów, dokładne pełne teksty, rodzaj kontaktu, źródła, kontrole semantyczne,
+uwagi oraz błędy runs/items/models/sources. Odczyt snapshotu sprawdzony na
+readonly SQLite przed startem; składnia prywatnych helperów PASS. Nie jest to
+regresja generatora ani nowy npm run check; ostatni pełny check niezmienionego
+kodu pozostaje Windows 439/12/15 PASS.
+
+Początkowe porównanie hashy: outbox/send_attempts/usage/history/suppressions/
+shared records/profil/fakty/CV/granica kampanii identyczne; zero nowych wysyłek.
+Watcher kończy autoryzowaną pracę na deadline, Stop, błędzie lub zmianie chronionego
+stanu; zapisuje raport/backup i nie wznawia sesji. Właściwy tryb może zakończyć
+się wcześniej po 8 cyklach lub limicie/błędzie; nie deklarujemy pełnych 8 godzin.
+
+Heartbeat w tym czacie na **14 października 07:00 Europe/Warsaw** zapisany
+ACTIVE, jednorazowy poranny raport. Bez dostępu do Gmaila lub sekretów,
+wznowienia sesji, wysyłek lub AUTO_POLICY. Wymaga dostępnego komputera i app.
+Końcowy wynik nocny nadal **W TRAKCIE**; szczegóły/ocena dopiero po zakończeniu.
+
 # Domowy Windows — przygotowanie instalacji, 13 października 2026
 
 Rzeczywisty host Windows win32/x64, Node 24.19.0, npm 11.17.0,

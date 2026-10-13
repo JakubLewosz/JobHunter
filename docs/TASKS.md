@@ -1,5 +1,33 @@
 # Zadania
 
+## Nocny RESEARCH_ONLY — 13/14 października 2026
+
+- [x] Użytkownik jawnie zlecił jedną sesję 8 godzin, najpierw test wyszukiwarki,
+      bez Gmaila/wysyłki; rano pełny raport firm, wiadomości i błędów.
+- [x] Rzeczywisty Windows: doctor/build dostępny, historia integrity=ok,
+      trzy wcześniejsze SELF_TEST zachowane, niepewne próby 0, spójny backup.
+      Istniejący probe('search') potwierdził zdarzenie web_search i oficjalną
+      stronę wydań Node.js; searchCapability READY dla obecnej konfiguracji CLI.
+- [x] Istniejący backend/ResearchJobHunter uruchomiony w WORKSTATION/RESEARCH_ONLY
+      prywatnym bootstrapem, bez zmiany kodu produktu/generatora/builda. Start
+      13 października 22:32:16 Europe/Warsaw, planowany koniec 14 października
+      06:32:16; do 8 małych cykli, co około godzinę. Transport DisabledMailProvider,
+      bez Gmail gateway lub sekretów Google. Standardowy panel/Stop dostępny.
+      Ukryty Start-Process odrzucony przez politykę poleceń; zamiast niego
+      kontrolowana, utrzymywana sesja terminala. Brak zmian zasilania/autostartu.
+- [x] Początkowe health=ok i żywy proces; stan EXTRACT, pierwszy rzeczywisty
+      szkic, 10 kandydatów. Raport poza repo aktualizowany co 30 s, w razie
+      zakończenia/Stop/błędu zachowuje wynik i backup, bez automatycznego wznowienia.
+      Hashe historii/prób/liczników/materiałów/granicy kampanii identyczne; nowych
+      send_attempts 0. Raport i logi prywatne, bez publikacji firm/treści.
+- [x] Jednorazowy poranny powrót do tego czatu zaplanowany na 14 października
+      07:00 Europe/Warsaw. Czyta tylko wyniki tej próby; bez Gmaila lub nowego Start.
+- [ ] Rano sprawdzić rzeczywisty zakres, wszystkie źródła i przeznaczenia kontaktów,
+      pełne szkice, odrzucenia/deduplikację i błędy; porównać zachowaną historię
+      oraz brak nowych wysyłek. Wynik aktualnie W TRAKCIE — nie oznaczać pełnych
+      ośmiu godzin jako wykonanych. Jeśli limit/pauza/uśpienie/Stop zakończyły
+      pracę wcześniej, podać to uczciwie. Po raporcie wyłączyć poranny heartbeat.
+
 ## Przygotowanie domowego Windowsa — 13 października 2026
 
 - [x] Czysty, nieaktywny checkout: fetch i fast-forward `2aa3a1e` → `ed23d96`;
