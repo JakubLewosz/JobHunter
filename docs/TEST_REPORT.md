@@ -1,3 +1,58 @@
+# Domowy Windows — przygotowanie instalacji, 13 października 2026
+
+Rzeczywisty host Windows win32/x64, Node 24.19.0, npm 11.17.0,
+Codex CLI 0.162.0-alpha.17.2; testowany kod `ed23d96` na
+`codex/local-windows-pilot`. Checkout przed fast-forward był czysty,
+diagnostyka procesów/portów nie wykryła backendu JobHuntera.
+Przed inicjalizacją rzeczywisty katalog produkcyjny nie istniał; odróżniono go
+od przekierowanego LOCALAPPDATA sandboxa. WORKSTATION pozostaje nieoznaczony.
+
+npm ci na hoście PASS: 119 pakietów, audyt 120, zero zgłoszonych podatności.
+Pierwsza próba w sandboxie zakończyła się ENOTFOUND registry.npmjs.org;
+nie przypisujemy tego błędu Windows TLS. Build i doctor DEVELOPMENT PASS,
+SQLite 3.53.4. Pełny npm run check na tym fizycznym Windowsie **PASS, exit 0**:
+typecheck/build, **434/434 backend** (1482,7 s), **12/12 performance Stop**
+(25,9 s), **15/15 Playwright** (1,2 min). Zero skipped/cancelled w backendzie
+i performance, bez zmiany progów lub ponowień do PASS. Trzy izolowane pomiary
+odbioru Stop przy 10035 fikcyjnych firmach: 705,82 / 727,02 / 693,54 ms.
+Testy używają fikcyjnych providerów, tymczasowych baz i lokalnych repo Git.
+Nie jest to test natywnej poczty ani całodziennej pracy użytkownika.
+
+Istniejący reader-preflight uruchomiony na hoście przez
+`node --use-system-ca --import tsx scripts/reader-preflight.ts`: PASS,
+Node.js/example.com/Wikipedia READ i HTTP 200, 4 żądania z przekierowaniem,
+environmentFailure=null. Wynik potwierdza konfigurację z magazynem systemowym;
+nie jest nowym pomiarem działania bez tej flagi. TLS i SSRF pozostały aktywne.
+
+Istniejący ExecCodexRunner/ResearchJobHunter: login ChatGPT, wymagane flagi CLI,
+stdin→JSONL→walidacja na fikcyjnych danych PASS; rzeczywisty probe web search
+PASS ze zdarzeniem narzędzia i oficjalną stroną wydań Node.js. Jedna ekstrakcja
+publicznej strony Node.js oraz kwalifikacja w nowej izolowanej diagnostyce
+syntetycznej COMPLETED, bez błędów modelu/elementu. Kontakt niedopuszczony,
+zero szkiców, approvals, outbox i prób. Nie jest to smoke z profilem użytkownika
+ani kontrola gotowości do wysyłki. Nie inicjalizowano natywnego Gmaila.
+
+Podgląd history:new na dokładnym istniejącym prywatnym CSV PASS: jeden CONTACTED,
+scalenie z wbudowaną blokadą Fingoweb, brak dawnych nazw i zapisanych rekordów.
+Podgląd pozostawił target nieutworzony. Wskazany PDF ma SHA zgodny z prywatną propozycją,
+bez edycji pliku lub zatwierdzenia materiałów w produkcji. Dokładne ścieżki,
+hashe i logi są wyłącznie w lokalnym prywatnym raporcie poza repo.
+Po konkretnym potwierdzeniu dokładnej bazy oraz CSV/hash i po PASS check
+wykonano history:new initialize, history:local doctor oraz osobny backup.
+Integralność bazy ok; firmy 1, aliasy 1, ręczne rekordy 1, suppressions 1,
+kontakty 0. Fingoweb CONTACTED zachowuje istniejące wykluczenie i deterministyczną
+blokadę. Nie dodano 33 dawnych propozycji. Send attempts/outbox/usage/shared
+records/approvals/auto sessions 0, SENDING/SEND_UNKNOWN 0. LOCAL_ONLY,
+stopped=true, gmailSenderPaused=true. Granica kampanii zapisana raz.
+Oba backupy sprawdzone read-only: quick_check=ok, identyczny hash plików,
+zgodne liczniki i granica kampanii. Nie odtwarzano produkcji z backupu.
+Materiały seed: 10 DRAFT, profil niezatwierdzony, CV jeszcze nieimportowane.
+WORKSTATION czeka na osobne potwierdzenie configure; materiały, Gmail i pilotaż
+mają dalsze odrębne decyzje. Pełny smoke z profilem użytkownika niewykonany.
+Rzeczywiste wysyłki/SELF_TEST: **0**.
+
+---
+
 # Spójność dowodów — 13 października 2026
 
 macOS arm64, Node v24.11.0, CLI 0.162.0-alpha.17.2. Poprzednie CI 482f34a:

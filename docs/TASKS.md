@@ -1,5 +1,38 @@
 # Zadania
 
+## Przygotowanie domowego Windowsa — 13 października 2026
+
+- [x] Czysty, nieaktywny checkout: fetch i fast-forward `2aa3a1e` → `ed23d96`;
+      upstream zgodny. Diagnostyka hosta nie wykryła backendu JobHuntera ani
+      katalogu produkcyjnego. Sandbox przekierowuje LOCALAPPDATA, dlatego
+      diagnostyka historii użyła jawnej ścieżki rzeczywistego profilu Windows.
+- [x] Node 24.19.0, npm 11.17.0, Codex CLI 0.162.0-alpha.17.2;
+      npm ci/build/doctor PASS. Instalacja w sandboxie miała DNS ENOTFOUND;
+      instalacja tego samego lockfile przez sieć hosta zakończona poprawnie.
+- [x] Istniejący reader-preflight z --use-system-ca: 3 niezależne READ/HTTP 200,
+      4 żądania z przekierowaniem, bez wyłączania TLS/SSRF. Probe ChatGPT/JSON
+      i rzeczywisty web search PASS. Jedna publiczna ekstrakcja/kwalifikacja
+      strony Node.js w izolowanej diagnostyce syntetycznej, bez szkiców/poczty.
+- [x] Aktualny CSV i wskazany PDF znalezione poza repo; SHA PDF zgodny
+      z propozycją. Podgląd CSV poprawny, tylko scalenie z blokadą Fingoweb;
+      podczas podglądu zero zapisanych rekordów i dawnych propozycji, bez targetu.
+- [x] Pełny npm run check na fizycznym Windowsie PASS, exit 0: typecheck/build,
+      434 backend, 12 performance Stop, 15 Playwright. Fikcyjne providery i dane.
+- [x] Użytkownik potwierdził utworzenie wskazanej nowej bazy i import wyłącznie
+      dokładnego CSV/hashu z prywatnego podglądu. Bez zgody na WORKSTATION lub send.
+- [x] Po PASS check wykonano zatwierdzone history:new initialize z dokładnym
+      hashem, history:local doctor oraz osobny backup. Jeden ręczny rekord,
+      Fingoweb zablokowany, LOCAL_ONLY, stopped=true, gmailSenderPaused=true;
+      próby/outbox/usage/shared/auto sessions 0, niepewnych prób 0.
+      Oba spójne backupy: integrity=ok, zgodne liczniki i granica kampanii.
+- [ ] Uzyskać osobne potwierdzenie dokładnego configure
+      --confirm-new-campaign-history --single-workstation; pytanie przedstawiono.
+      Nie tworzyć workstation.json ręcznie. Zakres nowej kampanii nie jest
+      deklaracją kompletnej listy dawnych kontaktów; nie odnawiać granicy.
+- [ ] Potem profil/CV DRAFT do przeglądu w panelu; publiczny smoke z zatwierdzonym
+      profilem do 5 firm/15 minut. Gmail/status po konfiguracji; OAuth/read,
+      SELF_TEST oraz pilotaż do 3 firm wymagają osobnych decyzji. Wysyłki 0.
+
 ## Spójność dowodów — 13 października 2026
 
 - [x] Znana oryginalna diagnostyka odczytana bez zmian; spójna read-only kopia przed
