@@ -126,8 +126,10 @@ const rows: any[] = budget.identities.map((domain: string) => {
     ...new Set(
       drafts.flatMap((d) =>
         JSON.parse(d.context_json)
-          .profile.facts.filter((f: any) =>
-            ['autorelay', 'elektroscan', 'codefabric'].includes(f.key),
+          .profile.facts.filter(
+            (f: any) =>
+              ['autorelay', 'elektroscan', 'codefabric'].includes(f.key) &&
+              JSON.parse(d.payload_json).factIds.includes(f.id),
           )
           .map((f: any) => f.key),
       ),
@@ -145,7 +147,8 @@ const rows: any[] = budget.identities.map((domain: string) => {
       d.code_status === 'PASS' &&
       d.review_status === 'COMPLETED' &&
       reviews[d.draft_id + ':' + d.version]?.semantic?.supported === true &&
-      !reviews[d.draft_id + ':' + d.version]?.semantic?.issues?.length,
+      !reviews[d.draft_id + ':' + d.version]?.semantic?.issues?.length &&
+      !reviews[d.draft_id + ':' + d.version]?.materialIssues?.length,
   );
   const skip = !analysis
     ? (last?.error ?? 'Odczyt niedokończony; brak zweryfikowanej analizy.')
@@ -253,7 +256,8 @@ const versions = tables.research_draft_materials.map((m) => {
     m.code_status === 'PASS' &&
     m.review_status === 'COMPLETED' &&
     r.semantic.supported === true &&
-    !r.semantic.issues.length;
+    !r.semantic.issues.length &&
+    !r.materialIssues?.length;
   return {
     ...m,
     payload,
@@ -264,6 +268,7 @@ const versions = tables.research_draft_materials.map((m) => {
     email: r.email ?? tables.contacts.find((c) => c.id === d.contact_id)?.email,
     review: r.semantic,
     warnings: r.warnings ?? [],
+    material_issues: r.materialIssues ?? [],
     checked,
     original_text_hash: hash(original),
     exported_text_hash: hash(exported),
@@ -278,7 +283,10 @@ for (const call of tables.model_calls.filter((c) => c.status === 'ERROR')) {
     (e) => e.stage === 'MODEL_ATTRIBUTION' && e.call_id === call.id,
   )?.identity;
   const item = tables.research_items.find(
-    (i) => i.run_id === call.run_id && (!attributed || domainOf(i.url) === attributed),
+    (i) =>
+      i.run_id === call.run_id &&
+      (!autonomous || !!attributed) &&
+      (!attributed || domainOf(i.url) === attributed),
   );
   stageErrors.push({
     company_id:
@@ -378,7 +386,23 @@ const counts = {
   source_failures_retained: sourceFailures.length,
   model_errors: tables.model_calls.filter((c) => c.status === 'ERROR').length,
   model_calls_total: budget.models,
-  duplicates: events.filter((e) => /DUPLICATE/.test(e.outcome)).length,
+  model_calls_assigned_to_companies: autonomous
+    ? events.filter((e) => e.stage === 'MODEL_ATTRIBUTION' && e.outcome === 'STARTED' && e.identity)
+        .length
+    : null,
+  web_search_actions: autonomous
+    ? events
+        .filter((e) => e.stage === 'MODEL_ATTRIBUTION' && e.outcome === 'RECORDED')
+        .reduce((n, e) => n + e.web_search_actions, 0)
+    : null,
+  duplicates:
+    events.filter((e) => /DUPLICATE/.test(e.outcome)).length +
+    (autonomous
+      ? result.cycles.reduce((n: number, c: any) => n + (c.metrics?.duplicates ?? 0), 0)
+      : 0),
+  already_researched_leads: autonomous
+    ? events.filter((e) => e.outcome === 'ALREADY_RESEARCHED' && e.stage === 'LEAD').length
+    : null,
   replay_batches: events.filter((e) =>
     [
       'RESUME_EXISTING_ONLY',
@@ -393,7 +417,10 @@ const counts = {
   active_auto_sessions: 0,
 };
 const status = autonomous
-  ? result.outcome
+  ? result.outcome === 'COMPLETE' &&
+    (counts.model_errors || counts.extraction_validation_errors || counts.unverified_versions)
+    ? 'PARTIAL'
+    : result.outcome
   : result.outcome === 'BLOCKED_EXTERNAL'
     ? 'BLOCKED_EXTERNAL'
     : counts.analyzed_unique_firms
@@ -408,7 +435,10 @@ const dateParts = new Intl.DateTimeFormat('sv-SE', {
   minute: '2-digit',
   hourCycle: 'h23',
 }).format(new Date(budget.startedAt));
-const name = dateParts.replace(' ', '_').replace(':', '-') + '_' + budget.sessionId;
+const name =
+  dateParts.replace(' ', '_').replace(':', '-') +
+  '_' +
+  (autonomous ? hash(budget.startedAt).slice(0, 8) + '_macos_autonomous' : budget.sessionId);
 const output = resolve('docs/research-review', name);
 mkdirSync(output, { recursive: true });
 const write = (name: string, text: string) =>
@@ -478,7 +508,7 @@ write(
 let messages =
   '# Zachowane wiadomości\n\nWysyłki: 0. Są to rzeczywiste wyniki generatora; pozytywna kontrola nie udziela zgody na kontakt. Kopie publiczne nie są poprawiane stylistycznie.\n\n';
 for (const v of versions) {
-  messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version} (${v.latest ? 'NAJNOWSZA' : 'starsza'})\n\nSłów: ${v.word_count}. Odbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Generacja: ${v.created_at}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
+  messages += `## ${v.company_id} — ${v.draft_id}, wersja ${v.version} (${v.latest ? 'NAJNOWSZA' : 'starsza'})\n\nSłów: ${v.word_count}. Odbiorca: ${v.email ?? 'brak potwierdzonego adresu'}. Generacja: ${v.created_at}.\n\nKod: **${v.code_status}**; review: **${v.review_status}**, supported=${v.review.supported}. Pełne przejście kontroli: **${v.checked}**.\n\nUwagi: ${md(JSON.stringify({ code_error: v.code_error, review_error: v.review_error, review: v.review, warnings: v.warnings, material_issues: v.material_issues }))}.\n\nTemat: **${redact(v.payload.subject)}**\n\n~~~text\n${redact(v.payload.body)}\n~~~\n\nHash tekstu oryginalnego (temat + LF + treść): ${v.original_text_hash}. Hash kopii publicznej: ${v.exported_text_hash}. Redakcje: ${v.redacted ? 'telefon/prywatny email kandydata; znaczniki jawne' : 'brak; tekst zachowany'}; hash całego payloadu: ${v.payload_hash}.\n\nGenerator otrzymał factIds: ${v.context.profile.facts.map((f: any) => f.id).join(', ')}.\n\n| Deklaracja | Rodzaj | factIds | evidenceIds → sourceIds |\n| --- | --- | --- | --- |\n`;
   for (const claim of v.payload.claims)
     messages += `| ${md(claim.text)} | ${claim.kind} | ${claim.factIds.join(', ')} | ${claim.evidenceIds.map((id: string) => id + ' → ' + (evidenceMap.get(id)?.source_id ?? 'BRAK')).join(', ')} |\n`;
   messages +=
@@ -651,7 +681,10 @@ for (const call of tables.model_calls) {
     (e) => e.stage === 'MODEL_ATTRIBUTION' && e.call_id === call.id,
   )?.identity;
   const item = tables.research_items.find(
-    (i) => i.run_id === call.run_id && (!attributed || domainOf(i.url) === attributed),
+    (i) =>
+      i.run_id === call.run_id &&
+      (!autonomous || !!attributed) &&
+      (!attributed || domainOf(i.url) === attributed),
   );
   timeline.push({
     timestamp: call.created_at,
@@ -806,6 +839,11 @@ if (autonomous) {
     '## Planer: test przed/po i rzeczywiste cykle\n\nFixture: oferta pozostaje REJECTED; osobne udokumentowane COMPANY_INQUIRY. Kontakty 0 → 1, matchedOffers=0, companyInquiries=1, rejected=0. Temat AutoRelay wynika z tej samej projectSelection co szkic, z literalnej działalności; brak trafnego tytułu/wymagań nie usuwa sygnału. Jedna firma/licznik mimo kolejnych wersji. Puste/duplikatowe wyniki zmieniają kierunek i zachowują cooldown; awaria czytnika nie zwiększa licznika wyczerpania rynku.\n\n~~~json\n' +
     JSON.stringify(result.cycles, null, 2) +
     '\n~~~\n';
+  if (existsSync(join(dir, 'metrics-replay.json')))
+    comparison +=
+      '\n## Replay metryk po zamknięciu publicznej części\n\nOryginalny przebieg f59ccb8 pozostaje zachowany. Późniejsza poprawka używa tej samej kontroli materialBinding co bramka aplikacji. GOTOMA miała wcześniej pozytywny review; późniejsza analiza bez inquiryBasis unieważniła binding. W cyklu 4 pierwotny checkedDrafts=2 obejmował ten stary szkic. Poprawka daje 1 w bieżącym snapshotcie; cykl 3 w tym samym końcowym snapshotcie daje 2 zamiast dawnych 3, ponieważ jest to stan obecny, nie cofnięcie historycznej pozytywnej kontroli. Nie poprawiano oryginalnej bazy, decyzji lub wiadomości: spójna kopia po Stop i normalne metody planera, 0 HTTP/0 modeli. Regresja stale-material FAIL→PASS jest w TEST_REPORT.\n\n~~~json\n' +
+      JSON.stringify(read('metrics-replay.json'), null, 2) +
+      '\n~~~\n';
   write('POROWNANIE.md', comparison);
   write(
     'WIADOMOSCI.md',
@@ -827,6 +865,9 @@ if (autonomous) {
       r.qualifications.at(-1)?.decision?.startsWith('READY_'),
     ).length,
     latest_checked_drafts: newLatest.filter((v) => v.checked).length,
+    duplicates: counts.duplicates,
+    stale_drafts: newLatest.filter((v) => v.material_issues.includes('DRAFT_MATERIAL_STALE'))
+      .length,
     all_versions: versions.filter((v) => newRows.some((r) => r.company_id === v.company_id)).length,
     technical_item_errors: newRows.flatMap((r) =>
       r.items.filter((i: any) => ['ERROR', 'UNAVAILABLE'].includes(i.status)),
@@ -836,7 +877,7 @@ if (autonomous) {
   result.discovery = discovery;
   write(
     'README.md',
-    `# Samodzielny research JobHunter — ${name}\n\nWynik **${status}**, powód końca ${budget.stopReason}. Program sam wybierał kierunki przez QueryPlanner.next(), używał CodexSearchProvider i pełnego workera READ → EXTRACT → QUALIFY → DRAFT → SEMANTIC_REVIEW. Nowe firmy pochodzą z tych wyszukiwań. Kontrole są osobną grupą. Ręczne interwencje podczas publicznej pracy: **${result.manualInterventions}**.\n\n~~~json\n${JSON.stringify(discovery, null, 2)}\n~~~\n\nPoczątek publicznej części ${budget.firstPublicAt}, koniec ${budget.endedAt}, czas ${((Date.parse(budget.endedAt) - Date.parse(budget.firstPublicAt)) / 60000).toFixed(2)} min. DEVELOPMENT; osobne dane poza repo. Kod ${result.code.head}, dirty=${result.code.dirty}; hashe w MANIFEST. Zatwierdzony profil z ${materials.provenance.commit}; cvVerifiedInThisRun=false, bez PDF.\n\nLimity tej jawnej diagnostyki: 90 minut, 20 nowych firm i 4 kontrole, 180 bezpośrednich prób HTTP (redirect/retry/preflight wliczone), 100 wywołań modelu (probe/search/extract/draft/review wliczone), bez zerowania. Wybrany skończony zakres harnessu: do czterech cykli po cztery nowe firmy. Nie zmienia limitów produktu ani małego smoke. Wszystkie publiczne operacje tej rundy korzystają z jednego budżetu. Wewnętrzny ruch HTTP usługi web search nie jest ujawniany przez CLI; liczba jego akcji i zapytań jest w przebiegu, a ścisłej liczby transportowej po stronie dostawcy nie można zweryfikować.\n\n| Licznik (nowe + kontrolne) | Wynik |\n| --- | ---: |\n` +
+    `# Samodzielny research JobHunter — ${name}\n\nWynik **${status}**, powód końca ${budget.stopReason}. PARTIAL wynika z jednego zachowanego szkicu GOTOMA, którego binding po ponownej analizie stał się DRAFT_MATERIAL_STALE. Review treści było pozytywne; aktualna bramka nie dopuszcza tego materiału. Brak błędów modeli i HTTP. Późniejsza poprawka licznika gotowych szkiców została sprawdzona offline na spójnej kopii, bez zmiany publicznej chronologii. Program sam wybierał kierunki przez QueryPlanner.next(), używał CodexSearchProvider i pełnego workera READ → EXTRACT → QUALIFY → DRAFT → SEMANTIC_REVIEW. Nowe firmy pochodzą z tych wyszukiwań. Kontrole są osobną grupą. Ręczne interwencje podczas publicznej pracy: **${result.manualInterventions}**.\n\n~~~json\n${JSON.stringify(discovery, null, 2)}\n~~~\n\nPoczątek publicznej części ${budget.firstPublicAt}, koniec ${budget.endedAt}, czas ${((Date.parse(budget.endedAt) - Date.parse(budget.firstPublicAt)) / 60000).toFixed(2)} min. DEVELOPMENT; osobne dane poza repo. Kod ${result.code.head}, dirty=${result.code.dirty}; hashe w MANIFEST. Zatwierdzony profil z ${materials.provenance.commit}; cvVerifiedInThisRun=false, bez PDF.\n\nLimity tej jawnej diagnostyki: 90 minut, 20 nowych firm i 4 kontrole, 180 bezpośrednich prób HTTP (redirect/retry/preflight wliczone), 100 wywołań modelu (probe/search/extract/draft/review wliczone), bez zerowania. Wybrany skończony zakres harnessu: do czterech cykli po cztery nowe firmy. Nie zmienia limitów produktu ani małego smoke. Wszystkie publiczne operacje tej rundy korzystają z jednego budżetu. Wewnętrzny ruch HTTP usługi web search nie jest ujawniany przez CLI; liczba jego akcji i zapytań jest w przebiegu, a ścisłej liczby transportowej po stronie dostawcy nie można zweryfikować.\n\n| Licznik (nowe + kontrolne) | Wynik |\n| --- | ---: |\n` +
       Object.entries(counts)
         .map(([k, v]) => `| ${k} | ${v} |`)
         .join('\n') +
@@ -940,6 +981,9 @@ const manifest: any = {
     'Model nie ujawnił wersji; brak pełnych danych tokenów dla audytu',
   ],
   tests,
+  offline_metrics_replay: existsSync(join(dir, 'metrics-replay.json'))
+    ? read('metrics-replay.json')
+    : null,
   files: Object.fromEntries(exportedFiles.map((f) => [f, hash(readFileSync(join(output, f)))])),
 };
 manifest.files['MANIFEST.json'] = null;

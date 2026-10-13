@@ -109,7 +109,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   private preparationController?: AbortController;
   constructor(store: Store, options: ConstructorParameters<typeof GmailJobHunter>[1] = {}) {
     super(store, { ...options, mode: 'AUTO_POLICY' });
-    this.queryPlanner = new QueryPlanner(store, this.clock);
+    this.queryPlanner = new QueryPlanner(store, this.clock, (d) => this.draftMaterialIssues(d));
     store.exec(
       "UPDATE auto_sessions SET status='STOPPED',stopped_at=?,reason='RESTART' WHERE status IN ('RUNNING','PAUSED','WAITING')",
       this.now(),

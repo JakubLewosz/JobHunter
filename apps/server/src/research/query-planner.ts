@@ -54,6 +54,7 @@ export class QueryPlanner {
   constructor(
     private store: Store,
     private clock: () => Date,
+    private materialIssues: (draft: Row) => string[] = () => ['DRAFT_CHECK_UNAVAILABLE'],
   ) {}
   private now() {
     return iso(this.clock());
@@ -118,7 +119,8 @@ export class QueryPlanner {
               draft.code_status === 'PASS' &&
               draft.review_status === 'COMPLETED' &&
               review.supported === true &&
-              !review.issues.length
+              !review.issues.length &&
+              !this.materialIssues(draft).length
             )
               checked.add(item.company_id);
           }

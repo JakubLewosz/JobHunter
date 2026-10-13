@@ -10,6 +10,7 @@ import {
   normalizeResearchURL,
 } from '../apps/server/src/research/query-planner.js';
 import { ResearchJobHunter } from '../apps/server/src/research/service.js';
+import { createPublicDiagnostic } from '../apps/server/src/research/diagnostic.js';
 import { FixtureReader, FixtureRunner } from './research-fixture.js';
 test('planner persists progress, expands beyond eight, cools down and bounds history prompts', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'jh-plan-')),
@@ -168,4 +169,47 @@ test('planner measures documented company inquiry separately from rejected offer
   assert.equal(metrics.rejected, 0);
   assert.equal(metrics.topicCounts.autorelay, 1);
   assert.equal(metrics.topicCounts.fixdesk, 0);
+});
+
+test('planner never counts a positive review with stale material binding as a checked draft', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'jh-plan-stale-'));
+  const runner = new FixtureRunner(),
+    reader = new FixtureReader();
+  runner.prospect = reader.prospect = true;
+  const { service, store } = createPublicDiagnostic(dir, { runner, reader });
+  t.after(() => {
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+  service.approveProfile();
+  await service.probe('search');
+  const policy = { scopeHash: 'stale-fixture', searchScope: 'Polska' };
+  const planner = new QueryPlanner(
+    store,
+    () => new Date(),
+    (d) => service.draftMaterialIssues(d),
+  );
+  const plan = planner.next(policy, service.minimalProfile().facts);
+  await service.start(plan.query);
+  const run = store.one("SELECT * FROM runs WHERE status='QUEUED'")!;
+  planner.started(plan.id!, run.id);
+  await service.tick();
+  const d = service.draftRows()[0];
+  assert.equal(JSON.parse(d.semantic_review).supported, true);
+  const profile = service.profile();
+  service.updateProfile({
+    name: profile.name,
+    goal: profile.goal + ' Fixture new approved version.',
+    hours_approx: profile.hours_approx,
+    version: profile.version,
+    message_template: profile.message_template,
+    facts: profile.facts.map((f) => ({ id: f.id, content: f.content })),
+  });
+  service.approveProfile();
+  assert.ok(service.draftMaterialIssues(d).includes('DRAFT_MATERIAL_STALE'));
+  planner.reconcile(policy.scopeHash);
+  assert.equal(
+    JSON.parse(store.one('SELECT metrics FROM auto_query_plan')!.metrics).checkedDrafts,
+    0,
+  );
 });

@@ -14,7 +14,7 @@ export class AutonomousDiagnostic {
   ) {
     if (!store.get('diagnosticOnly', false) || 'gateway' in service)
       throw new Error('DIAGNOSTIC_ONLY_REQUIRED');
-    this.planner = new QueryPlanner(store, clock);
+    this.planner = new QueryPlanner(store, clock, (d) => service.draftMaterialIssues(d));
   }
   async cycle() {
     const plan = this.planner.next(this.policy, this.service.minimalProfile().facts);
