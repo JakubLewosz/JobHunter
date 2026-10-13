@@ -47,9 +47,45 @@ stopped=true, gmailSenderPaused=true. Granica kampanii zapisana raz.
 Oba backupy sprawdzone read-only: quick_check=ok, identyczny hash plików,
 zgodne liczniki i granica kampanii. Nie odtwarzano produkcji z backupu.
 Materiały seed: 10 DRAFT, profil niezatwierdzony, CV jeszcze nieimportowane.
-WORKSTATION czeka na osobne potwierdzenie configure; materiały, Gmail i pilotaż
+Po osobnym potwierdzeniu wykonano configure --confirm-new-campaign-history
+--single-workstation istniejącym helperem, bez ręcznego tworzenia znacznika.
+Backend nieuruchomiony, granica kampanii niezmieniona. Materiały, Gmail i pilotaż
 mają dalsze odrębne decyzje. Pełny smoke z profilem użytkownika niewykonany.
 Rzeczywiste wysyłki/SELF_TEST: **0**.
+
+## Blocker dokładnego zestawu materiałów
+
+Przed zmianą kodu bazowy pełny Windows check 434/12/15 PASS. Nowa fikcyjna
+regresja: trzy FAIL INVALID_FACT, gdy profil pomija domyślny opis czwartego
+projektu; przypadek niedozwolonego pomijania osobistych faktów PASS.
+To uniemożliwiało konfigurację aktualnego zestawu trzech projektów bez kasowania
+wiersza lub zatwierdzania niezamówionego opisu. Dane prywatne nie były używane
+w tych testach.
+
+Mała poprawka istniejącego updateProfile/profile/approveProfile: pominięty
+opcjonalny projekt zachowany jako DEFERRED; wyłącznie wybrane fakty idą do
+panelu/modelu/hasza/approve i approved-profile smoke. Późniejszy jawny wybór
+istniejącego ID przywraca opis jako DRAFT i unieważnia aprobatę. Nieznane,
+zdublowane ID lub pominięte fakty osobiste/dostępność nadal INVALID_FACT.
+Odłożenie faktu osobistego w niespójnej bazie blokuje aprobatę i snapshot.
+Panel pokazuje krótką informację o odłożonym opisie; bez zmiany stylu wiadomości.
+Pierwszy typecheck wykrył brak pola w typie override; adnotację poprawiono.
+Końcowy typecheck oraz **46/46** celowanych material-scope/public-diagnostic/
+message-style PASS na Windows, bez skipped. Pełny nowy Windows check po poprawce
+**PASS, exit 0**: **439/439 backend** (1652,0 s), **12/12 performance Stop**
+(32,4 s), **15/15 UI** (1,0 min), typecheck/build. Zero skipped; źródła kodu
+nie były edytowane podczas tego checku. Trzy izolowane odbiory Stop przy 10035
+firmach: 925,85 / 852,24 / 891,64 ms; pełny zestaw 936,28 ms.
+Progów nie podniesiono, nie ponawiano nieudanych pomiarów do PASS.
+
+Po dodatkowym spójnym backupie zapisano wyłącznie DRAFT: 9 bieżących faktów,
+trzy projekty i niezmienną kopię wskazanego PDF z prawidłowym SHA. Zachowano
+dziesiąty odłożony opis w bazie; nie dodano faktów o egzaminach/praktykach
+do materiałów wiadomości ani nie zatwierdzono niczego za użytkownika.
+Historia ręczna i granica kampanii porównane przed/po — identyczne;
+stopped=true, outbox/send attempts 0, Gmail/model/HTTP technicznie wyłączone
+w helperze przygotowującym materiały. Backend czeka na końcowy build/check
+i świadomy przegląd materiałów w panelu RESEARCH_ONLY.
 
 ---
 

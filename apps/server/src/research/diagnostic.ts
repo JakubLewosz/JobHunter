@@ -9,6 +9,7 @@ import { contactEligibility, validateAnalysis } from './contracts.js';
 import { hash } from '../util.js';
 import Database from 'better-sqlite3';
 import { workstationRuntime } from '../runtime.js';
+import { projectKeys } from './drafting.js';
 
 export type Materials = {
   name: string;
@@ -46,11 +47,14 @@ export function approvedDiagnosticMaterials(base: string): Materials {
           "SELECT fact_key,content,approval_status FROM candidate_facts WHERE profile_id='candidate'",
         )
         .all() as any[];
+      const selectedFacts = facts.filter(
+        (f) => f.approval_status !== 'DEFERRED' || !projectKeys.includes(f.fact_key),
+      );
       if (
         !profile?.approved_at ||
         profile.availability_mode !== 'APPROX' ||
-        !facts.length ||
-        facts.some((f) => f.approval_status !== 'APPROVED')
+        !selectedFacts.length ||
+        selectedFacts.some((f) => f.approval_status !== 'APPROVED')
       )
         throw new Error('APPROVED_MATERIALS_REQUIRED');
       const template = db
@@ -61,7 +65,7 @@ export function approvedDiagnosticMaterials(base: string): Materials {
         goal: profile.goal,
         hoursApprox: profile.hours_approx,
         template: JSON.parse(template.value),
-        facts: Object.fromEntries(facts.map((f) => [f.fact_key, f.content])),
+        facts: Object.fromEntries(selectedFacts.map((f) => [f.fact_key, f.content])),
       };
     })();
   } finally {

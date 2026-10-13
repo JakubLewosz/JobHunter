@@ -25,10 +25,23 @@
       Fingoweb zablokowany, LOCAL_ONLY, stopped=true, gmailSenderPaused=true;
       próby/outbox/usage/shared/auto sessions 0, niepewnych prób 0.
       Oba spójne backupy: integrity=ok, zgodne liczniki i granica kampanii.
-- [ ] Uzyskać osobne potwierdzenie dokładnego configure
-      --confirm-new-campaign-history --single-workstation; pytanie przedstawiono.
-      Nie tworzyć workstation.json ręcznie. Zakres nowej kampanii nie jest
-      deklaracją kompletnej listy dawnych kontaktów; nie odnawiać granicy.
+- [x] Po osobnej zgodzie wykonano dokładny configure
+      --confirm-new-campaign-history --single-workstation istniejącym helperem.
+      WORKSTATION ma zakres nowej kampanii, bez deklaracji kompletnej listy
+      dawnych kontaktów i bez odnowienia granicy lub uprawnienia do send.
+- [x] Odtworzony blocker konfiguracji: subset bez domyślnego projektu dawał
+      INVALID_FACT. Opisy projektów poza wybranym zestawem pozostają DEFERRED,
+      poza modelem/aprobatą/smoke, bez kasowania; jawny późniejszy wybór → DRAFT.
+      Fakty osobiste/dostępność nadal wymagane. Typecheck i 46 testów celowanych PASS.
+- [x] Po dodatkowym backupie przygotowano 9 aktualnych faktów DRAFT, trzy projekty,
+      FixDesk odłożony i zweryfikowany PDF jako niezatwierdzona niezmienna kopia.
+      Bez dodatkowych faktów o egzaminach/praktykach, bez edycji PDF. Historia
+      i granica kampanii bez zmian; native Gmail nieinicjalizowany, outbox/próby 0.
+- [x] Nowy pełny check Windows po poprawce zakresu PASS, exit 0:
+      439 backend / 12 performance Stop / 15 UI, typecheck/build.
+- [ ] Sprawdzić wychodzące pliki i commit/push kodu; następnie uruchomić panel
+      WORKSTATION/RESEARCH_ONLY z magazynem CA Windows i jawnym katalogiem danych,
+      pozostawiając pracę zatrzymaną do przeglądu profilu/CV przez użytkownika.
 - [ ] Potem profil/CV DRAFT do przeglądu w panelu; publiczny smoke z zatwierdzonym
       profilem do 5 firm/15 minut. Gmail/status po konfiguracji; OAuth/read,
       SELF_TEST oraz pilotaż do 3 firm wymagają osobnych decyzji. Wysyłki 0.

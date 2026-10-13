@@ -284,6 +284,7 @@ export class ResearchJobHunter extends JobHunter {
   }
   override profile(): Row & {
     facts: Row[];
+    deferred_facts: Row[];
     projects: Row[];
     cvs: Row[];
     message_template: string;

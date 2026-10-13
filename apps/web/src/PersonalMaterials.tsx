@@ -114,6 +114,13 @@ export function PersonalMaterials({
             </p>
           </div>
         </div>
+        {profile.deferred_facts?.length > 0 && (
+          <p>
+            Poza obecnym zestawem:{' '}
+            {profile.deferred_facts.map((f: Row) => projectNames[f.fact_key]).join(', ')}. Opisy
+            pozostają zapisane i wymagają osobnego wyboru oraz zatwierdzenia.
+          </p>
+        )}
         {facts
           .filter((f) => projectNames[f.fact_key])
           .map((f) => (

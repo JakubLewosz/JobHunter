@@ -5,6 +5,7 @@ import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 import { Store } from './db.js';
 import { companyHistoryBlocks } from './prior-applications.js';
+import { projectKeys } from './research/drafting.js';
 import {
   companyDomain,
   csvCell,
@@ -144,12 +145,24 @@ export class JobHunter {
   campaign() {
     return this.store.one('SELECT * FROM campaigns WHERE id=?', this.campaignId)!;
   }
-  profile(): Row & { facts: Row[]; projects: Row[]; cvs: Row[] } {
+  profile(): Row & { facts: Row[]; deferred_facts: Row[]; projects: Row[]; cvs: Row[] } {
     const p = this.store.one('SELECT * FROM candidate_profiles WHERE id=?', 'candidate')!;
+    const allFacts = this.store.all('SELECT * FROM candidate_facts ORDER BY created_at,id');
+    if (
+      allFacts.some(
+        (f) => f.approval_status === 'DEFERRED' && !projectKeys.some((key) => key === f.fact_key),
+      )
+    )
+      throw new DomainError('INVALID_FACT', 'Odłożenie może obejmować wyłącznie opis projektu.');
+    const facts = allFacts.filter((f) => f.approval_status !== 'DEFERRED');
+    const activeKeys = new Set(facts.map((f) => f.fact_key));
     return {
       ...p,
-      facts: this.store.all('SELECT * FROM candidate_facts ORDER BY created_at,id'),
-      projects: this.store.all('SELECT * FROM portfolio_projects ORDER BY name'),
+      facts,
+      deferred_facts: allFacts.filter((f) => f.approval_status === 'DEFERRED'),
+      projects: this.store
+        .all('SELECT * FROM portfolio_projects ORDER BY name')
+        .filter((p) => activeKeys.has(p.id)),
       cvs: this.store.all('SELECT * FROM cv_assets ORDER BY created_at DESC'),
     };
   }
@@ -412,7 +425,7 @@ export class JobHunter {
         this.now(),
       );
       this.store.exec(
-        "UPDATE candidate_facts SET approval_status='APPROVED',checked_at=?,updated_at=?",
+        "UPDATE candidate_facts SET approval_status='APPROVED',checked_at=?,updated_at=? WHERE profile_id='candidate' AND approval_status<>'DEFERRED'",
         this.now(),
         this.now(),
       );
@@ -429,10 +442,12 @@ export class JobHunter {
     const p = this.profile();
     if (v.version !== p.version)
       throw new DomainError('VERSION_CONFLICT', 'Profil zmieniono w innym oknie. Odśwież dane.');
+    const allFacts = this.store.all("SELECT * FROM candidate_facts WHERE profile_id='candidate'");
+    const selected = new Set(v.facts.map((f) => f.id));
     if (
-      v.facts.length !== p.facts.length ||
-      new Set(v.facts.map((f) => f.id)).size !== p.facts.length ||
-      v.facts.some((f) => !p.facts.some((x: Row) => x.id === f.id))
+      selected.size !== v.facts.length ||
+      v.facts.some((f) => !allFacts.some((x) => x.id === f.id)) ||
+      allFacts.some((f) => !selected.has(f.id) && !projectKeys.some((key) => key === f.fact_key))
     )
       throw new DomainError('INVALID_FACT', 'Nieprawidłowy zestaw faktów.');
     this.store.atomic(() => {
@@ -445,6 +460,15 @@ export class JobHunter {
         hash(JSON.stringify(v)),
         this.now(),
       );
+      // Omitted optional descriptions remain stored, outside this profile's approval/model scope.
+      // Supplying their existing IDs in a later edit restores them as DRAFT, never as approved facts.
+      for (const f of allFacts)
+        if (!selected.has(f.id) && f.approval_status !== 'DEFERRED')
+          this.store.exec(
+            "UPDATE candidate_facts SET approval_status='DEFERRED',checked_at=NULL,version=version+1,updated_at=? WHERE id=?",
+            this.now(),
+            f.id,
+          );
       for (const f of v.facts)
         this.store.exec(
           "UPDATE candidate_facts SET content=?,approval_status='DRAFT',version=version+1,updated_at=? WHERE id=?",
