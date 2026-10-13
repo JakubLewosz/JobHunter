@@ -111,6 +111,11 @@ export async function setup(
           }),
         }
       : undefined;
+  const readAtClock = reader.read.bind(reader);
+  reader.read = async (url, signal) => ({
+    ...(await readAtClock(url, signal)),
+    fetched_at: new Date(time).toISOString(),
+  });
   const options = {
     gateway,
     accountInfo: () => gateway.info,

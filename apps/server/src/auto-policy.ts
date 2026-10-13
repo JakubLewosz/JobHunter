@@ -698,6 +698,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     return hash(JSON.stringify({ opportunity: d.opportunity_id, contact: c }));
   }
   private awaitingDraftReview(d: Row) {
+    if (this.store.get(`researchPending:${d.company_id}`, null)) return true;
     const material = this.store.one(
       'SELECT review_status FROM research_draft_materials WHERE draft_id=? AND version=?',
       d.id,

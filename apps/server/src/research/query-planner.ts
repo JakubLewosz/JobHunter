@@ -105,7 +105,7 @@ export class QueryPlanner {
             }
           } else if (
             fit.decision === 'NEEDS_REVIEW' &&
-            /Niepotwierdzone|Brak osobnego|Sprzeczne/.test(contact.reason)
+            /Niepotwierdzone|Brak osobnego|Brak zweryfikowanej|Sprzeczne/.test(contact.reason)
           )
             missing.add(item.company_id);
           else rejected.add(item.company_id);

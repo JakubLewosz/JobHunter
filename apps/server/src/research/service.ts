@@ -38,6 +38,7 @@ import {
   semanticReviewPrompt,
 } from './message-policy.js';
 import {
+  resolveInquiryBasis,
   analysisSchema,
   searchSchema,
   realDraftSchema,
@@ -52,7 +53,7 @@ import {
   type Analysis,
 } from './contracts.js';
 import { parserVersion } from './html.js';
-const analysisPolicyVersion = 4;
+const analysisPolicyVersion = 5;
 const researchInstructions =
   baseResearchInstructions +
   '\nZdalna obsługa klientów lub spotkania online nie potwierdzają zdalnej pracy kandydata. Ceny usług nie potwierdzają wynagrodzenia. Warunki zatrudnienia wymagają osobnych dowodów; inaczej pozostają unknown.';
@@ -873,7 +874,7 @@ export class ResearchJobHunter extends JobHunter {
         runs,
       )!.n,
       drafts: this.store.one(
-        "SELECT count(*) n FROM audit_events WHERE action='DRAFTED' AND entity_id IN (SELECT id FROM drafts WHERE opportunity_id IN (SELECT opportunity_id FROM research_items WHERE run_id IN (SELECT value FROM json_each(?))))",
+        'SELECT count(DISTINCT d.id) n FROM drafts d JOIN research_items i ON i.opportunity_id=d.opportunity_id WHERE i.run_id IN (SELECT value FROM json_each(?))',
         runs,
       )!.n,
     };
@@ -1078,11 +1079,254 @@ export class ResearchJobHunter extends JobHunter {
         );
         e = { id: eid };
       }
+      const record = this.store.one(
+        'SELECT facts FROM research_evidence WHERE evidence_id=?',
+        e.id,
+      )!;
+      const extra = [
+        analysis.companyProof,
+        analysis.titleProof,
+        analysis.typeProof,
+        analysis.inquiryBasis,
+        ...(analysis.companyActivities ?? []),
+        ...Object.values(analysis.conditions),
+        ...analysis.requirements,
+        analysis.contact.proof,
+      ]
+        .filter((p) => p && p.sourceId === source.id && verifyQuote(p, [source]))
+        .map((p) => p!.quote!);
+      const combined = [...new Set([...JSON.parse(record.facts), ...extra])];
+      this.store.exec(
+        'UPDATE research_evidence SET facts=? WHERE evidence_id=?',
+        JSON.stringify(combined),
+        e.id,
+      );
+      this.store.exec(
+        'UPDATE evidence SET fragment=? WHERE id=?',
+        combined.join('\n').slice(0, 14000),
+        e.id,
+      );
       ids.set(source.id, e.id);
     }
     return ids;
   }
+  private knownResearchCompany(url: string) {
+    const domain = new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+    return this.store.one(
+      "SELECT * FROM companies WHERE replace(primary_domain,'www.','')=? OR id IN (SELECT company_id FROM company_aliases WHERE kind='DOMAIN' AND value=? AND verified_at IS NOT NULL)",
+      domain,
+      domain,
+    );
+  }
+  private beginAnalysis(item: Row) {
+    let token = this.store.get<Row | null>(`analysisOperation:${item.id}`, null);
+    if (!token)
+      this.store.atomic(() => {
+        const sequence = this.store.get<number>('analysisOperationSequence', 0) + 1;
+        this.store.set('analysisOperationSequence', sequence);
+        token = { sequence, itemId: item.id, startedAt: this.now() };
+        this.store.set(`analysisOperation:${item.id}`, token);
+      });
+    const company = item.company_id
+      ? this.store.one('SELECT * FROM companies WHERE id=?', item.company_id)
+      : this.knownResearchCompany(item.url);
+    if (company) {
+      const current = this.store.get<Row | null>(`researchPending:${company.id}`, null);
+      if (!current || current.sequence <= token!.sequence) {
+        const d = this.draftRows().find((d) => d.company_id === company.id);
+        if (d)
+          this.store.exec(
+            "UPDATE research_draft_materials SET review_result=COALESCE(review_result,?) WHERE draft_id=? AND version=? AND review_status='COMPLETED'",
+            d.semantic_review,
+            d.id,
+            d.version,
+          );
+        this.store.set(`researchPending:${company.id}`, { ...token, status: 'RUNNING' });
+      }
+    }
+    return token!;
+  }
+  private finishAnalysis(item: Row, complete: boolean) {
+    const company = item.company_id
+      ? this.store.one('SELECT * FROM companies WHERE id=?', item.company_id)
+      : this.knownResearchCompany(item.url);
+    if (!company) return;
+    const token = this.store.get<Row | null>(`analysisOperation:${item.id}`, null),
+      hold = this.store.get<Row | null>(`researchPending:${company.id}`, null);
+    if (hold?.sequence === token?.sequence)
+      this.store.set(
+        `researchPending:${company.id}`,
+        complete ? null : { ...hold, status: 'INCOMPLETE' },
+      );
+  }
+  private usableResearchSources(sources: Source[]) {
+    return (
+      sources.length > 0 &&
+      sources.every(
+        (s) =>
+          s.status === 'READ' &&
+          s.content_hash &&
+          s.final_url &&
+          this.sourceIsCurrent(s) &&
+          Date.parse(s.fetched_at) >= this.clock().getTime() - 86400000 &&
+          (s.method !== 'PUBLIC_HTTP' || s.parser_version === parserVersion),
+      )
+    );
+  }
+  private reuseResearchItem(item: Row, sources: Source[]) {
+    const company = this.knownResearchCompany(item.url);
+    if (!company || !this.usableResearchSources(sources)) return false;
+    const latest = this.store.one(
+      "SELECT i.* FROM research_items i JOIN research_extractions x ON x.item_id=i.id WHERE i.company_id=? AND i.stage='DONE' AND i.status='DONE' AND x.profile_hash=? ORDER BY i.updated_at DESC,i.rowid DESC LIMIT 1",
+      company.id,
+      this.profile().profile_hash,
+    );
+    if (!latest) return false;
+    const old = this.sourcesFor(latest);
+    if (!this.usableResearchSources(old)) return false;
+    const aliases = sources.map((s) => ({
+      current: s,
+      previous: old.find(
+        (o) =>
+          o.id === s.id ||
+          (o.content_hash === s.content_hash &&
+            o.text === s.text &&
+            o.address_contexts === s.address_contexts &&
+            o.parser_version === s.parser_version &&
+            new URL(o.final_url!).hostname.replace(/^www\./, '') ===
+              new URL(s.final_url!).hostname.replace(/^www\./, '')),
+      ),
+    }));
+    if (aliases.some((a) => !a.previous)) return false;
+    const analysis = validateAnalysis(JSON.parse(latest.analysis), old);
+    const token = this.store.get<Row>(`analysisOperation:${item.id}`, {});
+    if (token.sequence < this.store.get<number>(`analysisCommitted:${company.id}`, 0))
+      throw new DomainError('ANALYSIS_SUPERSEDED', 'Nowsza analiza firmy jest już zapisana.');
+    const policy = this.store.get<number>(
+      `extractionPolicy:${latest.url}:${this.profile().profile_hash}`,
+      0,
+    );
+    const d = this.draftRows().find((d) => d.company_id === company.id);
+    const oldScope = d
+      ? this.store.one('SELECT scope_hash FROM auto_draft_scope WHERE draft_id=?', d.id)?.scope_hash
+      : null;
+    const newScope = this.store.one(
+      'SELECT scope_hash FROM auto_run_scope WHERE run_id=?',
+      item.run_id,
+    )?.scope_hash;
+    const checked =
+      d &&
+      this.store.one(
+        'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+        d.id,
+        d.version,
+      );
+    // No hash normalization: retain the original, proven package and source order.
+    const reusable =
+      policy === analysisPolicyVersion &&
+      (!d ||
+        (checked?.context_hash === this.materialBinding(d) &&
+          checked.code_status === 'PASS' &&
+          checked.review_status === 'COMPLETED' &&
+          JSON.parse(d.semantic_review).supported === true &&
+          (this.mode !== 'AUTO_POLICY' || oldScope === newScope)));
+    this.store.atomic(() => {
+      this.store.exec(
+        'UPDATE research_items SET source_ids=?,analysis=?,company_id=?,opportunity_id=?,stage=? WHERE id=?',
+        latest.source_ids,
+        JSON.stringify(analysis),
+        company.id,
+        latest.opportunity_id,
+        reusable ? 'DONE' : 'QUALIFY',
+        item.id,
+      );
+      this.store.exec(
+        'INSERT OR REPLACE INTO research_extractions VALUES (?,?)',
+        item.id,
+        this.profile().profile_hash,
+      );
+      this.store.set(`analysisReuse:${item.id}`, {
+        policyVersion: 1,
+        previousItemId: latest.id,
+        aliases: aliases.map((a) => ({
+          requestedSourceId: a.current.id,
+          retainedSourceId: a.previous!.id,
+          contentHash: a.current.content_hash,
+        })),
+        qualifiedResultReused: reusable,
+      });
+      if (reusable) {
+        this.store.exec('UPDATE runs SET duplicates=duplicates+1 WHERE id=?', item.run_id);
+        this.store.set(`analysisCommitted:${company.id}`, token.sequence);
+        this.finishAnalysis({ ...item, company_id: company.id }, true);
+      }
+      this.event(
+        'RESEARCH_RESULT_REUSED',
+        reusable
+          ? 'Te same aktualne dane: zachowano analizę, tekst i kontrolę bez wywołania modelu.'
+          : 'Zweryfikowane zapisane źródła: bez powtórnej ekstrakcji; aktualna kwalifikacja i kontrola nadal wymagane.',
+        item.id,
+      );
+    });
+    return true;
+  }
+  private effectiveAnalysis(item: Row, raw: Analysis, sources: Source[]) {
+    const v = structuredClone(raw);
+    const company = this.knownResearchCompany(item.url);
+    const prior = company
+      ? this.store.one(
+          'SELECT q.details FROM research_qualifications q JOIN opportunities o ON o.id=q.opportunity_id WHERE o.company_id=? ORDER BY o.updated_at DESC,o.rowid DESC LIMIT 1',
+          company.id,
+        )
+      : null;
+    const carried: Row[] = [];
+    if (prior) {
+      const previous = JSON.parse(prior.details);
+      for (const proof of [
+        ...(previous.companyActivities ?? []),
+        ...(previous.inquiryBasis ? [previous.inquiryBasis] : []),
+      ]) {
+        const old = this.store.one('SELECT * FROM research_sources WHERE id=?', proof.sourceId);
+        const current = sources.find(
+          (s) =>
+            s.id === proof.sourceId ||
+            (old && (s.original_url === old.original_url || s.final_url === old.final_url)),
+        );
+        if (!current) continue;
+        const mapped = { ...proof, sourceId: current.id };
+        if (
+          !resolveInquiryBasis(
+            { ...v, inquiryBasis: mapped, companyActivities: [] },
+            sources,
+            [],
+            this.clock().getTime(),
+          )
+        )
+          continue;
+        if (
+          !(v.companyActivities ?? []).some(
+            (p) => p.sourceId === mapped.sourceId && compact(p.quote!) === compact(mapped.quote),
+          )
+        ) {
+          (v.companyActivities ??= []).push(mapped);
+          carried.push({
+            previousSourceId: proof.sourceId,
+            currentSourceId: current.id,
+            quote: mapped.quote,
+          });
+        }
+      }
+    }
+    const basis = resolveInquiryBasis(v, sources, [], this.clock().getTime());
+    if (basis) v.inquiryBasis = basis.proof;
+    this.store.set(`analysisCandidate:${item.id}`, { raw, carried, basis, version: 1 });
+    return v;
+  }
   private qualifyItem(item: Row, v: Analysis, sources: Source[]) {
+    sources = sources.filter((s) => s.status === 'READ');
+    if (!this.usableResearchSources(sources))
+      throw new DomainError('STALE_EVIDENCE', 'Źródła analizy są nieaktualne lub niekompletne.');
+    v = this.effectiveAnalysis(item, v, sources);
     return this.store.atomic(() => {
       // Identity is proven by the literal company name. Portal domains are never used as company identifiers.
       const name = normalizeName(v.company).startsWith('fingoweb') ? 'Fingoweb' : v.company;
@@ -1097,7 +1341,32 @@ export class ResearchJobHunter extends JobHunter {
       }
       const found = this.findOrCreateCompany(name, name === 'Fingoweb' ? null : domain);
       const c = found.company;
+      const token = this.store.get<Row>(`analysisOperation:${item.id}`, {});
+      if (token.sequence < this.store.get<number>(`analysisCommitted:${c.id}`, 0))
+        throw new DomainError('ANALYSIS_SUPERSEDED', 'Starsza analiza nie może zastąpić nowszej.');
       const eids = this.evidenceFor(c.id, sources, v);
+      const selectedBasis = resolveInquiryBasis(
+        v,
+        sources,
+        [...eids].map(([sourceId, id]) => ({
+          sourceId,
+          id,
+          fragment: this.store.one('SELECT fragment FROM evidence WHERE id=?', id)!.fragment,
+        })),
+        this.clock().getTime(),
+      );
+      const initialSelection = this.store.get<Row>(`analysisCandidate:${item.id}`, {}).basis;
+      if (selectedBasis && initialSelection) {
+        selectedBasis.field = initialSelection.field;
+        selectedBasis.reason = initialSelection.reason;
+      }
+      this.store.set(`inquiryBasisSelection:${item.id}`, selectedBasis);
+      if (selectedBasis)
+        this.event(
+          'INQUIRY_BASIS_SELECTED',
+          `${selectedBasis.field}: ${selectedBasis.reason}`,
+          item.id,
+        );
       const evidenceId = eids.get(v.titleProof.sourceId!) ?? eids.values().next().value;
       if (!evidenceId) throw new DomainError('NO_EVIDENCE', 'Brak odczytanego dowodu.');
       let contactId: string | null = null;
@@ -1267,8 +1536,208 @@ export class ResearchJobHunter extends JobHunter {
         this.now(),
         item.id,
       );
+      this.store.exec(
+        'UPDATE research_items SET analysis=?,source_ids=? WHERE id=?',
+        JSON.stringify(v),
+        JSON.stringify(sources.map((s) => s.id)),
+        item.id,
+      );
+      this.store.set(`analysisCommitted:${c.id}`, token.sequence);
+      this.finishAnalysis({ ...item, company_id: c.id }, true);
       return opportunityId;
     });
+  }
+  private async revalidateSameText(
+    d: Row,
+    opportunity: Row,
+    analysis: Analysis,
+    evidence: Row[],
+    profile: ReturnType<ResearchJobHunter['minimalProfile']>,
+    runId: string,
+    signal: AbortSignal,
+  ) {
+    const old = this.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    );
+    if (!old) return false; // Legacy material needs an explicit full review, never a forged binding.
+    const review = JSON.parse(old.review_result ?? d.semantic_review ?? '{"supported":null}');
+    if (review.supported !== true || review.issues.length) {
+      this.event(
+        'DRAFT_REPAIR_NEEDS_DECISION',
+        'Negatywnej/niepewnej kontroli nie ponawiamy automatycznie.',
+        d.id,
+      );
+      return true;
+    }
+    const sources = this.sourcesForDraft({ ...d, opportunity_id: opportunity.id });
+    const input = hash(
+      JSON.stringify({
+        profile: profile.hash,
+        scope:
+          this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', runId)
+            ?.scope_hash ?? null,
+        sources: sources
+          .map((s) => ({ id: s.id, hash: s.content_hash, url: s.final_url }))
+          .sort((a, b) => a.id.localeCompare(b.id)),
+      }),
+    );
+    const key = `draftContextRepair:${d.company_id}:${input}`;
+    if (this.store.get(key, null)) {
+      this.event(
+        'DRAFT_REPAIR_LIMIT',
+        'Jedna automatyczna próba dla tej firmy i wersji wejścia już była wykonana; stan pozostaje do decyzji.',
+        d.id,
+      );
+      return true;
+    }
+    this.store.set(key, {
+      at: this.now(),
+      draftId: d.id,
+      previousVersion: d.version,
+      status: 'STARTED',
+      inputHash: input,
+    });
+    if (d.profile_hash !== profile.hash) return false; // Changed candidate facts require normal generation.
+    const payload = JSON.parse(old.payload_json);
+    const mapping = new Map<string, string>();
+    for (const eid of payload.evidenceIds) {
+      if (evidence.some((e) => e.id === eid)) {
+        mapping.set(eid, eid);
+        continue;
+      }
+      const previous = this.store.one(
+        'SELECT s.*,r.facts FROM research_evidence r JOIN research_sources s ON s.id=r.source_id WHERE r.evidence_id=?',
+        eid,
+      );
+      if (!previous) return false;
+      const quotes: string[] = JSON.parse(previous.facts);
+      const replacement = sources.find(
+        (s) =>
+          (s.original_url === previous.original_url || s.final_url === previous.final_url) &&
+          quotes.every((q) => verifyQuote({ sourceId: s.id, quote: q }, sources)),
+      );
+      const e = replacement && evidence.find((e) => e.sourceId === replacement.id);
+      if (!e) return false;
+      mapping.set(eid, e.id);
+    }
+    const next = {
+      ...payload,
+      evidenceIds: payload.evidenceIds.map((id: string) => mapping.get(id)),
+      claims: payload.claims.map((c: Row) => ({
+        ...c,
+        evidenceIds: c.evidenceIds.map((id: string) => mapping.get(id)),
+      })),
+    };
+    const selection = projectSelection(profile.facts, analysis, evidence);
+    const currentProfile = {
+      ...profile,
+      projectSelection: selection,
+      facts: profile.facts.filter(
+        (f) =>
+          !projectKeys.includes(f.key as any) || selection.selected.some((p) => p.fact.id === f.id),
+      ),
+    };
+    try {
+      this.checkDraft(next, d.company_id, currentProfile, evidence, analysis);
+    } catch (e) {
+      if (e instanceof DomainError) {
+        this.event('DRAFT_CONTEXT_REQUIRES_TEXT_CHANGE', e.code, d.id);
+        return false;
+      }
+      throw e;
+    }
+    signal.throwIfAborted();
+    let version: number;
+    this.store.atomic(() => {
+      if (this.store.one('SELECT version FROM drafts WHERE id=?', d.id)?.version !== d.version)
+        throw new DomainError('VERSION_CONFLICT', 'Nowsza wersja szkicu ma pierwszeństwo.');
+      version =
+        Math.max(
+          d.version,
+          this.store.one(
+            'SELECT max(version) n FROM research_draft_materials WHERE draft_id=?',
+            d.id,
+          )!.n ?? 0,
+        ) + 1;
+      const payloadHash = hash(JSON.stringify(next));
+      this.store.exec(
+        'UPDATE research_draft_materials SET review_result=COALESCE(review_result,?) WHERE draft_id=? AND version=?',
+        JSON.stringify(review),
+        d.id,
+        d.version,
+      );
+      this.store.exec(
+        "UPDATE drafts SET opportunity_id=?,contact_id=?,fact_ids=?,evidence_ids=?,version=?,payload_hash=?,status='NEEDS_REVIEW',updated_at=? WHERE id=?",
+        opportunity.id,
+        opportunity.contact_id,
+        JSON.stringify(next.factIds),
+        JSON.stringify(next.evidenceIds),
+        version,
+        payloadHash,
+        this.now(),
+        d.id,
+      );
+      this.store.exec(
+        'INSERT INTO draft_versions VALUES (?,?,?,?,?,?,?)',
+        id(),
+        d.id,
+        version,
+        d.subject,
+        d.body,
+        payloadHash,
+        this.now(),
+      );
+      this.store.exec(
+        'UPDATE research_drafts SET profile_hash=?,claims=?,semantic_review=?,reviewed_at=NULL WHERE draft_id=?',
+        profile.hash,
+        JSON.stringify(next.claims),
+        JSON.stringify({
+          supported: null,
+          issues: ['Ten sam tekst, nowy pakiet dowodów; wymagana nowa kontrola.'],
+        }),
+        d.id,
+      );
+      this.store.exec(
+        'UPDATE draft_approvals SET revoked_at=? WHERE draft_id=? AND revoked_at IS NULL',
+        this.now(),
+        d.id,
+      );
+      const current = this.store.one('SELECT * FROM drafts WHERE id=?', d.id)!;
+      this.saveDraftMaterial(current, next, {
+        profile: currentProfile,
+        evidence,
+        analysis,
+        origin: 'REVALIDATED_SAME_TEXT',
+        previousVersion: d.version,
+        reason: 'CURRENT_VERIFIED_CONTEXT',
+        inputHash: input,
+      });
+      this.store.set(key, {
+        at: this.now(),
+        draftId: d.id,
+        previousVersion: d.version,
+        version,
+        status: 'REVIEW_PENDING',
+        inputHash: input,
+      });
+      this.event(
+        'DRAFT_CONTEXT_REVISED',
+        'Zachowano temat i treść; nowa wersja materiału wymaga własnych kontroli. Starszy wynik pozostaje w historii.',
+        d.id,
+      );
+    });
+    await this.reviewStoredDraft(d.id, version!, runId, signal);
+    this.store.set(key, {
+      at: this.now(),
+      draftId: d.id,
+      previousVersion: d.version,
+      version: version!,
+      status: 'COMPLETED',
+      inputHash: input,
+    });
+    return true;
   }
   private async generate(item: Row, signal: AbortSignal) {
     const o = this.store.one(
@@ -1342,9 +1811,18 @@ export class ResearchJobHunter extends JobHunter {
         existing.id,
         existing.version,
       );
-      if (material && ['PENDING', 'ERROR', 'RUNNING'].includes(material.review_status))
+      if (
+        material &&
+        !this.draftMaterialIssues(existing).includes('DRAFT_MATERIAL_STALE') &&
+        JSON.parse(material.context_json).origin !== 'REVALIDATED_SAME_TEXT' &&
+        ['PENDING', 'RUNNING'].includes(material.review_status)
+      )
         await this.reviewStoredDraft(existing.id, existing.version, item.run_id, signal);
-      return;
+      if (
+        !this.draftMaterialIssues(existing).length ||
+        (material && ['PENDING', 'ERROR', 'RUNNING'].includes(material.review_status))
+      )
+        return;
     }
     const count = this.store.get<number>(
       `draftedInRun:${item.run_id}`,
@@ -1370,6 +1848,22 @@ export class ResearchJobHunter extends JobHunter {
           selection.selected.some((project) => project.fact.id === f.id),
       ),
     };
+    if (
+      existing &&
+      existing.profile_hash === p.hash &&
+      !regeneration &&
+      sameScope &&
+      (await this.revalidateSameText(
+        this.draftRows().find((d) => d.id === existing.id)!,
+        o,
+        analysis,
+        evidence,
+        p,
+        item.run_id,
+        signal,
+      ))
+    )
+      return;
     const template = this.profile().message_template;
     const recent = this.store
       .all(
@@ -1563,7 +2057,7 @@ export class ResearchJobHunter extends JobHunter {
           ) + 1
         : d.version;
     this.store.exec(
-      'INSERT INTO research_draft_materials VALUES (?,?,?,?,?,?,?,NULL,?,NULL,?,?) ON CONFLICT(draft_id,version) DO UPDATE SET payload_hash=excluded.payload_hash,context_hash=excluded.context_hash,payload_json=excluded.payload_json,context_json=excluded.context_json,code_status=excluded.code_status,code_error=NULL,review_status=excluded.review_status,review_error=NULL,updated_at=excluded.updated_at',
+      'INSERT INTO research_draft_materials (draft_id,version,payload_hash,context_hash,payload_json,context_json,code_status,code_error,review_status,review_error,created_at,updated_at) VALUES (?,?,?,?,?,?,?,NULL,?,NULL,?,?) ON CONFLICT(draft_id,version) DO UPDATE SET payload_hash=excluded.payload_hash,context_hash=excluded.context_hash,payload_json=excluded.payload_json,context_json=excluded.context_json,code_status=excluded.code_status,code_error=NULL,review_status=excluded.review_status,review_error=NULL,updated_at=excluded.updated_at',
       d.id,
       version,
       codeStatus === 'INVALIDATED' ? hash(JSON.stringify(payload)) : d.payload_hash,
@@ -1577,6 +2071,9 @@ export class ResearchJobHunter extends JobHunter {
     );
   }
   draftMaterialIssues(d: Row) {
+    if (this.store.get(`researchPending:${d.company_id}`, null))
+      return ['DRAFT_MATERIAL_UNVERIFIED'];
+    if (!this.usableResearchSources(this.sourcesForDraft(d))) return ['DRAFT_MATERIAL_STALE'];
     const material = this.store.one(
       'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
       d.id,
@@ -1796,8 +2293,9 @@ export class ResearchJobHunter extends JobHunter {
           ];
     this.store.atomic(() => {
       this.store.exec(
-        "UPDATE research_draft_materials SET review_status='COMPLETED',review_error=NULL,updated_at=? WHERE draft_id=? AND version=?",
+        "UPDATE research_draft_materials SET review_status='COMPLETED',review_error=NULL,updated_at=?,review_result=? WHERE draft_id=? AND version=?",
         this.now(),
+        JSON.stringify(review),
         draftId,
         version,
       );
@@ -2093,6 +2591,7 @@ export class ResearchJobHunter extends JobHunter {
             'Profil się zmienił. Zatwierdź go i wznów pracę.',
           );
         let item = snapshot;
+        if (['READ', 'EXTRACT', 'QUALIFY'].includes(item.stage)) this.beginAnalysis(item);
         try {
           let sources = this.sourcesFor(item);
           if (item.stage === 'READ') {
@@ -2149,6 +2648,10 @@ export class ResearchJobHunter extends JobHunter {
               item.id,
             );
             continue;
+          }
+          if (item.stage === 'EXTRACT' && this.reuseResearchItem(item, sources)) {
+            item = this.store.one('SELECT * FROM research_items WHERE id=?', item.id)!;
+            sources = this.sourcesFor(item);
           }
           if (item.stage === 'EXTRACT') {
             const previous = this.store.one(
@@ -2234,6 +2737,7 @@ export class ResearchJobHunter extends JobHunter {
             item.id,
           );
         } catch (e) {
+          this.finishAnalysis(item, false);
           if (
             signal.aborted ||
             (e instanceof DomainError &&
