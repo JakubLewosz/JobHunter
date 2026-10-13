@@ -102,8 +102,48 @@ Nie potwierdzono wizualnie prywatnego panelu przez automat: dostępna przegląda
 automatyzacji nie miała tej karty. Automatyczny reviewer odrzucił transfer
 lokalnego tokenu do panelu Codex z powodu braku jawnej zgody na ten konkretny
 odbiornik; tokenu nie odczytano w odrzuconej operacji ani nie obchodzono blokady.
-Przegląd/akceptacja materiałów w domyślnej przeglądarce pozostają po stronie
-użytkownika. Gmail, real-profile smoke, SELF_TEST i pilot niewykonane; wysyłki 0.
+W tym checkpointcie przegląd/akceptacja materiałów pozostawały po stronie
+użytkownika. Gmail, real-profile smoke, SELF_TEST i pilot nie były wykonane.
+
+## Zatwierdzony profil i jednorazowy publiczny research Windows
+
+Użytkownik potwierdził widoczność panelu w domyślnej Operze GX po użyciu
+systemowego otwarcia Windows. Tokenu nie przekazano do Codexa. Profil i 9 faktów
+zatwierdził w panelu o 18:38:36, a CV osobnym przyciskiem o 18:41:58
+Europe/Warsaw. Read-only host potwierdził oba approved_at, 9 APPROVED,
+FixDesk DEFERRED i SHA oryginalnego niezmiennego PDF. Program pozostawał Stop.
+
+Jedna rzeczywista próba istniejącym smoke:public --approved-profile na fizycznym
+Windowsie, kod aplikacji 6409e09, NODE_USE_SYSTEM_CA=1: 18:43:59–18:50:46
+Europe/Warsaw (6 min 47 s), limit diagnostyki 5 firm/15 minut, exit 0.
+Nowa osobna baza poza repo; gałąź kwalifikacji AUTO użyta przez diagnostykę
+z DisabledMailProvider, bez gateway, natywnego Gmaila i produkcyjnej kolejki.
+To nie jest uruchomienie rzeczywistej kampanii AUTO_POLICY.
+
+COMPLETED: 5 firm, 25 READ, 5 ekstrakcji/kwalifikacji, 4 dopuszczone kontakty,
+4 wygenerowane wersje i 4 w pełni sprawdzone szkice. Jeden kontakt pominięto:
+SALES i brak literalnego emaila (zamaskowany adres). Pozostałe adresy GENERAL,
+z literalnym dowodem w publicznym źródle; warunki i rekrutacja niepotwierdzone,
+treści pozostają zapytaniami. Model/item errors, code/semantic rejections,
+review errors i unverified drafts: 0. Bez napraw kodu lub drugiej próby publicznej.
+
+Końcowe read-only kontrole wykonały istniejące draftMaterialIssues dwukrotnie
+na tych samych zapisanych źródłach: 4 × brak STALE/UNVERIFIED, bez modelu/network
+lub konstruktora modyfikującego bazę. Brak powtórzonych domen i szkiców dla firmy;
+run duplicates=0. Istniejąca companyHistoryBlocks potwierdziła blokadę Fingoweb.
+Hash porównania 11 tabel produkcyjnych przed/po identyczny; trwała granica kampanii
+i Stop/gmailSenderPaused zachowane. Produkcyjne outbox/attempts/usage/shared/
+auto sessions/model calls/research drafts oraz diagnostyczne outbox/attempts: 0.
+To kontrola lokalnej historii i krótkiej próby, bez potwierdzenia historii Gmaila.
+
+gmail:status z prawidłowym WORKSTATION/RESEARCH_ONLY odczytał wyłącznie lokalne
+metadane: konto na tej instalacji jeszcze niepodłączone. Bez nativeSecretStore,
+OAuth, wyboru nadawcy, zmiany scopes lub odczytu skrzynki. Prywatny raport
+zawiera pełne wiadomości i warunkowy plan do 3 firm co 5 minut, bez utworzenia
+kolejki. Przed send potrzebne osobne zgody, właściwe konto, historia i aktualne
+wiązania źródeł/materiałów. SELF_TEST/pilot/ciągła AUTO niewykonane, wysyłki 0.
+Kod i zależności aktywnego backendu niezmienione. Ostatni pełny check tego kodu
+pozostaje Windows 439/12/15 PASS; nie ponawiano go dla samej dokumentacji.
 
 ---
 

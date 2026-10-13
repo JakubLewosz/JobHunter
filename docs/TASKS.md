@@ -44,14 +44,28 @@
       Standardowy helper uruchomił backend/panel; health=ok, stopped=true.
       Odczyt SQLite po starcie: 9 DRAFT, 1 DEFERRED, CV niezatwierdzone,
       Fingoweb zablokowany, próby/outbox/usage/auto sessions 0.
-- [ ] Użytkownik przegląda i zatwierdza profil oraz CV w „Moje materiały”;
-      konkretne pytanie przedstawiono. Zostawić program zatrzymany. Po odpowiedzi
-      sprawdzić prawdziwe approved_at obu zasobów read-only i dopiero wtedy
-      jeden approved-profile smoke do 5 firm/15 minut. Jeśli panel niewidoczny,
-      wyjaśnić sposób otwarcia; nie przenosić tokenu dostępu bez jawnej zgody.
-- [ ] Publiczny smoke z zatwierdzonym profilem do 5 firm/15 minut;
-      zachować prywatny raport i pokazać pełne wiadomości. Gmail/status po diagnostyce; OAuth/read,
-      SELF_TEST oraz pilotaż do 3 firm wymagają osobnych decyzji. Wysyłki 0.
+- [x] Użytkownik potwierdził widoczność panelu w domyślnej Operze GX po otwarciu
+      przez Windows. Odmówił przekazywania tokenu do Codexa; tej ścieżki nie użyto.
+      Sam zatwierdził profil i osobno CV. Host read-only potwierdził 9 APPROVED,
+      approved_at profilu/PDF i zgodność SHA; FixDesk nadal DEFERRED, program Stop.
+- [x] Jedyny approved-profile smoke na fizycznym Windowsie: 5 firm / 25 stron,
+      4 szkice i 4 pełne kontrole PASS, 1 pominięcie SALES/zamaskowanego emaila.
+      Exit 0, czas 6 min 47 s, system CA; izolowany DisabledMailProvider, bez Gmaila.
+      Brak błędów modelu/elementów/walidacji; dwie read-only kontrole tych samych
+      źródeł bez DRAFT_MATERIAL_STALE. Brak duplikatów domen/firmowych szkiców.
+      Fingoweb blokowany rzeczywistą funkcją historii; 11 tabel produkcyjnych
+      identycznych przed/po, granica kampanii zachowana, outbox/próby/auto sessions 0.
+- [x] Prywatny raport poza repo zawiera pełne 4 wiadomości, źródła i plan 3 firm
+      co 5 minut, bez kolejki. GENERAL zachowany jako GENERAL, bez udawania wakatu.
+      Gmail/status: lokalna instalacja nie ma podłączonego konta; bez odczytu
+      magazynu sekretów lub skrzynki. Nie zmieniono kodu ani aktywnego builda.
+- [ ] Użytkownik wskazuje właściwego nadawcę i osobno zatwierdza OAuth; potem
+      osobna zgoda na wymagane sprawdzenie historii Gmaila oraz ewentualny SELF_TEST
+      z dokładnym odbiorcą/wiadomością/CV. Nie wybierać konta ani rozszerzać scopes.
+      Po odświeżeniu źródeł, kontroli historii i materiałów przedstawić dokładny
+      ograniczony pilot (GENERAL, 3 firmy, tempo/limity/CV/nadawca) do osobnej zgody
+      na wysyłkę. SEND_UNKNOWN → Stop bez retry; pilot nie udziela zgody na ciągłą AUTO.
+      Rzeczywiste wysyłki nadal 0.
 
 ## Spójność dowodów — 13 października 2026
 
