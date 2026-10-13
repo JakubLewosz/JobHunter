@@ -51,6 +51,22 @@ Snapshot zachowuje zawodowe fakty/ID i hash opublikowanej wersji. Diagnostyka ma
 approvals/outbox/send_attempts/auto sessions, DisabledMailProvider i brak gateway.
 Zero prawdziwych maili, SELF_TEST, odczytów skrzynki/OAuth lub zmian prywatnego runtime.
 
+### CI publikacji 15198a6 — faktyczne wyniki
+
+[Run 38360438675](https://github.com/JakubLewosz/JobHunter/actions/runs/38360438675),
+Node 24.19.0. Windows hosted: 403/403 backend (690940,55 ms), 12/12 performance
+(24689,57 ms), build i 15/15 UI PASS. To izolowane fixture, nie domowy WORKSTATION.
+macOS hosted: typecheck i 403/403 backend PASS, performance 11/12 FAIL. Pierwszy
+odbiór Stop przy 10035 firmach: 1458,72 ms wobec 1000 ms; odwołanie uprawnienia
+0,49 ms po odbiorze i brak nowych POST PASS. Pozostałe pomiary large-history
+820,46 i 791,63 ms. Build/UI w tym jobie nie uruchomione po niezaliczonym gate.
+Nie podniesiono progu, nie pominięto testu i nie przypisano przyczyny opóźnienia.
+Jedno żądanie ponowienia joba odrzucone przez integrację GitHub (HTTP 403), zatem
+nie ma drugiego wyniku tego SHA. Ta dokumentacja nie oznacza całego CI jako PASS.
+Następny krok poza zakresem researchu: profilować zimny GET dashboard/companies
+w tests/stop-scenario.ts na hosted macOS/Node 24.19 przy równoległych odświeżeniach.
+Finalny commit dokumentacji ma ten sam kod runtime; jego CI sprawdzamy po pushu.
+
 ## Publiczny research na Windowsie — pakiet do weryfikacji
 
 Research 23:29–23:40 Europe/Warsaw, bazowy HEAD `a3bc37b`, dirty.

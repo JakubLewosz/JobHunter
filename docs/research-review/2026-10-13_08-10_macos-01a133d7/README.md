@@ -103,9 +103,55 @@ Prawdziwe maile **0**; DisabledMailProvider, brak gateway/Gmail, approvals/outbo
   "diff_check": "PASS",
   "scope": "Fictional providers/recipients, temporary databases and local Git repositories. No native Gmail/private runtime.",
   "ci": {
-    "status": "VERIFY_FINAL_SHA_AFTER_PUSH",
-    "url": "https://github.com/JakubLewosz/JobHunter/actions/workflows/offline-check.yml",
-    "scope": "Windows/macOS isolated tests, not home workstation readiness."
+    "status": "PARTIAL",
+    "observed_commit": "15198a656aa42b79f76a824b1379f69a4a3f3793",
+    "run_id": 38360438675,
+    "url": "https://github.com/JakubLewosz/JobHunter/actions/runs/38360438675",
+    "macos": {
+      "node": "v24.19.0",
+      "backend": {
+        "passed": 403,
+        "failed": 0,
+        "duration_ms": 124744.815167
+      },
+      "performance": {
+        "passed": 11,
+        "failed": 1,
+        "duration_ms": 16929.882541,
+        "scenario": "large-history first isolated measurement",
+        "request_received_ms": 1458.72,
+        "limit_ms": 1000,
+        "revoke_after_receipt_ms": 0.49,
+        "no_new_posts": "PASS"
+      },
+      "build": "NOT_RUN_AFTER_GATE_FAILURE",
+      "ui": "NOT_RUN_AFTER_GATE_FAILURE",
+      "status": "FAIL"
+    },
+    "windows": {
+      "node": "v24.19.0",
+      "backend": {
+        "passed": 403,
+        "failed": 0,
+        "duration_ms": 690940.5476
+      },
+      "performance": {
+        "passed": 12,
+        "failed": 0,
+        "duration_ms": 24689.5715
+      },
+      "build": "PASS",
+      "ui": {
+        "passed": 15,
+        "failed": 0
+      },
+      "status": "PASS"
+    },
+    "rerun_request": {
+      "status": "NOT_EXECUTED",
+      "reason": "GitHub integration HTTP 403: Resource not accessible by integration"
+    },
+    "scope": "Isolated fixture tests on hosted Windows/macOS; not the home workstation. Final documentation commit has the same runtime code and its CI is checked after push."
   },
   "checked_at": "2026-10-13T07:00:03.524373+00:00"
 }
@@ -113,4 +159,4 @@ Prawdziwe maile **0**; DisabledMailProvider, brak gateway/Gmail, approvals/outbo
 
 Uwagi jakościowe: nowe wersje BizCode i Tukano otrzymały AutoRelay; OKE otrzymało CodeFabric po świeżym odczycie usług AI. Pełne opisy i mapping są przy wersjach w WIADOMOSCI. Część tekstów, m.in. BizCode i WizzDev, wylicza zbyt obszerny stack zamiast krótkiego dowodu pracy; review zgodności nie rozstrzyga tej jakości. Nie poprawiano ich ręcznie. WizzDev: oferta nadal REJECTED, szkic ma intencję COMPANY_INQUIRY; adres rekrutera z oferty nie jest osobnym potwierdzeniem kanału otwartej aplikacji z CV. Merixstudio: tylko pytania, obecny proces z CV zablokowany. Payarto: odczyt zawiera nazwę bez wystarczającej działalności/kontaktu, a dawny tytuł pozostaje nieustalony.
 
-Kod po kontroli: cae2f60ff66ac50c477a467d3f46b389a3c3decf. CI finalnego commitu pakietu: [Actions](https://github.com/JakubLewosz/JobHunter/actions/workflows/offline-check.yml); wynik sprawdzany po pushu.
+Kod po kontroli: 15198a656aa42b79f76a824b1379f69a4a3f3793. CI finalnego commitu pakietu: [Actions](https://github.com/JakubLewosz/JobHunter/actions/workflows/offline-check.yml); wynik sprawdzany po pushu.

@@ -1,7 +1,7 @@
 {
   "format_version": 1,
   "exporter_sha256": "cd727a0b62798176046a454749a91bb45e803b2235e9d988fdf35c41818b8fbc",
-  "checked_code_commit": "cae2f60ff66ac50c477a467d3f46b389a3c3decf",
+  "checked_code_commit": "15198a656aa42b79f76a824b1379f69a4a3f3793",
   "session_id": "macos-01a133d7",
   "status": "PARTIAL",
   "start": "2026-10-13T06:10:30.425Z",
@@ -232,9 +232,55 @@
     "diff_check": "PASS",
     "scope": "Fictional providers/recipients, temporary databases and local Git repositories. No native Gmail/private runtime.",
     "ci": {
-      "status": "VERIFY_FINAL_SHA_AFTER_PUSH",
-      "url": "https://github.com/JakubLewosz/JobHunter/actions/workflows/offline-check.yml",
-      "scope": "Windows/macOS isolated tests, not home workstation readiness."
+      "status": "PARTIAL",
+      "observed_commit": "15198a656aa42b79f76a824b1379f69a4a3f3793",
+      "run_id": 38360438675,
+      "url": "https://github.com/JakubLewosz/JobHunter/actions/runs/38360438675",
+      "macos": {
+        "node": "v24.19.0",
+        "backend": {
+          "passed": 403,
+          "failed": 0,
+          "duration_ms": 124744.815167
+        },
+        "performance": {
+          "passed": 11,
+          "failed": 1,
+          "duration_ms": 16929.882541,
+          "scenario": "large-history first isolated measurement",
+          "request_received_ms": 1458.72,
+          "limit_ms": 1000,
+          "revoke_after_receipt_ms": 0.49,
+          "no_new_posts": "PASS"
+        },
+        "build": "NOT_RUN_AFTER_GATE_FAILURE",
+        "ui": "NOT_RUN_AFTER_GATE_FAILURE",
+        "status": "FAIL"
+      },
+      "windows": {
+        "node": "v24.19.0",
+        "backend": {
+          "passed": 403,
+          "failed": 0,
+          "duration_ms": 690940.5476
+        },
+        "performance": {
+          "passed": 12,
+          "failed": 0,
+          "duration_ms": 24689.5715
+        },
+        "build": "PASS",
+        "ui": {
+          "passed": 15,
+          "failed": 0
+        },
+        "status": "PASS"
+      },
+      "rerun_request": {
+        "status": "NOT_EXECUTED",
+        "reason": "GitHub integration HTTP 403: Resource not accessible by integration"
+      },
+      "scope": "Isolated fixture tests on hosted Windows/macOS; not the home workstation. Final documentation commit has the same runtime code and its CI is checked after push."
     },
     "checked_at": "2026-10-13T07:00:03.524373+00:00"
   },
@@ -244,7 +290,7 @@
     "POROWNANIE.md": "3d21eb2af00925ab34ba5a803805edfd8b2cf0afab5cad5257004ad8ddae8044",
     "PROFIL_UZYTY.md": "73184f14e86aec11209b64f3938975272a0abff5627b2532dbcd1aeb6fcbd25b",
     "PRZEBIEG.jsonl": "db07699cffea0bf42e4725941e0cd2eafc100475afb9756313828119d69470ac",
-    "README.md": "09d22290c5d7b6d6f0703cbb77e4d9af6b88c0e8a0b8013a1592cb1d6c240b5a",
+    "README.md": "898bd89031f495a363b7749b49513ca78c3004455f3ef98162b3b5eaa8066510",
     "WIADOMOSCI.md": "78f5c80d275746585520e58173807abc6ea1531a210a4a551859194019770214",
     "ZRODLA.md": "ccb2519b963a3782296c71fcf82e9c8879b959288b3a67d5c534dd06c45ca036",
     "MANIFEST.json": null

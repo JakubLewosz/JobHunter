@@ -24,7 +24,12 @@
 - [x] Publiczny pakiet UTF-8 z pełnymi tekstami, porównaniem i audytem liczb/odwołań.
       [Raport](research-review/2026-10-13_08-10_macos-01a133d7/README.md).
 
-Publikację i CI finalnego SHA sprawdzamy po pushu, bez merge do main i deploymentu.
+Publikacja 15198a6 potwierdzona: SHA i README/FIRMY/WIADOMOSCI w GitHubie.
+CI 15198a6: Windows PASS, macOS backend PASS i performance Stop 11/12 FAIL.
+- [ ] Poza zakończonym researchem: profilować zimny odbiór Stop przy 10035 firmach
+      i trzech odświeżeniach w hosted macOS/Node 24.19; 1458,72 ms > 1000 ms, bez
+      zmiany progu. Rerun przez integrację odmówiony HTTP 403.
+Końcowy commit dokumentacji ma ten sam kod runtime; jego CI sprawdzamy po pushu.
 Pozostaje na domowym Windowsie: uruchomić `node --use-system-ca --import tsx
 scripts/reader-preflight.ts`, osobno sprawdzić istniejącą historię/marker/CV/Gmail/politykę
 według URUCHOMIENIE_RANO. MacBook i izolowane CI nie potwierdzają tej konfiguracji.
