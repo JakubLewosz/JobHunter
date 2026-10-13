@@ -1,5 +1,41 @@
 # Zadania
 
+## Spójność dowodów — 13 października 2026
+
+- [x] Znana oryginalna diagnostyka odczytana bez zmian; spójna read-only kopia przed
+      migracją i replay. Nie szukano prywatnej historii, CV lub poczty.
+- [x] GOTOMA: dokładnie odtworzony dawny hash. Ta sama firma/URL/wersje danych,
+      inny contactUrl i kolejność source_ids → cache miss → EXTRACT → utrata inquiryBasis
+      mimo companyActivities → nadpisanie qualification → prawidłowa blokada STALE.
+- [x] PRODAUT: poprawne inquiryBasis było ignorowane przez PROSPECT, a typeProof nie
+      pasował do reguły. Host/nazwa, aktualność, literalność i kontakt były potwierdzone.
+- [x] Wspólny wybór dowodu z audytem sourceId/evidenceId/hash/parser/data/powód;
+      GENERAL/kanał/konflikt/odmowy niezależne. Reuse bez zmiany materialBinding,
+      rewizja identycznego tekstu z nową kontrolą, jedna trwała próba na wersję wejścia.
+- [x] Starszy wynik nie nadpisuje nowszego; Stop/restart bez odnowienia prawa. Firma B
+      obsługiwana podczas reanalizy A. Review_result zachowuje historyczny verdict.
+- [x] Faktycznie sprawdzono 7 oryginalnych aktualnych kontekstów przed/po replay/restart,
+      bez zmiany tekstów/wersji; reviewer replayu jest jawnie fikcyjny, nie nowy publiczny PASS.
+- [x] Publiczny kod 7803b9d: GOTOMA i PRODAUT ze szkicami po rzeczywistym review,
+      utrzymane po dalszych cyklach i restarcie. Dwa cykle ukończone, trzeci SEARCH
+      CODEX_TIMEOUT; BLOCKED_EXTERNAL bez ponowienia/zmiany timeoutu/mock fallbacku.
+      9.71 min / 29 HTTP czytnika / 14 modeli, 2 rzeczywiście nowe firmy, 1 wcześniejsza
+      (Sprint0), 2 kontrole. Nowe firmy nie dały aktualnego szkicu w tym publicznym kodzie.
+- [x] Po Stop cache-only powrót do obu kontroli na spójnej kopii z wyłączonym modelem
+      i HTTP (rzucają błąd, bez fikcyjnych verdictów): 2→2 aktualne, tekst/wersja bez zmian,
+      restart zatrzymany, oryginał/budżet bez zmian. Powrót w głównym publicznym loopie
+      nie nastąpił przez timeout — nie oznaczamy go jako wykonany.
+- [x] Po publicznym Stop odtworzono 2 dodatkowe błędy reguły (własna praca u klienta,
+      rzeczownikowy opis usługi). Helper v2 i extraction policy v6 poprawione offline;
+      Sprint0/TwójSoftware teraz mają podstawę w read-only sprawdzeniu danych, bez nowych
+      maili lub publicznego powtórzenia. Poprawiono pamięć przyszłego harnessu (oba indeksy).
+
+Raport ma BLOCKED_EXTERNAL, a nie pełny sukces discovery. Publikacja/CI końcowego SHA
+są potwierdzane po pushu w końcowej odpowiedzi. Nie uruchamiać nowej szerokiej rundy ani
+Gmaila w tej pracy. Dokładny kolejny krok, jeśli użytkownik wróci: krótki search preflight
+po ustąpieniu zewnętrznego timeoutu; normalna analiza na nowym kodzie, bez ręcznej zmiany
+starych decyzji. Domowy Windows/Gmail pozostaje oddzielnym etapem. Prawdziwe maile 0.
+
 ## Runda samodzielnego researchu — 13 października, zakończony zakres
 
 - [x] Czysty checkout, brak aktywnego backendu, fetch/fast-forward do 646de0d;

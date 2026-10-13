@@ -1,0 +1,839 @@
+{
+  "format_version": 1,
+  "exporter_sha256": "fda18fb9b6bda2e0347e58b89fd285499d3ba8ea62d8fe9a6cefc60b9d9f835f",
+  "checked_code_commit": "dbd5a39a7bbb297074d2d0617c50e27baea8fd6d",
+  "session_id": "macos_consistency",
+  "status": "BLOCKED_EXTERNAL",
+  "start": "2026-10-13T12:31:47.567Z",
+  "first_public_query": "2026-10-13T12:31:47.735Z",
+  "end": "2026-10-13T12:41:30.589Z",
+  "stop_reason": "CODEX_TIMEOUT",
+  "code_versions": [
+    {
+      "batch_id": "autonomous-live-1",
+      "head": "7803b9d85ce5ecdadd6abf0501fdb96ac47f157f",
+      "dirty": false,
+      "source_hash": "aba8e85d5600e0308cf0718eeee1abc4109acce00a5bdb8e83c27814c944a2b0",
+      "files": {
+        "apps/server/src/app.ts": "bfc2fa82ccd469cf5dd38a4b0302f264d3020b872c7d7d2a28a4e8634f3c6d39",
+        "apps/server/src/auto-policy.ts": "65dbdd3306c80cd41bd847f1199cff27ff7a5d70232c0c512b06e1a858ab8180",
+        "apps/server/src/backend-lock.ts": "1bd26203c0b44eb5191b3b83d2ea83a20d996e52264635fabce309e2567b8b5d",
+        "apps/server/src/backup.ts": "bb2ff63ff89039527f63bdeb599aad3dd92921d2542a9dd57ce11c9b4237c46d",
+        "apps/server/src/db.ts": "512f1fd9848414c6bc6463e43492172bfb98d23c600e6273faa342ee7f9e698b",
+        "apps/server/src/gmail/client.ts": "cd61ac3c3387c4e8ea7064ef39c43d48b66d38777e5a82413c7d59cd7e0aea58",
+        "apps/server/src/gmail/inspection.ts": "13605c14e6b8a739499493f0cbf0a88c23b0a1ffd83f2a433a8403d1beea1183",
+        "apps/server/src/gmail/mime.ts": "4877143c9364064d4333fe4ad88ea311637ca23824041a910b8dbe37512fcf90",
+        "apps/server/src/gmail/oauth.ts": "84ade60ab33d8b67678d8ee11f2b466407c10936f9e785129a776ec4a6f2b869",
+        "apps/server/src/gmail/reader.ts": "89c28418776a7bbcdc960adb370f367483babc61f7a63ede899aa152cd35fd47",
+        "apps/server/src/gmail/service.ts": "f6b8ff0af108d2f6505da2ffbc34759ca1e3a1c827fe574c954319d325a20a51",
+        "apps/server/src/history-sync.ts": "003fcafae75877866d2134b38c95c49c064308fd1bf982f6330898ac4d56b91c",
+        "apps/server/src/initialize-local.ts": "06394dc9c08d215de8ebba533feecf9b4a6cf2b209060cb298c8a786a8a16d21",
+        "apps/server/src/main.ts": "dfc095f1a429ef52ed8d0c750f4caf36ba1020dfb434d1e18302d31338a79c61",
+        "apps/server/src/prior-applications.ts": "6795156418cbc38bf57cee6ca742a636908de2637205f97bc9cd9bb8ee45fa19",
+        "apps/server/src/providers.ts": "141ab9c46f78075afead8c678dae1bb749f8f2a48ceb61b61d31e7b8793ce47a",
+        "apps/server/src/research/autonomous-diagnostic.ts": "9c7cc83c991c9a85a18dec1b773032397572d43ac2a9e82923c59fce38904603",
+        "apps/server/src/research/codex.ts": "0ae58213be1d56c50b4b4ddf90393deb2a404c938e89d2efe3d0e6fb7a2f78da",
+        "apps/server/src/research/contracts.ts": "91847722aef88546eb8ed5418f51da55bf9e3ffe342ee848e89e45dbed8a1137",
+        "apps/server/src/research/diagnostic.ts": "dff36a6493966509931fcffdf07048e741612b1bb4eec49c7c16d43028efad38",
+        "apps/server/src/research/drafting.ts": "ed4869a3931d2d5d2d5a0dc6b384d6e86e78a2972e5810b5ec56be7aab31916a",
+        "apps/server/src/research/fetcher.ts": "a7c0ec930ffc99638453ea283ae524d956a40ec62cb8073c37385bb0d45b1293",
+        "apps/server/src/research/html.ts": "0d01c96cb7cb684dd2daacd463ca3abcf2ba5e19b5cdf95191270c65a62ed527",
+        "apps/server/src/research/message-policy.ts": "f23837746ac70d6da7f33222dfb49d05b242a30e28795b85d577338a43c14f3e",
+        "apps/server/src/research/query-planner.ts": "9004390c33dafcae279de6dc253d63383864fbf1700d3f34f6d4e9aedebac453",
+        "apps/server/src/research/review-session.ts": "7bd05754a6c180e2bbe8921f3dc316739317d95827e795b09b6b111b631012d3",
+        "apps/server/src/research/service.ts": "662e49d475f53362a7cba56fa5bf557e85227a2b6b51758612f6f307ad5dad4b",
+        "apps/server/src/runtime.ts": "bdef0228793a840efedeb0ad26026c6a5596ad7e1b1cc52fafd64087ecc0eaf7",
+        "apps/server/src/service.ts": "a3e8c66c406917bc17a413bc35953551a133c5c6aaae51773ed4b217faaca51e",
+        "apps/server/src/util.ts": "fed65f2085b07c0da803d506a9897830f560e79daff8fdf83858834fa01d11e8",
+        "packages/shared/types.ts": "8fe4a5dc12eafd1fcd33cc350bebec70a6c5d17daa8a0f6b35a1da6c29d1bd9c",
+        "scripts/public-consistency-review.ts": "f50d36a69b1b39839db53727c5478b472de1adf154ae1bb7903443b799aaa2f9"
+      }
+    }
+  ],
+  "cli_version": "codex-cli 0.162.0-alpha.17.2",
+  "model": null,
+  "tokens": null,
+  "cv_sha256": null,
+  "profile_provenance": {
+    "commit": "2aa3a1eef3fdbb1939adc6e710d80a76badb945c",
+    "path": "docs/research-review/2026-10-12_23-29_windows-01a1313a/PROFIL_UZYTY.md",
+    "sha256": "33bfb08dcad605c9517f85975fc0f65fc41073908775339ed7418961fa9c5c86",
+    "kind": "PUBLIC_APPROVED_SNAPSHOT",
+    "cvVerifiedInThisRun": false
+  },
+  "cvVerifiedInThisRun": false,
+  "profile_sha256": "3817835bb7085117c43d437e5ec3e5d32f88867723f35eff47a813e32289bec8",
+  "counts": {
+    "unique_requested_pages": 29,
+    "unique_read_pages": 27,
+    "repeat_http_requests": 0,
+    "new_firms_started": 2,
+    "new_firms_analyzed": 2,
+    "controls_analyzed": 2,
+    "technically_blocked_firms": 0,
+    "versions_with_selected_project": 2,
+    "versions_mentioning_selected_project": 2,
+    "proposed_identities": 5,
+    "analyzed_unique_firms": 5,
+    "index_rows": 5,
+    "http_requests": 29,
+    "fresh_reads_retained": 27,
+    "extraction_calls": 5,
+    "extractions_completed": 6,
+    "qualifications_completed": 5,
+    "public_contacts_literal": 4,
+    "contacts_qualified": 2,
+    "retained_versions": 2,
+    "fully_checked_drafts": 2,
+    "code_rejected_versions": 0,
+    "historical_code_rejections": 0,
+    "extraction_validation_errors": 0,
+    "semantic_rejected_versions": 0,
+    "unverified_versions": 0,
+    "rejected_offers": 0,
+    "explicitly_refused_company_contacts": 0,
+    "missing_contact_or_inquiry_basis": 1,
+    "rejected_firms": 3,
+    "historical_rejected_firm_decisions": 3,
+    "source_failures_retained": 0,
+    "model_errors": 1,
+    "model_calls_total": 14,
+    "model_calls_assigned_to_companies": 9,
+    "web_search_actions": 7,
+    "duplicates": 1,
+    "already_researched_leads": 0,
+    "replay_batches": 0,
+    "real_sends": 0,
+    "outbox": 0,
+    "send_attempts": 0,
+    "send_approvals": 0,
+    "active_auto_sessions": 0
+  },
+  "discovery": {
+    "directions": 3,
+    "new_companies": 2,
+    "new_literal_contacts": 1,
+    "new_current_checked": 0,
+    "controls": [
+      {
+        "domain": "gotoma.pl",
+        "result": "FULLY_CHECKED"
+      },
+      {
+        "domain": "prodaut.pl",
+        "result": "FULLY_CHECKED"
+      }
+    ],
+    "previously_researched_revisits": 1,
+    "completed_cycles": 2,
+    "blocked_cycles": 1,
+    "versions": 2,
+    "current_checked": 2,
+    "repeat_checks": [],
+    "manual_interventions": 0
+  },
+  "manual_interventions": 0,
+  "limits": {
+    "milliseconds": 3600000,
+    "firms": 8,
+    "checkedDrafts": 8,
+    "models": 60,
+    "http": 120
+  },
+  "redactions": [],
+  "missing_data": [],
+  "limitations": [
+    "Jawna ograniczona diagnostyka publicznej części; 0 poczty, nie próba całodzienna",
+    "Nieznane warunki nie są dowodem elastyczności",
+    "Nie sprawdzono Gmaila lub produkcyjnej historii",
+    "Model nie ujawnił wersji; brak pełnych danych tokenów dla audytu"
+  ],
+  "tests": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node": "v24.11.0",
+    "code_commit": "dbd5a39a7bbb297074d2d0617c50e27baea8fd6d",
+    "command": "npm run check",
+    "status": "PASS",
+    "backend": {
+      "passed": 434,
+      "failed": 0,
+      "duration_ms": 103225.199209
+    },
+    "performance": {
+      "passed": 12,
+      "failed": 0,
+      "measurements": [
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 28.49,
+          "rightsRevokedMs": 29.08,
+          "responseMs": 32.57,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 25.54,
+          "rightsRevokedMs": 25.89,
+          "responseMs": 30.18,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 412.5,
+          "rightsRevokedMs": 412.69,
+          "responseMs": 413.86,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 26.67,
+          "historyRows": 10035,
+          "historyBytes": 7588995,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 16.56,
+          "rightsRevokedMs": 16.68,
+          "responseMs": 18.32,
+          "inflightFinishedMs": 351.62,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "FULL_SUITE"
+        },
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 17.88,
+          "rightsRevokedMs": 18.4,
+          "responseMs": 21.06,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 13.57,
+          "rightsRevokedMs": 13.68,
+          "responseMs": 16.5,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 304.33,
+          "rightsRevokedMs": 304.47,
+          "responseMs": 306.22,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 20.37,
+          "historyRows": 10035,
+          "historyBytes": 7588995,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 14.36,
+          "rightsRevokedMs": 14.45,
+          "responseMs": 15.49,
+          "inflightFinishedMs": 351.27,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 13.78,
+          "rightsRevokedMs": 13.88,
+          "responseMs": 16.36,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 11.92,
+          "rightsRevokedMs": 12,
+          "responseMs": 14.51,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 272.47,
+          "rightsRevokedMs": 272.58,
+          "responseMs": 274.62,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 19.77,
+          "historyRows": 10035,
+          "historyBytes": 7588995,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 13.38,
+          "rightsRevokedMs": 13.46,
+          "responseMs": 14.52,
+          "inflightFinishedMs": 351.18,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-read",
+          "requestReceivedMs": 13.45,
+          "rightsRevokedMs": 13.52,
+          "responseMs": 15.78,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "slow-model",
+          "requestReceivedMs": 11.65,
+          "rightsRevokedMs": 11.7,
+          "responseMs": 14.14,
+          "inflightFinishedMs": null,
+          "companies": 34,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "large-history",
+          "requestReceivedMs": 212.12,
+          "rightsRevokedMs": 212.22,
+          "responseMs": 214.14,
+          "inflightFinishedMs": null,
+          "companies": 10035,
+          "historyBuildMs": 18.66,
+          "historyRows": 10035,
+          "historyBytes": 7588995,
+          "timingMode": "ISOLATED"
+        },
+        {
+          "scenario": "inflight-post",
+          "requestReceivedMs": 13.19,
+          "rightsRevokedMs": 13.25,
+          "responseMs": 14.32,
+          "inflightFinishedMs": 350.8,
+          "companies": 35,
+          "historyBuildMs": 0,
+          "historyRows": 0,
+          "historyBytes": 0,
+          "timingMode": "ISOLATED"
+        }
+      ],
+      "thresholds_changed": false
+    },
+    "ui": {
+      "passed": 15,
+      "failed": 0,
+      "duration_seconds": 35.1
+    },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diff_check": "PASS",
+    "initial_reproduction": {
+      "failed": 3,
+      "cause": "Missing companyActivities fallback, ignored explicit PROSPECT inquiryBasis, unordered source set triggers EXTRACT/DRAFT again."
+    },
+    "earlier_failed_checks": [
+      {
+        "backend_pass": 416,
+        "backend_fail": 12,
+        "causes": [
+          "Regulation quote rejection incomplete",
+          "Replay test attempted import before normal partial continuation",
+          "Historical draft opportunity remains historical; test now checks current opportunity and blocking",
+          "Pending flag incorrectly applied to already qualified DRAFT backlog",
+          "Synthetic reader clock differed from simulated app clock",
+          "Revalidation events counted as new drafts in hourly research"
+        ]
+      },
+      {
+        "backend_pass": 431,
+        "backend_fail": 1,
+        "cause": "Fixture assumed first three randomly ordered items always included Company 1; choose an actually prepared A instead, no weaker assertions."
+      }
+    ],
+    "targeted_after_fixes": {
+      "passed": 62,
+      "failed": 0
+    },
+    "original_seven_contexts_checked": true,
+    "offline_reviewer": "FIXTURE_EXPLICIT_NOT_REAL_PASS",
+    "public_status": "BLOCKED_EXTERNAL",
+    "public_stop": "CODEX_TIMEOUT",
+    "public_repeat_in_loop": "NOT_REACHED",
+    "after_stop_cache_only": "NO_HTTP_NO_MODEL_NO_MOCK_VERDICT",
+    "windows_local": "NOT_RUN",
+    "ci": "CHECK_AFTER_FINAL_PUSH",
+    "public_code_commit": "7803b9d85ce5ecdadd6abf0501fdb96ac47f157f",
+    "post_public_semantics": {
+      "old_7803_helper_isolated_failures": 2,
+      "new_strict_consistency_tests": 24,
+      "policy_version": 2,
+      "extraction_policy": 6,
+      "public_rerun": false,
+      "current_source_check_models": 0,
+      "current_source_check_http": 0
+    }
+  },
+  "post_public_basis_check": {
+    "timestamp": "2026-10-13T12:58:40.672Z",
+    "kind": "POST_PUBLIC_READ_ONLY_QUALIFICATION_CHECK",
+    "not_public_rerun": true,
+    "new_messages": 0,
+    "http": 0,
+    "models": 0,
+    "original_unchanged": true,
+    "source_hashes": {
+      "contracts": "ed59c628d559b3a8c20d54bcb1c9b416fea27b88ea5b68856841cec51b3ac4b5"
+    },
+    "results": [
+      {
+        "item_id": "d4c74b02-1b8e-49dd-97b6-b8e53ff2acd5",
+        "url": "https://gotoma.pl/",
+        "company": "GOTOMA Software House",
+        "original_stored_decision": "READY_COMPANY_INQUIRY",
+        "current_code_basis": {
+          "policyVersion": 2,
+          "field": "inquiryBasis",
+          "proof": {
+            "sourceId": "aeecb6cd-1db9-4dca-bbcf-0af403b08147",
+            "quote": "Projektujemy i rozwijamy aplikacje webowe dopasowane do procesów Twojej firmy.",
+            "explanation": "Firma tworzy i rozwija aplikacje webowe."
+          },
+          "sourceVersion": {
+            "id": "aeecb6cd-1db9-4dca-bbcf-0af403b08147",
+            "contentHash": "3d49ff444467fc846329addf738e8f4f3fdcf768334f9dcffe7350649f6e8b1a",
+            "parserVersion": 2,
+            "fetchedAt": "2026-10-13T12:32:15.988Z"
+          },
+          "evidenceIds": [],
+          "reason": "EXPLICIT_VERIFIED_BASIS"
+        },
+        "current_code_eligibility": {
+          "allowed": true,
+          "intent": "COMPANY_INQUIRY",
+          "reason": "Osobne zapytanie na podstawie działalności firmy; źródłowa oferta i jej niedopasowanie zachowane."
+        }
+      },
+      {
+        "item_id": "46c9d83e-d3e1-45fd-9967-39d3c54b8dfe",
+        "url": "https://www.prodaut.pl/",
+        "company": "PRODAUT Sp. z o.o.",
+        "original_stored_decision": "READY_COMPANY_INQUIRY",
+        "current_code_basis": {
+          "policyVersion": 2,
+          "field": "inquiryBasis",
+          "proof": {
+            "sourceId": "e82a6be2-6a9b-486f-ac45-6ae82b477a6c",
+            "quote": "Łączymy systemy, piszemy kod i automatyzujemy to, co powtarzalne",
+            "explanation": "Działalność firmy uzasadnia zapytanie o współpracę programistyczną."
+          },
+          "sourceVersion": {
+            "id": "e82a6be2-6a9b-486f-ac45-6ae82b477a6c",
+            "contentHash": "645ec78275661ebd61f7e451d8955a1ff8b2f697eb37f982a7937083a4e667e7",
+            "parserVersion": 2,
+            "fetchedAt": "2026-10-13T12:33:47.765Z"
+          },
+          "evidenceIds": [],
+          "reason": "EXPLICIT_VERIFIED_BASIS"
+        },
+        "current_code_eligibility": {
+          "allowed": true,
+          "intent": "COMPANY_INQUIRY",
+          "reason": "Osobne zapytanie na podstawie działalności firmy; źródłowa oferta i jej niedopasowanie zachowane."
+        }
+      },
+      {
+        "item_id": "892b1a60-9ee8-4ec7-827e-4eabcbf80df5",
+        "url": "https://assistron.pl/",
+        "company": "Assistron sp. z o.o.",
+        "original_stored_decision": "REJECTED",
+        "current_code_basis": {
+          "policyVersion": 2,
+          "field": "inquiryBasis",
+          "proof": {
+            "sourceId": "b23cee72-1240-48e1-a1fc-9f2d48bcbd31",
+            "quote": "Od chatbotów AI po dedykowane systemy ERP — budujemy oprogramowanie dopasowane do Twojego biznesu. Aplikacje webowe, mobilne, automatyzacja procesów.",
+            "explanation": "Potwierdzono działalność programistyczną, ale nie nabór ani otwartą kandydaturę."
+          },
+          "sourceVersion": {
+            "id": "b23cee72-1240-48e1-a1fc-9f2d48bcbd31",
+            "contentHash": "f9ad3d902b5eb7a7feee96d14ff63bf3cf0718593ee7e1c740b1da73afb66b96",
+            "parserVersion": 2,
+            "fetchedAt": "2026-10-13T12:36:04.771Z"
+          },
+          "evidenceIds": [],
+          "reason": "EXPLICIT_VERIFIED_BASIS"
+        },
+        "current_code_eligibility": {
+          "allowed": false,
+          "intent": "COMPANY_INQUIRY",
+          "reason": "Niepotwierdzone lub wykluczone przeznaczenie adresu."
+        }
+      },
+      {
+        "item_id": "56392826-6513-437d-98fc-1e99d31602f1",
+        "url": "https://gotoma.pl/",
+        "company": "GOTOMA Software House",
+        "original_stored_decision": "READY_COMPANY_INQUIRY",
+        "current_code_basis": {
+          "policyVersion": 2,
+          "field": "inquiryBasis",
+          "proof": {
+            "sourceId": "aeecb6cd-1db9-4dca-bbcf-0af403b08147",
+            "quote": "Projektujemy i rozwijamy aplikacje webowe dopasowane do procesów Twojej firmy.",
+            "explanation": "Firma tworzy i rozwija aplikacje webowe."
+          },
+          "sourceVersion": {
+            "id": "aeecb6cd-1db9-4dca-bbcf-0af403b08147",
+            "contentHash": "3d49ff444467fc846329addf738e8f4f3fdcf768334f9dcffe7350649f6e8b1a",
+            "parserVersion": 2,
+            "fetchedAt": "2026-10-13T12:32:15.988Z"
+          },
+          "evidenceIds": [],
+          "reason": "EXPLICIT_VERIFIED_BASIS"
+        },
+        "current_code_eligibility": {
+          "allowed": true,
+          "intent": "COMPANY_INQUIRY",
+          "reason": "Osobne zapytanie na podstawie działalności firmy; źródłowa oferta i jej niedopasowanie zachowane."
+        }
+      },
+      {
+        "item_id": "f9dab421-d813-49ab-b023-937e99809f02",
+        "url": "https://sprint0.pl/o-firmie",
+        "company": "Sprint0 sp. z o.o.",
+        "original_stored_decision": "REJECTED",
+        "current_code_basis": {
+          "policyVersion": 2,
+          "field": "inquiryBasis",
+          "proof": {
+            "sourceId": "dfa684f2-fe31-45dd-b5fe-acf5b618f59f",
+            "quote": "Budujemy systemy AI (asystentów na dokumentach firmy, ekstrakcję danych, agenty), wdrażamy modele lokalnie w infrastrukturze klienta, szkolimy zespoły i tworzymy dedykowane CRM-y oraz integracje.",
+            "explanation": "Działalność firmy stanowi podstawę zapytania o współpracę programistyczną."
+          },
+          "sourceVersion": {
+            "id": "dfa684f2-fe31-45dd-b5fe-acf5b618f59f",
+            "contentHash": "87b6d9d90c5c0ae4315cedc09af95affbc09b5ccad481aeb93b1f237365f3601",
+            "parserVersion": 2,
+            "fetchedAt": "2026-10-13T12:38:29.014Z"
+          },
+          "evidenceIds": [],
+          "reason": "EXPLICIT_VERIFIED_BASIS"
+        },
+        "current_code_eligibility": {
+          "allowed": true,
+          "intent": "COMPANY_INQUIRY",
+          "reason": "Osobne zapytanie na podstawie działalności firmy; źródłowa oferta i jej niedopasowanie zachowane."
+        }
+      },
+      {
+        "item_id": "64e38c34-ce3a-46fe-a41a-e8c42b826255",
+        "url": "https://www.twojsoftware.pl/kontakt",
+        "company": "TwójSoftware",
+        "original_stored_decision": "REJECTED",
+        "current_code_basis": {
+          "policyVersion": 2,
+          "field": "inquiryBasis",
+          "proof": {
+            "sourceId": "bf05b539-2a20-47e1-85da-d1efd2379ed7",
+            "quote": "Integracje modeli językowych i automatyzacje oparte na konkretnym procesie.",
+            "explanation": "Działalność firmy uzasadnia zapytanie o współpracę programistyczną."
+          },
+          "sourceVersion": {
+            "id": "bf05b539-2a20-47e1-85da-d1efd2379ed7",
+            "contentHash": "880ad349d60cb4b49dcbc893d03500d825211cf690e337345c9a4b26661755a6",
+            "parserVersion": 2,
+            "fetchedAt": "2026-10-13T12:37:43.521Z"
+          },
+          "evidenceIds": [],
+          "reason": "EXPLICIT_VERIFIED_BASIS"
+        },
+        "current_code_eligibility": {
+          "allowed": true,
+          "intent": "COMPANY_INQUIRY",
+          "reason": "Osobne zapytanie na podstawie działalności firmy; źródłowa oferta i jej niedopasowanie zachowane."
+        }
+      }
+    ]
+  },
+  "blocked_cache_check": {
+    "timestamp": "2026-10-13T12:47:56.921Z",
+    "kind": "CACHE_ONLY_POST_BLOCK_ON_CONSISTENT_COPY",
+    "not_new_public_research": true,
+    "no_mock_verdict": true,
+    "original_unchanged": true,
+    "public_budget_unchanged": true,
+    "model_calls": 0,
+    "http": 0,
+    "before": [
+      {
+        "id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+        "company": "PRODAUT Sp. z o.o.",
+        "version": 1,
+        "textHash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+        "supported": true,
+        "issues": []
+      },
+      {
+        "id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+        "company": "GOTOMA Software House",
+        "version": 1,
+        "textHash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+        "supported": true,
+        "issues": []
+      }
+    ],
+    "after": [
+      {
+        "id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+        "company": "PRODAUT Sp. z o.o.",
+        "version": 1,
+        "textHash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+        "supported": true,
+        "issues": []
+      },
+      {
+        "id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+        "company": "GOTOMA Software House",
+        "version": 1,
+        "textHash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+        "supported": true,
+        "issues": []
+      }
+    ],
+    "restartState": {
+      "paused": true,
+      "stopped": true,
+      "killSwitch": false,
+      "status": "STOPPED",
+      "nextCycle": null,
+      "heartbeat": null,
+      "scenario": "NORMAL"
+    },
+    "attempts": 0,
+    "outbox": 0
+  },
+  "consistency_replay": {
+    "kind": "OFFLINE_WITH_FIXTURE_REVIEWER",
+    "real_http": 0,
+    "real_model_calls": 0,
+    "fixture_calls": 3,
+    "original_database_unchanged": true
+  },
+  "consistency_snapshots": [
+    {
+      "at": "2026-10-13T12:33:45.970Z",
+      "rows": [
+        {
+          "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+          "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+          "company": "GOTOMA Software House",
+          "version": 1,
+          "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+          "supported": true,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "at": "2026-10-13T12:35:37.734Z",
+      "rows": [
+        {
+          "draft_id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+          "company_id": "78b37446-df5a-4145-8d4f-060c3971e635",
+          "company": "PRODAUT Sp. z o.o.",
+          "version": 1,
+          "text_hash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+          "supported": true,
+          "issues": []
+        },
+        {
+          "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+          "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+          "company": "GOTOMA Software House",
+          "version": 1,
+          "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+          "supported": true,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "at": "2026-10-13T12:37:03.738Z",
+      "rows": [
+        {
+          "draft_id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+          "company_id": "78b37446-df5a-4145-8d4f-060c3971e635",
+          "company": "PRODAUT Sp. z o.o.",
+          "version": 1,
+          "text_hash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+          "supported": true,
+          "issues": []
+        },
+        {
+          "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+          "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+          "company": "GOTOMA Software House",
+          "version": 1,
+          "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+          "supported": true,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "at": "2026-10-13T12:39:30.399Z",
+      "rows": [
+        {
+          "draft_id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+          "company_id": "78b37446-df5a-4145-8d4f-060c3971e635",
+          "company": "PRODAUT Sp. z o.o.",
+          "version": 1,
+          "text_hash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+          "supported": true,
+          "issues": []
+        },
+        {
+          "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+          "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+          "company": "GOTOMA Software House",
+          "version": 1,
+          "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+          "supported": true,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "at": "2026-10-13T12:41:30.516Z",
+      "rows": [
+        {
+          "draft_id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+          "company_id": "78b37446-df5a-4145-8d4f-060c3971e635",
+          "company": "PRODAUT Sp. z o.o.",
+          "version": 1,
+          "text_hash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+          "supported": true,
+          "issues": []
+        },
+        {
+          "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+          "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+          "company": "GOTOMA Software House",
+          "version": 1,
+          "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+          "supported": true,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "at": "2026-10-13T12:41:30.558Z",
+      "rows": [
+        {
+          "draft_id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+          "company_id": "78b37446-df5a-4145-8d4f-060c3971e635",
+          "company": "PRODAUT Sp. z o.o.",
+          "version": 1,
+          "text_hash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+          "supported": true,
+          "issues": []
+        },
+        {
+          "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+          "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+          "company": "GOTOMA Software House",
+          "version": 1,
+          "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+          "supported": true,
+          "issues": []
+        }
+      ]
+    }
+  ],
+  "restart_check": {
+    "state": {
+      "paused": true,
+      "stopped": true,
+      "killSwitch": false,
+      "status": "STOPPED",
+      "nextCycle": null,
+      "heartbeat": null,
+      "scenario": "NORMAL"
+    },
+    "rows": [
+      {
+        "draft_id": "bfb19e47-93b1-4257-a4ac-f01560bee90b",
+        "company_id": "78b37446-df5a-4145-8d4f-060c3971e635",
+        "version": 1,
+        "text_hash": "4aed20f15124e00f23568bf553f5578d1bb236ad44b9010cff744d832f9802ee",
+        "supported": true,
+        "issues": []
+      },
+      {
+        "draft_id": "cf74c59d-9b87-45c0-a7db-3ba93e9e0767",
+        "company_id": "86da6a63-eae5-48a6-9461-b11f81309f20",
+        "version": 1,
+        "text_hash": "d17d6d4621afd5b7a8e1e626baba724e49e796e6138b8e3c865e456ffca3e2a4",
+        "supported": true,
+        "issues": []
+      }
+    ],
+    "outbox": 0,
+    "approvals": 0,
+    "attempts": 0,
+    "auto_sessions": 0
+  },
+  "offline_metrics_replay": null,
+  "files": {
+    "BLEDY.md": "cee2a61d3dcc241e811781cd269527ad8ae082a600e2c8d34194a3ceff8d02ec",
+    "FIRMY.csv": "94cf8170735db2508afda31f912d1c865283d10b0a2b5098c9c80c37e46b64b6",
+    "POROWNANIE.md": "a6939989695d802664738f01c2f7d47f8fbf5538d8d423f9d51eba3d461c3150",
+    "PROFIL_UZYTY.md": "73184f14e86aec11209b64f3938975272a0abff5627b2532dbcd1aeb6fcbd25b",
+    "PRZEBIEG.jsonl": "5bd6bd0a48e6ddf47e22b505860e57b9cc61341b7230475d5a986e5ef09b0dc3",
+    "README.md": "65fa2d9e2abeb40b654768a52decd7e1af51e39f32acaa4a77517837ab452225",
+    "WIADOMOSCI.md": "f8f883233cba1cd43bfa3ce657b3fecf6ba1485b2ab78ea9c7b4e7fb7240a6e5",
+    "ZRODLA.md": "c78d109f92649cd712a79c8f858e6b346a9126bc99b9bc1c7818aba8d2959910",
+    "MANIFEST.json": null
+  },
+  "self_hash_note": "Hash własnego manifestu pominięty, aby uniknąć rekursji; plik jest w wykazie. Pozostałe hashe dotyczą bajtów UTF-8."
+}

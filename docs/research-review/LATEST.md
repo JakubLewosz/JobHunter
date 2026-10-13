@@ -1,3 +1,3 @@
 # Ostatnia diagnostyka
 
-[2026-10-13_12-02_9c7ca137_macos_autonomous](2026-10-13_12-02_9c7ca137_macos_autonomous/README.md) — PARTIAL; 2026-10-13T10:02:42.350Z. 19 firm po analizie, 12 wersji, 11 szkiców po pełnych kontrolach. Prawdziwe maile: 0.
+[2026-10-13_14-31_ac3c1403_macos_consistency](2026-10-13_14-31_ac3c1403_macos_consistency/README.md) — BLOCKED_EXTERNAL; 2026-10-13T12:31:47.567Z. 5 firm po analizie, 2 wersji, 2 szkiców po pełnych kontrolach. Prawdziwe maile: 0.

@@ -1,3 +1,54 @@
+# Spójność dowodów — 13 października 2026
+
+macOS arm64, Node v24.11.0, CLI 0.162.0-alpha.17.2. Poprzednie CI 482f34a:
+Windows i macOS success, hosted/fikcyjne usługi, nie domowy komputer.
+
+Przed poprawką 3 FAIL: missing inquiryBasis mimo verified companyActivities;
+PROSPECT ignoruje właściwe inquiryBasis; zmiana kolejności aktualnych źródeł
+powtarza EXTRACT/DRAFT i unieważnia tekst. Po podstawowej poprawce 27/27 celowanych
+PASS; po rozszerzeniu/race/Stop/B-podczas-A i licznikach 62/62 PASS.
+
+Pośredni pełny check: 416 PASS / 12 FAIL. Przyczyny: brak wykluczenia słowa regulamin
+w samym cytacie, test ponownego importu przed normalną kontynuacją partial, asercja
+myliła historyczną opportunity starego szkicu z aktualną kwalifikacją, hold pozostawał
+na już zakwalifikowanym backlog DRAFT, zegar syntetycznego readera nie podążał za
+wirtualnym zegarem aplikacji, kolejne kontrole liczono jako nowe szkice w hourly trial.
+Poprawiono kod i datowanie fixture; bez usunięcia asercji lub zwiększenia progów.
+Kolejny check miał 431 PASS / 1 FAIL: fixture wybierała Company 1, której nie musiało
+być w losowo uporządkowanej pierwszej trójce. Test teraz wybiera rzeczywiście przygotowaną
+firmę A i nadal wymaga dispatch B przy wstrzymanej A. Check publicznego kodu 7803b9d:
+432 backend / 12 performance / 15 UI PASS, typecheck/build/diff check PASS.
+
+Po zamknięciu publicznej części: zbyt szerokie wykluczenie klienta i wymóg czasownika
+w opisie usługi. Dokładny helper z 7803b9d na dwóch izolowanych przypadkach: 2 FAIL
+(wynik null zamiast właściwego inquiryBasis). Pierwsze dwie asercje były zbyt słabe,
+bo dopuszczały fallback; zaostrzono je do wyboru dokładnego priorytetowego cytatu.
+Helper v2 / extraction policy v6: 24/24 konsystencji PASS, w tym negatywne przypadki.
+Read-only aktualnych zapisanych danych: Sprint0/TwójSoftware mają właściwą podstawę,
+Assistron nadal bez literalnego adresu. Bez zmiany oryginalnych decyzji, nowego szkicu,
+HTTP lub modeli. Publiczna próba nie była ponawiana na późniejszym helperze.
+
+Replay używa spójnej kopii znanej diagnostyki i jawnego FixtureRunner: 1 DRAFT
+(PRODAUT), 2 nowe review (GOTOMA/PRODAUT), 0 rzeczywistych modeli/HTTP. GOTOMA:
+nowa rewizja tego samego tematu/tekstu z aktualnym kontekstem; 7 wcześniejszych
+poprawnych oryginalnych materiałów i ich pełne konteksty sprawdzone przed/po/restart,
+bez zmian. Nie jest to nowe zewnętrzne review tych siedmiu. Oryginalny SQLite bez zmian.
+
+Publiczne: 9.71 min, 29 HTTP/14 modeli; 2 kontrolne szkice supported=true/code PASS,
+utrzymane po dalszych cyklach i restarcie. Dwa cykle ukończone; trzeci SEARCH
+CODEX_TIMEOUT, bez retry/zmiany 120 s. BLOCKED_EXTERNAL. Harness pamiętał starszy
+indeks: Sprint0 ponownie badany, nie nowy; nowa pamięć obejmuje oba poprzednie indeksy.
+Celowy powrót w głównym loopie nieosiągnięty. Oddzielny cache-only replay po Stop
+na spójnej kopii: prawdziwe wcześniejsze verdicts + bieżący binding, HTTP i model
+rzucają błąd przy użyciu; 0 nowych wywołań, 2→2 aktualne, bez nowej generacji/mock PASS.
+
+Końcowy kod dbd5a39: npm run check 434 backend / 12 performance / 15 UI PASS, typecheck/build/diff check PASS. CI finalnego SHA sprawdzane po pushu. Publiczny kod 7803b9d i późniejsza korekta offline mają osobne hashe i zakresy w pakiecie.
+Historyczny niestabilny odbiór Stop nie jest wyjaśniony późniejszym PASS. Progów i
+liczby iteracji nie zmieniono. Windows lokalnie/Gmail/dostarczalność bez weryfikacji.
+Prawdziwe mail/SELF_TEST, OAuth, prywatny runtime/CV/liczniki: bez operacji.
+
+---
+
 # Runda samodzielnego researchu — 13 października 2026
 
 macOS arm64, Node v24.11.0. Publiczna próba: f59ccb8; końcowy kod: 835a6d5; wyłącznie fikcyjni odbiorcy, katalogi
