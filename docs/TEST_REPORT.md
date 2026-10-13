@@ -145,6 +145,109 @@ wiązania źródeł/materiałów. SELF_TEST/pilot/ciągła AUTO niewykonane, wys
 Kod i zależności aktywnego backendu niezmienione. Ostatni pełny check tego kodu
 pozostaje Windows 439/12/15 PASS; nie ponawiano go dla samej dokumentacji.
 
+## Przygotowanie SELF_TEST i nowych priorytetów — checkpoint OAuth
+
+Ponowne gmail:status na domowym Windowsie: brak lokalnego account.json,
+konto niepodłączone, backend health=ok w RESEARCH_ONLY. 9 APPROVED,
+profil/PDF zatwierdzone, Stop i sender paused; próby/outbox/auto sessions 0.
+Użytkownik wskazał inne konkretne konto i odbiorcę testu. Prywatna propozycja
+SELF_TEST zachowuje przejrzany tekst, prefix testu i obecne zatwierdzone CV.
+Nie jest natywnym frozen preview ani zgodą na jego wysłanie.
+
+Nowe priorytety: 6 publicznych stron przez istniejący PublicSourceReader,
+6 żądań, wszystkie READ/HTTP 200 na Windowsie z system CA. Bez dodatkowego
+modelu lub Gmaila. Wstępna ocena źródeł: dwa literalne kanały rekrutacyjne,
+jeden nadal GENERAL. Ogłoszone typowe role nie potwierdzają aktualnego naboru;
+pełna zdalność jednej firmy zależy od rozmowy i roli. Nie potwierdzono 20 h.
+Brak pasujących lokalnych firm/aliasów; historia skrzynki niesprawdzona.
+Trzy wcześniejsze szkice zachowano w prywatnym raporcie i porównano
+id/version/subject/body oraz hash całego oryginalnego raportu: identyczne.
+
+Brak lokalnego Desktop JSON. Użytkownik zalogował się do Google Cloud;
+po jednym Ponów po błędzie SPA odczytano istniejący projekt i klienta typu
+Komputer, zgodnego z podanym przez użytkownika ID. UI Google potwierdziło,
+że starych sekretów nie można już ponownie pobrać. Po osobnej konkretnej zgodzie
+dodano drugi klucz, pozostawiając stary aktywny. Scopes przyszłego połączenia
+identity/send/readonly opisano i zatwierdzono; sam helper OAuth nie został uruchomiony.
+
+Pobierz JSON: event download timeout, pliku nie znaleziono; ręczny klik
+użytkownika też nie pobrał pliku. Browser clipboard API po ikonie Copy puste,
+więc nie zapisano konfiguracji z domniemanym sekretem. Automatyczny reviewer
+odrzucił odczyt globalnego schowka jako możliwość pobrania niepowiązanych
+wrażliwych danych; odrzucona komenda nie została wykonana. Potem browser policy
+zablokowała dalszy dostęp do Google Cloud po odmowie zgody. Nie próbowano innych
+powierzchni/API/surowego CDP ani odczytu schowka po odrzuceniu.
+
+Do ręcznego wpisania powstał wyłącznie lokalny szablon JSON bez realnego
+sekretu. Użytkownik potwierdził, że jednorazowe opcje nowego klucza zniknęły,
+i osobno zatwierdził ręczne zastąpienie tylko tego niezapisanego klucza
+w zwykłej Operze, zachowując stary. Na tym checkpointcie czekano na Desktop JSON;
+wyniku ręcznej operacji jeszcze nie potwierdzono. Pełne identyfikatory, końcówki,
+konto/odbiorca i data klucza są tylko w prywatnym raporcie. Ani JSON, ani
+sekret/token/schowek nie trafiły do modelu lub Git; zapis szablonu nie oznacza
+gotowości integracji. Brak połączenia, mailbox read, wysyłek/SELF_TEST/pilotażu
+i AUTO sesji. Kod, generator, zależności i aktywny build bez zmian.
+
+## Natywne połączenie i jeden SELF_TEST — Windows, 13 października 2026
+
+Użytkownik dostarczył lokalny Desktop JSON po ręcznej operacji w zwykłej
+przeglądarce. Walidacja potwierdziła właściwy typ/klienta/projekt i nowy sekret;
+zawartość JSON, sekret i tokeny nie trafiły do modelu lub Git. Standardowy helper
+gmail:enable-read nie ukończył otwarcia przeglądarki: explorer.exe zwrócił exit 1.
+To samo odtworzono z niesekretnym adresem dokumentacji. Prywatny adapter użył
+istniejącego connectGoogle, tego samego PKCE/state/loopback i systemowego vault,
+ze standardowym Windows ShellExecute; bez zmiany produkcyjnego helpera/builda.
+Nowy OAuth ukończony o 20:34:24 Europe/Warsaw, wskazane konto zgodne,
+identity/send/readonly zgodne z wcześniejszą osobną zgodą. Użytkownik potwierdził
+ukończenie logowania. Samo połączenie: zero odczytów poczty i wysyłek.
+
+Oficjalny Stop zakończył poprzedni backend; brak listenera i zwolnione blokady.
+Spójny backup oraz history:local doctor PASS, integrity=ok, niepewnych prób 0.
+Jedna celowana publiczna para URL zaimportowana istniejącym RESEARCH_ONLY
+do właściwej historii produkcyjnej, z wyłączoną pocztą. Zwykła ekstrakcja,
+kwalifikacja i generacja: COMPLETED/DRAFTS_READY, semantic review supported=true,
+issues/material issues puste. Jedna wersja szkicu; nie zmieniono generatora
+lub wcześniejszych zachowanych wiadomości. Historia i granica kampanii identyczne.
+
+Po dodatkowym spójnym backupie istniejący GmailJobHunter z natywnym runtime
+WORKSTATION przygotował SELF_TEST w APPROVAL_REQUIRED, bez workerów/researchu.
+Potwierdzono 9 APPROVED oraz zatwierdzony profil i PDF; FixDesk DEFERRED.
+Pokazano dokładnego nadawcę, osobistego odbiorcę, cały tekst, temat i załącznik/hash.
+Zamrożony EML oraz kopia właściwego CV zapisane wyłącznie w prywatnym raporcie.
+Użytkownik osobno zatwierdził tę jedną wiadomość i celowane sprawdzenie tej próby
+w Wysłanych. Użyto niewygasłego preview/hash bez odświeżania lub zmiany bajtów.
+
+Rzeczywisty natywny sender na fizycznym Windowsie: rezerwacja o **21:12:14**,
+**SENT_CONFIRMED o 21:12:16 Europe/Warsaw**. Jedna próba POST i jedna rezerwacja,
+identyczny hash zatwierdzonego MIME, konto/odbiorca/CV zgodne; error_class=null.
+Gmail przyjął wiadomość, istniejący reconcile potwierdził właściwy provider ID,
+temat, konto, odbiorcę i czas w Wysłanych. To nie dowodzi folderu odbiorcy.
+Nie odczytano historii firm ani innych wątków i nie ponawiano wysyłki.
+
+Końcowy stan: stopped=true, gmailSenderPaused=true, jeden terminalny outbox
+SELF_TEST, send_attempts=1, usage=1/10 bez resetu lub zmiany limitów. Firmowe
+wysyłki 0, niepewne próby 0, AUTO_POLICY niewłączone. Ręczna historia, suppressions
+i trwała granica kampanii identyczne przed/po. Program i sender zatrzymane.
+Końcowy history:local doctor: integrity=ok, attempts=1, usage=1, uncertain=0;
+istniejący helper utworzył i sprawdził spójny backup także po wysyłce.
+Hash pierwotnego raportu i trzy odłożone szkice ponownie zweryfikowane: bez zmian.
+Odbiorca następnie zgłosił **Spam**. Otwarcie CV nie zostało potwierdzone.
+Nie ustalono przyczyny klasyfikacji i nie zmieniono generatora lub treści.
+Użytkownik wskazał zmianę nadawcy na inne konkretne konto i jedną kolejną próbę
+do tego samego odbiorcy. Przygotowano prywatny adapter istniejącego connectGoogle
+z kontrolą tego konta i standardowym otwarciem przeglądarki; node --check PASS.
+Nowy OAuth czeka na odpowiedź na konkretne pytanie o identity/send/readonly
+i zastąpienie lokalnego połączenia. Samo wskazanie konta nie uruchomiło helpera.
+Potem potrzebny nowy podgląd i osobne zatwierdzenie dokładnej kolejnej wysyłki;
+pierwsza próba/rezerwacja pozostają zachowane, bez resetu limitów.
+Pilot do firm czeka na udany wynik testu, osobną zgodę na celowany odczyt ich historii
+i dokładny podgląd do trzech wiadomości; późniejsza wysyłka wymaga osobnej zgody.
+
+Nie uruchamiano testów z rzeczywistą pocztą jako fikcyjnej regresji. Powyższe
+jest osobno autoryzowaną operacją, nie npm run check. Kod produktu i zależności
+pozostają 6409e09; ostatni pełny fizyczny Windows check nadal 439/12/15 PASS.
+Stock opener wymaga osobnej poprawki z fikcyjnym URL; nie wymaga nowego OAuth.
+
 ---
 
 # Spójność dowodów — 13 października 2026

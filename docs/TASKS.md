@@ -59,13 +59,61 @@
       co 5 minut, bez kolejki. GENERAL zachowany jako GENERAL, bez udawania wakatu.
       Gmail/status: lokalna instalacja nie ma podłączonego konta; bez odczytu
       magazynu sekretów lub skrzynki. Nie zmieniono kodu ani aktywnego builda.
-- [ ] Użytkownik wskazuje właściwego nadawcę i osobno zatwierdza OAuth; potem
-      osobna zgoda na wymagane sprawdzenie historii Gmaila oraz ewentualny SELF_TEST
-      z dokładnym odbiorcą/wiadomością/CV. Nie wybierać konta ani rozszerzać scopes.
-      Po odświeżeniu źródeł, kontroli historii i materiałów przedstawić dokładny
-      ograniczony pilot (GENERAL, 3 firmy, tempo/limity/CV/nadawca) do osobnej zgody
+- [x] Na nową decyzję użytkownika wybrano prywatnie nadawcę i odbiorcę SELF_TEST
+      oraz inne trzy priorytetowe firmy. Sześć publicznych stron odświeżonych
+      obecnym PublicSourceReader na Windowsie: 6 READ/HTTP 200, system CA,
+      bez modelu/Gmaila. Wstępnie dwa kontakty RECRUITMENT i jeden nadal GENERAL;
+      pełna zdalność jednej firmy zależy od roli, 20 h nadal do potwierdzenia.
+      Lokalne nazwy/domeny/aliasy bez dopasowań; nie oznacza to pustej historii Gmaila.
+      Trzy wcześniejsze wiadomości zachowane i porównane dokładnie, bez zmian generatora.
+- [x] Użytkownik osobno zatwierdził drugi klucz istniejącego klienta Desktop
+      i przyszłe połączenie wskazanego konta ze scopes identity/send/readonly.
+      Google Cloud po logowaniu potwierdził istniejący projekt i typ klienta.
+      Jednorazowy klucz utworzony, stary nadal aktywny; JSON nie został zapisany:
+      download timeout, ręczne pobranie też nieskuteczne, clipboard API puste.
+      Automatyczny reviewer odrzucił szerszy odczyt schowka przed wykonaniem;
+      potem przeglądarka zablokowała dostęp do domeny po odmowie zgody. Bez obejścia.
+      Powstał wyłącznie prywatny szablon JSON i propozycja treści testu, nie frozen preview.
+- [x] Użytkownik dostarczył rzeczywisty Desktop JSON po ręcznej operacji w Operze.
+      Typ/klient/projekt zgodne; sekret nie trafił do modelu lub Git. Połączenie
+      wskazanego konta z uzgodnionymi scopes zakończone i potwierdzone przez użytkownika.
+      Stock opener explorer.exe zwracał exit 1 na Windowsie; prywatny adapter użył
+      istniejącego connectGoogle i standardowego ShellExecute, bez zmiany kodu produktu.
+      Ten krok nie odczytał poczty ani nie wysłał maila. Nie ponawiano zablokowanego
+      dostępu do Google Cloud lub schowka; metadane i zgody tylko w prywatnym raporcie.
+- [x] Stop backendu → spójny backup/doctor PASS → jeden publiczny import URL
+      i zwykły szkic produkcyjny istniejącym RESEARCH_ONLY z wyłączoną pocztą.
+      COMPLETED/DRAFTS_READY, semantic review PASS, material issues puste.
+      Bez zmiany generatora; historia, blokady i granica kampanii zachowane.
+- [x] Istniejący GmailJobHunter/WORKSTATION przygotował dokładny SELF_TEST z CV
+      w zatrzymanym APPROVAL_REQUIRED. Wszystkie 9 faktów, profil i PDF zatwierdzone.
+      Nadawca/odbiorca/cały tekst/CV/hash pokazane; użytkownik osobno zatwierdził
+      jedną wysyłkę i celowane potwierdzenie tej próby w Wysłanych.
+      Rzeczywisty Windows 21:12:14 Europe/Warsaw: SENT_CONFIRMED, jedna próba
+      i rezerwacja, MIME zgodny z zatwierdzonym podglądem, CV bez zmian.
+      Zero kontaktów z firmami lub odczytów ich historii. Sender ponownie Stop;
+      granica, ręczna historia i suppressions identyczne; wykorzystanie 1/10 bez resetu.
+      Końcowy doctor integrity=ok, niepewne próby 0; spójny backup po wysyłce.
+      Trzy zachowane szkice i hash pierwotnego raportu ponownie porównane: bez zmian.
+- [x] Odbiorca zgłosił Spam pierwszego SELF_TEST; otwarcie CV niepotwierdzone.
+      Nie przypisano przyczyny generatorowi lub OAuth i nie zmieniono treści.
+- [ ] Dokładny następny krok: użytkownik wskazał zmianę na inne konkretne konto
+      i jedną kolejną próbę do tego samego osobistego odbiorcy. Przygotowano prywatny
+      adapter istniejącego connectGoogle z kontrolą właściwego konta; node --check PASS.
+      Czeka osobne pytanie o nowy OAuth identity/send/readonly z zastąpieniem lokalnego
+      nadawcy. Nie uruchamiać połączenia przed odpowiedzią. Potem nowy dokładny
+      SELF_TEST preview tej samej treści/CV i osobna zgoda przed wysyłką/potwierdzeniem
+      tej próby w Wysłanych. Zachować pierwszą próbę i rezerwację; bez resetu limitów.
+      Pilot trzech priorytetowych firm czeka na udany wynik testu; AUTO nadal wyłączone.
+- [ ] Poprawić stock opener helpera OAuth na Windowsie po wykazanym exit 1:
+      oddzielna zmiana z fikcyjnym URL i regresją, po zakończeniu operacji/backupie.
+      Nie ponawiać poprawnie zakończonego OAuth ani zmieniać scopes w ramach testów.
+- [ ] Po udanym SELF_TEST zwykła kwalifikacja priorytetowych trzech firm,
+      wymagane celowane sprawdzenie historii Gmaila z osobną zgodą oraz aktualność
+      źródeł/materiałów. Konflikty przedstawić, nie obchodzić. Dopiero dokładny
+      podgląd do 3 firm (RECRUITMENT/GENERAL, tempo/limity/CV/nadawca) i osobna zgoda
       na wysyłkę. SEND_UNKNOWN → Stop bez retry; pilot nie udziela zgody na ciągłą AUTO.
-      Rzeczywiste wysyłki nadal 0.
+      Program Stop, wysłany wyłącznie jeden zatwierdzony SELF_TEST; firmowe wysyłki 0.
 
 ## Spójność dowodów — 13 października 2026
 
