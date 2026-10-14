@@ -22,11 +22,29 @@
       send_attempts 0. Raport i logi prywatne, bez publikacji firm/treści.
 - [x] Jednorazowy poranny powrót do tego czatu zaplanowany na 14 października
       07:00 Europe/Warsaw. Czyta tylko wyniki tej próby; bez Gmaila lub nowego Start.
-- [ ] Rano sprawdzić rzeczywisty zakres, wszystkie źródła i przeznaczenia kontaktów,
-      pełne szkice, odrzucenia/deduplikację i błędy; porównać zachowaną historię
-      oraz brak nowych wysyłek. Wynik aktualnie W TRAKCIE — nie oznaczać pełnych
-      ośmiu godzin jako wykonanych. Jeśli limit/pauza/uśpienie/Stop zakończyły
-      pracę wcześniej, podać to uczciwie. Po raporcie wyłączyć poranny heartbeat.
+- [x] Sesja zakończyła się sama jako DAY_FINISHED o 14 października 05:39:53
+      Europe/Warsaw po 8 cyklach: 6 COMPLETED, 2 PARTIAL. Rzeczywisty czas około
+      7 h 8 min, nie pełne osiem godzin. Raport i spójny backup powstały przed
+      restartami systemu około 05:45/05:46; User32 1074 wskazuje TrustedInstaller
+      i zaplanowaną aktualizację. Restart nie przerwał researchu; backend nie działa.
+- [x] Końcowa próba: 77 rekordów kandydatów / 63 różne URL, 58 firm,
+      21 nowych szkiców i 1 ponownie użyty (22 pełne wiadomości w raporcie),
+      222 źródła i 110 wywołań modelu. 11 zapisów błędów: 4 UNAVAILABLE,
+      2 UNVERIFIED_COMPANY, 5 SIZE_LIMIT; część to dwa etapy tego samego problemu.
+      Model errors 0. Powrót do 10 URL daje 14 dodatkowych rekordów kandydatów;
+      w zestawie szkiców brak powtórzonych firm lub odbiorców.
+- [x] Read-only kontrola po restarcie: 22/22 kod/semantyka/literalny kontakt/
+      powiązania materiałów PASS, bez STALE/UNVERIFIED. 21 GENERAL i 1 RECRUITMENT;
+      warunki pracy nadal wymagają potwierdzenia. Baza i końcowy backup integrity=ok,
+      hashe chronionej historii/prób/liczników/materiałów/granicy identyczne,
+      Fingoweb blokowany. Nowych send attempts 0, poczty nie odczytywano.
+- [x] Pełny końcowy raport przygotowano poza repo przy powrocie użytkownika
+      po restarcie; zawiera listę firm, dokładne wiadomości, kontakty/dowody,
+      warunki, odrzucenia, powtórzenia i błędy. Poranny heartbeat wyłączony (PAUSED)
+      po wykonaniu jednorazowego raportu. Nie wznawiano testu/Start ani Gmaila.
+- [ ] Dalsza ocena wyników i decyzja o ewentualnym kolejnym etapie; problem
+      dostarczalności nadawcy i wymagane zgody na historię/pilot pozostają odrębne.
+      Nie uznawać szkiców z RESEARCH_ONLY za zatwierdzenie wysyłki lub pełnych 8 h pracy.
 
 ## Przygotowanie domowego Windowsa — 13 października 2026
 

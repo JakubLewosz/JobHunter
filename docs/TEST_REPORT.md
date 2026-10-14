@@ -1,4 +1,4 @@
-# Nocny RESEARCH_ONLY — uruchomienie, 13/14 października 2026
+# Nocny RESEARCH_ONLY — wynik, 13/14 października 2026
 
 Po wyraźnym poleceniu użytkownika przygotowano jedną 8-godzinną próbę bez
 Gmaila/wysyłki. Rzeczywisty Windows: istniejący doctor PASS, build gotowy,
@@ -45,7 +45,61 @@ się wcześniej po 8 cyklach lub limicie/błędzie; nie deklarujemy pełnych 8 g
 Heartbeat w tym czacie na **14 października 07:00 Europe/Warsaw** zapisany
 ACTIVE, jednorazowy poranny raport. Bez dostępu do Gmaila lub sekretów,
 wznowienia sesji, wysyłek lub AUTO_POLICY. Wymaga dostępnego komputera i app.
-Końcowy wynik nocny nadal **W TRAKCIE**; szczegóły/ocena dopiero po zakończeniu.
+Powyższe opisuje stan uruchomienia; poniżej właściwy końcowy wynik.
+
+## Zakończenie i weryfikacja po restartach Windowsa
+
+Sesja zakończyła się **14 października 05:39:53 Europe/Warsaw** jako DAY_FINISHED,
+po ośmiu zaplanowanych cyklach: **6 COMPLETED i 2 PARTIAL**. Ostatni cykl ukończony
+05:39:47, raport/backup zapisane 05:39:53. Rzeczywisty czas od startu około
+**7 godzin 8 minut**, nie pełne osiem godzin; istniejący RESEARCH_ONLY kończy
+się także po maxCycles=8. Nie był to limit Codexa lub przerwanie przez restart.
+
+Windows zapisał zamknięcie 05:44:54 i uruchomienie 05:45:12, następnie kolejne
+zamknięcie/uruchomienie około 05:46. Zdarzenie User32 1074 o 05:46:35 wskazuje
+TrustedInstaller.exe i planowaną aktualizację systemu (0x80020003). Końcowy raport
+i backup są wcześniejsze. Bieżący backend nie działa, nie wznawiano sesji.
+Nie zmieniano aktualizacji/zasilania Windowsa ani ustawień autostartu.
+
+Wynik: **77 rekordów kandydatów, 63 różne URL, 58 firm, 21 nowych szkiców**
+oraz jeden wcześniej zapisany wykorzystany w tej sesji — 22 wiadomości w raporcie.
+222 zapisane źródła publiczne, 110 wywołań modelu; model errors=0. 11 zapisów
+błędów: cztery UNAVAILABLE/NO_READABLE_SOURCE, dwa UNVERIFIED_COMPANY i pięć
+SOURCE SIZE_LIMIT. Nie są to 11 niezależnych awarii; odczyt i element mogą
+opisywać tę samą stronę. Błędne/niedostępne kandydatury zachowane, bez wymuszania
+akceptacji, osłabiania limitu źródeł lub ponawiania całej próby do PASS.
+
+Po restarcie read-only, istniejącymi draftMaterialIssues i checkDraft na dokładnych
+zapisanych wersjach/źródłach: **22/22 bez STALE/UNVERIFIED i bez code issues**,
+22/22 semantic supported=true, 22/22 literalny email w zachowanym dowodzie.
+21 kontaktów GENERAL, 1 RECRUITMENT; nie zmieniano ich przeznaczenia. Warunki,
+rekrutacja i przyjęcie ucznia/20 h pozostają takie, jak udokumentowano, często unknown.
+To weryfikacja zapisanych danych, bez nowego modelu, publicznych fetchy lub Gmaila.
+
+Powrót do 10 URL wygenerował 14 dodatkowych rekordów kandydatów. Nie było
+powtórzonych company_id lub odbiorców w zestawie 22 szkiców. Reuse wcześniejszej
+wersji rozróżniono od 21 nowych; nie przeniesiono dawnych propozycji do blokad.
+Kwalifikacje w zakresie próby: 56 NEEDS_REVIEW i 3 REJECTED. Materiały są szkicami
+bez zgody na przyszłą wysyłkę; historia Gmaila tych firm nie była sprawdzana.
+
+Pełne integrity_check bieżącej SQLite i końcowego backupu: **ok**. Porównanie
+chronionych tabel i trwałej granicy z początkiem oraz backupem: identyczne,
+w tym profil/fakty/CV, outbox, send attempts, usage, ręczna historia, suppressions
+i shared records. Fingoweb blokowany. Nadal tylko 3 wcześniejsze SELF_TEST,
+zero nowych prób wysyłki i zero niepewnych wyników. Nie inicjalizowano Gmaila.
+
+Pomocniczy odczyt weryfikacji początkowo użył nieistniejącego evidence.url;
+poprawiono go na canonical_url po odczytaniu schematu. To błąd raportu operacyjnego,
+bez zmian SQLite lub kodu produktu, odrębny od 11 zapisów błędów nocnej próby.
+
+Raport TXT/JSON, pełne 22 wiadomości, kontakty i literalne dowody, warunki,
+odrzucenia, błędy i kontrola po restarcie są poza repo. Raport przekazano w obecnej
+sesji po powrocie użytkownika; automatycznego porannego turnu nie potwierdzono.
+Jednorazowy heartbeat ustawiono PAUSED po wykonaniu raportu. Nie wznawiano
+backendu ani pracy; firmowy pilot i AUTO_POLICY nadal niewłączone.
+
+Niezmieniony kod produktu pozostaje 6409e09, ostatni pełny rzeczywisty Windows
+check 439/12/15 PASS. Nie powtarzano suite dla raportu i odczytów operacyjnych.
 
 # Domowy Windows — przygotowanie instalacji, 13 października 2026
 
