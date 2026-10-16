@@ -261,6 +261,11 @@ test('prompt: około 20 z profilu, AI opcjonalne, różny temat i pytanie oraz p
     assert.doesNotMatch(prompt, /15–20/);
     assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
     assert.match(prompt, /Poprzednie otwarcie/);
+    assert.match(prompt, /Czy pytanie jest krótkie, zamiast zawierać całą edukację i dostępność/);
+    assert.match(prompt, /Podobny kontekst może uzasadniać podobną konstrukcję/);
+    assert.match(prompt, /przed zwróceniem pierwszego wyniku/);
+    assert.match(prompt, /zgodność claims z tym tekstem/);
+    assert.doesNotMatch(prompt, /Wyraź tę jedną prośbę już we wprowadzeniu/);
     assert.ok(prompt.includes(messageContactType(analysis(type))));
   }
 });

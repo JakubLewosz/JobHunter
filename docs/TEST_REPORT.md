@@ -1,3 +1,42 @@
+# Naturalność pierwszego wyniku — Windows, 16 października 2026
+
+Mała korekta instrukcji generowania, bez zmian modeli danych, CV, profilu,
+historycznych szkiców i ustawień wysyłki. Dwa priorytety redakcyjne wymuszały
+wczesne łączenie prośby z profilem/dostępnością, co sprzyjało długim pytaniom.
+Skrótowe opisy faktów przenikały do zdań; kontrola faktów nie gwarantuje
+poprawności języka. Usunięto tę presję i dodano odczyt całego listu przed
+pierwszym wynikiem: gramatyka, sens działania, krótkie pytanie i odwołania
+claims zgodne z końcową treścią. Bez listy podmian, dodatkowego automatycznego
+przepisywania lub wymuszania odmiennej konstrukcji każdego listu.
+
+Celowane testy **88/88 PASS**. Istniejący test regeneracji sprawdza teraz
+osobną wersję, nienaruszoną starą historię oraz dokładną zgodność wyniku
+z zapisem, wersją, zamrożonym materiałem i wejściem review. Kontrole kodu
+i semantyki dotyczą tego samego końcowego tekstu; brak nowych prób wysyłki.
+
+Cztery rzeczywiste pierwsze generacje CLI na fikcyjnych źródłach .test:
+ACTIVE/OPEN/GENERAL/GENERAL, trzy zatwierdzone projekty, **93/95/82/91 słów**.
+Kod PASS i supported=true/issues=[] dla czterech surowych tekstów. Bez
+ręcznej redakcji, podmian i generowania kolejnych wariantów do wyboru.
+Otwarcie ofertą, historia projektu z praktyk oraz zapytania z kontekstu
+działalności są uzasadnione sytuacją. Dwa zbliżone zapytania mają podobny
+układ i zakończenie; to dopuszczalne podobieństwo, nie dowód błędu. Próbka
+nie gwarantuje jakości wszystkich przyszłych tekstów; PASS faktów pozostaje
+odrębny od oceny języka. Pełne surowe teksty i dane kontroli poza Git.
+
+Pełny nieprzerwany **npm run check na Windowsie: typecheck PASS, 530/530
+backend, 12/12 performance, build PASS, 15/15 UI**. Źródła i testy nie zmieniły
+się podczas checka; końcowy fingerprint obejmuje 206 plików źródeł/builda.
+
+Niezależny audyt readonly: **51 tabel bez zmian**, integrity=ok/FK=0, spójne
+backupy przed/po. Zachowane 472 rekordy firm, 376 kontaktów, 221 szkiców,
+254 wersje, profil v4/9 faktów, zatwierdzony PDF/hash i zapisany wzór,
+historia/granica kampanii, Fingoweb, ARHAT, aliasy i blokady. Próby/outbox/
+liczniki **6/6/6**, shared **0/0** bez zmian. Fikcyjne dane nie trafiły do
+głównej bazy. Bez Gmaila, sekretów, tokenu panelu, publicznego researchu,
+wysyłki i Start; RESEARCH_ONLY zatrzymany. Prywatny raport z pełnymi surowymi
+tekstami i wynikami kontroli zapisany poza Git.
+
 # Konstrukcja z kontekstu — Windows, 16 października 2026
 
 Na jawne zlecenie usunięto stałe pierwsze zdanie i cztery części. Kod wyznacza

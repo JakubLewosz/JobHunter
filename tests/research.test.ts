@@ -782,10 +782,19 @@ test('generator: poprawny faktami lecz stylistycznie słaby szkic zostaje NEEDS_
   assert.equal(d.status, 'NEEDS_REVIEW');
   assert.match(d.warnings, /META/);
 });
-test('generator: ponowna generacja dopisuje wersję i zachowuje wcześniejszą historię', async (t) => {
-  const { service, store } = await prepare(t);
+test('generator: ponowna generacja dopisuje wersję i kontroluje dokładną końcową treść', async (t) => {
+  const { service, store, runner } = await prepare(t);
   const first = service.draftRows()[0];
   const before = store.all('SELECT * FROM draft_versions WHERE draft_id=?', first.id);
+  const original = runner.run.bind(runner);
+  let generated: any, reviewed: any;
+  runner.run = async (prompt, schema, options) => {
+    if (prompt.includes('Sprawdź KAŻDE'))
+      reviewed = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)).draft;
+    const result = await original(prompt, schema, options);
+    if (prompt.includes('Przygotuj indywidualny')) generated = structuredClone(result.value);
+    return result;
+  };
   service.regenerateDraft(first.id, first.version);
   await service.tick();
   const next = service.draftRows()[0];
@@ -799,6 +808,23 @@ test('generator: ponowna generacja dopisuje wersję i zachowuje wcześniejszą h
     before,
   );
   assert.equal(store.all('SELECT * FROM draft_versions WHERE draft_id=?', first.id).length, 2);
+  const version = store.one(
+    'SELECT * FROM draft_versions WHERE draft_id=? AND version=?',
+    first.id,
+    next.version,
+  )!;
+  const material = store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    first.id,
+    next.version,
+  )!;
+  assert.equal(next.body, generated.body);
+  assert.equal(next.subject, generated.subject);
+  assert.equal(version.body, generated.body);
+  assert.deepEqual(JSON.parse(material.payload_json), generated);
+  assert.deepEqual(reviewed, generated);
+  assert.equal(material.code_status, 'PASS');
+  assert.equal(material.review_status, 'COMPLETED');
   assert.equal(next.reviewed_at, null);
   assert.equal(store.all('SELECT * FROM send_attempts').length, 0);
 });

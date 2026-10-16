@@ -85,6 +85,13 @@ w podpisie. Bez „niniejszym”, „pragnę wyrazić zainteresowanie”, „z p
 „innowacyjnych rozwiązań”, propozycji prezentowania projektu lub portfolio.
 GitHub wystarczy. Temat wynika z faktycznego celu, bez clickbaitu.
 
+Jedno krótkie pytanie nie musi otwierać listu. Edukacja i dostępność są
+osobnymi stwierdzeniami, bez wciskania wszystkich warunków do pytania.
+Nazwy firm muszą pasować gramatycznie do zdania. Skrótowy opis faktu nie
+jest gotowym zdaniem: istotne działanie objaśniamy prostym językiem,
+zachowując sens. Nie dopisujemy komentarza o podobieństwie projektu,
+jeśli związek jest już jasny. Podobne konteksty mogą mieć podobne otwarcia.
+
 AI/Codex są opcjonalnym narzędziem pracy, tylko przy istotnym kontekście
 i w zatwierdzonym zakresie. Samodzielne testy, planowanie, debugowanie
 i weryfikacja wymagają własnych faktów; przykład stylistyczny ich nie dodaje.
@@ -95,7 +102,11 @@ stawki, negocjacji lub dokładnej daty startu.
 ## Kontrole i wersje
 
 Generator sprawdza cały tok listu, powtórzoną prośbę (także oznajmującą),
-rzeczowy związek projektu i kompletność. recent zawiera ostatnie tematy,
+rzeczowy związek projektu, naturalność polskich zdań i kompletność przed
+pierwszym wynikiem. Claims odnoszą się do ostatecznie zwróconej treści.
+Nie dodajemy automatycznego zastępowania fraz po generacji. Każda późniejsza
+korekta zapisanego szkicu wymaga osobnej wersji i kontroli końcowej treści.
+recent zawiera ostatnie tematy,
 otwarcia, pytania i pełny tok akapitów trzech poprzednich szkiców: pomaga
 zauważyć powielanie, nie jest źródłem faktów ani
 nakazem odmienności za wszelką cenę. Dane firm i wyniki modeli nie udzielają

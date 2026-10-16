@@ -1,5 +1,28 @@
 # Zadania
 
+## Mała korekta naturalności surowych generacji — 16 października 2026
+
+- [x] Usunąć z dwóch wskazówek nakaz łączenia prośby, profilu i dostępności
+      już we wprowadzeniu. Krótkie pytanie, dostępność osobno; poprawna
+      gramatyka nazw i prosty opis działania zamiast skrótów z faktów.
+      Kontrola języka przed pierwszym wynikiem, claims dla końcowego tekstu.
+      Bez wymuszonej odmienności, nowych etapów i zastępowania fraz.
+- [x] Celowane testy **88/88 PASS**. Wzmocniony test regeneracji: osobna
+      wersja, wcześniejsza historia bez zmian, dokładna treść generatora
+      w zapisie/wersji/materiale i kontroli semantycznej, kod PASS.
+- [x] Cztery pierwsze surowe generacje na fikcyjnych firmach: ACTIVE, OPEN
+      i dwa GENERAL, trzy zatwierdzone projekty; **93/95/82/91 słów**.
+      Kod i semantyka bez uwag, zero redakcji po generacji lub ponawiania
+      dla stylu. Podobne zapytania zachowują podobny układ; nie wymuszać
+      czterech odmiennych konstrukcji. Wyniki poza Git.
+- [x] Pełny nieprzerwany check Windows: **530/530 backend, 12/12 performance,
+      15/15 UI**, typecheck/build PASS. Audyt readonly: wszystkie 51 tabel
+      bez zmian, integrity=ok/FK=0, spójne backupy przed/po. Profil v4,
+      9 faktów, PDF/hash, 221 szkiców/254 wersje, historia, blokady, ustawienia
+      i 6 dawnych prób/liczników zachowane. Fingerprint 206 plików zgodny.
+      Bez Gmaila/publicznego researchu/wysyłki. SHA publikacji na istniejącej
+      gałęzi w raporcie czatu; wcześniejsze etapy oddzielone od małej poprawki.
+
 ## Konstrukcja wiadomości z kontekstu — 16 października 2026
 
 - [x] Na kolejne jawne zlecenie usunąć sztywne pierwsze zdanie i kolejność
