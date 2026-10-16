@@ -1,5 +1,37 @@
 # Zadania
 
+## Zamknięcie prac stylistycznych — 16 października 2026
+
+- [x] Mała korekta instrukcji: pierwszy kontakt domyślnie „Państwo”,
+      swobodniejsza forma tylko przy wyraźnej podstawie w oficjalnym źródle,
+      bez mieszania i przenoszenia tonu recent/template. Ograniczenia statusu
+      projektu pozostają kontrolą prawdziwości, bez zbędnych zaprzeczeń
+      w mailu. Konkretny wkład i cel pracy zamiast oceny korzyści za firmę.
+      Bez zmiany konstrukcji, architektury lub podmiany fraz po generacji.
+- [x] Celowane testy **90/90 PASS**. Jedna próba: trzy pierwsze surowe
+      generacje na całkowicie fikcyjnym profilu/firmach .test, bez redakcji
+      i ponawiania dla stylu. Wszystkie „Państwo”, bez mieszania, zastrzeżeń
+      i oceny przydatności; kod PASS, supported=true/issues=[]. Przy jawnej
+      podstawie swobodniejszej formy model również wybrał „Państwo”;
+      nie wymuszać „Wy”. Oddzielna kontrola niepopartego oficjalnego statusu
+      i produkcji odrzucona supported=false z zachowanym uzasadnieniem.
+- [x] Windows: **532/532 backend, typecheck/build i 15/15 UI PASS**.
+      Pełny check zatrzymał się na performance **11/12**; jedna powtórka
+      również 11/12. Próg odbioru Stop <1000 ms przy 10035 fikcyjnych firmach
+      przekroczony do 1015 ms. Ten sam błąd odtworzony na odizolowanym
+      poprzednim SHA `5acee94` (2/3 testy large-history). Nie zmieniać progów
+      ani nazywać pełnego checka PASS; przyczyna pozostaje nieustalona.
+- [x] Końcowy audyt readonly: **51 tabel bez zmian**, integrity=ok/FK=0,
+      spójne backupy przed/po i fingerprint 206 plików. Profil v4/9 faktów,
+      PDF/hash, 221 szkiców/254 wersje, historia, blokady, ustawienia i 6
+      dawnych prób/liczników zachowane. Zero rzeczywistego Gmaila/researchu/
+      wysyłki. Prace stylistyczne zamknięte; kolejny etap to rzeczywisty pilotaż.
+- [ ] Przed Start pilotażu rozstrzygnąć znany wynik wydajności Stop podczas
+      równoległego odczytu dużej historii; zachować limity i kontrolę braku
+      POST po cofnięciu prawa. Bez dalszego strojenia stylu. Następnie aktualne
+      sprawdzenie gotowości i świadoma zgoda na wysyłkę; ten etap nie uruchamia
+      Gmaila, researchu, SELF_TEST ani AUTO_POLICY.
+
 ## Mała korekta naturalności surowych generacji — 16 października 2026
 
 - [x] Usunąć z dwóch wskazówek nakaz łączenia prośby, profilu i dostępności

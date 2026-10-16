@@ -1,3 +1,55 @@
+# Zamknięcie stylu: forma kontaktu i ograniczenia faktów — Windows, 16 października 2026
+
+Korekta wyłącznie instrukcji generatora i doprecyzowanie kontroli semantycznej.
+Pierwszy kontakt domyślnie używa „Państwo”; swobodniejsza forma potrzebuje
+wyraźnej podstawy w oficjalnym sposobie komunikacji firmy. Bez mieszania
+i kopiowania tonu recent/template bez dowodu. Status prototypu z praktyk
+pozostaje ograniczeniem prawdziwości; precyzyjny opis nie wymaga dopisku
+o braku oficjalnego statusu. Nie osłabiono kontroli produkcji/kompetencji.
+Opis wykonanej pracy zastępuje ocenianie za odbiorcę przydatności kandydata.
+Bez zmiany schematu, architektury, automatycznej podmiany fraz lub starych
+wiadomości. Późniejsze korekty nadal wymagają wersji i kontroli treści.
+
+Celowane **90/90 PASS**: zasady dla trzech rodzajów kontaktu, brak dziedziczenia
+tonu poprzednich wiadomości, zachowanie faktów/zastrzeżeń w danych kontrolnych
+bez wymuszania ich w treści, niezmienność wejść. Istniejące kontrole i test
+wersjonowania końcowej treści nadal przechodzą.
+
+Jedna mała próba rzeczywistego CLI: **trzy pierwsze surowe generacje**, w pełni
+fikcyjny profil i firmy .test. Bez użycia produkcyjnego profilu w generowaniu,
+edycji lub ponawiania dla lepszego stylu. Wszystkie trzy używają „Państwo”,
+bez mieszania, zbędnych zaprzeczeń lub oceny przydatności. Kod PASS,
+supported=true/issues=[]. Jedno źródło jawnie dopuszczało swobodniejszą formę,
+lecz model pozostał przy „Państwo”; próba nie potwierdza użycia „Wy”. Osobna
+negatywna kontrola dopisała fałszywy oficjalny status i produkcję do kopii
+fikcyjnego materiału: supported=false z uzasadnieniem, bez zmiany surowych
+wyników. Łącznie 3 DRAFT + 4 SEMANTIC_REVIEW, search=false, zero publicznego
+researchu/Gmaila/wysyłki. Surowe teksty i pełne dane kontroli poza Git.
+
+Windows: typecheck i **532/532 backend PASS**. Pełny `npm run check` zatrzymał
+się na performance **11/12**: drugi pomiar large-history odebrał żądanie Stop
+po **1014,78 ms**, przy wymaganiu <1000 ms. Jedna powtórka niezmienionej grupy
+również **11/12**, **1013,25 ms**. Po odebraniu cofnięcie uprawnienia trwało
+około 0,33/0,25 ms; kontrole braku nowego POST po odwołaniu prawa przeszły.
+Nie zmieniono progów, kodu Stop ani ustawień systemu. Bez ponawiania w pętli.
+
+Kontrola porównawcza: odizolowany checkout poprzedniego SHA
+`5acee94d6dab5ed3135a672b4770fa257a7f91ae`, te same zależności, trzy testy
+large-history bez równoległego builda. Wynik **2/3**, ten sam drugi pomiar
+**1005,97 ms**. Błąd występuje także bez tej poprawki. Przyczyny nie ustalono;
+nie przypisujemy jej na pewno środowisku. Następnie osobno **build i 15/15 UI
+PASS**. Nie był to pełny check zakończony PASS. Pełne logi i metryki poza Git;
+rozstrzygnięcie wyniku Stop zapisane jako punkt gotowości przed pilotażem.
+
+Końcowy audyt readonly: **51 tabel bez zmian**, integrity=ok/FK=0, spójne
+backupy przed/po i fingerprint 206 plików. Zatwierdzony profil v4/9 faktów,
+CV/PDF/hash i zapisany wzór bez zmian. Zachowane 472 rekordy firm, 376
+kontaktów, 221 szkiców/254 wersje, historia/granica, Fingoweb/ARHAT/aliasy/
+blokady, 6 prób/outbox/liczników i shared 0/0. Dane fikcyjne nie trafiły do
+głównej bazy; RESEARCH_ONLY zatrzymany, zero prawdziwego Gmaila, publicznego
+researchu, wysyłki i AUTO_POLICY. Prace stylistyczne zamknięte; następny etap
+to rzeczywisty pilotaż po rozstrzygnięciu wskazanego punktu gotowości.
+
 # Naturalność pierwszego wyniku — Windows, 16 października 2026
 
 Mała korekta instrukcji generowania, bez zmian modeli danych, CV, profilu,

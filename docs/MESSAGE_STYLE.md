@@ -19,9 +19,9 @@ wykonalność nieustalonych godzin w ofercie, dopasowanie projektu, dopasowanie
 profilu do otwartej kandydatury albo samą możliwość współpracy bez naboru.
 To priorytet decyzji odbiorcy, bez gotowych zdań i rotacji wariantów. W tym
 samym rodzaju kontaktu potwierdzenie godzin może zmienić priorytet. Przy
-nieznanym wymiarze w ofercie lub samym zapytaniu bez naboru prośba pojawia
-się już we wprowadzeniu, a projekt uzasadnia kontakt bez drugiego pytania.
-Pozostały tok i granice akapitów dobiera model do konkretnej sytuacji.
+nieznanym wymiarze w ofercie lub samym zapytaniu bez naboru prośba jest
+krótka, a dostępność podana osobno. Nie ma nakazu prośby we wprowadzeniu.
+Tok i granice akapitów dobiera model do konkretnej sytuacji.
 
 Prośba lub pytanie o współpracę/aplikowanie występuje raz. „Piszę z pytaniem,
 czy…” jest prośbą także z kropką. Jeśli pojawia się na początku, nie należy
@@ -48,6 +48,8 @@ Opis projektu może poprzedzać nawiązanie, rozwijać zadanie z oferty albo by�
 z nim połączony w akapicie. Nie wymyślamy zainteresowań, emocji ani historii
 obserwowania firmy. Bez ogólników o liderze branży, tłumaczenia oczywistości
 dopasowania i komentarzy o procesie tworzenia maila.
+Nie oceniamy za pracodawcę przydatności doświadczenia lub korzyści dla firmy.
+Pokazujemy konkretne wykonane zadanie i chęć pracy przy podobnych zadaniach.
 
 Zwykle jeden projekt, wyjątkowo dwa przy odrębnych potwierdzonych obszarach
 z wyjaśnieniem w warnings; przy braku związku opis jest pomijany. Nie ma
@@ -69,6 +71,9 @@ etykieta „publiczne demo” nie potwierdzają działającej aplikacji; potrzeb
 potwierdzenia działającej wersji i adresu poza repo. Neutralne „projekt”,
 „aplikacja”, „prototyp” nie oznaczają produkcji. Nie dodajemy też niepopartego
 braku wdrożenia. Bez etykiety „projekt portfolio” i domyślnego słowa demo.
+To ograniczenia prawdziwości dla generatora i kontroli, nie obowiązkowe
+zastrzeżenia w mailu. Precyzyjny opis prototypu z praktyk nie wymaga dopisku
+o braku oficjalnego statusu. Poprawiamy mylącą sugestię w samym opisie.
 
 ## Cel i ton kontaktu
 
@@ -84,6 +89,12 @@ marketingu, sprzedaży usług i deklaracji eksperckości. Imię wystarczy
 w podpisie. Bez „niniejszym”, „pragnę wyrazić zainteresowanie”, „z pasją”,
 „innowacyjnych rozwiązań”, propozycji prezentowania projektu lub portfolio.
 GitHub wystarczy. Temat wynika z faktycznego celu, bez clickbaitu.
+
+Pierwszy kontakt domyślnie używa „Państwo” i trzeciej osoby liczby mnogiej.
+„Wy” dopuszczalne tylko przy wyraźnej podstawie w odczytanej oficjalnej
+komunikacji firmy. Sam młody zespół, branża IT lub pojedyncze „Ty” w ofercie
+nie wystarczają. W razie niepewności „Państwo”; bez mieszania obu form
+i kopiowania swobodnego tonu poprzednich listów bez podstawy.
 
 Jedno krótkie pytanie nie musi otwierać listu. Edukacja i dostępność są
 osobnymi stwierdzeniami, bez wciskania wszystkich warunków do pytania.

@@ -8,6 +8,7 @@ import {
   messageStyleIssues,
   recentMessageContext,
   messageWritingGoal,
+  semanticReviewPrompt,
 } from '../apps/server/src/research/message-policy.js';
 import { relevantProjectFacts } from '../apps/server/src/research/drafting.js';
 import { conditionKeys, type Analysis } from '../apps/server/src/research/contracts.js';
@@ -281,6 +282,68 @@ test('kontekst poprzednich wiadomości udostępnia także dalszy tok, bez zmiany
   assert.match(recent.question, /Czy taki wymiar pracy/);
   assert.deepEqual(previous, original);
 });
+test('pierwszy kontakt: Państwo domyślnie, dowód wyjątku zamiast kopiowania tonu recent', () => {
+  for (const type of ['ACTIVE', 'OPEN', 'PROSPECT'] as const) {
+    const data = {
+      profile,
+      analysis: analysis(type),
+      qualification: 'NEEDS_REVIEW',
+      evidence: [{ id: 'tone', fragment: 'Młody zespół IT. Dołącz do nas!' }],
+      history: 'NEW',
+      template: 'Cześć, piszę do Was.',
+      recent: [{ opening: 'Piszę do Was.' }],
+    };
+    const original = structuredClone(data);
+    const prompt = messagePrompt(data);
+    assert.match(prompt, /pierwszym kontakcie domyślnie stosuj Państwo/);
+    assert.match(prompt, /Wy dopuszczaj tylko przy wyraźnej podstawie w odczytanym oficjalnym/);
+    assert.match(prompt, /pojedyncze Ty w ogłoszeniu nie wystarczają/);
+    assert.match(prompt, /Nie mieszaj form Państwo i Wy/);
+    assert.match(prompt, /nie kopiuj tonu recent lub template bez takiej podstawy/);
+    assert.match(prompt, /Nie oceniaj za pracodawcę przydatności doświadczenia/);
+    assert.deepEqual(
+      JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)).recent,
+      data.recent,
+    );
+    assert.deepEqual(data, original);
+  }
+});
+
+test('ograniczenie statusu pozostaje faktem, neutralny prototyp nie wymaga zastrzeżenia w treści', () => {
+  const body =
+    'Podczas praktyk przygotowałem prototyp CodeFabric wykorzystujący lokalne modele językowe.';
+  const mail = {
+    ...draft(body),
+    factIds: ['codefabric'],
+    claims: [{ text: body, kind: 'CANDIDATE', factIds: ['codefabric'], evidenceIds: [] }],
+  };
+  const p = {
+    ...profile,
+    facts: [
+      {
+        id: 'codefabric',
+        key: 'codefabric',
+        content:
+          'CodeFabric: samodzielny prototyp z praktyk, lokalne modele językowe. Nie jest oficjalnym produktem fikcyjnej instytucji.',
+      },
+    ],
+  };
+  const data = { draft: mail, profile: p, evidence: [], analysis: analysis('OPEN') };
+  const before = structuredClone(data);
+  assert.deepEqual(checkMessageRules(mail, p, data.analysis), []);
+  const review = semanticReviewPrompt(data);
+  assert.match(review, /nie wymaga dopisku o braku oficjalnego statusu lub wdrożenia/);
+  assert.match(
+    review,
+    /Nadal odrzuć deklarację oficjalnego produktu lub produkcyjnego wdrożenia bez dowodu/,
+  );
+  const sent = JSON.parse(review.slice(review.lastIndexOf('Dane: ') + 6));
+  assert.deepEqual(sent, data);
+  assert.doesNotMatch(sent.draft.body, /nie jest|oficjalnym produktem/);
+  assert.match(sent.profile.facts[0].content, /Nie jest oficjalnym/);
+  assert.deepEqual(data, before);
+});
+
 test('finalny styl: formalność, meta-komentarz, sprzedaż i prezentacja wymagają przeglądu bez odrzucenia', () => {
   for (const [text, code] of [
     ['Pragnę wyrazić zainteresowanie regularną współpracą.', 'FORMAL'],
