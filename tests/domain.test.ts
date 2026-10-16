@@ -114,6 +114,118 @@ test('alias domeny scala firmę; wspólny ATS/Gmail nie scala różnych firm', (
     service.findOrCreateCompany('E', 'greenhouse.io').company.id,
   );
 });
+test('potwierdzona nazwa prawna kieruje historię do marki, zachowując archiwalny duplikat', (t) => {
+  const { service, store } = setup(t);
+  const brand = service.findOrCreateCompany('Brand', 'brand.example.invalid').company;
+  const legacy = service.findOrCreateCompany('Legal Company', 'legal.example.invalid').company;
+  store.exec('UPDATE company_aliases SET company_id=? WHERE company_id=?', brand.id, legacy.id);
+  store.exec(
+    "UPDATE companies SET primary_domain=NULL,suppression_reason='DUPLICATE_COMPANY_ALIAS' WHERE id=?",
+    legacy.id,
+  );
+  const before = store.one('SELECT * FROM companies WHERE id=?', legacy.id);
+  const count = store.one('SELECT count(*) n FROM companies')!.n;
+  assert.equal(service.findOrCreateCompany('LEGAL COMPANY', null).company.id, brand.id);
+  assert.equal(
+    service.findOrCreateCompany('Legal Company', 'legal.example.invalid').company.id,
+    brand.id,
+  );
+  const csv = 'company,status\nLegal Company,REJECTED';
+  const preview = service.previewHistory(csv);
+  assert.equal(preview.rows[0].duplicate, true);
+  service.importHistory(csv, preview.hash);
+  assert.equal(
+    store.one('SELECT company_id FROM history_records WHERE original_name=?', 'Legal Company')!
+      .company_id,
+    brand.id,
+  );
+  assert.ok(
+    store.one("SELECT id FROM suppressions WHERE company_id=? AND reason='REJECTED'", brand.id),
+  );
+  assert.deepEqual(store.one('SELECT * FROM companies WHERE id=?', legacy.id), before);
+  assert.equal(store.one('SELECT count(*) n FROM companies')!.n, count);
+  assert.equal(service.findOrCreateCompany('Brand', null).company.history_status, 'REJECTED');
+});
+test('alias nazwy nie wystarcza do potwierdzenia obcej domeny', (t) => {
+  const { service } = setup(t);
+  const brand = service.findOrCreateCompany('Brand', 'brand.example.invalid').company;
+  service.findOrCreateCompany('Legal Company', 'brand.example.invalid');
+  assert.throws(
+    () => service.findOrCreateCompany('LEGAL COMPANY', 'unrelated.example.invalid'),
+    (e: any) => e.code === 'COMPANY_IDENTITY_CONFLICT',
+  );
+  assert.equal(service.findOrCreateCompany('Legal Company', null).company.id, brand.id);
+});
+test('niepotwierdzony lub niejednoznaczny alias nazwy nie scala firm', (t) => {
+  const { service, store } = setup(t);
+  const a = service.findOrCreateCompany('First', 'first.example.invalid').company;
+  const b = service.findOrCreateCompany('Second', 'second.example.invalid').company;
+  store.exec(
+    "INSERT INTO company_aliases VALUES ('unverified-name',?,'NAME','Unverified Company',NULL,?)",
+    a.id,
+    service.now(),
+  );
+  assert.notEqual(service.findOrCreateCompany('Unverified Company', null).company.id, a.id);
+  store.exec("UPDATE company_aliases SET verified_at=? WHERE id='unverified-name'", service.now());
+  assert.throws(
+    () => service.findOrCreateCompany('Unverified Company', null),
+    (e: any) => e.code === 'COMPANY_IDENTITY_CONFLICT',
+  );
+  store.exec(
+    "INSERT INTO company_aliases VALUES ('ambiguous-a',?,'NAME','Legal Company',?,?)",
+    a.id,
+    service.now(),
+    service.now(),
+  );
+  store.exec(
+    "INSERT INTO company_aliases VALUES ('ambiguous-b',?,'NAME','LEGAL COMPANY',?,?)",
+    b.id,
+    service.now(),
+    service.now(),
+  );
+  assert.throws(
+    () => service.findOrCreateCompany('legal company', null),
+    (e: any) => e.code === 'COMPANY_IDENTITY_CONFLICT',
+  );
+  assert.equal(
+    service.findOrCreateCompany('Legal Company', 'first.example.invalid').company.id,
+    a.id,
+  );
+});
+test('wycofana transakcja nie zostawia nieistniejącej tożsamości w pamięci aliasów', (t) => {
+  const { service, store } = setup(t);
+  assert.throws(
+    () =>
+      store.atomic(() => {
+        service.findOrCreateCompany('Rolled Back', null);
+        assert.ok(service.findKnownCompany('Rolled Back', null));
+        throw new Error('ROLLBACK_FIXTURE');
+      }),
+    /ROLLBACK_FIXTURE/,
+  );
+  assert.equal(service.findKnownCompany('Rolled Back', null), undefined);
+  const created = service.findOrCreateCompany('Rolled Back', null);
+  assert.equal(created.duplicate, false);
+  assert.equal(service.findKnownCompany('ROLLED BACK', null)!.id, created.company.id);
+});
+test('zmiana potwierdzonego aliasu w drugim połączeniu odświeża rozpoznanie nazwy', (t) => {
+  const { service, store, dir } = setup(t);
+  const a = service.findOrCreateCompany('First', 'first.example.invalid').company;
+  const b = service.findOrCreateCompany('Second', 'second.example.invalid').company;
+  service.findOrCreateCompany('Legal Company', 'first.example.invalid');
+  assert.equal(service.findKnownCompany('Legal Company', null)!.id, a.id);
+  const external = new Store(dir);
+  try {
+    external.exec(
+      "UPDATE company_aliases SET company_id=? WHERE kind='NAME' AND value='Legal Company'",
+      b.id,
+    );
+  } finally {
+    external.close();
+  }
+  assert.equal(service.findKnownCompany('Legal Company', null)!.id, b.id);
+  assert.ok(store.one('SELECT id FROM companies WHERE id=?', a.id));
+});
 test('nieistniejące fact ID i evidence ID nie przechodzą walidacji', async (t) => {
   const { service } = await prepared(t);
   const d = service.draftRows()[0];

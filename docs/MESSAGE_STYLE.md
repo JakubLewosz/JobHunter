@@ -1,54 +1,126 @@
 # Styl zgłoszeń JobHunter
 
-Od 12 października development używa syntetycznych fixture. Dawny message-style-preview.ts
-odczytuje wcześniej zatwierdzone materiały wyłącznie przy jawnym WORKSTATION na Windowsie
-i wskazanym JOBHUNTER_DATA_DIR; nie otwiera domyślnej prywatnej historii Maca. Publiczny
-smoke:public ma nowy katalog diagnostyczny i technicznie brak Gmaila (URUCHOMIENIE_RANO).
+Aktualizacja 16 października 2026 na wyraźne życzenie użytkownika: list ma
+wynikać z konkretnej firmy i celu kontaktu. Zastępuje wcześniejszy sztywny
+schemat „pytanie → edukacja/dostępność → firma/projekt → pytanie”. Nie
+wprowadza losowego parafrazowania ani rotacji gotowych wariantów.
 
-Aktualizacja z 8 października 2026 na podstawie schematu Jakuba. Zastępuje obowiązkowe AI na początku i schemat 80–130 słów.
+## Konstrukcja i kompletność
 
-Aktualne drobne poprawki języka: naturalny mail programisty szukającego regularnej współpracy. Cztery części pozostają: kim jestem/cel → fakt o firmie i krótki opis jednego projektu → dostępność → pytanie, następnie GitHub i podpis. Od 13 października orientacyjnie około 110–170 słów, bez obowiązkowego minimum i mechanicznego obcinania. Sama długość nie blokuje szkicu, firmy ani sesji. Jeden projekt w 1–2 rzeczowych zdaniach, 2–3 trafne funkcje lub umiejętności; technologie tylko, gdy pomagają ocenić dopasowanie. Pełny zatwierdzony opis pozostaje dostępny generatorowi i review. Krótszy kompletny mail jest lepszy niż powtarzanie celu, dostępności lub działalności firmy. Bez automatycznego „początkujący programista” w zakończeniu.
+Generator najpierw rozpoznaje cel, najmocniejszy udokumentowany powód
+napisania do firmy oraz nierozstrzygniętą kwestię dla odbiorcy. Dobiera do
+nich początek i kolejność informacji. Nie ma obowiązkowego pierwszego
+zdania, liczby akapitów ani pytania na końcu. Powitanie i podpis mogą być
+wspólne; podobny kontekst może uzasadniać podobny tok listu. Różnorodność
+nie jest celem samym w sobie i nie polega na podmianie synonimów.
 
-Nawiązanie jest bezpośrednie: „Na Państwa stronie zwróciłem uwagę na…” lub „W ogłoszeniu zainteresowało mnie…”, zamiast relacji „Firma X tworzy…”. Projekty opisujemy neutralnie jako projekt, aplikację lub prototyp; słowo demo nie jest domyślne. Neutralna nazwa nie oznacza produkcji, która nadal wymaga dowodu. Poprawna odmiana, interpunkcja i szyk: „Nazywam się Jakub Lewosz”, „z osobą”. Tematy mają prosty format kandydatury z tytułem i nazwiskiem albo zapytania o współpracę z obszarem. Bez „z pasją”, „innowacyjnych rozwiązań” i innych marketingowych ozdobników.
+Kod wyznacza cel redakcyjny z rodzaju kontaktu i zweryfikowanych warunków:
+wykonalność nieustalonych godzin w ofercie, dopasowanie projektu, dopasowanie
+profilu do otwartej kandydatury albo samą możliwość współpracy bez naboru.
+To priorytet decyzji odbiorcy, bez gotowych zdań i rotacji wariantów. W tym
+samym rodzaju kontaktu potwierdzenie godzin może zmienić priorytet. Przy
+nieznanym wymiarze w ofercie lub samym zapytaniu bez naboru prośba pojawia
+się już we wprowadzeniu, a projekt uzasadnia kontakt bez drugiego pytania.
+Pozostały tok i granice akapitów dobiera model do konkretnej sytuacji.
 
-Przedstawienie zaczyna się od „Nazywam się Jakub Lewosz i jestem uczniem ostatniej klasy…”, z imieniem i edukacją w jednym zdaniu, bez doklejania imienia po opisie szkoły i bez zbędnego roku szkolnego. Przy aktywnej ofercie może je poprzedzać krótkie „Piszę w sprawie oferty…”. Opis projektu mówi wprost, co robi aplikacja, bez zdań typu „chciałbym nawiązać do wskazanego obszaru pracy”. Publiczne repozytorium ani dawne określenie „publiczne demo” nie oznaczają działającej publicznie aplikacji; bez potwierdzenia działającej wersji i jej adresu poza repozytorium GitHub w zatwierdzonych faktach pozostaje neutralny opis projektu. Potwierdzony brak wdrożenia opisujemy krótko: „Projekt działa lokalnie i nie był wdrażany produkcyjnie”, zamiast „nie jest publicznym systemem produkcyjnym”.
+Prośba lub pytanie o współpracę/aplikowanie występuje raz. „Piszę z pytaniem,
+czy…” jest prośbą także z kropką. Jeśli pojawia się na początku, nie należy
+powtarzać jej w zakończeniu. Początek dotyczący oferty lub rzeczowego
+związku z firmą może prowadzić do jednego konkretnego pytania o nieznany
+warunek. Zdanie „szukam płatnej pracy” samo opisuje cel, nie prośbę odbiorcy.
 
-Pierwszy akapit przedstawia ucznia technikum i cel kontaktu. AI/Codex są opcjonalnym narzędziem pracy przy istotnym związku z firmą/ofertą; firma bez związku z AI nie wymaga wzmianki. Szczegóły planowania, implementacji, debugowania, własnej weryfikacji i testów wymagają zatwierdzonych faktów; przykład stylistyczny nie dodaje ich do profilu.
+Zachowujemy edukację, cel płatnej regularnej pracy, pełną zdalność,
+dostępność, rzeczowe dopasowanie, zatwierdzony GitHub i podpis. Można łączyć
+informacje i umieszczać je w różnych miejscach. Obecna zatwierdzona
+dostępność to około 20 godzin tygodniowo, głównie po lekcjach; liczby zawsze
+pochodzą z aktualnego profilu. Nazwa szkoły, miasto i ostatnia klasa także
+wymagają zatwierdzonych faktów. Nie dopisujemy roku szkolnego.
 
-Trzy ostatnie korekty: „mój projekt [nazwa]” zamiast „projekt portfolio”; „Przy tworzeniu oprogramowania korzystam z Codexa” zamiast „korzystam z programowania wspomaganego AI”; krótkie pierwsze zdanie bez łączenia stanowiska, rodzaju współpracy i obszaru technologicznego. W razie potrzeby otwarcie dzielimy na dwa krótkie zdania w obecnym układzie akapitów. Pozostały styl, struktura i zasady faktów pozostają bez zmian.
+Orientacyjne 80–130 słów to wskazówka redakcyjna, nie minimum, maksimum ani
+kontrola wysyłki. Nie obcinamy istotnych informacji dla długości i nie
+wydłużamy listu powtórzeniami.
 
-Kolejne mikro-poprawki: naturalna informacja o przyjmowaniu otwartych kandydatur, bez „zamieszczonego zaproszenia”; bez powtarzania tego samego sformułowania w jednym akapicie; prosty opis „Pracowałem w zespole nad ElektroScan — aplikacją do analizy planów elektrycznych w PDF”; naturalne pytanie „Czy taki wymiar i godziny pracy są dla Państwa odpowiednie?”. „Dwuosobowy” i „rozwijam” wymagają potwierdzenia liczby osób oraz trwającego rozwoju w zatwierdzonych faktach. Długość, struktura i pozostały styl bez zmian.
+## Firma i projekt jako jeden wątek
 
-Powtórzenia obejmują także odmienione formy, np. „wspomagające tworzenie oprogramowania” i „do wspomagania tworzenia oprogramowania”. Po pełnym nawiązaniu do firmy opis projektu można skrócić lub odwołać się do „takich planów”. Zdanie o Codexie może wtedy brzmieć „Przy pracy nad kodem korzystam z Codexa”, żeby również ono nie powtarzało wcześniejszego sformułowania.
+Związek wynika z konkretnego zadania, problemu lub obszaru potwierdzonego
+w źródłach. Nie narzucamy konstrukcji „Na Państwa stronie… Mój projekt…”.
+Opis projektu może poprzedzać nawiązanie, rozwijać zadanie z oferty albo być
+z nim połączony w akapicie. Nie wymyślamy zainteresowań, emocji ani historii
+obserwowania firmy. Bez ogólników o liderze branży, tłumaczenia oczywistości
+dopasowania i komentarzy o procesie tworzenia maila.
 
-Aktualny zatwierdzony profil ma około 20 godzin tygodniowo, w pełni zdalnie, głównie po lekcjach. Przedział 15–20 z przykładu nie zmienia dostępności w bazie. Umowa zlecenie jest wspominana tylko przy istotnej, zweryfikowanej informacji o formach współpracy. Bez negocjacji, niezatwierdzonej stawki lub dokładnej daty startu w pierwszej wiadomości.
+Zwykle jeden projekt, wyjątkowo dwa przy odrębnych potwierdzonych obszarach
+z wyjaśnieniem w warnings; przy braku związku opis jest pomijany. Nie ma
+minimalnej liczby funkcji ani technologii. Wystarczy istotny szczegół;
+stack jest potrzebny tylko wtedy, gdy rzeczywiście objaśnia dopasowanie.
+Technologia firmy nie staje się kompetencją kandydata.
 
-Nawiązanie wynika ze sprawdzonych źródeł. Projekt jest krótkim dowodem dopasowania, bez propozycji prezentacji portfolio lub aplikacji. Domyślnie jeden, wyjątkowo dwa przy dwóch odrębnych potwierdzonych obszarach; przy braku związku opis jest pomijany.
+Kod dobiera projekty z literalnych dowodów i zatwierdzonych faktów:
 
-- PHP/Laravel lub obsługa usterek: FixDesk.
+- PHP/Laravel lub obsługa usterek: FixDesk, tylko jeśli zatwierdzony.
 - API, webhooki, integracje i automatyzacja: AutoRelay.
-- Lokalne modele, LLM, narzędzia AI i agenci: CodeFabric, wyłącznie z zatwierdzonym opisem prototypu.
-- Dokumenty, PDF i analiza obrazu: ElektroScan.
+- Lokalne modele, LLM, narzędzia AI: CodeFabric, w zakresie prototypu.
+- PDF, dokumenty, analiza obrazu i plany elektryczne: ElektroScan.
 
-Generator porównuje ostatnie tematy, otwarcia i pytania. Różnice wynikają z firmy, zadania i rodzaju kontaktu; fakty i dostępność pozostają zgodne z profilem.
+„Stworzyłem”, „pracowałem w zespole nad” i „rozwijam” nie są zamienne.
+Samodzielność, liczba osób, udział i trwający rozwój wymagają faktów.
+CodeFabric nie jest oficjalnym produktem UKNF. Publiczny GitHub ani dawna
+etykieta „publiczne demo” nie potwierdzają działającej aplikacji; potrzeba
+potwierdzenia działającej wersji i adresu poza repo. Neutralne „projekt”,
+„aplikacja”, „prototyp” nie oznaczają produkcji. Nie dodajemy też niepopartego
+braku wdrożenia. Bez etykiety „projekt portfolio” i domyślnego słowa demo.
 
-ACTIVE_JOB to potwierdzona aktywna oferta: temat i początek odnoszą się do stanowiska. OPEN_APPLICATION to konkretne zaproszenie do otwartych kandydatur. GENERAL_RECRUITMENT_CONTACT jest schematem ostrożnego zapytania bez oferty; nie zmienia rzeczywistego rodzaju kontaktu GENERAL w adres rekrutacyjny. Cel kontaktu nadal wynika z analizy źródła.
+## Cel i ton kontaktu
 
-Reguły wykrywają propozycje prezentacji, niepoparty status studenta, komercję/produkcję, przesadne deklaracje AI, niezatwierdzone stawki, niepotwierdzone technologie kandydata, błędną dostępność i twierdzenie o wakacie bez aktywnej oferty. Technologia firmy nie staje się kompetencją kandydata. Obsługa polskich znaków i negacji ogranicza fałszywe blokady.
+ACTIVE_JOB wymaga potwierdzonego wakatu. Temat i treść odnoszą się do
+rzeczywistego stanowiska, bez deklaracji spełniania nieznanych wymagań.
+OPEN_APPLICATION oznacza rzeczywiste przyjmowanie otwartych kandydatur,
+nie ofertę konkretnej roli. GENERAL_RECRUITMENT_CONTACT jest konstrukcją
+ostrożnego zapytania bez oferty; nie zmienia GENERAL w RECRUITMENT.
+Przeznaczenie i uprawnienie do użycia adresu kontroluje kod.
 
-Obce fakty/dowody i naruszenia prawdziwości pozostają blokowane. Pełna dyspozycyjność nie odpowiada profilowi po lekcjach. Walidacja zakresu odrzuca sztywne 20 h, kiedy zatwierdzony profil ma 15–20; dla obecnego profilu pozostaje około 20 zgodnie z osobną odpowiedzią użytkownika.
+Język jest profesjonalny, prosty i swobodny: bez przesadnych formalności,
+marketingu, sprzedaży usług i deklaracji eksperckości. Imię wystarczy
+w podpisie. Bez „niniejszym”, „pragnę wyrazić zainteresowanie”, „z pasją”,
+„innowacyjnych rozwiązań”, propozycji prezentowania projektu lub portfolio.
+GitHub wystarczy. Temat wynika z faktycznego celu, bez clickbaitu.
 
-Prezentacje portfolio, formalne otwarcia, sprzedażowe CTA, powtórzenia, tłumaczenie oczywistości dopasowania i umowa bez potwierdzenia dają uwagi stylistyczne oraz NEEDS_REVIEW, zamiast odrzucać merytorycznie poprawny szkic. Usunięto wzorce „To konkretny punkt wspólny”, „projekt pozostaje lokalnym demo”, „w odpowiedzi na Państwa zaproszenie” i „czy potrzebują Państwo pomocy”. Prawdziwy status demo/prototypu pozostaje częścią krótkiego opisu projektu. Umowa zlecenie tylko przy aktywnej ofercie wyraźnie ją potwierdzającej.
+AI/Codex są opcjonalnym narzędziem pracy, tylko przy istotnym kontekście
+i w zatwierdzonym zakresie. Samodzielne testy, planowanie, debugowanie
+i weryfikacja wymagają własnych faktów; przykład stylistyczny ich nie dodaje.
+Umowa zlecenie tylko przy ACTIVE_JOB z jej potwierdzeniem w ofercie;
+akceptacja tej formy wymaga osobnego faktu kandydata. Bez niezatwierdzonej
+stawki, negocjacji lub dokładnej daty startu.
 
-Kontrola semantyczna zwraca true/false/null. Niepewność lub negatywna ocena zachowują NEEDS_REVIEW z problemami, bez zgody na wysyłkę. Problemy są zapisywane także przy supported=true.
+## Kontrole i wersje
 
-Zasady dotyczą nowych generacji. „Wygeneruj nową wersję” dopisuje wersję z zapisanych źródeł, bez nadpisywania historii. Równoległa edycja blokuje zapis spóźnionego wyniku. Wzór użytkownika nie jest automatycznie zastępowany; nowy schemat można wybrać w Moje materiały i samodzielnie zatwierdzić.
+Generator sprawdza cały tok listu, powtórzoną prośbę (także oznajmującą),
+rzeczowy związek projektu i kompletność. recent zawiera ostatnie tematy,
+otwarcia, pytania i pełny tok akapitów trzech poprzednich szkiców: pomaga
+zauważyć powielanie, nie jest źródłem faktów ani
+nakazem odmienności za wszelką cenę. Dane firm i wyniki modeli nie udzielają
+uprawnień.
 
-Kontrola: `npx tsx scripts/message-style-preview.ts`. Rzeczywisty Codex, zatwierdzone fakty, fikcyjne firmy i odbiorcy. Żywy profil jest tylko odczytywany, a podglądy trafiają poza repo do katalogu danych `content-previews`, niezależnego od czyszczenia wyników Playwright. Zero wysyłek, Gmaila i edycji istniejących szkiców.
+Natywne kontrole nadal blokują obce fakty/dowody, niepoparte technologie,
+status studenta, komercję, eksperckość AI, stawki, błędną dostępność i wakat
+bez źródła. Formalność, prezentacja, sprzedażowe CTA, powtórzenia i umowa
+bez kontekstu dają uwagi oraz NEEDS_REVIEW. Dodano REPEATED_REQUEST dla
+kilku próśb, także zakończonych kropką. To pomocnicza heurystyka redakcyjna,
+nie pełna analiza znaczenia; nie wymaga pytania końcowego. Kontrola
+semantyczna pozostaje true/false/null, z zachowaniem wszystkich issues.
 
-Pliki wdrożenia:
+Zasady dotyczą nowych generacji. Nie przepisujemy starych szkiców, ich
+wersji ani zatwierdzonego profilu i CV. Nowy domyślny wzór zawiera wskazówki,
+a nie sztywne zdania do wypełnienia; zapisany dawny wzór nie wymusza
+kolejności lub podwójnego pytania w nowej instrukcji. Zatwierdzone pole
+wzoru w bazie pozostaje bez automatycznej zmiany. Ręczna zmiana materiałów
+nadal wymaga zwykłego zatwierdzenia. Nowa wersja szkicu dopisuje historię,
+a konflikt równoległej edycji blokuje spóźniony zapis.
 
-- Generator: `apps/server/src/research/drafting.ts`, `message-policy.ts`, `service.ts`, `contracts.ts`.
-- API i ekrany: `apps/server/src/app.ts`, `apps/web/src/PersonalMaterials.tsx`, `apps/web/src/App.tsx`.
-- Weryfikacja: `tests/message-style.test.ts`, `tests/research.test.ts`, `tests/research-fixture.ts`, `tests/e2e/research.spec.ts`, `scripts/message-style-preview.ts`.
-- Dokumentacja: niniejszy plik, `README.md`, `JobHunter_SPEC.md`, `docs/WIZJA_PROJEKTU.md`, `docs/TASKS.md`, `docs/TEST_REPORT.md`, `docs/CAPABILITY_REPORT.md`.
+Testy developmentu używają fikcyjnych firm, odbiorców i danych tymczasowych.
+Rzeczywiste podglądy modelu z zatwierdzonymi faktami wymagają jawnego
+WORKSTATION na Windowsie i właściwego katalogu danych. Wyniki zapisujemy
+poza Git, bez Gmaila/send i zapisu fikcyjnych danych do głównej bazy.
+Ocena sześciu wiadomości obejmuje funkcję otwarcia, kolejność informacji,
+prośby, połączenie firmy/projektu i kompletność; sam inny tekst lub hash
+nie dowodzi odmiennej konstrukcji.

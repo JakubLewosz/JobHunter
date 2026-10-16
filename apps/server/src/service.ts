@@ -114,6 +114,11 @@ export class JobHunter {
   readonly mail: MailProvider;
   private busy = false;
   private timer?: ReturnType<typeof setInterval>;
+  private companyNameAliases?: {
+    revision: number;
+    dataVersion: number;
+    owners: Map<string, Set<string>>;
+  };
   readonly clock: () => Date;
   readonly mode: Mode;
   readonly campaignId: string;
@@ -290,29 +295,92 @@ export class JobHunter {
       }
     });
   }
-  findOrCreateCompany(name: string, domain: string | null, historyStatus = 'NEW') {
+  private verifiedCompanyNames() {
+    const revision = this.store.companyAliasRevision;
+    const dataVersion = this.store.one('PRAGMA data_version')!.data_version as number;
+    if (
+      revision !== undefined &&
+      this.companyNameAliases?.revision === revision &&
+      this.companyNameAliases.dataVersion === dataVersion
+    )
+      return this.companyNameAliases.owners;
+    const owners = new Map<string, Set<string>>();
+    for (const alias of this.store.all(
+      "SELECT company_id,value FROM company_aliases WHERE kind='NAME' AND verified_at IS NOT NULL",
+    )) {
+      const key = normalizeName(alias.value);
+      const ids = owners.get(key) ?? new Set<string>();
+      ids.add(alias.company_id);
+      owners.set(key, ids);
+    }
+    // Lightweight readonly Store views lack a mutation revision: always reread them.
+    if (revision !== undefined) this.companyNameAliases = { revision, dataVersion, owners };
+    return owners;
+  }
+  private rememberCompanyName(name: string, companyId: string, inserted: boolean) {
+    const cache = this.companyNameAliases;
+    if (!cache) return;
+    if (inserted) {
+      const key = normalizeName(name);
+      const ids = cache.owners.get(key) ?? new Set<string>();
+      ids.add(companyId);
+      cache.owners.set(key, ids);
+    }
+    cache.revision = this.store.companyAliasRevision;
+  }
+  findKnownCompany(name: string, domain: string | null) {
     const normalized = normalizeName(name);
     const d = companyDomain(domain);
+    const verifiedNames = this.verifiedCompanyNames();
     const byAlias =
       d &&
       this.store.one(
         "SELECT c.* FROM company_aliases a JOIN companies c ON c.id=a.company_id WHERE a.kind='DOMAIN' AND a.value=? AND a.verified_at IS NOT NULL",
         d,
       );
-    const found =
-      byAlias ||
-      this.store.one(
-        'SELECT * FROM companies WHERE normalized_key=? OR (primary_domain IS NOT NULL AND primary_domain=?)',
-        normalized,
-        d,
+    if (byAlias) return byAlias;
+    // A verified legal-name alias may supersede a preserved, archived company row.
+    // Otherwise a name-only history import could miss the canonical company's blocks.
+    const nameOwners = verifiedNames.get(normalized) ?? new Set<string>();
+    if (nameOwners.size > 1)
+      throw new DomainError(
+        'COMPANY_IDENTITY_CONFLICT',
+        'Potwierdzone aliasy nazwy wskazują różne firmy. Wymagany przegląd tożsamości.',
       );
+    const byKey = this.store.one(
+      'SELECT * FROM companies WHERE normalized_key=? OR (primary_domain IS NOT NULL AND primary_domain=?)',
+      normalized,
+      d,
+    );
+    if (nameOwners.size) {
+      const owner = [...nameOwners][0];
+      if (byKey && byKey.id !== owner && byKey.suppression_reason !== 'DUPLICATE_COMPANY_ALIAS')
+        throw new DomainError(
+          'COMPANY_IDENTITY_CONFLICT',
+          'Alias nazwy koliduje z istniejącą firmą. Wymagane jawne rozstrzygnięcie duplikatu.',
+        );
+      return this.store.one('SELECT * FROM companies WHERE id=?', owner);
+    }
+    return byKey;
+  }
+  findOrCreateCompany(name: string, domain: string | null, historyStatus = 'NEW') {
+    const normalized = normalizeName(name);
+    const d = companyDomain(domain);
+    const found = this.findKnownCompany(name, domain);
     if (found) {
+      const byAlias =
+        d &&
+        this.store.one(
+          "SELECT id FROM company_aliases WHERE company_id=? AND kind='DOMAIN' AND value=? AND verified_at IS NOT NULL",
+          found.id,
+          d,
+        );
       if (d && found.primary_domain && companyDomain(found.primary_domain) !== d && !byAlias)
         throw new DomainError(
           'COMPANY_IDENTITY_CONFLICT',
           'Podobna nazwa ma inną potwierdzoną domenę. Nie scalono firm; wymagany przegląd tożsamości.',
         );
-      this.store.exec(
+      const nameAlias = this.store.exec(
         "INSERT OR IGNORE INTO company_aliases VALUES (?,?,'NAME',?,?,?)",
         id(),
         found.id,
@@ -336,6 +404,7 @@ export class JobHunter {
           this.now(),
         );
       }
+      this.rememberCompanyName(name, found.id, nameAlias.changes > 0);
       return {
         company: this.store.one('SELECT * FROM companies WHERE id=?', found.id)!,
         duplicate: true,
@@ -353,7 +422,7 @@ export class JobHunter {
       at,
       at,
     );
-    this.store.exec(
+    const nameAlias = this.store.exec(
       "INSERT OR IGNORE INTO company_aliases VALUES (?,?,'NAME',?,?,?)",
       id(),
       companyId,
@@ -370,6 +439,7 @@ export class JobHunter {
         at,
         at,
       );
+    this.rememberCompanyName(name, companyId, nameAlias.changes > 0);
     return {
       company: this.store.one('SELECT * FROM companies WHERE id=?', companyId)!,
       duplicate: false,
@@ -1493,13 +1563,7 @@ export class JobHunter {
         };
       const key = normalizeName(v.company);
       const d = companyDomain(v.domain);
-      const duplicate =
-        seen.has(key) ||
-        !!this.store.one(
-          'SELECT id FROM companies WHERE normalized_key=? OR (primary_domain IS NOT NULL AND primary_domain=?)',
-          key,
-          d,
-        );
+      const duplicate = seen.has(key) || !!this.findKnownCompany(v.company, d);
       seen.add(key);
       return {
         ...v,

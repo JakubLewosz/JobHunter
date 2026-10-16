@@ -1,3 +1,1369 @@
+# Konstrukcja z kontekstu — Windows, 16 października 2026
+
+Na jawne zlecenie usunięto stałe pierwsze zdanie i cztery części. Kod wyznacza
+cel redakcyjny z rodzaju kontaktu i zweryfikowanych warunków, również różny
+w tym samym rodzaju kontaktu po potwierdzeniu godzin. To priorytet decyzji
+odbiorcy, bez gotowych zdań, losowych wariantów i zmiany uprawnień. Generator
+otrzymuje też dalsze akapity trzech poprzednich szkiców. Nowe ostrzeżenie
+REPEATED_REQUEST obejmuje kilka próśb zakończonych kropką, nie karze samego
+opisu celu kandydata i nie wymaga pytania końcowego. Celowane testy 48/48 PASS.
+
+Sześć rzeczywistych generacji modelu na fikcyjnych firmach i adresach .test:
+po dwie ACTIVE/OPEN/PROSPECT i po dwa wybory trzech zatwierdzonych projektów.
+Natywne kontrole kodu i semantyki bez uwag. Cztery minimalne korekty językowe
+podglądów ponownie zweryfikowano, z zamrożoną treścią i nowymi odwołaniami;
+surowe wyniki zachowane osobno. Nie zmieniano ręcznie konstrukcji. Otwarta
+kandydatura ze znanymi warunkami nie ma zbędnego pytania; zapytania bez naboru
+nie udają odpowiedzi na ofertę. Ocena konstrukcji jest ostrożna: funkcje
+otwarć i miejsce prośby wynikają z kontekstu, lecz bliskie sytuacje dają
+zbliżone listy. To nie sześć całkowicie niezależnych toków ani gwarancja
+jakości przyszłych generacji. Surowe drobne usterki języka i poprawki są
+ujawnione w prywatnym raporcie; PASS faktów nie oznacza braku uwag językowych.
+
+Windows `npm run check`: typecheck PASS, backend **529/530**; jedna stara
+asercja oczekiwała dosłownego zdania ze starego promptu. Zastąpiono ją
+sprawdzeniem, że brak dowodów usuwa wszystkie projekty także z danych
+przekazanych generatorowi. Ponowiona cała grupa research **40/40 PASS**,
+finalna asercja 1/1. Następnie ukończono **12/12 performance, build i 15/15 UI
+PASS**. Kod aplikacji/generatora nie zmienił się podczas korekty testu;
+jedyna zmiana pliku testowego jest osobno udokumentowana. Nie był to jeden
+nieprzerwany pełny check zakończony PASS. Trzy wcześniejsze checki przerwano
+przy dopracowywaniu konstrukcji, bez zaliczania ich jako ukończone.
+
+Audyt readonly względem spójnego backupu: **51 tabel bez zmian**, integrity=ok,
+FK=0. Biblioteka **472/376/221, 254 wersje** zachowana; profil v4, 9 faktów,
+PDF/hash, zatwierdzony zapisany wzór, historia/granica, aliasy i blokady bez
+zmian. Próby/outbox/liczniki **6/6/6**, shared **0/0** bez zmian. Spójny backup
+końcowy i fingerprint 206 plików kodu/builda. Fikcyjne dane nie trafiły do
+głównej bazy. Bez Gmaila, skrzynki, sekretów OAuth, tokenu panelu, publicznego
+researchu, Start i wysyłek; RESEARCH_ONLY zatrzymany. Pełny prywatny raport
+z wiadomościami, pierwotnymi wynikami i oceną podobieństw zapisany poza Git.
+
+# Prostszy wzór wskazany przez użytkownika — Windows, 16 października 2026
+
+Na jawne życzenie zmieniono domyślny wzór i instrukcję nowych generacji:
+proste zapytanie → edukacja i dostępność razem → fakt o firmie i jeden projekt
+→ krótkie zakończenie. Bez wymuszonego „Nazywam się…” i osobnego powtarzania
+godzin. Prawdziwość, wybór projektu, rodzaj kontaktu i uprawnienia bez zmian.
+Technologia firmy nadal nie jest kompetencją kandydata; akceptacja formy umowy
+wymaga faktu kandydata, a nie samej oferty. Stare szkice nie są przepisywane.
+
+Celowane **38/38** testów stylu PASS, w tym poprawny nowy układ i oddzielenie
+technologii firmy od deklaracji kandydata. Dwa rzeczywiste podglądy CLI na
+fikcyjnych firmach/odbiorcach: **78/86 słów**, różne właściwe projekty, brak
+uwag kodu i supported=true/issues=[]. Jeden podgląd używa poprzedniego
+zapisanego domyślnego wzoru; aktualna instrukcja nadal daje prosty układ.
+Wyłącznie odczyt zatwierdzonych faktów; żadnych zapisów fikcyjnych firm do
+głównej bazy, Gmaila, researchu lub wysyłki. Podglądy i raport poza Git.
+
+Końcowy pełny **npm run check na Windowsie: 520/520 backend, 12/12 performance,
+15/15 UI, typecheck/build PASS**. UI potwierdza nowy domyślny wzór w materiałach.
+Przed końcowym uruchomieniem przerwano dwa wstępne checki przy dostosowywaniu
+asercji dawnego wzoru i zachowaniu zgodności rozpoznawania etapu DRAFT przez
+fixture; ich logi zachowano. Powyższy PASS dotyczy finalnego ukończonego checka.
+
+Spójny backup SQLite przed pracą, końcowy audyt readonly wszystkich 51 tabel
+bez różnic. Baza **472/376/221**, **254 wersje** zachowane; zatwierdzony profil
+v4, 9 faktów, PDF/hash, historia/granica, blokady i aliasy bez zmian. Sześć
+SELF_TEST/outbox/liczników i shared 0/0 zachowane. Nie nadpisano zatwierdzonego
+pola wzoru ani materiałów w żywej bazie; nowe instrukcje stylu działają także
+z poprzednim domyślnym wzorem. Nowy fingerprint kodu/builda zapisany prywatnie;
+dawne fingerprinty sesji są historyczne. Brak świadomego Start i rzeczywistej
+kampanii, RESEARCH_ONLY pozostaje zatrzymany.
+
+# Dwie minimalne korekty szkiców — Windows, 16 października 2026
+
+Na jawne zlecenie użytkownika ponownie odczytano 10 oficjalnych publicznych
+źródeł natywnym readerem: READ, Node --use-system-ca. Niejednoznaczny wakat
+zastąpiono zapytaniem PROSPECT/active=unknown, z aktualnym literalnym dowodem
+własnej działalności firmy. W drugim szkicu usunięto jedno zdanie deklarujące
+akceptację formy umowy, której zatwierdzony profil nie określa. Pozostałe
+zdania oraz odbiorcy zachowane; nie rozszerzano kompetencji kandydata.
+
+Pierwszy krok zatrzymała natywna kwalifikacja niepełnej podstawy zapytania:
+bez zmiany szkiców lub wcześniejszych ocen. Zachowano wynik i backup; następnie
+znaleziono jednoznaczny opis działalności w oficjalnej polskiej wersji strony.
+Natywny resolver i literalna walidacja dopuściły ten dowód. Bez zmian kodu,
+osłabienia reguł lub ponawiania negatywnego/niepewnego review dla tego samego
+tekstu. Osobny backup przed dokończeniem; dawne wyniki zachowane.
+
+Dwa ograniczone runIds: 2 DRAFT i 2 SEMANTIC_REVIEW przez rzeczywisty CLI
+(0.162.0-alpha.17.2, auth ChatGPT), wszystkie OK. Model opracował odwołania
+do faktów/dowodów dla dokładnych minimalnych korekt, kod sprawdził zakres
+tekstu, tożsamość firmy, niezmienność odbiorcy, walidację deklaracji i kontrolę
+materiałów. Obie wersje 2: PASS/COMPLETED/supported=true/issues=[], bieżące
+materialIssues=[]. NEEDS_REVIEW; bez zatwierdzenia lub uprawnienia do wysyłki.
+Warunki, których źródła nie potwierdzają, pozostają niepotwierdzone.
+
+Końcowy niezależny audyt readonly względem pierwszego backupu: wszystkie
+pierwotne ID, 252 stare wersje i materiały kontroli zachowane. Stare oferty
+i kwalifikacje bez zmian, pozostałe szkice i kontakty bez zmian. Chronione
+tabele/stan, materiały v4/9 faktów/PDF/hash, historia/granica, blokady i aliasy
+zachowane. Baza **472/376/221**, wersje **252 → 254**. Próby/outbox/liczniki
+**6/6/6**, shared **0/0** bez zmian; zero Gmaila i wysyłek. Backupy zgodne
+ze stanami 51 tabel, integrity=ok/FK=0. Kod/build 206 plików bez zmian;
+to kontrola dwóch rzeczywistych operacji na danych, bez nowego pełnego
+npm run check lub sesji poszukiwania firm. RESEARCH_ONLY stopped/paused/
+senderPaused=true, aktywne run/job=0, lock zwolniony. Pełny prywatny raport
+z dokładnymi wiadomościami, źródłami i dawnymi wersjami poza Git.
+
+# Katalog całej biblioteki — Windows, 16 października 2026
+
+Audyt readonly **472 rekordów firm / 376 kontaktów / 221 szkiców / 252 wersji**.
+Użyto natywnych metod kontroli powiązań materiałów i historii oraz czystego
+walidatora analizy/przeznaczenia, przez adapter readonly bez konstruktora
+Store/service lub providerów. Bez pobierania stron, skrzynki, tokenu panelu,
+sekretów lub OAuth. Bieżące kontrole: 155 szkiców dodatnich, 63 niewstrzymane
+do odświeżenia, 2 zastrzeżenia; 1 dodatkowy szkic do odświeżenia pozostaje
+wśród 3 wstrzymanych firm. Pozostałe 249 niewstrzymanych firm bez szkicu:
+99 bez kontaktu, 48 z niedopuszczonym/niepotwierdzonym kontaktem, 93 bez
+potwierdzonej podstawy/zgodności, 9 z analizą do odświeżenia. Żadna z nich
+nie przeszła kompletu bieżących warunków przygotowania szkicu w tym audycie.
+Stan na **17:27 Europe/Warsaw**, aktualność źródeł 24 h. Dodatnia kontrola
+materiałów nie stanowi zgody na wysyłkę ani potwierdzenia warunków pracy.
+
+Brak kolizji kluczy nazw/domen, kontaktu w firmie, szkicu w kampanii i aliasów.
+Jeden wspólny mailbox dotyczy wcześniej rozstrzygniętego archiwalnego aliasu.
+Wskazano 3 grupy relacji nazw/domen do sprawdzenia (4 istniejące rekordy),
+w tym nowy sygnał podobieństwa nazw po pominięciu formy prawnej. To sygnał
+przeglądu, nie dowód tożsamości. Bez automatycznego łączenia lub kasowania.
+42 ostatnie wpisy dla URL bez ustalonego company_id pozostają osobnym
+wykazem; oznaczono znane aliasy, nie doliczano ich do firm. 2 zapisane
+znaczniki niedokończonej analizy nie są działającymi procesami.
+
+Spójny backup SQLite i 51 hashy tabel identycznych z bazą; integrity=ok/FK=0.
+Wszystkie 51 tabel głównej bazy bez zmian po eksporcie. Zatwierdzone materiały
+v4/9 faktów/PDF/hash, historia i granica kampanii, stare wersje, blokady,
+aliasy, 6 SELF_TEST/outbox/liczników oraz shared zachowane. RESEARCH_ONLY
+stopped/paused/senderPaused, brak aktywnych run/job. 206 plików kodu/builda
+zgodnych z wcześniejszym fingerprintem. Nie zmieniano aplikacji; nie
+przypisuje się temu etapowi nowego pełnego npm run check. Prywatne TXT/JSON
+i interaktywny katalog poza Git; dane firm i wiadomości nie są w dokumentacji.
+
+Rzeczywisty Playwright na Windows: filtry grup i przeznaczenia kontaktu,
+wyszukiwanie nazwy/literalnego emaila, paginacja, brak wyników oraz pokazanie
+zastrzeżeń treści i blokady PASS. Wyświetlona wiadomość identyczna z zapisanym
+tekstem; wszystkie 221 bieżących treści obecne w eksporcie. Układ 900/360 px,
+jasny/ciemny, bez poziomego przepełnienia; podglądy obejrzane, wąska tabela
+układa informacje w jednym polu. Brak pageerror. Działanie sprawdzone przy
+zablokowanych zewnętrznych żądaniach bibliotek opakowania podglądu; sam katalog
+nie wywołuje sieci ani API. Kontrole dotyczą prywatnego katalogu, nie nowej
+próby aplikacji, researchu lub dostarczalności poczty.
+
+# Pojedynczy rzeczywisty SELF_TEST — Windows, 16 października 2026
+
+Jawne zlecenie użytkownika obejmowało jedną wiadomość bez kolejnego pytania
+o zgodę. Zachowano normalne kontrole programu: aktualny natywny podgląd,
+nadawca/odbiorca/temat/cała treść, brak CC/BCC i dokładne bajty zatwierdzonego
+PDF zgodne z dotychczasowym testem. Jeden POST dla jednej rezerwacji;
+**16:53:14.951 Europe/Warsaw**, **SENT_CONFIRMED 16:53:16.598**. Natywne
+potwierdzenie dotyczyło wyłącznie własnej próby w Wysłanych, bez historii firm
+lub innych wiadomości. Bez nowego OAuth, zmiany konta/uprawnień lub treści.
+
+Spójne backupy SQLite przed/po, integralność=ok/FK=0, wszystkie wcześniejsze
+wiersze i chroniony stan niezmienione. Baza firm/kontaktów/szkiców nadal
+**472/376/221**. SELF_TEST/outbox/liczniki **5/5/5 → 6/6/6**, bez resetu;
+5 wcześniejszych prób, materiały, CV/hash, historia/granica, blokady i shared
+zachowane. 206 plików kodu/builda zgodnych z fingerprintem. Brak researchu,
+wiadomości do firm i AUTO_POLICY. Końcowy RESEARCH_ONLY: stopped=true,
+paused=true, senderPaused=true; aktywne run/job i nierozstrzygnięty outbox=0.
+Pełna treść, MIME i wynik prywatnie poza Git. Folder Odebrane/Spam i działanie
+CV pozostają do potwierdzenia przez odbiorcę; nie wynikają z SENT_CONFIRMED.
+
+Późniejszy wynik użytkownika: próba z programu w Spam, dwie ręczne wiadomości
+o tej samej treści i CV w Odebranych u dwóch innych odbiorców bez wcześniejszego
+kontaktu. Różni odbiorcy nie izolują wpływu formatu lub sposobu wysyłki.
+Wyłącznie lokalny audyt zapisanego MIME: pojedyncze nagłówki, CRLF, linie do
+76 bajtów, tekst/plain+HTML i jeden PDF zgodny z zatwierdzonym hashem. Własny
+Message-ID ma domenę jobhunter.local; to element do porównania, bez dowodu,
+że spowodował Spam. Brak odebranych oryginałów i Authentication-Results;
+nie oceniono SPF/DKIM/DMARC u odbiorcy. Bez zmian programu, nowych wysyłek,
+odczytów skrzynki i konfiguracji OAuth. Dalsza diagnoza wymaga oryginałów
+obu odebranych wiadomości; wynik otwarcia PDF nie został podany.
+
+# Nowa sesja RESEARCH_ONLY 8 h — Windows, 16 października 2026, zakończona
+
+Po zgłoszonej przez użytkownika utracie internetu sprawdzono niezależnie
+publiczny reader (3/3 READ, systemowe CA), natywny CLI i rzeczywiste web search:
+PASS. Doctor: win32 x64, Node 24.19.0, SQLite 3.53.4, CLI 0.162.0-alpha.17.2.
+Brak zmian źródeł, zależności i builda; 206 plików zgodnych z fingerprintem
+przetestowanym 15 października. Nie wykonywano nowego pełnego npm run check;
+wcześniejsze wyniki 519 backend/12 performance/15 UI są osobnym zakresem.
+
+Przed zamknięciem pozostawionego checkpointu poprzedniej sesji spójny backup
+SQLite poza Git (51 tabel, integrity=ok/FK=0, hashe tabel zgodne). Natywna
+operacja finishPartial zmieniła wyłącznie stan poprzedniego run/job na CANCELLED;
+zachowała rekordy, CODEX_FAILED, oryginalny sessionId/deadline, metadane i raport.
+Dane chronione, wszystkie stare wersje, tożsamości/aliasy, profil v4/9 faktów,
+PDF/hash, historia/granica, blokady, shared i 5 SELF_TEST/outbox/liczników
+bez zmian. Drugi spójny backup 51 tabel utrwala punkt odniesienia nowej sesji:
+**354 rekordy firm / 282 kontakty / 170 szkiców**, w tym archiwalny duplikat.
+
+Nowy start **16.10.2026 07:27:08.873 Europe/Warsaw**, stały termin
+**16.10.2026 15:27:08.873**. Natywne 8 godzin, interwał 15 min,
+do 10 nowych propozycji i 5 szkiców/cykl, rozszerzany plan i jedna operacja
+naraz. Node --use-system-ca, nowy sessionId/runIds, DisabledMailProvider,
+bez Gmaila, wysyłki i AUTO_POLICY. Start i preflighty są osobnym zakresem
+od opisanego poniżej końcowego przebiegu. Nie wznawiano dawnego checkpointu,
+nie włączano autostartu i nie zmieniano zasilania.
+
+Audyt readonly po faktycznym starcie: hours=8, stałe 28 800 000 ms,
+128 początkowych kierunków, active=true i pierwszy run w nowym zakresie.
+Integrity=ok/FK=0, wszystkie pięć pól protection puste, senderPaused=true,
+próby/outbox/liczniki 5/5/5. W trakcie sesji monitor ACTIVE; bez rutynowych
+powiadomień podczas prawidłowej pracy. Nie przypisywać tych kontroli
+powodzeniu końcowego przebiegu.
+
+Rzeczywisty koniec **16.10.2026 15:27:09.252 Europe/Warsaw**, wynik **DEADLINE**,
+przedział **28 800 379 ms (8 h + 0,379 s)**. Termin nieodnawiany. 32 cykle:
+23 COMPLETED / 9 PARTIAL, bez awarii workera i bez błędów modeli. Suma okien
+operacji 2 h 15 min 3,692 s, największy odstęp startów 15 min 0,663 s;
+to czasy ścienne, nie CPU. PID zakończony, brak aktywnych run/job,
+stopped=true, paused=true, session.active=false, senderPaused=true.
+
+Wyniki wyłącznie runIds tej sesji: **+118 rekordów firm / +94 kontakty /
++51 szkiców**, biblioteka **354/282/170 → 472/376/221**. Zachowany archiwalny
+duplikat; liczba rekordów nie potwierdza niezależności wszystkich podmiotów.
+Powrót do 82 znanych firm. Raport obejmuje 86 bieżących szkiców: 51 nowych,
+9 wcześniejszych z nową wersją i 26 ponownie użytych bez zmiany wersji.
+Zapisano 60 nowych wersji, zachowano wszystkie 192 wersje sprzed sesji.
+**50 nowych szkiców PASS/COMPLETED/supported=true**, 1 PASS/COMPLETED/supported=null
+z niepewną aktualnością konkretnego wakatu; pozostaje do wyjaśnienia.
+3 wcześniejsze szkice w zakresie mają DRAFT_MATERIAL_STALE; nie obchodzono
+blokady, zachowano treści. Pozostałe kontrole nie udzielają zgody na wysyłkę.
+Nowe kontakty literalne: 76 GENERAL / 8 RECRUITMENT / 6 UNKNOWN / 4 SALES.
+Nowe szkice: 45 GENERAL / 6 RECRUITMENT, żadnych na UNKNOWN/SALES.
+
+261 wpisów kandydatów / 223 różne URL / 200 rekordów firm w zakresie.
+16 przypadków błędów: 7 NO_READABLE_SOURCE, 3 UNVERIFIED_COMPANY,
+3 STALE_EVIDENCE i 3 COMPANY_IDENTITY_CONFLICT (te ostatnie dotyczą
+2 kandydatur, bez automatycznego scalania lub kasowania). 13 nieudanych
+rekordów źródeł: 4 DNS_FAILED, 5 NOT_FOUND, po 1 ACCESS_BLOCKED, HTTP_ERROR,
+SIZE_LIMIT i TLS_UNTRUSTED. Błąd TLS dotyczył niezgodnego certyfikatu strony,
+bez wyłączania TLS lub traktowania tego jako odmowy firmy. 311 wywołań modeli,
+0 ERROR. Źródła w zakresie 771, FETCH=531/CACHE=233/FAILURE_CACHE=0;
+brak pełnych pomiarów HTTP/redirect/bytes, null nie jest zerem. Liczb błędów
+nie sumować jako niezależnych firm. contactUrl nie jest ukończoną analizą.
+
+Aktywna kolejka researchDeferred pusta przed i po; 10 historycznych markerów
+BUDGET_DEFERRED pozostaje historią, a klucze kolejki mają null. Ta sesja
+nie sprawdziła opróżniania niepustej kolejki ani rozszerzenia po początkowych
+128 kierunkach. Odpowiednie wcześniejsze testy fixture nie są dowodem
+wykonania tych ścieżek podczas tego rzeczywistego przebiegu.
+
+Końcowy niezależny audyt readonly: **integrity=ok/FK=0**, wszystkie pola
+changedProtectedTables/changedOldVersions/protectedStateChanged/
+protectedCompanyIdentityChanged/protectedAliasesChanged puste. Pierwotne ID,
+wersje, profil v4/9 faktów/CV i hash, historia/trwała granica kampanii,
+wcześniejsze blokady i aliasy, shared oraz 5 SELF_TEST/outbox/liczników
+zachowane. Brak duplikatów kluczy i nowych nierozstrzygniętych wspólnych
+mailboxów; wcześniejszy rozstrzygnięty alias pozostaje historią.
+206 plików kodu/builda zgodnych z fingerprintem. 3 backupy (przed zamknięciem
+dawnego checkpointu, przed nową sesją i po niej): SHA-256 zgodne,
+integrity=ok/FK=0, wszystkie 51 tabel zgodne z właściwym punktem odniesienia.
+Zero Gmaila/skrzynki/sekretów/tokenu panelu, wysyłek i AUTO_POLICY. Pełny
+czytelny raport oraz dokładne tematy, treści, kontakty, wersje, źródła,
+ostrzeżenia, pominięcia i błędy zapisane prywatnie poza Git.
+Automatyzacja raportu tej jednej sesji ustawiona na PAUSED po przygotowaniu
+końcowego raportu i pełnych wiadomości; nie uruchomiono kolejnej sesji.
+
+# Rzeczywista sesja planowana na 15 h — Windows, 15–16 października 2026
+
+Start **15.10 21:43:46.326**, koniec **16.10 06:14:14.536 Europe/Warsaw**;
+stały pierwotny deadline 12:43:46.326 nie został odnowiony. Wynik **CODEX_FAILED**,
+nie DEADLINE: rzeczywisty przedział **8 h 30 min 28,210 s**, a nie pełne 15 h.
+35 rozpoczętych cykli: 20 COMPLETED / 14 PARTIAL / 1 PAUSED na SEARCH.
+Suma ściennych okien operacji **3 h 9 min 12,760 s**, bez nazywania jej CPU;
+największy odstęp startów kolejnych cykli 15 min 0,645 s.
+Ostatnie wywołanie CLI: 12,670 s, exit=1, brak sygnału, zapisany komunikat
+„workspace routing discovery failed”, przejście WebSockets → HTTPS i pięć
+ponownych połączeń wewnątrz CLI. Nie ustalono głębszej przyczyny transportu;
+nie stwierdzono na tej podstawie limitu konta, odmowy firmy lub błędu Gmaila.
+Kontroler/PID zakończony; stopped=true, paused=true, session.active=false.
+Zachowano 1 run PAUSED i 1 job QUEUED; brak aktywnego workera lub writera,
+bez wznowienia, nowej sesji, odnowienia deadline lub usuwania locków.
+
+Zakres wyłącznie runIds tej sesji: **+208 rekordów firm / +173 kontakty /
++88 szkiców**, baza **146/109/82 → 354/282/170**. Liczba rekordów nie dowodzi
+liczby niezależnych podmiotów; zachowany wcześniejszy archiwalny duplikat.
+Ponownie odwiedzono 40 znanych firm. W zakresie raportu 112 bieżących szkiców:
+88 nowych, 8 wcześniejszych z nową wersją i 16 ponownie użytych bez zmiany
+wersji. Utworzono 96 wersji; wszystkie pierwotne ID i wcześniejsze wersje
+zachowane. **87 nowych szkiców PASS/COMPLETED/supported=true**, jeden REJECTED /
+NOT_RUN / DRAFT_MATERIAL_UNVERIFIED pozostaje niegotowy. Nie zmieniano go
+w raportowaniu. Nowe szkice: 78 GENERAL / 10 RECRUITMENT; brak nowych na SALES
+lub UNKNOWN. Nowe literalne kontakty: 130 GENERAL / 15 RECRUITMENT / 17 UNKNOWN /
+11 SALES — zapis nie oznacza dopuszczenia wszystkich do kontaktu.
+
+319 wpisów kandydatów / 283 różne URL; **33 przypadki błędów kandydatów**:
+16 NO_READABLE_SOURCE, 5 STALE_EVIDENCE, 5 UNVERIFIED_COMPANY,
+4 UNVERIFIED_QUOTE, 2 COMPANY_IDENTITY_CONFLICT i 1 INVALID_CLAIM.
+**34 nieudane rekordy źródeł**: 14 ACCESS_BLOCKED, 3 DNS_FAILED, 2 EMPTY,
+3 HTTP_ERROR, 5 NOT_FOUND, 2 SIZE_LIMIT i 5 TIMEOUT. **469 wywołań modeli,
+1 ERROR**. Liczb nie sumować jako niezależnych firm; źródła mogą się nakładać.
+1000 rekordów źródeł w zakresie, 928 FETCH / 157 CACHE / 0 FAILURE_CACHE;
+brak pełnego pomiaru HTTP/redirect/bytes. Błędy odczytu nie są odmowami firm.
+contactUrl w metadanych nie jest ukończoną analizą. Pełne dokładne wiadomości,
+96 wersji, wszystkie ostrzeżenia, dowody i diagnostyka w prywatnych TXT/JSON
+poza Git. Dwa konflikty dopasowania tej samej kandydatury wymagają wyjaśnienia;
+nie scalano danych. Brak duplikatów kluczy i nowych nierozstrzygniętych wspólnych
+mailboxów; wcześniejszy rozstrzygnięty alias nie jest nowym konfliktem.
+
+Niezależny audyt readonly: **integrity=ok/FK=0**; changedProtectedTables,
+changedOldVersions, protectedStateChanged, protectedCompanyIdentityChanged,
+protectedAliasesChanged puste. Profil v4/9 zatwierdzonych faktów/PDF i hash,
+historia/trwała granica kampanii, wszystkie wcześniejsze blokady i aliasy,
+5 SELF_TEST/outbox/liczników oraz shared zachowane. **206 plików źródeł/builda**
+zgodnych z fingerprintem Windows check. Backupy przed/po: SHA-256 zgodne,
+integrity=ok/FK=0, wszystkie 51 tabel zgodne z właściwym stanem odniesienia.
+Bez zmian kodu/builda w trakcie sesji i raportowania. Zero Gmaila, skrzynki,
+sekretów, tokenu panelu, wysyłek i AUTO_POLICY. Pełne rzeczywiste 15 h niezaliczone;
+wykonany check i symulacja opisane poniżej pozostają osobnym zakresem.
+Automatyzacja raportu tej jednej sesji ustawiona na PAUSED po przygotowaniu
+końcowego raportu i pełnego eksportu wiadomości.
+
+# Rozszerzone sesje RESEARCH_ONLY — Windows, 15 października 2026
+
+Pełny `npm run check` PASS: **519 backend / 12 performance / 15 UI**, typecheck
+i build. Doctor: Windows win32 x64, Node 24.19.0, SQLite 3.53.4, natywny CLI
+0.162.0-alpha.17.2. 21 celowanych testów PASS; po dopracowaniu rotacji tematów
+ponownie zaliczono cały celowany plik. UI obejmuje wybór 15 godzin, rzeczywiste
+wywołanie lokalnego API i Stop, z fikcyjnymi providerami i tymczasową bazą.
+
+Natywne parametry sesji 1–24 h; panel 8/15 h, API długiej sesji 2–24 h.
+Długa sesja: odstęp 15 min, do 10 nowych propozycji i 5 szkiców/cykl, do 5
+odłożeń w kolejce, bez nakładania operacji i lawiny zaległych cykli. Plan
+rozszerzany po 128 początkowych kierunkach o kolejne partie; regiony, branże,
+typy firm i zatwierdzone projekty są mieszane już od początku. Katalog testowy
+1537 kierunków z 3 projektami i jednym kierunkiem bazowym jest unikalny.
+Nie przypisuje firmom cech na podstawie słów zapytania. Godzinny test zachowuje
+łączne 10 kandydatów/3 szkice; AUTO_POLICY i generator treści bez zmian.
+
+Symulacja 15 h PASS: 60 różnych cykli, po 5 miejsc generowania, ten sam deadline
+przez całą sesję, automatyczne zakończenie DEADLINE. Sprawdzono poszerzenie
+planu, brak duplikatów, powrót odłożeń, Stop, restart bez automatycznego startu,
+zachowanie terminu przy jawnym wznowieniu, niewłaściwe długości. Outbox/próby/
+zatwierdzenia wysyłek=0. To test zegara i fixture, nie wynik rzeczywistych 15 h.
+
+Przed zmianami kodu spójny backup 51 tabel poza Git; baza 146/109/82,
+zatwierdzony profil v4/9 faktów i PDF/hash. Natywna sesja 15 h oraz jej końcowy
+raport są osobnym etapem; nie oznaczać ich jako ukończone na podstawie checka.
+
+Natywny start: **15.10.2026 21:43:46.326 Europe/Warsaw**, nieodnawialny deadline
+**16.10.2026 12:43:46.326**. Publiczny reader 3/3 READ z systemowymi CA,
+CLI i rzeczywisty search probe PASS; pierwotna kolejka jest analizowana.
+206 plików kodu/builda utrwalonych po checku. Kontroler używa wyłącznie
+DisabledMailProvider, zapisuje wyniki do głównej bazy i monitoruje ochronę.
+To potwierdzenie startu, nie wynik 15-godzinnego przebiegu. Końcowy audyt
+i wyniki dopisać po faktycznym końcu, bez zmian kodu aktywnego procesu.
+
+# Celowana weryfikacja 3 kandydatur — Windows, 15 października 2026
+
+Rzeczywisty RESEARCH_ONLY, natywny CLI i PUBLIC_HTTP z systemowymi CA.
+2 cykle ekstrakcji/kwalifikacji oraz 1 regeneracja jednej nowej wiadomości;
+wszystkie COMPLETED, bez nowych błędów modeli, cykli lub STALE_EVIDENCE.
+Biblioteka **144/108/81 → 146/109/82**: +2 rekordy firm, +1 kontakt GENERAL,
++1 szkic. Liczba rekordów nadal obejmuje wcześniejszy archiwalny duplikat.
+
+Pierwsza wersja wiadomości miała supported=null z zastrzeżeniem aktualności
+naboru; została zachowana w historii. Bieżąca wersja 2 jest osobnym zapytaniem
+o współpracę na adres ogólny: code=PASS, review=COMPLETED, supported=true,
+issues=[], bindingIssues=[], styleWarnings=[]. Zachowany NEEDS_REVIEW
+i przeznaczenie GENERAL; pozytywny wynik treści nie zatwierdza kontaktu,
+polityki, historii skrzynki lub wysyłki.
+
+Dwie kandydatury bez szkicu: (1) natywny HTML maskuje email; konkretna oferta
+wymaga średniego doświadczenia, a osobne zaproszenie do aplikacji spontanicznej
+zachowano w analizie. Publiczny DOM w przeglądarce potwierdził literalny mailto
+odnoszący się do tej aplikacji; zapis prywatny, bez fałszowania PUBLIC_HTTP,
+zmiany typu kontaktu w bazie lub obchodzenia walidacji. (2) dwa oficjalne
+adresy kariery zwracają HTTP 403/ACCESS_BLOCKED/retryable=false. Dostępne przez
+web informacje o otwartych kandydaturach nie są natywnym READ ani potwierdzeniem
+wymaganej pełnej zdalności. Wszystkie dawne błędy/analizy zachowane.
+
+Niezależny audyt readonly PASS: integrity=ok, FK=0; changedProtectedTables,
+changedOldVersions, protectedStateChanged, protectedCompanyIdentityChanged,
+protectedAliasesChanged puste. Wszystkie stare 81 drafts i wersje, całe
+wiersze kontaktów i research_items niezmienione. Zachowane profil v4/9 faktów,
+PDF/hash, historia i trwała granica kampanii, blokady, aliasy, 5 SELF_TEST/
+outbox/liczników oraz shared. Brak nowych duplikatów kluczy i konfliktów
+wspólnego mailboxa. Backupy SQLite przed/po zgodne względem 51 tabel.
+203 pliki kodu/builda zgodne z ostatnim pełnym checkiem 513/12/15; bez zmian
+źródeł, generatora, builda i bez ponawiania całego checka. Końcowy RESEARCH_ONLY
+zatrzymany, senderPaused=true, brak aktywnych run/job, lock zwolniony.
+Zero Gmaila, odczytów poczty/sekretów/tokenu panelu, wysyłek i AUTO_POLICY.
+Pełne wyniki trzech firm, ostrzeżenia i dokładna wiadomość wyłącznie poza Git.
+
+# Końcowy raport sesji 5 h — Windows, 15 października 2026
+
+Zakończenie **DEADLINE 20:45:17.517 Europe/Warsaw**, początek 15:45:17.052,
+rzeczywisty przedział **18 000 465 ms (5 h + 0,465 s)**. 5 cykli co godzinę;
+suma okien started_at–finished_at 1 747 333 ms (29 min 7,333 s), pozostały
+czas obejmuje planowe oczekiwanie. Nie jest to pomiar CPU ani nieprzerwanej
+pracy obliczeniowej. Proces zakończony prawidłowo; bez awarii, restartu sesji,
+nowego researchu lub odnowienia deadline podczas audytu.
+
+W zakresie tylko runIds tej sesji: **30 nowych rekordów firm, 23 nowe kontakty,
+11 nowych szkiców**. Biblioteka **114/85/70 → 144/108/81**; w całkowitej liczbie
+firm nadal zachowany archiwalny duplikat. Odwiedzono ponownie 4 znane firmy,
+wykorzystano 1 poprzedni szkic bez zmiany jego treści lub wersji. 34 firmy
+i 12 wiadomości w zakresie nie oznaczają tylu nowych rekordów. Kontrole kluczy
+domen/nazw/firma+email/firma+szkic bez nowych duplikatów; jedyny wspólny mailbox
+pozostaje rozstrzygniętym wcześniej aliasem. Brak nowego konfliktu wspólnego
+emaila; nie wykonano odrębnej kontroli rejestrowej wszystkich operatorów.
+
+39 elementów kandydatur, 37 różnych URL: 36 DONE, 2 ERROR, 1 UNAVAILABLE.
+3 problemy kandydatur: **2 STALE_EVIDENCE i 1 NO_READABLE_SOURCE/HTTP 403**
+(dwa warianty URL 403 tej samej kandydatury). Nie są odmowami kontaktu firmy.
+2 cykle PARTIAL/ITEMS_NEED_REVIEW, pozostałe 3 COMPLETED/DRAFTS_READY;
+brak błędów modeli i kontrolera. Historyczne dyspozycje elementów:
+11 DRAFTED, 2 BUDGET_DEFERRED, 8 NO_CONTACT, 7 REJECTED,
+7 CONTACT_NOT_ALLOWED, 1 REUSED, 3 bez dyspozycji. 19 nowych firm bez szkicu,
+7 bez kontaktu; te liczniki nie oznaczają automatycznej zgody na przyszły send.
+Nie ponawiano błędów lub generowania podczas raportowania.
+
+Nowe kontakty: **14 GENERAL, 6 RECRUITMENT, 2 UNKNOWN, 1 SALES**. Dla UNKNOWN
+i SALES nie powstały wiadomości. Nowe szkice: **8 GENERAL, 3 RECRUITMENT**,
+**9 COMPANY_INQUIRY, 2 OPEN_APPLICATION**. Wszystkie 11 oraz zachowany szkic:
+code=PASS, review=COMPLETED, supported=true/issues=[], aktualne powiązania
+materiałów w chwili audytu; ponowny readonly check dokładnych payloadów PASS,
+bez uwag stylistycznych. Ogólny kontakt zachowuje swoje przeznaczenie.
+Nieznane warunki, niedopasowana źródłowa oferta i wskazany kanał aplikowania
+pozostają w ostrzeżeniach; pozytywny review nie stanowi zgody ani kompletnej
+kwalifikacji do wysyłki. Literalne kontakty, krótkie dowody, źródła i wszystkie
+ostrzeżenia/pominięcia oraz pełne wiadomości są w prywatnym raporcie.
+
+Niezależny audyt po końcu otworzył wyłącznie readonly SQLite, bez konstruktora
+Store/service, Gmaila, poczty, OAuth, keyring lub tokenu panelu. Wszystkie pola
+protection puste: changedProtectedTables, changedOldVersions,
+protectedStateChanged, protectedCompanyIdentityChanged, protectedAliasesChanged.
+Wszystkie oryginalne ID zachowane; całe stare wiersze 70 drafts niezmienione,
+stare ID/firma/email/typ kontaktu niezmienione. Profil v4/9 zatwierdzonych faktów,
+PDF/hash, historia, trwała granica kampanii, dawne blokady i aliasy,
+shared oraz wszystkie 5 SELF_TEST/outbox/liczników zachowane. 0 nowych prób,
+0 nowego usage. Native blokady oraz powiązanie rozstrzygniętej tożsamości PASS.
+
+SQLite integrity=ok/FK=0. Spójne backupy przed i po: hash plików, integrity/FK
+i zgodność wszystkich 51 tabel PASS; końcowy backup odpowiada bieżącej bazie.
+**203 pliki kodu/builda niezmienione**. Bez nowego buildu/npm run check,
+bez zmian generatora lub programu — to audyt danych rzeczywistej sesji.
+RESEARCH_ONLY stopped=true, paused=false, senderPaused=true, brak aktywnych
+run/job i procesu kontrolera, lock zwolniony. Zapisano czytelny raport poza Git,
+osobny plik dokładnych 11 nowych + 1 zachowanej wiadomości i audyt JSON.
+Monitor pojedynczej zakończonej sesji wyłączony (PAUSED). Gmail/pilot/AUTO_POLICY
+pozostają odłożone; brak zgody na wysyłkę.
+
+# Uruchomienie sesji 5 h — Windows, 15 października 2026, zapis po starcie
+
+Na polecenie użytkownika uruchomiono RESEARCH_ONLY w głównej bazie,
+**15:45:17–20:45:17 Europe/Warsaw**, z nieodnawialnym terminem i nowymi
+kierunkami wyszukiwania. To potwierdzenie startu, nie zakończenia 5 godzin.
+Punkt odniesienia: **114 rekordów firm / 85 kontaktów / 70 szkiców**,
+z zachowanym archiwalnym duplikatem. Spójny backup poza Git zgodny z 51
+tabelami, integrity=ok, FK=0; zatwierdzony profil v4/9 faktów i PDF/hash.
+
+Panel udostępnia warianty 1/8 h; prywatny adapter poza repo przekazuje
+5 do istniejącego silnika obliczającego deadline i poprawia tylko opis
+DAY_STARTED, bez zmiany generatora, uprawnień lub buildu. Próba Windows
+na fikcyjnej bazie i zegarze PASS: 18 000 000 ms, godzina między kierunkami,
+maxCycles=null, nieodnowiony termin, natywne DEADLINE, DisabledMailProvider,
+outbox=0. Nie jest to pomiar rzeczywistej pracy przez 5 h. 203 pliki
+źródeł/buildu zgodne z końcowym checkiem 513/12/15; bez ponownego buildu.
+
+Rzeczywisty start Node z --use-system-ca: publiczny preflight 3/3 READ,
+CLI/search PASS. Proces aktywny, pierwsza tura COMPLETED/DRAFTS_READY,
+0 kandydatów i 0 nowych szkiców, bez błędów. Następny kierunek o 16:45.
+Kontroler zachowuje główną bazę i natywne reguły deduplikacji; sprawdza
+też stare tożsamości/aliasy, blokady, profil/CV, historię, shared i wersje.
+Wszystkie pola protection puste; brak nowych prób wysyłki lub usage,
+nadal 5 historycznych SELF_TEST/outbox/liczników. Gmail/provider nie jest
+inicjalizowany. Brak automatycznego wznowienia po restarcie lub awarii,
+zmian zasilania Windowsa i zmian kodu pracującego procesu.
+
+Raport i cichy monitor zakończenia ustawiono w tej samej rozmowie.
+Końcowy czas, wyniki, deduplikacja semantyczna, kontakty/przeznaczenie,
+pełne wiadomości i komplet błędów pozostają do oceny po zakończeniu.
+Zapisanie szkiców nie daje zgody na Gmail, rzeczywistą wysyłkę ani AUTO_POLICY.
+Prywatne dane i pliki sesji pozostają poza Git.
+
+# Rozstrzygnięcie jednej pary tożsamości — Windows, 15 października 2026
+
+Na osobne polecenie użytkownika potwierdzono wspólny podmiot: 5 rzeczywistych
+publicznych odczytów READ/HTTP 200 przez natywny czytnik Windows z systemowym
+CA oraz oficjalny odpis rejestrowy HTTP 200. Wspólny email był tylko dowodem
+pomocniczym; sprawdzono operatora obu witryn i dane rejestrowe. Szczegóły firm,
+źródła/hash i pełna zachowana wiadomość są w prywatnym raporcie poza Git.
+
+W transakcji przypisano obie domeny i potwierdzone nazwy do jednego rekordu
+głównego. Drugi rekord zachowano jako archiwalny, blokowany przez
+DUPLICATE_COMPANY_ALIAS bez automatycznego wygaśnięcia. Jego pierwotny
+history_status zachowany; to nie odmowa firmy lub wcześniejsza wysyłka.
+Nie usunięto żadnych rekordów. Stare kontakty, dowody i elementy researchu
+pozostały z własnymi ID. Para nie miała przypisanych lokalnych prób, blokad
+lub historii wymagających przenoszenia; nie jest to deklaracja braku dawnej
+korespondencji Gmaila. Zmieniono tylko companies, company_aliases,
+suppressions i audit_events. Pozostałe 47 tabel identyczne; wcześniejsze
+wiersze blokad i audytu niezmienione, nowe wpisy wyłącznie dopisane.
+
+Resolver i podgląd CSV używają potwierdzonych aliasów nazw również bez domeny.
+Niejednoznaczny alias, kolizja z niearchiwalną firmą i niepotwierdzona obca
+domena nadal blokują. Trzy regresje FAIL→PASS; dodatkowo rollback i zapis
+aliasu z drugiego połączenia PASS. Pamięć aliasów ma kontrolę lokalnych zmian,
+rollbacku i SQLite data_version; readonly widoki bez licznika odczytują dane
+bez cache. Pierwszy pełny check przeszedł, ale ujawnił spowolnienie scenariusza
+dużej historii do ok. 69 s. Naprawione przed wdrożeniem: trzy odrębne scenariusze
+ponad 10 tys. firm 4,5–4,8 s, końcowy pełny zestaw performance 17,7 s.
+Są to czasy całych scenariuszy, nie latencja Stop. Bez migracji schematu.
+
+Końcowy `npm run check` na Windowsie **15:22:27–15:35:16 Europe/Warsaw**:
+**513/513 backend, 12/12 performance, 15/15 UI**, typecheck/build PASS.
+135 źródeł bez zmian podczas checka i 68 plików builda w fingerprint.
+Doctor: win32 x64, Node 24.19.0, SQLite 3.53.4, natywny CLI 0.162.0-alpha.17.2,
+WORKSTATION/RESEARCH_ONLY, build gotowy. Nie uruchamiano prawdziwego backendu.
+Odrębny proces po zapisie potwierdził obie domeny, warianty nazw oraz podgląd
+importu bez wykonywania rzeczywistego importu historii. Rekord główny nie ma
+blokady duplikatu; rekord archiwalny jest blokowany. Dawne blokady nadal aktywne.
+
+Spójne backupy SQLite przed i po porównano ze wszystkimi 51 tabelami;
+integrity=ok, FK=0. Nadal **114 rekordów firm / 85 kontaktów / 70 szkiców**;
+wśród firm jest zachowany duplikat, więc nie jest to liczba potwierdzonych
+niezależnych podmiotów. Wszystkie 70 treści i wersji, materiały, profil v4/9
+faktów, zatwierdzony PDF/hash, historia i trwała granica kampanii, shared,
+5 SELF_TEST/outbox i liczniki zachowane. Ponowny audyt readonly:
+**69/69 przygotowanych do przyszłego podglądu**, code=PASS/review=COMPLETED,
+supported=true/issues=[], brak lokalnych blokad w tej grupie. Jeden odłożony
+szkic nadal blokowany poza nią. 63 GENERAL/6 RECRUITMENT; 257 zapisanych URL,
+bez ponownego odczytu wszystkich stron/modelu/generatora. Najwcześniejszy
+próg 24 h nadal **15 października 17:37 Warszawa**. Ręczny przegląd paczki,
+bieżące materiały i osobno uzgodniona historia Gmaila pozostają przed wysyłką;
+nie zmieniono reguł AUTO_POLICY na akceptację każdej wiadomości.
+
+RESEARCH_ONLY, stopped/paused/senderPaused=true, lock zwolniony. Bez Gmaila,
+poczty, OAuth, magazynu haseł, tokenu panelu, rzeczywistych wysyłek lub Start.
+
+# Audyt 69 szkiców przed przyszłym pilotażem — Windows, 15 października 2026
+
+Audyt readonly dokładnie 69 istniejących szkiców, z pominięciem jednej
+odłożonej firmy. **68 przygotowanych do przyszłego podglądu pilotażu;
+1 wymaga wyjaśnienia tożsamości/deduplikacji.** Dwa rekordy firmy mają
+wspólny literalny email; tylko jeden ma szkic w kontrolowanej grupie.
+Nie scalano rekordów, nie kasowano danych i nie zapisano nowej blokady.
+Dotychczasowa blokada odłożonej firmy pozostała aktywna poza tymi 69.
+
+69/69 bieżących materiałów ma code=PASS, review=COMPLETED,
+supported=true/issues=[]. Dokładne payloady sprawdzono ponownie funkcją
+checkDraft na zapisanym kontekście zatwierdzonego profilu i dowodów:
+69/69 PASS, zero uwag stylistycznych. 0 DRAFT_MATERIAL_STALE,
+0 DRAFT_MATERIAL_UNVERIFIED, 0 negatywnych/nieukończonych kontroli.
+Brak identycznych całych treści u różnych firm. 257 różnych zapisanych URL:
+sprawdzono READ/hash/aktualną wersję/parser/24 h, binding i profil/CV;
+**nie odczytano ponownie wszystkich stron** i nie uruchamiano modelu,
+generatora lub discovery. Pomocniczo sprawdzono cztery publiczne strony
+i odsyłacz produktu o zbieżnej nazwie; brak podstaw do scalenia po samej
+nazwie. Szczegóły i źródła są w prywatnym raporcie.
+
+Sprawdzono 69 literalnych dowodów i zapisanych kontekstów adresów oraz
+contactPurposeAllowed/contactEligibility. 63 GENERAL/NEEDS_REVIEW
+i 6 RECRUITMENT/VERIFIED_PUBLIC. Nie znaleziono dodatkowego przypadku
+potwierdzonego wyłącznie informacją administratora bez odrębnego ogólnego
+kontaktu. Adresy mające również kontekst privacy zachowały właściwy typ
+dzięki osobnemu blokowi kontaktowemu; bez przepisywania na RECRUITMENT.
+W przygotowanej grupie 68: **62 GENERAL, 6 RECRUITMENT; 62 COMPANY_INQUIRY,
+5 OPEN_APPLICATION, 1 CONDITIONS_INQUIRY**. Nieznane warunki współpracy
+pozostają pytaniami. Obecny brak reviewed_at i przeglądu 63 kontaktów GENERAL
+opisano jako pozostałe kroki ręcznego pilotażu wybranej paczki; nie jako
+wymóg akceptacji każdego przyszłego maila AUTO_POLICY.
+
+Najwcześniejszy próg 24 h źródeł/dowodów/kontaktu w przygotowanej grupie:
+**15 października 2026, 17:37:17 Europe/Warsaw**. Gotowość jest oceną
+zapisanych materiałów w chwili audytu, nie gwarancją ich aktualności
+w przyszłym terminie. Przed wysyłką potrzebne są aktualne materiały,
+uzgodniony etap Gmaila (nadawca/test, celowana historia), dokładny podgląd
+do 3 wiadomości i osobna zgoda na pilot. Brak nowego odczytu Gmaila nie jest
+potwierdzeniem braku wcześniejszych kontaktów. W 69 nie wykryto innych
+lokalnych blokad historii/suppressions lub zarejestrowanych FIRST_CONTACT.
+
+Wszystkie **51 tabel bez zmian** przed/po i zgodne z końcowym backupem
+poprzedniej operacji założenia blokady. Nadal 114 rekordów firm / 85 kontaktów /
+70 szkiców, profil v4/9 faktów, zatwierdzony i wybrany CV/PDF/hash,
+historia/blokady/granica, shared i 5 SELF_TEST/outbox/usage zachowane.
+integrity=ok, FK=0, RESEARCH_ONLY stopped/paused/senderPaused, brak aktywnych
+operacji/nierozstrzygniętego outboxa; lock zwolniony. Fingerprint 203 plików
+zgodny, bez zmian kodu/zależności/migracji/builda i bez ponawiania checka
+implementacji. Brak Store/backendu/providerów poczty, Gmaila, skrzynki,
+sekretów/OAuth/tokenu panelu i wysyłki. Początkowy błąd prywatnego zapytania
+audytu poprawiono przy połączeniu readonly; nie był błędem aplikacji.
+Pełny raport, lista gotowości, konteksty i 69 zachowanych wiadomości poza Git.
+
+# Odłożenie firmy do wyjaśnienia kontaktu — Windows, 15 października 2026
+
+Na wyraźne polecenie użytkownika dodano jeden trwały do czasu wyjaśnienia
+wpis CONTACT_PURPOSE_UNCONFIRMED w istniejącej tabeli suppressions, marker
+suppression_reason jednej firmy i zdarzenie audytu z aktorem user. permanent=0
+oznacza wstrzymanie do wyjaśnienia, bez automatycznej daty wygaśnięcia;
+obecne bramki sprawdzają każdy wpis suppressions. Nie użyto helpera
+nadpisującego history_status: dotychczasowa historia pozostaje identyczna.
+Nie oznaczono kontaktowania, odmowy ani wyłącznego PRIVACY, nie zmieniono
+odbiorcy lub typu GENERAL. Mocniejsze wcześniejsze blokady pozostają aktywne.
+
+Rzeczywista wspólna bramka companyHistoryBlocks na Windowsie: przed zmianą
+false, po zapisie true, po zamknięciu połączenia i otwarciu bazy readonly
+w osobnym procesie nadal true. Istniejące bramki końcowe poczty i AUTO_POLICY
+odrzucają suppression_reason/wpis suppressions; nie uruchamiano ich transportu,
+Start ani Gmaila. Blokada nie zależy od ważności źródeł, dnia lub sesji;
+powrót do rozważania kontaktu wymaga potwierdzenia jego przeznaczenia i
+kontrolowanego zdjęcia wyłącznie tej blokady. Nie wykonano odblokowania.
+
+Przed zapisem zweryfikowany spójny backup SQLite, uwzględniający WAL.
+Zmiana w jednej transakcji z audytem przed zatwierdzeniem. Po zapisie drugi
+spójny backup, oba zgodne ze wszystkimi 51 tabelami; integrity=ok, FK=0.
+Zmieniły się jedynie companies (marker/wersja/data jednej firmy), suppressions
+(+1) i audit_events (+1). Pozostałe **48 tabel identyczne**. Wszystkie stare
+wpisy blokad i audytu, pozostałe firmy i wszystkie history_status zachowane.
+**70 szkiców, ich treści/odbiorcy, stare wersje/materiały i 85 kontaktów
+identyczne**. Nadal 114/85/70 rekordów firm/kontaktów/szkiców, profil v4/9
+zatwierdzonych faktów, CV/PDF/hash, trwała granica, shared, Fingoweb oraz
+5 SELF_TEST/outbox/usage bez zmian. RESEARCH_ONLY stopped/paused/senderPaused,
+brak aktywnych operacji i nierozstrzygniętego outboxa; lock zwolniony.
+
+Bez zmian kodu/zależności/migracji/builda; fingerprint 203 plików zgodny
+z wcześniejszym pełnym checkiem Windows. Nie powtarzano testów implementacji;
+zweryfikowano zapis rzeczywistej blokady i trwałość bramki po otwarciu
+w osobnym procesie. Bez Gmaila, odczytu poczty, OAuth/sekretów/tokenu panelu
+lub wysyłki. Pełny prywatny raport, zachowany szkic i backupy poza Git.
+
+# Celowana ocena przeznaczenia kontaktu — Windows, 15 października 2026
+
+Sprawdzono przeznaczenie jednego adresu biura bez zmiany szkicu, kodu,
+powiązań źródeł lub stanu głównej bazy. Natywny PublicSourceReader z Windows
+system CA: **5/5 READ** (strona główna, kontakt PL/EN, produkt i mapa witryny).
+Trzy dodatkowe odczyty jawnego HTML potwierdziły, że stopka publikuje inny
+adres serwisowy. Bez wykonywania skryptów, zgadywania adresów lub użycia
+formularza. Dwa oficjalne podręczniki przeszukano w dostępnej warstwie
+tekstowej; nie znaleziono @. Odsyłacz polityki prywatności prowadzi do #,
+więc nie uznano go za odrębne źródło.
+
+Adres biura jest literalnie opublikowany w danych administratora pod
+formularzem w dwóch językach. Nie znaleziono niezależnego ogólnego kontekstu
+tego adresu ani wyłącznego ograniczenia do privacy. **Wynik niejednoznaczny:
+kontakt niepotwierdzony do pilotażu; rekomendowane pominięcie do wyjaśnienia.**
+Nie wpisano odmowy, nie oznaczono PRIVACY/RECRUITMENT i nie zmieniono odbiorcy.
+Brak ogłoszenia rekrutacji sam w sobie nie wyklucza GENERAL; wątpliwość
+dotyczy funkcji konkretnej skrzynki. Obecne contactPurposeAllowed zwraca true,
+ale ten wynik techniczny nie jest niezależnym potwierdzeniem przeznaczenia.
+Nie zmieniono walidatora ani nie wywołano reviewContact za użytkownika;
+wcześniejsze ostrzeżenie pozostaje w analizie. Nie dodawano nowej blokady
+technicznej, nie usuwano istniejących blokad i nie udzielano zgody na send.
+
+Główna SQLite otwarta wyłącznie readonly, bez instancji Store/backendu
+lub providerów poczty. Porównanie **wszystkich 51 tabel przed/po identyczne**:
+cały wiersz szkicu v2, temat/treść/odbiorca, pozostałe szkice, stare wersje,
+materiały, historia, blokady i liczniki bez zmian. Nadal **114/85/70**
+rekordów firm/kontaktów/szkiców, profil v4/9 zatwierdzonych faktów, PDF/hash,
+5 SELF_TEST/outbox/usage i shared zachowane. integrity=ok, FK=0,
+stopped/paused/senderPaused=true, brak aktywnych operacji, lock zwolniony.
+Fingerprint 203 plików kodu/build zgodny. Brak zmian kodu/zależności/migracji
+i builda; poprzedniego checka nie powtarzano. Bez Gmaila, poczty,
+sekretów/OAuth/tokenu panelu i wysyłki. Wynik nie dowodzi wyczerpania całego
+internetu ani dostarczalności. Pełny prywatny raport, zachowana wiadomość,
+źródła i audyt poza Git; żadne dane firmy/kontaktu nie trafiły do dokumentacji.
+
+# Resolver opisów działalności i dwa szkice — Windows RESEARCH_ONLY, 15 października 2026
+
+Resolver policyVersion=4 uzupełnia wąskie przypadki własnej działalności:
+wykonanie programów komputerowych, produkcję systemów informatycznych,
+autorskie oprogramowanie wynikające z doświadczeń firmy i bierną prezentację
+produktu na jego własnej stronie. Ostatni przypadek wymaga zgodnej marki
+w domenie i tytule oraz konkretnych szczegółów API/obsługi błędów. Bez listy
+wyjątków firm, zmiany generatora/stylu lub migracji. Negacje, cudze/zakupione
+i odsprzedawane produkty, menu, działalność fizyczna i wymagania wakatu
+nie zastępują dowodu. Kontrole READ/hash/parser/24 h, nowszych sprzecznych
+źródeł, hosta/tożsamości, odbiorcy/przeznaczenia, odmów i historii zachowane.
+
+Cztery brakujące przypadki odtworzone FAIL przed poprawką. Dodano 27 nowych
+syntetycznych przypadków, fikcyjnych odbiorców i stron. **97/97 testów
+celowanych PASS**. Pełny `npm run check` na Windows 15 października,
+12:18:01–12:31:09 Europe/Warsaw: **508/508 backend, 12/12 performance,
+15/15 UI**, typecheck/build PASS. Doctor: win32 x64, Node 24.19.0,
+SQLite 3.53.4, natywny Codex CLI 0.162.0-alpha.17.2, build gotowy.
+Fingerprint 135 źródeł i 68 plików builda zgodny po operacji;
+zero zmian źródeł podczas checka. Ostrzeżenia testowe dotyczą wyłącznie
+jednoczesnych NO_COLOR/FORCE_COLOR; brak błędów testów.
+
+Po zakończeniu checka dwa celowane natywne przebiegi w głównej bazie
+WORKSTATION/RESEARCH_ONLY: **3/3 rzeczywistych odczytów READ**, dwa przebiegi
+COMPLETED, dwie kontrole semantyczne OK. Wszystkie wcześniejsze cytaty
+pozostały literalnie w świeżych źródłach. Kwalifikacja została ponownie
+wykonana; natywne revalidateSameText dopisało dla obu wersję materiałów 2,
+code=PASS, review=supported=true/issues=[], bez problemów bindingu/stale.
+**Tematy, treści i odbiorcy identyczni**, zero wywołań DRAFT. Szkice pozostają
+NEEDS_REVIEW, kontakty GENERAL, warunki współpracy niepotwierdzone.
+
+Jeden kontakt wymaga zachowania zastrzeżenia: literalny adres jest w danych
+firmy/administratora pod formularzem, a nie w odrębnym zaproszeniu do współpracy.
+Bieżące reguły dopuszczają GENERAL; brak jawnego ograniczenia tylko do privacy,
+ale nie znaleziono niezależnego potwierdzenia zastosowania do współpracy.
+Nie utożsamiono go z innym adresem serwisowym ani nie zmieniono odbiorcy.
+Ostrzeżenie dodano do nowej analizy i prywatnego raportu; nie jest to
+zatwierdzenie odbiorcy do przyszłej wysyłki. Drugi adres występuje również
+w sekcji zapytania/kontaktu. Żaden nie uzyskał typu RECRUITMENT.
+
+Baza nadal **114 rekordów firm / 85 kontaktów / 70 szkiców**. Audyt potwierdził
+identyczność wszystkich 70 tekstów/odbiorców, pozostałych 68 wierszy szkiców,
+starych wersji i materiałów, tożsamości firm i historii/blokad. Chronione
+tabele/stan bez zmian; profil v4/9 zatwierdzonych faktów, PDF/hash, trwała
+granica, shared oraz 5 SELF_TEST/outbox/usage zachowane. Spójne backupy przed
+i po, końcowy zgodny ze wszystkimi 51 tabelami; integrity=ok, FK=0. Końcowo
+stopped/paused/senderPaused=true, aktywne runs/jobs=0, nierozstrzygnięty
+outbox=0, lock zwolniony. DisabledMailProvider, bez Gmaila, odczytu poczty,
+sekretów/OAuth/tokenu panelu lub wysyłki. AUTO_POLICY wyłączone. Nie testowano
+tu dostarczalności, wysyłki, nowego discovery lub pozostałych firm.
+Pełne wiadomości, literalne dowody i prywatny audyt poza Git.
+
+# Odświeżenie 21 wcześniejszych szkiców — Windows RESEARCH_ONLY, 15 października 2026
+
+Operacja na dokładnej wcześniejszej liście 21 DRAFT_MATERIAL_STALE, bez
+zmiany kodu/generatora/builda/zależności. Wszystkie miały przeterminowane
+źródła przy zgodnych binding/payload/profilu. Ponownie odczytano publiczne
+źródła przez natywny PublicSourceReader: **87/87 READ, 73 różne URL**,
+obejmujące ponowienia fazy uzupełnienia i jedną dodatkową stronę produktu.
+Nie odświeżano dat/hashów bez rzeczywistego odczytu. Nowe wersje HTML mają
+własne rzeczywiste hashe; nie zrównywano ich z poprzednimi.
+
+**Wszystkie 21 tematów, treści i odbiorców zachowane bez zmian.** 19 przechodzi
+bieżące kontrole. 10 otrzymało nową wersję materiałów z identycznym tekstem
+i odrębnym pozytywnym review; 11 zachowuje wersję. Wszystkie cytaty starych
+analiz były literalnie obecne w nowych źródłach; ponowna kwalifikacja nadal
+obowiązywała. Cztery pierwotne pominięcia uzupełniono pełniejszym ciągłym
+kontekstem usług/produktu i właściwą stroną produktu. Dwie analizy używają
+potwierdzonej w tych samych źródłach marki przy zachowaniu pełnego literalnego
+dowodu tożsamości, hosta, ID i nazwy firmy w bazie. Bez wyjątków kodowych.
+
+Dwa przypadki nadal nie przechodzą resolvera podstawy zapytania mimo
+aktualnych opisów własnego produktu/usług. Dla obu niezależnie sprawdzono
+samą treść z aktualnymi dowodami i zatwierdzonym profilem: kod bez uwag,
+model supported=true/issues=[]. Ta ocena nie nadpisała materiałów szkiców
+ani nie zastąpiła kwalifikacji. Jeden zachowuje DRAFT_MATERIAL_STALE,
+drugi ma aktualne materiały i blokadę kwalifikacji; nie uznano ich za gotowe
+do wysyłki. Następny krok i kontekst przeznaczenia adresu w TASKS oraz
+prywatnym raporcie. To ograniczenia rozpoznawania dowodów, nie odmowy firm.
+
+Łącznie **12 wywołań modelu OK**: 10 kontroli nowych wersji tego samego tekstu
+i 2 odrębne kontrole treści zatrzymanych przypadków. Zero błędów modelu lub
+odczytów, zero generacji nowych tekstów. 13 celowanych przebiegów COMPLETED;
+trzy obejmują pierwotne pominięcia, poprawione później w dwóch przypadkach.
+Pozostałe pierwotne pominięcia dotyczyły odświeżenia identycznej wersji bez
+zlecania przebiegu. Źródeł dostępnych READ nie nazywano odmową.
+
+Końcowy audyt readonly względem stanu sprzed operacji: **114/85/70 bez zmian**.
+Zero zmian 70 tematów/treści/odbiorców, 49 szkiców spoza zakresu, wszystkich
+starych wersji, wierszy materiałów i zdarzeń weryfikacji źródeł. Chronione
+tabele/stan, historia/blokady firm i trwała granica, profil v4/9 APPROVED,
+CV/PDF/hash, shared oraz 5 SELF_TEST/outbox/usage zachowane. Spójne backupy
+przed/po fazach; końcowy zgodny z 51 tabelami, integrity=ok, FK=0.
+Fingerprint 135 źródeł i 68 plików builda zgodny. Poprzedni pełny Windows
+check tej samej wersji (481/12/15 PASS) jest referencją, nie nowym testem
+tego zlecenia; nie powtarzano go bez zmiany kodu.
+
+DisabledMailProvider, brak gateway Gmaila i odczytu poczty, OAuth, sekretów,
+tokenu panelu lub wysyłki. Końcowo RESEARCH_ONLY, stopped/paused/senderPaused=true,
+aktywne runs/jobs=0, nierozstrzygnięty outbox=0, blokada profilu zwolniona.
+Pełne 21 wiadomości, źródła, wcześniejsze pominięcia, ostrzeżenia i audyt
+poza Git. Nie przedstawiać biblioteki 70 szkiców jako zgody na wysyłkę.
+
+# Rozpoznawanie opisów własnego oprogramowania — Windows, 15 października 2026
+
+Resolver podstawy zapytania v3 rozpoznaje własny system TMS, formy pierwszej
+osoby „zbudowałem”/„buduję”, producenta oprogramowania i wspieranie firm
+w budowaniu oprogramowania. Reguły są językowe, bez wyjątków po nazwach.
+Zachowano dowód literalny, aktualną wersję źródła/host/tożsamość, kontakt
+i jego przeznaczenie, odmowy i konflikty warunków. Własny system nie oznacza
+potwierdzonego wewnętrznego zespołu IT. Generator/styl bez zmian.
+
+20 nowych syntetycznych przypadków obejmuje te opisy i negacje, rozwój
+pracowników, cudzą działalność, menu/zgodę marketingową, nieaktualny lub
+nieodczytany/obcy dowód, parser/hash i nowszą sprzeczną wersję, zakazane
+przeznaczenie, odmowy i konflikt. **70/70 testów celowanych PASS** na
+Windowsie. Ponadto readonly kontrola czterech rzeczywistych zapisanych
+propozycji dowodu: 4/4 rozpoznane bez zmiany kontaktu GENERAL. Porównanie
+kwalifikacji 66 istniejących szkiców: zero zmian. 21 wcześniejszych szkiców
+miało już DRAFT_MATERIAL_STALE; blokada pozostaje, bez nadpisania materiałów.
+Spójny backup sprzed zmiany kodu zgodny z 51 tabelami.
+
+Pełne **npm run check** końcowej wersji na Windowsie: **481/481 backend,
+12/12 performance, 15/15 UI**, typecheck/build PASS. Dane testowe syntetyczne,
+fikcyjny transport; nie testowano prawdziwej wysyłki. Doctor PASS: Windows
+x64, Node 24.19.0, SQLite 3.53.4, natywne CLI wykryte. Fingerprint 135 plików
+źródłowych i 68 plików builda; zero zmian źródeł podczas końcowej kontroli.
+
+Rzeczywista operacja RESEARCH_ONLY na tym Windowsie: **15/15 odczytów READ,
+11 wywołań modelu OK, zero błędów modelu/elementów**. Cztery nowe szkice v1:
+**114 firm / 85 kontaktów / 66 szkiców → 114/85/70**. Bez nowych firm lub
+kontaktów i bez duplikatów odbiorców tych czterech szkiców. Wszystkie
+GENERAL, kod PASS, review COMPLETED/supported=true/issues=[], binding
+issues=[], uwagi stylistyczne=[], status NEEDS_REVIEW. Nie potwierdzają
+nieznanych warunków, wewnętrznego zespołu programistycznego ani kompetencji
+kandydata wynikających jedynie z technologii firmy. Jeden szkic odnosi się
+do opublikowanej oferty; ostrzeżenia o niedopasowaniu wymagań i kanale CV
+zachowano. Nie uznano go za zgodę na aplikację pod adresem ogólnym.
+
+Pierwsza analiza jednego przypadku wybrała nagłówek z nierozpoznaną formą
+czasownika. CONTACT_NOT_ALLOWED zachowano jako pierwotne pominięcie podstawy
+zapytania, nie odmowę firmy lub błąd odczytu. Po zakończeniu pierwszej fazy
+i spójnym backupie ponownie odczytano źródła; wybrano wcześniej znaleziony,
+pełny dosłowny akapit twórcy aplikacji. Bez zmiany kontaktu, warunków lub
+materiałów kandydata. validateAnalysis/resolveInquiryBasis/contactEligibility,
+natywna kwalifikacja, zwykły generator i review przeszły. Pięć przebiegów
+COMPLETED, z czego jeden obejmuje pierwotne pominięcie; nie testowano
+automatycznej naprawy każdego możliwego zbyt krótkiego cytatu.
+
+Końcowy audyt readonly względem stanu sprzed kodu: zero zmian chronionych
+tabel/stanu, 66 wcześniejszych szkiców, ich wersji/materiałów i historii
+firm. Profil v4/9 APPROVED faktów, CV/PDF/hash, Fingoweb/blokady/granica,
+shared i 5 wcześniejszych SELF_TEST/outbox/usage zachowane. Spójne backupy
+przed kodem i przed/po obu fazach; końcowy zgodny z 51 tabelami, integrity=ok,
+FK=0. Fingerprint 135 źródeł + 68 builda zgodny również po researchu.
+DisabledMailProvider, brak gateway; bez Gmaila/poczty, OAuth, tokenu panelu,
+wysyłki lub AUTO_POLICY. Końcowo RESEARCH_ONLY, stopped/paused/senderPaused=true,
+aktywne runs/jobs=0, nierozstrzygnięty outbox=0, blokada profilu zwolniona.
+Pełne dokładne wiadomości, literalne kontakty/dowody, źródła, ostrzeżenia
+i audyt pozostają poza Git. 70 to liczba zapisanych szkiców, nie gotowość
+całej biblioteki do wysyłki; 21 dawnych DRAFT_MATERIAL_STALE zachowano.
+
+# Uzupełnienie podstaw grupy 18 firm — Windows RESEARCH_ONLY, 15 października 2026
+
+Sprawdzono dokładnie 18 istniejących przypadków z wcześniejszego audytu.
+Trzy zatrzymywane fazy w głównej bazie: ponowny odczyt/kwalifikacja, dodatkowe
+źródła i wybór pełniejszych cytatów, przegląd dosłownych dowodów i wyjaśnienie
+tożsamości. Bez zmian kodu/generatora, builda lub zależności. **104/104 READ**
+w zarejestrowanych próbach odczytu URL (obejmują ponowienia różnych faz,
+nie 104 niezależne witryny); dodatkowo 2 READ polityk dla powiązania marek.
+**48 wywołań modelu OK, zero błędów modelu**. 22 przebiegi: 21 COMPLETED,
+jeden początkowy przypadek tożsamości przerwany i zachowany jako CANCELLED
+z błędem elementu TARGET_IDENTITY_REVIEW_REQUIRED; nie pominięto go w raporcie.
+
+**14 nowych szkiców v1; 114 firm / 85 kontaktów / 52 szkice → 114/85/66.**
+Wszystkie GENERAL, bez przepisywania na RECRUITMENT; kod PASS, review
+COMPLETED/supported=true/issues=[], binding issues=[], uwagi stylistyczne=[]
+w końcowym audycie. Status NEEDS_REVIEW bez zgody na wysyłkę. Zapytania nie
+potwierdzają nieznanych warunków; część odnosi się do opublikowanych ofert
+i pyta o możliwość współpracy przy zatwierdzonej dostępności. Pełne dokładne
+treści, źródła i wszystkie ostrzeżenia poza Git. Projekt wybrany tylko
+z zatwierdzonych faktów; brak wyboru w zawężonym kontekście nie oznacza
+utraty trzech zatwierdzonych projektów w pełnym profilu.
+
+Dwa końcowe uzupełnienia użyły pełnych dosłownych akapitów opisujących
+własne usługi firmy, zamiast zbyt wąskiego wycinka. Nie zmieniano warunków,
+kontaktu lub materiałów kandydata. Uzupełniona analiza przeszła te same
+validateAnalysis/resolveInquiryBasis/contactEligibility, natywną kwalifikację,
+generowanie i review. Cztery przypadki nadal nie przechodzą obecnego
+resolvera mimo udokumentowanej własnej aplikacji/systemu lub działalności
+programistycznej; formy językowe opisano w TASKS i prywatnym raporcie.
+To ograniczenie rozpoznawania dowodu, nie odmowa firmy lub nieudany odczyt.
+Reguły nie zostały poluzowane, nie zapisano dla tych czterech gotowych szkiców.
+
+W jednej parze potwierdzono wspólnego administratora i adres. Początkowa
+próba zatrzymała zmianę tożsamości; po sprawdzeniu obu lokalnych historii
+utworzono jeden szkic pod istniejącym rekordem drugiej marki. Oba rekordy
+i historia zachowane, bez scalenia/usunięcia lub dwóch wiadomości. Przed
+przyszłą wysyłką nadal potrzebne uporządkowanie reprezentacji tej pary;
+114 to liczba rekordów, nie ostateczna liczba niezależnych podmiotów.
+
+Końcowy audyt readonly obejmuje stan sprzed całej operacji: **0 zmian
+chronionych tabel/stanu, starych 52 szkiców/wersji/materiałów oraz historii
+firm**. Zatwierdzony profil v4/9 faktów, CV/hash, blokady, trwała granica,
+shared i 5 SELF_TEST/outbox/usage zachowane. Spójne backupy przed/po każdej
+fazy; końcowy zgodny z 51 tabelami, integrity=ok, FK=0. Fingerprint 134 zgodny.
+DisabledMailProvider i brak gateway Gmaila. Bez odczytu poczty, OAuth,
+zmian konta/liczników, wysyłki lub AUTO_POLICY. Końcowo RESEARCH_ONLY,
+stopped=true, paused=true, senderPaused=true, aktywne runs/jobs=0,
+nierozstrzygnięty outbox=0, blokada profilu zwolniona.
+
+# Dokończenie dwóch znanych firm — Windows RESEARCH_ONLY, 15 października 2026
+
+Na jawne zlecenie użytkownika odczytano ponownie 6 publicznych stron dwóch
+znanych firm (**6/6 READ**), zweryfikowano kontakt/przeznaczenie, lokalną
+historię i blokady. Dwa celowane przebiegi **COMPLETED / DRAFTS_READY**,
+po jednym kandydacie; **6/6 EXTRACT/DRAFT/SEMANTIC_REVIEW OK**, bez błędów.
+Bez wyszukania kolejnych firm. Biblioteka **114/85/50 → 114/85/52**.
+Dwa nowe szkice v1: otwarta kandydatura na RECRUITMENT oraz zapytanie
+na GENERAL; rodzaj kontaktu zachowany, bez potwierdzonego wakatu IT lub
+warunków zdalności/wymiaru pracy. Nie deklarują zgodności z nieznaną ofertą.
+
+Oba szkice **kod PASS, review COMPLETED, supported=true, issues=[]**,
+bez problemów powiązań i uwag stylistycznych; **NEEDS_REVIEW** zachowane.
+Dla obu wybór projektu dał NO_PROJECT_MATCH. Ostrzeżenie modelu o braku
+opisów projektów w jednym szkicu dotyczy zawężonego kontekstu generowania;
+pełny profil nadal ma 9 zatwierdzonych faktów, w tym 3 projekty. Nie zmieniano
+generatora ani materiałów, nie dopisywano kompetencji. Nie ustalono jednej
+historycznej przyczyny wcześniejszego pominięcia tych dwóch szkiców.
+
+Natywny ResearchJobHunter z DisabledMailProvider, bez gateway Gmaila,
+workera okresowego lub wysyłki. **Chronione tabele i stan bez zmian**,
+50 dawnych szkiców, ich wersje i materiały zachowane. Profil v4/9 APPROVED,
+CV/hash, historia, blokady/granica, shared i **5 SELF_TEST/outbox/usage**
+zachowane. Spójne backupy przed/po zgodne ze wszystkimi 51 tabelami;
+integrity=ok, FK=0. Fingerprint 134 plików kodu zgodny, kod/build bez zmian.
+Końcowo RESEARCH_ONLY, stopped=true, paused=true, senderPaused=true,
+brak aktywnych runs/jobs i nierozstrzygniętego outbox, blokada zwolniona.
+Pełne wiadomości, dowody i ostrzeżenia w prywatnym raporcie poza Git.
+Zakres obejmuje research i szkice, nie gotowość do rzeczywistej wysyłki
+ani kontrolę wcześniejszej korespondencji firm w Gmailu.
+
+# Pokrycie firm szkicami — audyt readonly, 15 października 2026
+
+Główna biblioteka: **114 rekordów firm, 85 firm z kontaktem, 85 kontaktów
+(84 różne adresy), 50 firm z 50 szkicami**. Bez szkicu 64 firmy: 29 nie ma
+zapisanego emaila, 35 ma kontakt. Dla tych 35 obecne lokalne reguły i ich
+najnowsze zapisane analizy dają: **25 CONTACT_NOT_ALLOWED, 8 REJECTED,
+2 przechodzą kontrole wstępne**. Pierwsza grupa obejmuje nieodpowiednie lub
+niepotwierdzone przeznaczenie oraz brak zweryfikowanej podstawy zapytania;
+GENERAL sam w sobie nie jest zakazany. W grupie bez adresu także pojedyncza
+blokada historyczna i pojedyncza odrzucona oferta; kategorie powodów nie
+są tożsame z samą obecnością emaila.
+
+Dwa przypadki bez szkicu wymagają dokończenia weryfikacji. Jeden nie ma
+zapisanej dyspozycji, drugi ma dawną CONTACT_NOT_ALLOWED, mimo pozytywnej
+oceny obecnymi regułami wstępnymi. Aktywne researchDeferred=0. Nie ustalono
+jednej przyczyny technicznej, nie wykonano generowania lub modelu i nie
+przypisano im pełnej gotowości do wysyłki. Audyt używał readonly SQLite
+i metod walidujących bez konstruktorów Store/service, sieci/Gmaila,
+zmian danych lub kodu. Szczegóły firm i wyników wyłącznie poza Git.
+
+# Dwie rzeczywiste próby SELF_TEST — 15 października 2026
+
+Operacja na domowym Windowsie po osobnej zgodzie na dwa konkretne podglądy
+i celowane potwierdzenia w Wysłanych. Istniejący nadawca/OAuth i zatwierdzone
+materiały, bez nowego połączenia lub uprawnień. Natywny GmailJobHunter w
+APPROVAL_REQUIRED, bez uruchamiania workera/researchu; świeże podglądy kolejno
+dla każdego odbiorcy. Zweryfikowano pojedynczy adres, brak CC/BCC, dokładny
+temat/tekst i zgodność części MIME/PDF z zaakceptowanym prywatnym podglądem.
+
+Wysyłki **08:16:39 i 08:16:41 Europe/Warsaw**, obie **SENT_CONFIRMED**
+po odczycie metadanych konkretnych identyfikatorów w Wysłanych. Jedna próba
+POST dla każdej, bez ponawiania i bez błędów operacji/audytu. Nie odczytywano
+historii firm lub pozostałej poczty. Użytkownik następnie zgłosił: jeden
+odbiorca WP — **Odebrane**, jeden odbiorca Gmail — **Spam**; CV poprawnie
+otwiera się u **2/2 odbiorców**. To zgłoszenie użytkownika, bez odczytu ich
+skrzynek. Wynik mieszany; problem spamu w Gmailu nadal występuje w tej próbie,
+przyczyna nie została ustalona. Nie wykonano dodatkowych wysyłek lub zmian.
+
+Przed/po spójne backupy SQLite: wszystkie 51 tabel zgodne z odpowiednim
+stanem, integrity=ok, FK=0. **0 zmian dawnych rekordów**, brak nieoczekiwanych
+zmian tabel; kampania zmieniła tylko policy_version wskutek wyboru dwóch
+adresów testowych. 3 wcześniejsze SELF_TEST zachowane; outbox/attempts/usage
+**3 → 5**, dzienne wykorzystanie **0 → 2**, bez resetowania liczników.
+Firmy/kontakty/szkice **114/85/50** i liczba wywołań modelu bez zmian.
+Profil v4, 9 zatwierdzonych faktów, PDF/hash, historia, blokady, granica
+kampanii i shared records zachowane. Fingerprint 134 plików kodu zgodny.
+Końcowo **RESEARCH_ONLY**, stopped=true, senderPaused=true, research inactive,
+0 aktywnych runs/jobs i 0 nierozstrzygniętych outbox; profil odblokowany.
+Bez wiadomości do firm i AUTO_POLICY. Pełne podglądy, zgoda, wyniki i backupy
+prywatne poza Git; repo zawiera wyłącznie powyższe wyniki zbiorcze.
+Zakres to operacyjne SELF_TEST, bez zmian kodu/generatora i bez dodatkowego
+researchu; nie jest wynikiem pilotażu do firm i nie dowodzi ogólnej
+dostarczalności do skrzynek innych odbiorców.
+
+# Nocny RESEARCH_ONLY w głównej bazie — wynik, 15 października 2026
+
+Sesja zakończyła się jako **DEADLINE**, **15 października 04:36:04.011
+Europe/Warsaw**, przy pierwotnym terminie 04:36:03.740. Od startu
+14 października 20:36:03.740 upłynęło **8 h 0,271 s**. Nie jest to osiem godzin
+ciągłej pracy obliczeniowej: kierunki co godzinę, zaplanowane przerwy i ręczna
+naprawa początkowego uruchomienia, z przerwą **5 min 48,968 s**. Wykonano
+**8/8 cykli COMPLETED**, również po ostatnim cyklu czekano do stałego deadline.
+Suma okien started_at/finished_at około 42 min 18 s obejmuje tę przerwę;
+po jej odjęciu około 36 min 29 s, bez interpretacji jako pomiar CPU.
+PID zakończone, blokada profilu zwolniona, stopped=true, DAY_FINISHED,
+brak aktywnych/PAUSED runs i aktywnych jobs. Windows boot sprzed sesji;
+brak wpisów Kernel-Power 42/107 w jej przedziale. To ograniczona kontrola
+zdarzeń zasilania, nie pełny audyt uśpienia. Rano nie wznowiono pracy.
+
+**40 nowych rekordów firm, 33 nowe rekordy kontaktowe, 19 nowych wiadomości.**
+Stan głównej biblioteki: **74 → 114 firm, 52 → 85 kontaktów, 31 → 50 szkiców**.
+Zapisy już w głównej SQLite, bez kolejnego scalenia. W zakresie 8 runIds:
+50 wpisów kandydatów, 47 różnych URL, 44 rekordy firm (40 nowych, 4 wcześniej
+znane), 21 szkiców w eksporcie, z których **2 stare nie doliczone do 19 nowych**.
+Jeden stary szkic dostał wersję 2 przy odświeżeniu powiązania kwalifikacji;
+temat i treść identyczne, wersja 1 i jej materiały zachowane. Wszystkie
+31 wcześniejszych tematów/treści i wszystkie wcześniejsze wersje nienaruszone.
+Trzy BUDGET_DEFERRED wróciły i dostały szkice; na końcu brak aktywnego
+researchDeferred. Wrócił także szkic odłożony we wcześniejszej próbie.
+
+Poranny audyt przez readonly SQLite i istniejące walidatory, bez konstruktorów
+Store/service lub providerów: **47/47 pełnych analiz**, **19/19 nowych szkiców**
+kod PASS, review COMPLETED, supported=true, issues=[], aktualne powiązania
+bez problemów; dwie stare użyte ponownie również mają poprawne powiązania.
+Metadane contactUrl w nieukończonych odczytach nie są traktowane jako analiza.
+NEEDS_REVIEW zachowane; ten wynik nie zatwierdza wysyłki lub warunków pracy.
+Wiadomości mają konkretne nawiązania do firm; brak dopasowania projektu
+nie usuwa zatwierdzonych projektów z pełnego profilu. Ostrzeżenia o zawężonym
+kontekście NO_PROJECT_MATCH zachowane wraz z pozostałymi zastrzeżeniami.
+
+Nowe kontakty: **22 GENERAL, 6 RECRUITMENT, 4 UNKNOWN, 1 SALES**, wszystkie
+z literalnym dowodem. UNKNOWN i SALES pozostają wykluczone z wysyłki.
+Nowe szkice: **16 GENERAL, 3 RECRUITMENT**. UNKNOWN warunków/rekrutacji
+nie przepisano na potwierdzone. Brak duplikatów kluczy domeny/normalized_key,
+firma+email i kampania+firma. **Jedna para różnych nazw/domen ze wspólnym
+literalnym adresem pozostaje do wyjaśnienia**; nie scalano ani nie kasowano
+jej rekordów. 33 nowe kontakty obejmują **32 adresy nowe względem starej
+biblioteki**. Nie ogłaszać 40 rekordów jako 40 potwierdzonych niezależnych
+podmiotów ani deduplikacji tożsamości jako zakończonej. Szczegóły poza Git.
+
+Wyniki pozycji: DRAFTED 19, REUSED 2, BUDGET_DEFERRED 3, CONTACT_NOT_ALLOWED 11,
+REJECTED 6, NO_CONTACT 6, NO_READABLE_SOURCE 3. Trzy nieczytelne przypadki
+nie są odmowami firm: dwa z początkowego problemu TLS, jeden z HTTP 526.
+W 166 użytych rekordach źródeł **159 READ i 7 nieudanych**: TLS_UNTRUSTED 3,
+HTTP_ERROR/526 2, ACCESS_BLOCKED 1, NOT_FOUND/404 1; nie sumować każdej
+podstrony jako osobnej nieudanej firmy. **Zero błędów modelu i końcowych
+błędów cyklu**, początkowy READER_ENVIRONMENT pozostaje w historii.
+W cyklach 89 wywołań, osobno 2 probe; 163 odczyty, 7 cache, 178 HTTP,
+16 przekierowań. Przyrost research_sources 160, użyto też wcześniejszych
+rekordów. Pomiary CLI: input 2410243, output 97808, cached input 667520;
+bez przeliczania na koszt lub limit konta.
+
+**changedProtectedTables=[], changedOldVersions=[], protectedStateChanged=[]**.
+Profil v4, 9 APPROVED faktów, odłożony fakt, zatwierdzone CV i PDF/hash,
+historia/blokady/granica kampanii bez zmian. Zachowane 3 dawne SELF_TEST,
+outbox=3, usage=3, shared attempts/usage=0; nowe próby/outbox/usage=0.
+Rano niezależnie zweryfikowano oba spójne backupy, **51/51 tabel zgodnych**
+z odpowiednim stanem, integrity=ok, FK=0. Fingerprint **134 plików kodu
+bez zmian**. Nie wykonywano nowego buildu lub npm run check; obecny zakres
+to rzeczywista sesja i niezależny audyt jej danych, nie nowy zestaw regresji.
+
+Pełny czytelny raport prywatny zawiera 44 rekordy firm z kontaktami/dowodami,
+19 dokładnych nowych wiadomości i 2 starsze użyte ponownie, wszystkie
+ostrzeżenia/błędy/pominięcia oraz otwartą parę do weryfikacji. Porównano
+literalne tematy/treści z główną bazą; audyt nie zmienił jej hashy. Wszystkie
+prywatne artefakty poza Git. **Zero Gmaila/skrzynek/OAuth, tokenu panelu,
+sekretów, wysyłki lub nowego Start**. AUTO_POLICY wyłączone; następny
+SELF_TEST/pilot wymaga konkretnego podglądu i osobnej zgody.
+
+Po przygotowaniu końcowego raportu poranna automatyzacja ustawiona PAUSED;
+zapis potwierdzony, godzinny monitor również PAUSED. Bez zaplanowanego
+wznowienia researchu lub wysyłki.
+
+# Nocny RESEARCH_ONLY w głównej bazie — start, 14/15 października 2026
+
+Na wyraźne polecenie użytkownika uruchomiono istniejącą 8-godzinną sesję
+Windows RESEARCH_ONLY, zapisując bezpośrednio w głównej lokalnej bibliotece.
+Początek **14 października 20:36:03.740 Europe/Warsaw**, stały deadline
+**15 października 04:36:03.740**, różnica dokładnie 28 800 000 ms.
+Kierunki co 60 minut, maxCycles=null; zachowane ograniczenia pracy cyklu
+(maks. 20 kandydatów, 20 min, do 3 szkiców), bez limitu ośmiu cykli
+skrótowo zastępującego czas. Kierunki doprecyzowano do kolejnych firm
+i oficjalnych kontaktów do pracy, z wykorzystaniem kontekstu istniejącej
+biblioteki i deduplikacji aplikacji. Odłożone szkice mogą wrócić zgodnie
+z dotychczasowymi regułami. Wynik pełnej nocy pozostaje **do sprawdzenia**.
+
+Pierwszy start faktycznie zatrzymał się **20:37:00.380**, po **56,640 s**,
+na READER_ENVIRONMENT; trzy niezależne hosty TLS_UNTRUSTED /
+UNABLE_TO_VERIFY_LEAF_SIGNATURE. Launcher pominął `--use-system-ca`, stosowaną
+we wcześniejszym Windows preflight. Sprawdzono obsługę flagi zainstalowanego
+Node; z nią publiczny reader ma **3/3 READ, systemCA=true**, bez zmiany
+certyfikatów Windows, wyłączania TLS lub osłabienia SSRF/DNS pinning.
+Po zamknięciu pierwszego procesu w bieżącym zleceniu poprawiono tylko
+prywatny launcher i ręcznie kontynuowano checkpoint **20:42:49.388**.
+Ten sam sessionId, runId i pierwotny deadline **04:36:03.740**; bez przedłużenia
+czasu, kasowania błędów, nowych zgód lub resetu liczników. Początkowy raport,
+audyt i backup zachowane poza Git. Po poprawce nowe firmy/kontakty są już
+w głównej bazie; changedProtectedTables=[], stare wersje i chroniony stan
+bez zmian, nowe próby/usage=0, integrity=ok, FK=0. W raporcie końcowym
+uwzględnić przerwę oraz zachowane błędy TLS; nie przedstawiać ich jako odmów
+firm ani zaliczać pełnych ośmiu godzin nieprzerwanej pracy. Metadane
+contactUrl w READ/PENDING nie są ukończoną analizą — eksport prywatny
+odróżnia je od wyników walidacji faktycznej analizy.
+
+Przygotowanie: brak aktywnego backendu/researchu/sendera, profil WORKSTATION
+na Windowsie i LOCAL_ONLY; punkt odniesienia **74 firmy, 52 kontakty, 31 szkiców**.
+SQLite backup API przed otwarciem pod wyłączną blokadą profilu: integrity=ok,
+51/51 tabel zgodnych; brak oczekujących migracji. Zatwierdzony profil v4,
+9 faktów APPROVED i zatwierdzone CV/PDF/hash zgodne. Fingerprint kodu zgodny
+z wcześniejszym pełnym Windows check; bez zmian aplikacji/generatora, build,
+zależności, konta lub uprawnień. Natywny CLI obsługuje wymagane flagi,
+istniejące logowanie ChatGPT; rzeczywiste codex/search probes PASS.
+
+Po otwarciu brak samoczynnej pracy, stopped/paused potwierdzone; dopiero
+zlecony `startDay(...,8)` uruchomił nową sesję. Proces używa wyłącznie
+ResearchJobHunter + DisabledMailProvider, bez gateway/Gmaila/send. Trzy
+wcześniejsze SELF_TEST/outbox/usage i shared attempts/usage=0 zachowane.
+Zapis postępu i pełnego raportu poza Git, kontrola chronionych tabel/starych
+wersji szkiców/materiałów, zachowanie stałego deadline. Nie tworzono tokenu
+panelu ani nie odczytywano dotychczasowego. Bez autostartu/wznowienia po
+awarii, restartu procesu lub zmiany zasilania Windowsa.
+
+Poranny raport w tej rozmowie ustawiony na **15 października 07:00**;
+przy przerwaniu tylko rekonstrukcja readonly, bez uruchomienia kolejnego
+researchu. Nie zaliczać pełnych 8 godzin, powodzenia deduplikacji całej
+sesji lub liczby nowych wyników na podstawie samego poprawnego startu.
+Gmail/pilot nadal odłożone; AUTO_POLICY wyłączone.
+
+# Scalenie biblioteki researchu — 14 października 2026
+
+Na wyraźne zlecenie użytkownika scalono wyłącznie nowe wyniki dwóch zakończonych
+prób do głównej lokalnej bazy Windows: **14 firm, 12 literalnie potwierdzonych
+kontaktów GENERAL, 8 szkiców NEEDS_REVIEW**. Stan głównej biblioteki:
+**60 → 74 firmy, 40 → 52 kontakty, 23 → 31 szkiców, 230 → 281 źródeł**.
+Import objął 17 wpisów researchu, 7 zakończonych przebiegów, dowody/kwalifikacje,
+wersje wiadomości, wyniki kontroli i potrzebne metadane. Zachowano UUID i
+powiązania z zatwierdzonym profilem; nie kopiowano całej bazy diagnostycznej,
+zgód na wysyłkę, prób, outbox, limitów ani konfiguracji Gmaila.
+
+Przed zapisem stopped=true, bez aktywnych runs/jobs/outbox; istniejąca blokada
+profilu przejęta wyłącznie po potwierdzeniu zakończenia poprzedniego procesu.
+Spójny backup SQLite API przed i po operacji, poza Git, **51/51 tabel zgodnych**
+z bazą w danym momencie. Główne scalenie jedną transakcją IMMEDIATE.
+`integrity_check=ok`, `foreign_key_check` bez naruszeń. Brak duplikatów domen,
+kluczy firm, kontaktów firma+email i szkiców kampania+firma; żaden nowy adres
+email nie występował wcześniej w głównej bibliotece.
+
+Weryfikacja na osobnych kopiach przed właściwym zapisem: pełne scalenie PASS;
+ponowny import **0 zapisów**, wszystkie hashe bez zmian; wymuszony błąd po
+20 zapisach wycofał całą transakcję; konflikt domeny/tożsamości odrzucił import
+bez częściowego zapisu. Po zapisie w głównej bazie **17/17 analiz i 8/8 szkiców**
+sprawdzone istniejącymi walidatorami, bez providerów/modelu/sieci. Dokładne
+tematy/treści/wersje/hashe i powiązania materiałów zgodne; 8/8 kod PASS,
+review COMPLETED, supported=true, issues=[]. NEEDS_REVIEW pozostaje bez zgody
+na wysyłkę. Przyczyny wcześniejszych pominięć i jedno odłożenie zachowane.
+
+Wszystkie wcześniejsze rekordy zachowane dokładnie, poza jawnym wyrównaniem
+pomocniczego `analysisOperationSequence` **79 → 91** do utrwalonych analiz.
+To porządek analiz, bez resetu limitów/wysyłek lub odnowienia granicy kampanii.
+**changedProtectedTables=[]**: profil v4, 9 APPROVED faktów, odłożony fakt,
+CV/PDF/hash, historia/blokady, 3 wcześniejsze SELF_TEST/outbox/usage,
+shared attempts/usage=0 i dane polityk bez zmian. Dawne 23 szkice i wersje
+zachowane. Obie źródłowe bazy diagnostyczne mają identyczne hashe do stanu
+przed scaleniem. Zapisano jawny audit/receipt importu.
+
+Pełny raport prywatny z 14 firmami, kontaktami, dowodami, zastrzeżeniami i
+8 dokładnymi wiadomościami odczytany już z głównej bazy; eksport readonly
+nie zmienił jej hashy. Raport, helper jednorazowej operacji, audit i backupy
+poza Git. Nie zmieniano kodu aplikacji/generatora, zależności ani schematu;
+fingerprint kodu zgodny z wcześniejszym pełnym Windows check. Nie uruchamiano
+nowego `npm run check`; zakres obecnej weryfikacji to powyższe testy operacji
+danych, a poprzedni wynik 461 backend / 12 performance / 15 UI pozostaje
+wynikiem wcześniejszego etapu. **RESEARCH_ONLY, stopped=true, STOPPED**;
+zero Gmaila/skrzynek/OAuth, tokenu panelu, nowych rezerwacji, wysyłek lub Start.
+Etap Gmaila odłożony przez użytkownika; AUTO_POLICY wyłączone.
+
+# Godzinna diagnostyka po poprawkach — wynik, 14 października 2026
+
+Rzeczywista sesja na Windowsie trwała **18:15:02.030–19:15:02.367 Europe/Warsaw**,
+60 min 0,337 s z przerwami zgodnymi z tempem. Osiągnięto zapisany DEADLINE,
+kontroler i procesy zakończone, stopped=true. To osobna diagnostyka z zewnętrznym
+kontrolerem i procesami po Stop, nie natywna sesja 8 h lub test restartu Windowsa.
+Użyto pełnej spójnej kopii lokalnej historii, zatwierdzonego profilu v4/9 faktów
+i zatwierdzonego PDF poza repo. Kod nie był zmieniany podczas pracy.
+
+**6/6 cykli COMPLETED, 12 wpisów kandydatów, 9 różnych firm/URL, 6 nowych
+pełnych szkiców.** Wyszukiwarka probe PASS; 7/7 procesów (probe + sześć cykli)
+potwierdziło poprzedni Stop, bezczynność stopped/paused po otwarciu przed
+jawnym startem i wyłączony transport. W każdym po zakończeniu wykonano Stop
+i zamknięto proces; chronione tabele bez zmian. Wszystkie szkice to PROSPECT /
+GENERAL / COMPANY_INQUIRY, bez potwierdzonego naboru lub warunków pracy.
+
+Trzy wcześniej odłożone firmy wróciły po ponownym otwarciu procesu i dostały
+szkic z dokładnie tymi samymi sourceIds. **9 EXTRACT dla 9 różnych firm**:
+bez ponownej ekstrakcji przy tych trzech powrotach. Jedna firma pozostaje
+BUDGET_DEFERRED z ostatniego cyklu. Dwie pominięto: brak potwierdzonego emaila
+oraz brak zaakceptowanego aktualnego dowodu działalności do zapytania. Brak
+podwójnych szkiców/domen i konfliktów z zapisaną lokalną historią; Gmaila nie
+odczytywano, więc wynik nie potwierdza kompletności historii spoza SQLite.
+
+**Zero błędów cyklu, źródeł i modelu.** 29 zapisanych rekordów READ i fetches,
+34 HTTP, 5 przekierowań, zero HTTP cache hits. Cache analizy odłożonych firm
+jest osobnym mechanizmem. 27 wywołań w cyklach: 6 SEARCH, 9 EXTRACT, 6 DRAFT,
+6 SEMANTIC_REVIEW; osobno jeden probe. Pomiary CLI: input 947710, output 22892,
+cached input 366208; bez przeliczania na cenę lub zużycie limitu konta.
+
+Readonly audyt po końcu: **6/6 kod PASS, review COMPLETED, supported=true,
+issues=[]**, ponowne checkDraft i draftMaterialIssues bez problemów. Wersje,
+zatwierdzone fakty, źródła i literalne kontakty zweryfikowane. Zapisane warnings
+zachowane w eksporcie i przy dokładnych wiadomościach. Jedno ostrzeżenie mówi
+o braku opisów projektów w zatwierdzonych faktach: kontekst tej wiadomości
+zawierał sześć faktów bazowych przy NO_PROJECT_MATCH, a cały profil nadal miał
+trzy zatwierdzone projekty. Wyjaśniono zakres w prywatnym raporcie, bez edycji
+szkicu lub odtwarzania generacji.
+
+Wszystkie **51 tabel oryginalnej SQLite** mają identyczne hashe do stanu sprzed
+zmian i po zakończeniu; integrity=ok. Chronione tabele kopii także identyczne:
+profil/fakty/CV, historia/blokady, próby/outbox/usage/shared. Zachowane trzy
+dawne SELF_TEST, outbox=3, usage=3, shared attempts/usage=0, Fingoweb blokowany,
+granica kampanii bez zmian. Oryginalny i skopiowany PDF zatwierdzone i zgodne
+z zapisanym SHA. Końcowy spójny backup diagnostyki integrity=ok; wszystkie jego
+tabele identyczne z końcową bazą. Fingerprint 134 plików kodu zgodny z check.
+Zero nowych rezerwacji/wysyłek, Gmaila/OAuth lub zmian nadawcy/uprawnień.
+
+Pełny czytelny raport z 9 firmami, 6 dokładnymi tematami/tekstami, ostrzeżeniami,
+pominięciami i dowodami, audyt, cykle oraz backup zachowano wyłącznie poza Git.
+Porównanie tekstów raportu do wszystkich 6 szkiców PASS. Wynik dopisano do
+dokumentacji; bez ponownego pełnego check dla samych odczytów/raportu/dokumentacji.
+Monitor po jednorazowym końcowym raporcie ma PAUSED, potwierdzone lokalnie.
+Gmail/SELF_TEST, celowana historia firm i pilotaż pozostają odrębnym etapem
+z wymaganymi konkretnymi zgodami; AUTO_POLICY nadal wyłączone.
+
+# Poprawki kontaktów i raportowania — 14 października 2026
+
+Na polecenie „działaj” wdrożono dwie celowane poprawki. Zwykłe pytania pod
+adresem GENERAL zachowują GENERAL_INQUIRY; literalne pytania o rekrutację lub
+pytania pod RECRUITMENT nadal nie upoważniają do aplikacji z CV. Odmowy CV,
+ograniczenia kanału, sprzedaż i pozostałe wykluczone przeznaczenia pozostają
+blokujące. Zneutralizowano komunikat, który nazywał GENERAL rekrutacyjnym.
+Analiza ma policy v8: starszy kompletny pakiet nie dostaje automatycznego reuse
+bez nowej kwalifikacji według bieżących reguł. Nie zmieniano generatora/stylu.
+
+Raport TXT/JSON czyta zapisane warnings właściwego research_draft, usuwa tylko
+identyczne powtórzenia i pokazuje dokładny wynik oceny przeznaczenia kontaktu.
+Regresja obejmuje zakres jednej sesji, pełny niezmieniony temat/tekst, brak
+zastrzeżeń obcej firmy/cyklu oraz brak zapisów raportu do SQLite. Cztery nowe
+testy: trzy FAIL przed zmianą, potem celowany zestaw **41/41 PASS**; negatywne
+przypadki nie zostały rozluźnione. Zapisany rzeczywisty przypadek oceniono
+wyłącznie w pamięci nad readonly SQLite, bez modelu/sieci/zmiany rekordu:
+GENERAL pozostaje GENERAL, wynik COMPANY_INQUIRY dopuszczony po dowodach.
+Prywatny eksport wcześniejszej krótkiej sesji ma oba dokładne teksty i wszystkie
+zapisane ostrzeżenia. Nie ponawiano generacji ani odczytu stron w tym audycie.
+
+Końcowy pełny `npm run check` na fizycznym Windowsie: **461/461 backend,
+12/12 performance Stop, 15/15 UI, typecheck/build PASS**, exit 0, brak skipped.
+Backend 711163 ms, performance 17562 ms, UI 49,7 s. Pierwsza próba zatrzymała
+się na TS7006: brak jawnego typu nowego pola warnings; dodano warnings:string[]
+i powtórzono pełny check. Nie zaliczać pierwszej próby jako PASS. Doctor
+DEVELOPMENT/DEMO PASS: win32/x64, Node 24.19.0, SQLite 3.53.4, CLI
+0.162.0-alpha.17.2. Fingerprint 134 plików kodu/konfiguracji/testów zgodny
+przed/po. Istniejące niezacommitowane zmiany zachowane; bez push/deploymentu.
+
+Przed zmianami brak aktywnego prywatnego backendu, spójny backup przez SQLite
+backup API z readonly uchwytu poza repo. Końcowe hashe wszystkich 51 tabel
+oryginalnej SQLite identyczne; integrity=ok, 9 APPROVED, zatwierdzony PDF/hash
+zgodny, 3 dawne próby/outbox. Sprawdzono wyłącznie lokalne metadane istniejącej
+konfiguracji Gmaila; bez odczytu skrzynki, vault/sekretów, OAuth, zmiany nadawcy,
+nowych rezerwacji lub wysyłek. Dane nadawcy i prywatne logi/eksporty poza Git.
+
+**Godzinny test rzeczywisty trwa**, rozpoczęty 18:15:02 Europe/Warsaw,
+deadline 19:15:02. Spójna osobna kopia pełnej historii i zatwierdzonego PDF,
+RESEARCH_ONLY z DisabledMailProvider i bez gateway. Kontroler testu jawnie
+uruchamia do 6 cykli co 10 minut, do 2 kandydatów i 1 szkicu/cykl; po każdym
+Stop kończy proces, następny restart ma pozostawać bezczynny do jawnego startu.
+To ograniczona diagnostyka z zewnętrznym kontrolerem, nie natywna sesja 8 h.
+Probe wyszukiwarki PASS, restartIdleVerified=true i chronione tabele bez zmian
+po probe i pierwszym cyklu. Cykl 1 COMPLETED 18:17:43: 2 firmy, 1 nowy szkic,
+druga firma BUDGET_DEFERRED, 7 źródeł READ, 8 HTTP, zero błędów źródeł/modelu;
+restartIdleVerified=true, kontrolowany Stop i zakończenie procesu. Wynik godziny, dalszych restartów,
+odłożeń/deduplikacji nie jest jeszcze zaliczony. Raport/stan/końcowy backup
+poza Git. Heartbeat ma przekazać jednorazowy wynik lub przerwanie bez nowego
+Start/Gmaila i potem się wyłączyć. SELF_TEST/pilot czekają na konkretny
+podgląd i osobne uprawnienie do wysyłki; AUTO_POLICY pozostaje wyłączone.
+
+# Krótki publiczny test nowej wersji — 14 października 2026
+
+Na wyraźne zlecenie użytkownika wykonano rzeczywisty Windows RESEARCH_ONLY
+z limitem 5 firm i 15 minut, obejmującym sprawdzenie wyszukiwarki. Windows
+win32/x64, Node 24.19.0; 17:35:42–17:41:16 Europe/Warsaw, **5 min 34 s**.
+Użyto aktualnego builda po pełnym check, fingerprint 134 plików źródeł,
+konfiguracji i testów zgodny przed/po próbie. Nie zmieniano generatora/kodu.
+
+Przed startem oryginalna SQLite integrity=ok, zatrzymany backend, brak aktywnych
+cykli. Profil v4 i 9 faktów APPROVED, jeden projekt DEFERRED; zatwierdzony PDF
+z prawidłowym SHA. SQLite backup API z readonly uchwytu utworzyło spójną osobną
+kopię poza repo; dołączono kopię wyłącznie zatwierdzonego PDF. ResearchJobHunter
+działał w rzeczywistym RESEARCH_ONLY, mail=DisabledMailProvider, bez gateway,
+natywnego providera Google, czytania skrzynki lub wysyłki. Bez nowego zatwierdzania
+materiałów, zmiany OAuth/nadawcy i tokenu panelu. Nie uruchamiano AUTO_POLICY.
+
+Wyszukiwarka **PASS** z potwierdzonym web_search. Cykl **COMPLETED**, **5 nowych
+firm, 2 nowe pełne szkice**, zero przypadków błędów cyklu, źródeł lub modelu.
+22 zapisane rekordy READ, 22 fetches, 1 cache hit, 26 HTTP i 4 przekierowania;
+10 wywołań modelu w cyklu i osobny probe wyszukiwarki. Trzy pominięcia:
+brak zaakceptowanego dowodu działalności powiązanego z tożsamością, kontakt
+QUESTIONS_ONLY oraz brak potwierdzonego emaila. Nie zgadywano adresów ani nie
+obchodzono blokad. Nie wymuszano większej liczby szkiców.
+
+Readonly audyt: 5/5 analizy ponownie walidowane, 4/4 znalezione emaile literalnie
+potwierdzone; 5 nowych, różnych domen i brak konfliktu z zapisaną lokalną historią.
+Bez odczytu Gmaila wynik nie stanowi dowodu braku wcześniejszych kontaktów poza
+tą historią. Oba szkice **kod PASS, review COMPLETED, supported=true, issues=[]**;
+ponowna kontrola kodu i material binding bez problemów lub ostrzeżeń stylu.
+Zapisane zastrzeżenia o niepotwierdzonych warunkach zachowane. Kontakt firmy
+z otwartym zaproszeniem pozostaje GENERAL; formularz kariery nie dowodzi
+przyjmowania CV na ten email. Szkic jest zapytaniem o współpracę.
+
+Wykryto błąd opisu jednego pominięcia: GENERAL o literalnym przeznaczeniu
+„Inne pytania” ma komunikat „Adres rekrutacyjny służy pytaniom”. Typ GENERAL
+nie został zmieniony, szkicu nie utworzono. Przypadek zapisano do dalszego
+przeglądu; zero błędów technicznych nie oznacza braku tej uwagi jakościowej.
+
+Wszystkie tabele oryginalnej SQLite mają identyczne hashe przed/po, integrity=ok.
+Chronione tabele kopii — profil/fakty/CV, historia/blokady, próby/outbox/liczniki
+i shared records — też niezmienione. Zachowane 3 dawne SELF_TEST; zero nowych
+rezerwacji/wysyłek. Program zatrzymany. Pełne dokładne teksty, firmy, adresy,
+źródła, ostrzeżenia, audyt, log i spójny końcowy backup tej diagnostyki zapisano
+wyłącznie w prywatnym katalogu poza Git. Treści raportu porównano z oboma
+zapisanymi szkicami. Nie wykonywano ponownie pełnego check dla samej operacji
+researchu i wpisu dokumentacji.
+
+# Poprawki po nocnym researchu — 14 października 2026
+
+Na polecenie „działaj” zmieniono kod po analizie zapisanych wyników. Literalne
+zaproszenia do pracy/CV/resume nie tracą przeznaczenia przez odmianę czasownika;
+negacja odnosi się do działania, a pytania do właściwego adresu. GENERAL przy
+ACTIVE/OPEN pozostaje zapytaniem. Niedopasowana oferta zachowuje typ i warunki;
+odrębne zapytanie wymaga aktualnej, niezależnej podstawy i właściwego kontaktu.
+Odmowy, sprzedaż, niewłaściwy kanał i historia nadal blokują.
+
+Badawcza paczka jest kwalifikowana przed wyborem szkiców. Trwała przyczyna
+pominięcia odróżnia budżet od blokady; kolejny uprawniony cykl może dokończyć
+szkic z cache, także bez ponownego zwrócenia firmy przez wyszukiwarkę. Zmiana
+profilu/źródła/kontaktu wymaga kontroli. AUTO zachowuje osobny mechanizm małej,
+wznawialnej kolejki i pracę ciągłą bez limitu użytkownika.
+
+Świeżo sprawdzone NEW trafiają do kontekstu wyszukiwania, bez zmiany historii
+kontaktowania. SIZE_LIMIT ma pomiar granicy/bajtów i sześciogodzinny cooldown,
+z jawnym ponowieniem. Znana literalna podstrona może zastąpić za duży root,
+jeśli sama identyfikuje firmę i dowody; błąd root jest zachowany w raporcie,
+nie jest dowodem READ. Limit 1 MiB, TLS/SSRF i dekompresja pozostają chronione.
+UNVERIFIED_COMPANY zapisuje ograniczoną nazwę/cytat/hash i powód odrzucenia.
+
+Osiem godzin oznacza deadline; licznik ośmiu cykli nie skraca sesji. Deadline
+także podczas operacji pozostawia checkpoint i stan zatrzymany. PARTIAL po
+ukończonych pozycjach ma koniec; częściowa kolejka AUTO z PENDING pozostaje
+wznawialna. Raport TXT/JSON obejmuje treści/wersje/kontakty/dowody/warunki,
+powody pominięcia i powiązane błędy. Prywatny zapis jest atomowy, fizyczny
+katalog poza repo sprawdzany, finał ma spójny backup. CLI `research:report`
+używa readonly SQLite, bez konstruktora Store, migracji lub providerów.
+
+Rzeczywisty Windows: przed zmianami brak aktywnego backendu, backup przez
+SQLite backup API z uchwytu readonly, integrity=ok i zgodne hashe wszystkich
+tabel. Oryginalna baza miała 60 firm oraz 3 wcześniejsze próby/outbox/liczniki.
+Nowe testy używają katalogów tymczasowych, fikcyjnych firm, modeli i poczty;
+nie wykonano nowych operacji Gmaila, OAuth, publicznego researchu lub Start.
+Zależności i schemat bazy bez zmian. Zachowany styl i dawne prywatne teksty.
+
+Celowane testy: **20/20 PASS**, szerszy wcześniejszy zestaw **131/131 PASS**.
+Nowe scenariusze są w `research-night.test.ts`, rozszerzenia kontaktów w
+`contact-invitations.test.ts` i `contact-intent.test.ts`. Podczas przygotowania
+odtworzono negację zaproszenia oraz doprecyzowano niezależny dowód/odczyt
+kontaktu w syntetycznych fixture; końcowe celowane przypadki przechodzą.
+Pełny końcowy `npm run check` na fizycznym Windowsie: **457/457 backend,
+12/12 performance Stop, 15/15 UI, typecheck/build PASS**, exit=0 i brak skipped.
+Backend trwał 638771 ms; szeregowa część wydajności 15839 ms; Playwright 48,8 s.
+Fingerprint 134 plików kodu/konfiguracji/testów identyczny przed i po check.
+Doctor DEVELOPMENT/DEMO: win32 x64, Node 24.19.0, SQLite 3.53.4,
+Codex CLI 0.162.0-alpha.17.2, build gotowy. Nie jest to ponowne uruchomienie
+prywatnej instalacji lub nowy publiczny research. CLI eksportu wykonano osobnym
+rzeczywistym procesem na fikcyjnej SQLite: pełny tekst, wszystkie tabele bez zmian.
+
+Końcowy readonly audyt oryginalnej historii: wszystkie tabele identyczne z
+backupem, integrity=ok, 9 APPROVED, zatwierdzony PDF z niezmienionym hashem,
+3 dawne próby/outbox. Prywatny backend nie działa; zero nowej wysyłki, odczytu
+poczty, zmian nadawcy/OAuth/liczników lub Start. Logi/backup/hashe poza repo.
+
+Dwa wcześniejsze uruchomienia przerwano świadomie. Kolejny backend zakończył się 456/457:
+regresja planera ujawniła zmianę odrzucenia niedopasowanej oferty na NEEDS_REVIEW.
+Poprawka zachowuje REJECTED i oddzielnie ocenia podgląd COMPANY_INQUIRY;
+syntetyczny generator rozróżnia teraz ten podgląd od kandydatury na wakat.
+Końcowy zestaw planera/researchu/kontaktów/stylu: **79/79 PASS**, bez zmiany
+dotychczasowych oczekiwań planera. Nie zaliczać nieudanego przebiegu jako check PASS.
+
 # Nocny RESEARCH_ONLY — wynik, 13/14 października 2026
 
 Po wyraźnym poleceniu użytkownika przygotowano jedną 8-godzinną próbę bez

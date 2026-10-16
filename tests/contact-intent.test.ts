@@ -75,6 +75,17 @@ const matrix = [
   ],
   ['F: sprzeczność', 'PROSPECT', 'active', 'conflicting', 'UNKNOWN', false, 'COMPANY_INQUIRY'],
 ] as const;
+test('GENERAL remains a company inquiry even next to ACTIVE or OPEN recruitment evidence', async () => {
+  const { a } = await fixture();
+  for (const type of ['ACTIVE', 'OPEN'] as const) {
+    a.type = type;
+    a.conditions.active.value = 'yes';
+    a.conditions.openInquiry.value = 'yes';
+    assert.equal(a.contact.kind, 'GENERAL');
+    assert.equal(messageContactType(a), 'GENERAL_RECRUITMENT_CONTACT');
+    assert.equal(a.type, type);
+  }
+});
 for (const [name, type, key, value, scope, allowed, intent] of matrix)
   test('contact intent matrix ' + name, async () => {
     const { a, source, proof } = await fixture();

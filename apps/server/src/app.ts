@@ -646,10 +646,13 @@ export async function createApp(options: {
     });
     app.post('/api/research/day', async (request) => {
       const v = z
-        .object({ query: z.string().min(10).max(3000).optional() })
+        .object({
+          query: z.string().min(10).max(3000).optional(),
+          hours: z.number().int().min(2).max(24).default(8),
+        })
         .strict()
         .parse(request.body);
-      await researchService().startDay(v.query);
+      await researchService().startDay(v.query, v.hours);
       return { ok: true };
     });
     app.post('/api/research/trial', async (request) => {
@@ -684,6 +687,7 @@ export async function createApp(options: {
       researchService();
       return store.all('SELECT * FROM research_sources ORDER BY fetched_at DESC LIMIT 100');
     });
+    app.get('/api/research/report', async () => researchService().researchReport());
     app.post<{ Params: { id: string } }>('/api/drafts/:id/review', async (request) => {
       const v = z.object({ version: z.number().int().positive() }).strict().parse(request.body);
       researchService().reviewDraft(request.params.id, v.version);
@@ -695,6 +699,19 @@ export async function createApp(options: {
     });
     app.get('/api/runs', async () => store.all('SELECT * FROM runs ORDER BY started_at DESC'));
     app.get<{ Querystring: { format?: string } }>('/api/reports/export', async (request, reply) => {
+      if (
+        service.mode === 'RESEARCH_ONLY' &&
+        ['txt', 'json'].includes(request.query.format ?? '')
+      ) {
+        const json = request.query.format === 'json';
+        return reply
+          .type(json ? 'application/json; charset=utf-8' : 'text/plain; charset=utf-8')
+          .header(
+            'Content-Disposition',
+            `attachment; filename="JobHunter-research.${json ? 'json' : 'txt'}"`,
+          )
+          .send(json ? researchService().researchReport() : researchService().report('md'));
+      }
       const format = request.query.format === 'csv' ? 'csv' : 'md';
       return reply
         .type(format === 'csv' ? 'text/csv; charset=utf-8' : 'text/markdown; charset=utf-8')

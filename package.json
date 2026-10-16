@@ -20,6 +20,7 @@
     "format": "prettier --write apps packages tests scripts/*.mjs *.ts *.json README.md AGENTS.md docs",
     "smoke:research": "node scripts/research-smoke.mjs",
     "smoke:public": "tsx scripts/public-research-smoke.ts",
+    "research:report": "tsx scripts/research-report.ts",
     "history:local": "tsx scripts/local-history.ts",
     "history:new": "tsx scripts/initialize-local.ts",
     "gmail:connect": "node scripts/gmail.mjs connect",

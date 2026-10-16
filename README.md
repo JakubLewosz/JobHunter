@@ -104,3 +104,33 @@ Na domowym Windowsie `npm run smoke:public -- --approved-profile KATALOG_BAZOWY`
 Poprawny strukturalnie DRAFT jest najpierw zachowany jako materiał niezweryfikowany, z dokładną wersją/hashem i odwołaniami. Błąd review nie usuwa tekstu; ponowienie tego etapu nie generuje maila ponownie. Zmiana treści, profilu, kontaktu lub źródeł unieważnia kontrolę. Raport rozdziela zachowane wersje, negatywne review, błędy wykonania i szkice po kontroli; samo zachowanie tekstu nie oznacza gotowości do wysyłki. Diagnostyka CLI jest ograniczona i oczyszczona, poza repo, bez tokenów/środowiska/zdarzeń treści modelu.
 
 Wyniki świeżych prób i replay, przyczyny oraz granice: [TEST_REPORT](docs/TEST_REPORT.md). npm run check obejmuje typecheck, backend, osobny szeregowy test wydajności Stop (test:performance), build i Playwright na fikcyjnych usługach/tymczasowych bazach. Pełny backend nadal twardo sprawdza brak nowych POST po odwołaniu prawa. Testy opcjonalnego PRIVATE_GIT zachowane. [WINDOWS_SMOKE](docs/WINDOWS_SMOKE.md), [SECURITY](docs/SECURITY.md). CI finalnego SHA potwierdzamy po zakończeniu.
+
+## Badawcza sesja czasowa i raport
+
+RESEARCH_ONLY oferuje sesję 8 lub 15 godzin (API: całkowite 2–24 h), ze stałym
+deadline i kolejnymi cyklami co 15 minut. Jeden cykl zbiera do 10 nowych propozycji
+i tworzy do 5 szkiców, uwzględniając kolejkę odłożeń. Cykle nie nakładają się
+i nie nadrabiają opóźnień serią równoległych zadań. Plan rozszerza kierunki
+według regionu, branży i zatwierdzonych projektów; kierunki nie są dowodami.
+Liczba ukończonych cykli nie skraca tego czasu; brak nowych kierunków, limit, Pauza
+lub Stop mają zapisany osobny powód. Restart wymaga świadomego wznowienia.
+Godzinny test zachowuje jawny wspólny budżet 10 kandydatów i 3 szkiców.
+
+Mała paczka jest kwalifikowana przed wyborem najlepszych szkiców. Firmy odłożone
+po limicie generowania wracają podczas kolejnej uruchomionej pracy badawczej;
+cache analizy nie oznacza gotowej wiadomości. Historia kontaktów i odmowy nadal
+blokują ponowny kontakt. GENERAL zachowuje swój cel także obok ACTIVE/OPEN.
+
+Raport TXT/JSON jest zapisywany poza repo po cyklu i zakończeniu sesji, z końcowym
+spójnym backupem. Panel udostępnia pełne wiadomości i wersje, dowody, warunki,
+powody pomijania oraz błędy. Eksport istniejącej SQLite bez uruchamiania backendu,
+migracji lub providerów:
+
+```powershell
+npm run research:report -- "C:\ścieżka\jobhunter.sqlite" "C:\katalog-poza-repo\raport"
+```
+
+Odczyt raportu nie uruchamia researchu ani wysyłki. Statystyki odróżniają zapisane
+źródła, cache, bezpośrednie próby HTTP i przekierowania; brak dawnego pomiaru to
+brak danych. Techniczne SIZE_LIMIT ma ograniczony cooldown, bez uciętego READ,
+podnoszenia limitu pobierania lub traktowania błędu strony jako odmowy firmy.

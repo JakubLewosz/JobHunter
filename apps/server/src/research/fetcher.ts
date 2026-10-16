@@ -85,6 +85,7 @@ export type Source = {
   error: string | null;
   parser_version?: number;
   address_contexts?: string;
+  metrics?: { httpRequests: number; redirects: number; wireBytes: number; decodedBytes: number };
 };
 export interface SourceReader {
   read(url: string, signal?: AbortSignal): Promise<Source>;
@@ -96,12 +97,15 @@ type Response = {
   contentType?: string;
   body: string;
   retryAfter?: string;
+  wireBytes?: number;
+  decodedBytes?: number;
 };
 export type ReadFailure = {
   category: 'TLS' | 'DNS' | 'TIMEOUT' | 'HTTP' | 'LIMIT' | 'CANCELLED' | 'NETWORK' | 'POLICY';
   code: string;
   stage: string;
   retryable: boolean;
+  size?: { limiter: string; limitBytes: number; wireBytes?: number; decodedBytes?: number };
 };
 export function readFailure(source: Source): ReadFailure | null {
   try {
@@ -173,6 +177,7 @@ export class PublicSourceReader implements SourceReader {
       content_hash: null,
       text: '',
       error: null,
+      metrics: { httpRequests: 0, redirects: 0, wireBytes: 0, decodedBytes: 0 },
     };
     if (this.active >= 2) await new Promise<void>((r) => this.waiting.push(r));
     this.active++;
@@ -204,13 +209,21 @@ export class PublicSourceReader implements SourceReader {
         stage = 'BUDGET';
         this.options.beforeRequest?.(url.href);
         stage = 'HTTP';
+        result.metrics!.httpRequests++;
         const response = await (this.options.transport ?? this.download.bind(this))(
           url,
           addresses[0].address,
           combined,
         );
+        result.metrics!.wireBytes += response.wireBytes ?? Buffer.byteLength(response.body ?? '');
+        result.metrics!.decodedBytes +=
+          response.decodedBytes ?? Buffer.byteLength(response.body ?? '');
         if (Buffer.byteLength(response.body ?? '') > (this.options.maxBytes ?? 1024 * 1024))
-          throw new DomainError('SIZE_LIMIT', 'Limit treści.');
+          throw new DomainError('SIZE_LIMIT', 'Limit treści.', 409, {
+            limiter: 'BODY',
+            limitBytes: this.options.maxBytes ?? 1024 * 1024,
+            decodedBytes: Buffer.byteLength(response.body),
+          });
         result.final_url = url.href;
         result.http_status = response.status;
         if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -219,6 +232,7 @@ export class PublicSourceReader implements SourceReader {
           if (!response.location)
             throw new DomainError('BAD_REDIRECT', 'Brak adresu przekierowania.');
           url = publicURL(new URL(response.location, url).href);
+          result.metrics!.redirects++;
           continue;
         }
         if (response.status === 429) {
@@ -305,11 +319,25 @@ export class PublicSourceReader implements SourceReader {
                     : 'NETWORK';
       result.status =
         category === 'TLS' ? 'TLS_UNTRUSTED' : category === 'DNS' ? 'DNS_FAILED' : code;
+      const size =
+        error instanceof DomainError && code === 'SIZE_LIMIT' && error.details
+          ? {
+              limiter: String(error.details.limiter),
+              limitBytes: Number(error.details.limitBytes),
+              wireBytes: Number(error.details.wireBytes ?? 0),
+              decodedBytes: Number(error.details.decodedBytes ?? 0),
+            }
+          : null;
+      if (size && size.limiter !== 'BODY') {
+        result.metrics!.wireBytes += size.wireBytes;
+        result.metrics!.decodedBytes += size.decodedBytes;
+      }
       result.error = JSON.stringify({
         category,
         code,
         stage,
         retryable: ['TIMEOUT', 'EAI_AGAIN', 'ECONNRESET', 'ETIMEDOUT', 'EPIPE'].includes(code),
+        ...(size ? { size } : {}),
       } satisfies ReadFailure);
       // Independent sites with the same failure suggest an environment problem, never a firm refusal.
       if (['TLS', 'DNS', 'TIMEOUT', 'NETWORK'].includes(category)) {
@@ -361,6 +389,9 @@ export class PublicSourceReader implements SourceReader {
             response.headers['content-encoding'],
             this.options.maxBytes ?? 1024 * 1024,
             signal,
+            (wireBytes, decodedBytes) => {
+              Object.assign(meta, { wireBytes, decodedBytes });
+            },
           ).then(
             (body) => resolve({ ...meta, body }),
             (error) => {
@@ -389,6 +420,7 @@ export async function decodePage(
   encoding: string | undefined,
   max: number,
   signal: AbortSignal,
+  metrics?: (wireBytes: number, decodedBytes: number) => void,
 ): Promise<string> {
   if (encoding && !['gzip', 'deflate', 'br', 'identity'].includes(encoding)) {
     stream.destroy();
@@ -416,16 +448,33 @@ export async function decodePage(
     stream.on('error', fail);
     stream.on('data', (b: Buffer) => {
       wire += b.length;
-      if (wire > max) fail(new DomainError('SIZE_LIMIT', 'Limit pobierania.'));
+      if (wire > max)
+        fail(
+          new DomainError('SIZE_LIMIT', 'Limit pobierania.', 409, {
+            limiter: 'WIRE',
+            limitBytes: max,
+            wireBytes: wire,
+            decodedBytes: size,
+          }),
+        );
     });
     if (decoded !== stream) stream.pipe(decoded as ReturnType<typeof createGunzip>);
     decoded.on('error', fail);
     decoded.on('data', (b: Buffer) => {
       size += b.length;
-      if (size > max) fail(new DomainError('SIZE_LIMIT', 'Limit treści po dekompresji.'));
+      if (size > max)
+        fail(
+          new DomainError('SIZE_LIMIT', 'Limit treści po dekompresji.', 409, {
+            limiter: 'DECOMPRESSED',
+            limitBytes: max,
+            wireBytes: wire,
+            decodedBytes: size,
+          }),
+        );
       else chunks.push(b);
     });
     decoded.on('end', () => {
+      metrics?.(wire, size);
       signal.removeEventListener('abort', abort);
       resolve(Buffer.concat(chunks).toString('utf8'));
     });

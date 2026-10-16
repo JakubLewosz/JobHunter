@@ -134,7 +134,15 @@ export function validateAnalysis(raw: unknown, sources: Source[]): Analysis {
     !verifyQuote(v.companyProof, sources) ||
     !normalizeName(v.companyProof.quote!).includes(normalizeName(v.company))
   )
-    throw new DomainError('UNVERIFIED_COMPANY', 'Nazwa firmy nie wynika z odczytanego źródła.');
+    throw new DomainError(
+      'UNVERIFIED_COMPANY',
+      'Nazwa firmy nie wynika z odczytanego źródła.',
+      409,
+      {
+        result: !verifyQuote(v.companyProof, sources) ? 'QUOTE_NOT_IN_SOURCE' : 'NAME_NOT_IN_QUOTE',
+        sourceId: v.companyProof.sourceId,
+      },
+    );
   if (
     v.type === 'ACTIVE' &&
     (!verifyQuote(v.titleProof, sources) ||
@@ -205,9 +213,10 @@ export function validateAnalysis(raw: unknown, sources: Source[]): Analysis {
     if (v.contact.email && v.contact.kind === 'RECRUITMENT') {
       const purpose = compact(v.contact.proof.quote!).replace(email, '');
       if (
-        !/rekrut|kandydatur|aplikuj|aplikować|nabór|nabor|recruit|career|human resources|dział hr|hr department|(?:wyślij|prześlij|zostaw|send|submit).{0,40}\bcv\b/iu.test(
+        !/rekrut|kandydatur|aplikuj|aplikować|nabór|nabor|recruit|career|human resources|dział hr|hr department/iu.test(
           purpose,
         ) &&
+        !cvInvitation(purpose) &&
         !recruitmentQuestion(purpose) &&
         !recruitmentInvitation(purpose)
       ) {
@@ -229,11 +238,21 @@ export type ContactIntent =
 const recruitmentQuestion = (text: string) =>
   /(?:part of|join).{0,30}(?:our|the) team|dołącz.{0,30}zespoł/iu.test(text) &&
   /ask.{0,30}question|pytani|in doubt/iu.test(text);
+const cvInvitationPattern =
+  /(?:wyślij|wysyłasz|prześlij|przesyłasz|zostaw|send|submit).{0,100}\b(?:cv|resume|résumé)\b/iu;
+const cvRefusal = (text: string) =>
+  /(?:(?:\bnie|do not|don't|never)\s+(?:wyślij|wysył\w*|prześlij|przesył\w*|send|submit)|\bnie\s+(?:wolno|należy)\s+(?:wysyłać|przesyłać)).{0,60}\b(?:cv|resume|résumé)\b/iu.test(
+    text,
+  );
+const cvInvitation = (text: string) => cvInvitationPattern.test(text) && !cvRefusal(text);
 // Purpose follows literal invitation language, never the domain or mailbox prefix.
 const recruitmentInvitation = (text: string) =>
-  /(?:chcesz|chcecie|możesz|zapraszamy|dołącz).{0,65}(?:do nas dołączyć|dołącz.{0,35}(?:do nas|zespoł)|do (?:naszego )?zespoł)|(?:want to |come |you can )?join (?:us|our team|the team)/iu.test(
+  (/\b(?:chcesz|chcecie|możesz|zapraszamy|dołącz).{0,65}(?:do nas dołączyć|dołącz.{0,35}(?:do nas|zespoł)|do (?:naszego )?zespoł)|(?:want to |come |you can )?join (?:us|our team|the team)/iu.test(
     text,
-  ) && /napisz|skontaktuj|write|contact|email/iu.test(text);
+  ) ||
+    (/interested in working with us/iu.test(text) &&
+      /vacanc(?:y|ies)|job|position/iu.test(text))) &&
+  /napisz|skontaktuj|write|contact|email/iu.test(text);
 export function contactUsage(v: Analysis, sources: Source[] = []) {
   const source = sources.find((s) => s.id === v.contact.proof.sourceId && s.status === 'READ');
   let contexts: AddressContext[] = [];
@@ -249,17 +268,28 @@ export function contactUsage(v: Analysis, sources: Source[] = []) {
       c.email.toLowerCase() === v.contact.email?.toLowerCase() &&
       [
         ...compact(c.text).matchAll(
-          /(?:wyślij|prześlij|zostaw|send|submit).{0,100}\bcv\b.{0,120}[^\s@]+@[^\s@]+/giu,
+          /(?:wyślij|wysyłasz|prześlij|przesyłasz|zostaw|send|submit).{0,100}\b(?:cv|resume|résumé)\b.{0,120}?([a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,})/giu,
         ),
       ].some(
         (m) =>
-          m[0].includes(v.contact.email!.toLowerCase()) &&
+          m[1] === v.contact.email!.toLowerCase() &&
+          !cvRefusal(c.text) &&
           !/ask.{0,30}question|pytani/iu.test(m[0]),
       ),
   );
   if (invitation && v.contact.kind === 'RECRUITMENT') return 'RECRUITMENT_APPLICATION';
   const quote = v.contact.proof.quote ?? '';
+  const directQuestions = contexts.some(
+    (c) =>
+      c.email.toLowerCase() === v.contact.email?.toLowerCase() &&
+      [
+        ...compact(c.text).matchAll(
+          /\b(?:pytania|questions)\b.{0,60}?([a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,})/giu,
+        ),
+      ].some((m) => m[1] === v.contact.email?.toLowerCase()),
+  );
   if (
+    (directQuestions && v.contact.kind === 'RECRUITMENT') ||
     recruitmentQuestion(quote) ||
     /zapytaj.{0,40}(?:nabór|nabor)/iu.test(quote) ||
     /(?:pytania.{0,30}rekrut|recruitment questions)/iu.test(quote)
@@ -333,13 +363,75 @@ export function contactPurposeAllowed(v: Analysis, sources: Source[]) {
   );
 }
 export type InquiryBasisSelection = {
-  policyVersion: 2;
+  policyVersion: 4;
   field: 'inquiryBasis' | 'companyActivities' | 'typeProof';
   proof: { sourceId: string; quote: string; explanation: string };
   sourceVersion: { id: string; contentHash: string; parserVersion: number; fetchedAt: string };
   evidenceIds: string[];
   reason: string;
 };
+function describesCompanySoftware(quote: string, context: string, source: Source) {
+  // Exclude negated services and employee growth before looking for provider language.
+  // The saved proof remains the exact original quote, including any limitations.
+  const affirmative = quote
+    .replace(
+      /\bnie\s+(?:tworz|projektu|rozwij|budu|zbud|pisz|łącz|wspier|jeste|jest|produku|oferu|specjalizu|nasz|własn)[^.!?;]*/gu,
+      ' ',
+    )
+    .replace(/\brozwij(?:a|amy|am)\s+się/gu, ' ');
+  const ownedTechnicalSystem =
+    /\bnasz (?:własny )?system (?:zarządzania transportem|tms\b|erp\b|crm\b)/u.test(affirmative);
+  const softwareProduction =
+    /(?:^|[.!?;]\s+)oferujemy wykonanie programów komputerowych\b/u.test(affirmative) ||
+    /(?:^|[.!?;]\s+)specjalizujemy się w (?:produkcji|tworzeniu)(?: i wdrażaniu)? (?:dedykowanych )?systemów informatycznych\b/u.test(
+      affirmative,
+    ) ||
+    /(?:^|[.!?;]\s+)(?:wynikiem|efektem) naszych [^.!?;]{1,80} jest autorskie oprogramowanie\b/u.test(
+      affirmative,
+    );
+  // A passive product description needs a matching product domain/title and technical detail.
+  // This supports a company inquiry; it does not establish in-house development or recruitment.
+  const namedProduct = affirmative.match(
+    /^([\p{L}\p{N}][\p{L}\p{N} .+-]{1,79}?) to (?:zaawansowane )?rozwiązanie on-premise do (?:automatyzacji|automatycznego) przetwarzania dokumentów\b/u,
+  )?.[1];
+  const productName = namedProduct ? normalizeName(namedProduct) : null;
+  const ownProductSite =
+    !!productName &&
+    normalizeName(source.title).includes(productName) &&
+    normalizeName(new URL(source.final_url!).hostname.replace(/^www\./, '').split('.')[0]) ===
+      productName &&
+    /\b(?:rest api|web services)\b/u.test(compact(source.text)) &&
+    /konektor|mechanizm.{0,25}retry|obsług.{0,15}błęd/u.test(compact(source.text)) &&
+    !/career|karier|jobs|rekrut|vacanc/.test(context) &&
+    !/\b(?:nie nasz produkt|nie jest (?:to )?naszym produktem|nie jest to nasz produkt|produkt(?:em)? (?:firmy|dostawcy|zewnętrznego dostawcy)|jesteśmy (?:dystrybutor|reseller)\p{L}*|korzystamy z (?:zakupionego|gotowego) oprogramowania)\b/u.test(
+      compact(source.text),
+    );
+  const activity =
+    ownedTechnicalSystem ||
+    softwareProduction ||
+    /aplikac|oprogramowan|software|automatyz|integrac|\bapi\b|\bsaas\b|piszemy kod|writing code/.test(
+      affirmative,
+    );
+  const provider =
+    /tworzymy|tworzy|projektujemy|projektuje|rozwijamy|rozwija|budujemy|buduje|piszemy|łączymy|we (?:build|develop|create)|dedykowane aplikacje|custom (?:software|applications)|nasz produkt|własny produkt|usługi programistyczne/.test(
+      affirmative,
+    ) ||
+    /\b(?:buduję|tworzę|projektuję|rozwijam|zbudowałem|zbudowaliśmy)[^.!?;]{0,180}(?:aplikac|oprogramowan|automatyz|integrac|narzędzi|platform)/u.test(
+      affirmative,
+    ) ||
+    /\bwspieramy (?:firmy|klientów|partnerów)[^.!?;]{0,80}\bw (?:budowaniu|tworzeniu|rozwijaniu) oprogramowania/u.test(
+      affirmative,
+    ) ||
+    /\bproducent(?:em)? oprogramowania/u.test(affirmative);
+  const ownServicePage =
+    /usług|uslug|oferta|offer|service|products|mvp/.test(context) &&
+    !/career|karier|jobs|rekrut|vacanc/.test(context);
+  // Ownership of a named software system supports an inquiry, not a claim of in-house development.
+  return (
+    activity &&
+    (provider || ownedTechnicalSystem || softwareProduction || ownProductSite || ownServicePage)
+  );
+}
 // One resolver shared by qualification, drafting/review and planner. Inputs are saved READ sources.
 export function resolveInquiryBasis(
   v: Analysis,
@@ -398,25 +490,14 @@ export function resolveInquiryBasis(
       context = compact(source.title + ' ' + new URL(source.final_url).pathname);
     if (
       /privacy|regulamin|polityk.{0,20}prywat|terms|warunki korzystania/.test(context) ||
-      /regulamin|privacy|warunki korzystania|terms of|ignoruj|ignore.{0,30}instruction|agent.{0,30}(?:poleceni|instruction)|nasz klient (?:jest|tworzy)|klient.{0,70}(?:tworzy|rozwija)(?=\s|$|[.,;])|(?:client|customer).{0,70}(?:creates|develops)|our client|wymagania|requirements|kandydat.{0,30}(?:zna|musi)|you must|doświadczeni.{0,25}(?:komerc|wymag)/.test(
+      /regulamin|privacy|warunki korzystania|terms of|ignoruj|ignore.{0,30}instruction|agent.{0,30}(?:poleceni|instruction)|nasz (?:klient|dostawca|partner) (?:jest|tworzy|rozwija|buduje)|jako (?:klient|użytkownik)|testimonial|klient.{0,70}(?:tworzy|rozwija)(?=\s|$|[.,;])|(?:client|customer).{0,70}(?:creates|develops)|our client|wymagania|requirements|kandydat.{0,30}(?:zna|musi)|you must|doświadczeni.{0,25}(?:komerc|wymag)/.test(
         quote,
       )
     )
       continue;
-    const activity =
-      /aplikac|oprogramowan|software|automatyz|integrac|\bapi\b|\bsaas\b|piszemy kod|writing code/.test(
-        quote,
-      );
-    const provider =
-      /tworzymy|tworzy|projektujemy|projektuje|rozwijamy|rozwija|budujemy|buduje|piszemy|łączymy|we (?:build|develop|create)|dedykowane aplikacje|custom (?:software|applications)|nasz produkt|własny produkt|usługi programistyczne/.test(
-        quote,
-      );
-    const ownServicePage =
-      /usług|uslug|oferta|offer|service|products|mvp/.test(context) &&
-      !/career|karier|jobs|rekrut|vacanc/.test(context);
-    if (!activity || (!provider && !ownServicePage)) continue;
+    if (!describesCompanySoftware(quote, context, source)) continue;
     return {
-      policyVersion: 2,
+      policyVersion: 4,
       field: candidate.field,
       proof: { sourceId: source.id, quote: p.quote!, explanation: p.explanation },
       sourceVersion: {
@@ -456,6 +537,7 @@ export function contactEligibility(
     .map((s) => s.text)
     .join('\n');
   if (
+    cvRefusal(text) ||
     /nie (?:przyjmujemy|akceptujemy|rozpatrujemy) (?:spontanicznych )?(?:zgłoszeń|kandydatur)|wyłącznie (?:przez formularz|przez portal)|aplikuj tylko przez|nie (?:przyjmujemy|akceptujemy).{0,40}(?:mail|e-mail)|do not (?:send|email).{0,30}(?:cv|applications)|do not accept (?:unsolicited )?(?:applications|candidates)|applications only (?:via|through) (?:the )?(?:form|portal)/iu.test(
       text,
     )
@@ -467,7 +549,7 @@ export function contactEligibility(
     return result(
       false,
       'CONDITIONS_INQUIRY',
-      'Adres rekrutacyjny służy pytaniom; obecny proces aplikacji z CV nie jest dopuszczony.',
+      'Adres służy pytaniom; brak potwierdzonego zaproszenia do aplikacji z CV.',
     );
   if (Object.values(v.conditions).some((c) => c.value === 'conflicting'))
     return result(false, 'COMPANY_INQUIRY', 'Sprzeczne warunki wymagają rozstrzygnięcia.');

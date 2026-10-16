@@ -18,7 +18,7 @@ Dowody mają pierwotny/końcowy URL, czas, metodę, tekst/fragment i hash. Wersj
 
 Materiały mają jawne wersje i zatwierdzenie. Publiczny GitHub nie jest działającym publicznym demo; projekt portfolio nie jest produkcją. Kandydat jest uczniem technikum, nie studentem uczelni. Nie dopisujemy doświadczenia, stawek, egzaminów ani kompetencji. CV wskazuje i zatwierdza użytkownik; sprawdzamy SHA-256 niezmiennej kopii. Zmiana faktów/CV/nadawcy wymaga ponownego sprawdzenia polityki.
 
-Styl pozostaje w docs/MESSAGE_STYLE.md: przedstawienie, prawdziwe nawiązanie, zwykle jeden projekt, dostępność, jedno pytanie, GitHub i podpis. Bez sprzedaży usług, marketingu, prezentacji i wypełniaczy. AI/Codex opisujemy naturalnie, w zatwierdzonym zakresie.
+Styl pozostaje w docs/MESSAGE_STYLE.md: otwarcie i kolejność wynikają z konkretnej firmy i celu kontaktu, bez stałej konstrukcji ani losowego parafrazowania. Jedna prośba, rzeczowe powiązanie działalności zwykle z jednym projektem, kompletna edukacja/cel/dostępność, GitHub i podpis. Przy potwierdzonej ofercie wiadomość odnosi się do stanowiska. Bez sprzedaży usług, marketingu, prezentacji, zbędnych list technologii i wypełniaczy. AI/Codex opisujemy naturalnie, w zatwierdzonym zakresie.
 
 ## Tryby i polityka
 

@@ -30,11 +30,13 @@ import {
   type SourceReader,
 } from './fetcher.js';
 import { normalizeResearchURL, normalizeQuery } from './query-planner.js';
+import { researchReport, researchReportText, writeResearchReport } from './report.js';
 import {
   checkAvailability,
   checkMessageRules,
   messageContactType,
   messagePrompt,
+  recentMessageContext,
   semanticReviewPrompt,
 } from './message-policy.js';
 import {
@@ -53,7 +55,8 @@ import {
   type Analysis,
 } from './contracts.js';
 import { parserVersion } from './html.js';
-const analysisPolicyVersion = 6;
+import { sessionQueries } from './session-plan.js';
+const analysisPolicyVersion = 8;
 const researchInstructions =
   baseResearchInstructions +
   '\nZdalna obsługa klientów lub spotkania online nie potwierdzają zdalnej pracy kandydata. Ceny usług nie potwierdzają wynagrodzenia. Warunki zatrudnienia wymagają osobnych dowodów; inaczej pozostają unknown.';
@@ -176,7 +179,12 @@ export class ResearchJobHunter extends JobHunter {
     // After a process restart work requires an explicit resume; do not burst missed cycles.
     store.exec("UPDATE runs SET status='PAUSED' WHERE status IN ('QUEUED','RUNNING')");
     store.set('paused', true);
-    store.set('researchDay', { ...store.get<Row>('researchDay', {}), active: false });
+    const interrupted = store.get<Row>('researchDay', {});
+    store.set('researchDay', {
+      ...interrupted,
+      active: false,
+      ...(interrupted.active ? { finalReason: 'PROCESS_RESTART', finishedAt: this.now() } : {}),
+    });
     store.set('nextCycle', null);
   }
   protected recordCall(
@@ -491,6 +499,24 @@ export class ResearchJobHunter extends JobHunter {
     return source;
   }
   private failedReads = new Map<string, { at: number; source: Source }>();
+  private observedRead(kind: 'FETCH' | 'CACHE' | 'FAILURE_CACHE', source: Source) {
+    const key = `readerMetrics:${this.activeRunId ?? 'manual'}`;
+    const stats = this.store.get<Row>(key, {});
+    stats[kind] = (stats[kind] ?? 0) + 1;
+    if (kind === 'FETCH') {
+      if (source.metrics)
+        for (const [name, value] of Object.entries(source.metrics))
+          stats[name] = (stats[name] ?? 0) + value;
+      else stats.missingMeasurements = (stats.missingMeasurements ?? 0) + 1;
+    }
+    this.store.set(key, stats);
+    this.store.set(`sourceRead:${source.original_url}`, {
+      at: this.now(),
+      result: kind,
+      sourceId: source.id,
+    });
+    return source;
+  }
   private sourceIsCurrent(source: Source) {
     return !this.store.one(
       'SELECT id FROM research_sources WHERE (original_url IN (?,?) OR final_url IN (?,?)) AND fetched_at>? AND (status<>? OR content_hash IS NOT ? OR final_url IS NOT ?) LIMIT 1',
@@ -518,14 +544,30 @@ export class ResearchJobHunter extends JobHunter {
       this.sourceIsCurrent(existing as Source) &&
       (existing.method !== 'PUBLIC_HTTP' || existing.parser_version === parserVersion)
     )
-      return existing as Source;
+      return this.observedRead('CACHE', existing as Source);
     signal?.throwIfAborted();
+    const failure = this.store.one(
+      'SELECT * FROM research_sources WHERE original_url=? OR final_url=? ORDER BY fetched_at DESC,rowid DESC LIMIT 1',
+      normalized,
+      normalized,
+    );
+    const retryKey = `sourceRetry:${normalizeResearchURL(normalized)}`;
+    const explicitRetry = this.store.get(retryKey, false);
+    if (explicitRetry) this.store.set(retryKey, false);
+    if (
+      !explicitRetry &&
+      failure?.status === 'SIZE_LIMIT' &&
+      Date.parse(failure.fetched_at) > this.clock().getTime() - 6 * 3600000
+    ) {
+      return this.observedRead('FAILURE_CACHE', failure as Source);
+    }
     const recentFailure = this.failedReads.get(normalized);
-    if (recentFailure && Date.now() - recentFailure.at < 30000) return recentFailure.source;
-    let source = await this.reader.read(normalized, signal);
+    if (!explicitRetry && recentFailure && this.clock().getTime() - recentFailure.at < 30000)
+      return this.observedRead('FAILURE_CACHE', recentFailure.source);
+    let source = this.observedRead('FETCH', await this.reader.read(normalized, signal));
     if (retryableRead(source)) {
       this.saveSource(source);
-      source = await this.reader.read(normalized, signal);
+      source = this.observedRead('FETCH', await this.reader.read(normalized, signal));
     }
     const saved = this.saveSource(source);
     if (saved.status === 'READER_ENVIRONMENT')
@@ -536,7 +578,7 @@ export class ResearchJobHunter extends JobHunter {
     if (this.failedReads.size >= 256)
       this.failedReads.delete(this.failedReads.keys().next().value!);
     if (saved.status !== 'READ')
-      this.failedReads.set(normalized, { at: Date.now(), source: saved });
+      this.failedReads.set(normalized, { at: this.clock().getTime(), source: saved });
     return saved;
   }
   async importURL(url: string, contactUrl?: string) {
@@ -557,12 +599,28 @@ export class ResearchJobHunter extends JobHunter {
       this.controller = undefined;
     }
     const readable = sources.filter((s) => s.status === 'READ');
-    if (!readable.some((s) => s.original_url === normalized || s.final_url === normalized))
+    const primary = readable.find(
+      (s) => s.original_url === normalized || s.final_url === normalized,
+    );
+    const fallback =
+      !primary && sources[0].status === 'SIZE_LIMIT'
+        ? readable.find((s) => new URL(s.original_url).origin === new URL(normalized).origin)
+        : null;
+    if (!primary && !fallback)
       return { sources, queued: false, detail: 'Brak odczytanego źródła; analiza niedostępna.' };
-    return this.importSavedSources(
-      normalized,
+    const result = this.importSavedSources(
+      fallback?.original_url ?? normalized,
       readable.map((s) => s.id),
     );
+    if (fallback && result.runId) {
+      const item = this.store.one('SELECT id FROM research_items WHERE run_id=?', result.runId)!;
+      this.store.set(`sourceFallback:${item.id}`, {
+        requestedURL: normalized,
+        analysisURL: fallback.original_url,
+        failedSourceIds: sources.filter((s) => s.status !== 'READ').map((s) => s.id),
+      });
+    }
+    return result;
   }
   importSavedSources(url: string, sourceIds: string[]) {
     const normalized = publicURL(url).href;
@@ -757,6 +815,23 @@ export class ResearchJobHunter extends JobHunter {
         runId,
         this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
       );
+      if (query && this.mode === 'RESEARCH_ONLY') {
+        const deferred = this.store
+          .all("SELECT value FROM app_state WHERE key LIKE 'researchDeferred:%'")
+          .map((row) => JSON.parse(row.value))
+          .filter(Boolean)
+          .sort((a, b) => a.queuedAt.localeCompare(b.queuedAt));
+        for (const entry of deferred.slice(0, Math.min(maxDrafts, 5))) {
+          const previous = this.store.one('SELECT * FROM research_items WHERE id=?', entry.itemId);
+          if (!previous) continue;
+          const sources = this.sourcesFor(previous);
+          this.addItem(
+            runId,
+            previous.url,
+            this.usableResearchSources(sources) ? JSON.parse(previous.source_ids) : [],
+          );
+        }
+      }
     });
     return runId;
   }
@@ -819,26 +894,39 @@ export class ResearchJobHunter extends JobHunter {
       );
     this.enqueue(`search-${id()}`, query, 3);
   }
-  async startDay(query?: string, hours: 1 | 8 = 8) {
-    this.minimalProfile();
+  async startDay(query?: string, hours = 8) {
+    const profile = this.minimalProfile();
+    z.number().int().min(1).max(24).parse(hours);
     if (this.store.get<Row>('researchDay', {}).active) return;
     if (this.researching || this.probing) throw new DomainError('BUSY', 'Codex już pracuje.');
     if (!this.capability('searchCapability').tested)
       throw new DomainError('SEARCH_NOT_TESTED', 'Najpierw sprawdź wyszukiwanie w Połączeniach.');
-    const queries = query
+    const trialQueries = query
       ? [query, ...dayQueries.map((topic) => `${query}. Kolejny kierunek: ${topic}`)]
       : dayQueries;
+    const plan =
+      hours === 1
+        ? null
+        : sessionQueries(
+            dayQueries,
+            query,
+            profile.facts.map((f) => f.key),
+          );
     this.store.set('researchDay', {
+      sessionId: id(),
+      startedAt: this.now(),
       active: true,
       hours,
-      expiresAt: iso(new Date(Date.now() + hours * 3600000)),
+      expiresAt: iso(new Date(this.clock().getTime() + hours * 3600000)),
       nextAt: this.now(),
-      intervalMinutes: hours === 1 ? 10 : 60,
-      maxCycles: hours === 1 ? 6 : 8,
+      intervalMinutes: hours === 1 ? 10 : 15,
+      maxDraftsPerCycle: hours === 1 ? 3 : 5,
+      ...(plan ? { queryPlanVersion: 1, querySeed: query, queryCursor: plan.cursor } : {}),
+      maxCycles: hours === 1 ? 6 : null,
       runIds: [],
       cycles: 0,
       nextTopic: 0,
-      queries: queries.slice(0, 8),
+      queries: plan?.queries ?? trialQueries.slice(0, 8),
     });
     this.store.set('stopped', false);
     this.store.set('paused', false);
@@ -846,26 +934,33 @@ export class ResearchJobHunter extends JobHunter {
       await this.start();
       const work = this.store.get<Row>('researchDay', {});
       const run = this.store.one("SELECT id FROM runs WHERE status='QUEUED'")!;
-      if (hours === 1)
-        this.store.exec(
-          'UPDATE research_run_config SET max_drafts=MIN(max_drafts,3) WHERE run_id=?',
-          run.id,
-        );
+      this.store.exec(
+        'UPDATE research_run_config SET max_drafts=? WHERE run_id=?',
+        hours === 1
+          ? Math.min(
+              this.store.one('SELECT max_drafts FROM research_run_config WHERE run_id=?', run.id)!
+                .max_drafts,
+              3,
+            )
+          : 5,
+        run.id,
+      );
       this.store.set('researchDay', {
         ...work,
         cycles: 1,
         runIds: [run.id],
-        nextAt: iso(new Date(Date.now() + work.intervalMinutes * 60000)),
+        nextAt: iso(new Date(this.clock().getTime() + work.intervalMinutes * 60000)),
       });
     } else this.scheduleDayCycle();
     this.event(
       'DAY_STARTED',
       hours === 1
         ? 'Rozpoczęto godzinny test: do 10 kandydatów i 3 szkiców łącznie, kolejne kierunki co 10 minut. Zero wysyłek.'
-        : 'Użytkownik uruchomił szukanie firm na 8 godzin. Maksymalnie 8 małych cykli, bez wysyłek.',
+        : `Użytkownik uruchomił szukanie firm na ${hours} godzin, kolejne kierunki co 15 minut, do 5 szkiców na cykl, bez wysyłek.`,
       null,
       'user',
     );
+    this.persistResearchReport();
   }
   private sessionUsage(work: Row) {
     const runs = JSON.stringify(work.runIds ?? []);
@@ -894,8 +989,10 @@ export class ResearchJobHunter extends JobHunter {
     this.store.set('researchDay', {
       ...work,
       active: true,
-      queries: dayQueries,
-      nextTopic: 0,
+      finalReason: null,
+      finishedAt: null,
+      queries: work.queries ?? dayQueries,
+      nextTopic: work.nextTopic ?? 0,
     });
     this.store.set('stopped', false);
     this.store.set('paused', false);
@@ -908,56 +1005,90 @@ export class ResearchJobHunter extends JobHunter {
     );
   }
   private scheduleDayCycle() {
-    const work = this.store.get<Row>('researchDay', {});
+    let work = this.store.get<Row>('researchDay', {});
     if (!work.active) return;
     const usage = this.sessionUsage(work);
     if (
       work.expiresAt <= this.now() ||
-      work.cycles >= (work.maxCycles ?? 8) ||
+      (typeof work.maxCycles === 'number' && work.cycles >= work.maxCycles) ||
       (work.hours === 1 && (usage.candidates >= 10 || usage.drafts >= 3))
     ) {
-      this.store.set('researchDay', { ...work, active: false });
+      this.store.set('researchDay', {
+        ...work,
+        active: false,
+        finishedAt: this.now(),
+        finalReason: work.expiresAt <= this.now() ? 'DEADLINE' : 'SESSION_BUDGET',
+      });
       this.store.set('workerStatus', work.hours === 1 ? 'TRIAL_FINISHED' : 'DAY_FINISHED');
       this.store.set('stopped', true);
       this.event('SESSION_FINISHED', 'Sesja zakończona. Wyniki zapisane; zero wysyłek.');
+      this.persistResearchReport();
       return;
     }
     if (work.nextAt > this.now()) return;
     const profile = this.minimalProfile();
     let topic = work.nextTopic;
-    while (
-      topic < work.queries.length &&
-      this.store.one(
-        "SELECT id FROM research_queries WHERE query=? AND profile_hash=? AND status='DONE' AND updated_at>?",
-        work.queries[topic],
-        profile.hash,
-        iso(new Date(Date.now() - 86400000)),
+    while (true) {
+      if (topic >= work.queries.length && work.queryPlanVersion === 1) {
+        const next = sessionQueries(
+          dayQueries,
+          work.querySeed,
+          profile.facts.map((f) => f.key),
+          work.queryCursor,
+          64,
+        );
+        if (next.queries.length) {
+          work = { ...work, queries: [...work.queries, ...next.queries], queryCursor: next.cursor };
+          this.store.set('researchDay', work);
+        }
+      }
+      if (
+        topic >= work.queries.length ||
+        !this.store.one(
+          "SELECT id FROM research_queries WHERE query=? AND profile_hash=? AND status='DONE' AND updated_at>?",
+          work.queries[topic],
+          profile.hash,
+          iso(new Date(this.clock().getTime() - 86400000)),
+        )
       )
-    )
+        break;
       topic++;
+    }
     if (topic >= work.queries.length) {
-      this.store.set('researchDay', { ...work, active: false });
+      this.store.set('researchDay', {
+        ...work,
+        active: false,
+        finishedAt: this.now(),
+        finalReason: 'NO_NEW_QUERIES',
+      });
       this.store.set('workerStatus', 'NO_NEW_QUERIES');
+      this.store.set('stopped', true);
+      this.persistResearchReport();
       return;
     }
     const runId = this.enqueue(
       `day-${id()}`,
       work.queries[topic],
-      work.hours === 1 ? 3 - usage.drafts : 3,
+      work.hours === 1 ? 3 - usage.drafts : (work.maxDraftsPerCycle ?? 3),
     );
     this.store.set('researchDay', {
       ...work,
       runIds: [...(work.runIds ?? []), runId],
       cycles: work.cycles + 1,
       nextTopic: topic + 1,
-      nextAt: iso(new Date(Date.now() + (work.intervalMinutes ?? 60) * 60000)),
+      nextAt: iso(new Date(this.clock().getTime() + (work.intervalMinutes ?? 60) * 60000)),
     });
   }
   override control(action: 'pause' | 'stop' | 'emergency-stop' | 'resume-sender') {
     if (action === 'resume-sender') this.requireDemo();
     this.controller?.abort();
     const dayWork = this.store.get<Row>('researchDay', {});
-    this.store.set('researchDay', { ...dayWork, active: false });
+    this.store.set('researchDay', {
+      ...dayWork,
+      active: false,
+      finishedAt: this.now(),
+      finalReason: action === 'pause' ? 'PAUSED' : 'STOPPED',
+    });
     if (action === 'stop' || action === 'emergency-stop') {
       // Keep checkpoints resumable. No send approvals or transport exist in this mode.
       this.store.set('stopped', true);
@@ -972,6 +1103,7 @@ export class ResearchJobHunter extends JobHunter {
     );
     this.store.set('nextCycle', null);
     this.event('CONTROL', 'Przerwano własne zadanie; zapisane etapy można wznowić.', null, 'user');
+    if (!this.researching && !this.probing) this.persistResearchReport();
   }
   override updateProfile(input: unknown) {
     this.controller?.abort();
@@ -1225,12 +1357,12 @@ export class ResearchJobHunter extends JobHunter {
     // No hash normalization: retain the original, proven package and source order.
     const reusable =
       policy === analysisPolicyVersion &&
-      (!d ||
-        (checked?.context_hash === this.materialBinding(d) &&
-          checked.code_status === 'PASS' &&
-          checked.review_status === 'COMPLETED' &&
-          JSON.parse(d.semantic_review).supported === true &&
-          (this.mode !== 'AUTO_POLICY' || oldScope === newScope)));
+      !!d &&
+      checked?.context_hash === this.materialBinding(d) &&
+      checked.code_status === 'PASS' &&
+      checked.review_status === 'COMPLETED' &&
+      JSON.parse(d.semantic_review).supported === true &&
+      (this.mode !== 'AUTO_POLICY' || oldScope === newScope);
     this.store.atomic(() => {
       this.store.exec(
         'UPDATE research_items SET source_ids=?,analysis=?,company_id=?,opportunity_id=?,stage=? WHERE id=?',
@@ -1436,8 +1568,13 @@ export class ResearchJobHunter extends JobHunter {
       }
       applyCandidateConstraints(v, this.minimalProfile());
       const q = qualifyReal(v);
+      const eligibility = contactEligibility(v, sources);
+      this.store.set(`researchContactIntent:${item.id}`, {
+        ...eligibility,
+        offerDecision: q.decision,
+        at: this.now(),
+      });
       if (this.mode === 'AUTO_POLICY') {
-        const eligibility = contactEligibility(v, sources);
         if (eligibility.allowed) {
           q.decision = `READY_${eligibility.intent}`;
           q.reasons.unshift(`Intencja kontaktu: ${eligibility.intent}. ${eligibility.reason}`);
@@ -1740,6 +1877,76 @@ export class ResearchJobHunter extends JobHunter {
     });
     return true;
   }
+  private draftDisposition(item: Row, reason: string) {
+    const key = `researchDeferred:${item.company_id}`;
+    const previous = this.store.get<Row | null>(key, null);
+    const value = {
+      reason,
+      itemId: item.id,
+      companyId: item.company_id,
+      opportunityId: item.opportunity_id,
+      profileHash: this.profile().profile_hash,
+      at: this.now(),
+      queuedAt: previous?.queuedAt ?? this.now(),
+    };
+    this.store.set(`draftDisposition:${item.id}`, value);
+    if (reason === 'BUDGET_DEFERRED') this.store.set(key, value);
+    else if (previous) this.store.set(key, null);
+  }
+  private draftPriority(item: Row) {
+    try {
+      const a = validateAnalysis(JSON.parse(item.analysis), this.sourcesFor(item));
+      const contact = contactEligibility(a, this.sourcesFor(item));
+      if (!contact.allowed || this.companyHistoryBlocked(item.company_id)) return -1;
+      const intent = {
+        APPLICATION: 100,
+        OPEN_APPLICATION: 80,
+        CONDITIONS_INQUIRY: 60,
+        COMPANY_INQUIRY: 20,
+      };
+      return (
+        intent[contact.intent] +
+        (a.contact.kind === 'RECRUITMENT' ? 10 : 0) +
+        Math.max(
+          0,
+          ...projectSelection(this.minimalProfile().facts, a).selected.map((p) => p.score),
+        )
+      );
+    } catch {
+      return -1;
+    }
+  }
+  private itemFailure(item: Row, error: unknown, signal: AbortSignal) {
+    this.finishAnalysis(item, false);
+    if (
+      signal.aborted ||
+      (error instanceof DomainError &&
+        [
+          'READER_ENVIRONMENT',
+          'CODEX_LIMIT',
+          'CODEX_LOGIN',
+          'CLI_MISSING',
+          'CODEX_CONFIGURATION',
+          'ISOLATION_FAILED',
+          'PROFILE_CHANGED',
+          'CODEX_TIMEOUT',
+          'CODEX_TOOLS',
+          'CLI_START',
+        ].includes(error.code))
+    )
+      throw error;
+    this.store.exec(
+      "UPDATE research_items SET status='ERROR',error=?,attempts=attempts+1,updated_at=? WHERE id=?",
+      error instanceof DomainError ? error.code : 'INVALID_MODEL_RESULT',
+      this.now(),
+      item.id,
+    );
+    this.event(
+      'ITEM_ERROR',
+      'Zapisano błąd pojedynczego kandydata; pozostałe wyniki pozostają w bazie.',
+      item.id,
+    );
+  }
   private async generate(item: Row, signal: AbortSignal) {
     const o = this.store.one(
       'SELECT o.*,c.history_status,c.suppression_reason,t.email,t.kind,t.verification_status FROM opportunities o JOIN companies c ON c.id=o.company_id LEFT JOIN contacts t ON t.id=o.contact_id WHERE o.id=?',
@@ -1748,20 +1955,38 @@ export class ResearchJobHunter extends JobHunter {
     const analysis = validateAnalysis(JSON.parse(item.analysis), this.sourcesFor(item));
     const recruitmentContact =
       o.kind === 'RECRUITMENT' && o.verification_status === 'VERIFIED_PUBLIC';
+    const eligibility = contactEligibility(analysis, this.sourcesFor(item));
     const prospectContact =
-      (this.mode === 'AUTO_POLICY'
-        ? contactEligibility(analysis, this.sourcesFor(item)).allowed
-        : o.type === 'PROSPECT' && analysis.type === 'PROSPECT') &&
+      eligibility.allowed &&
       o.kind === 'GENERAL' &&
       analysis.contact.kind === 'GENERAL' &&
       analysis.contact.email?.toLowerCase() === o.email;
+    const blocked = this.companyHistoryBlocked(o.company_id);
+    const separateInquiry =
+      this.mode === 'RESEARCH_ONLY' &&
+      analysis.type === 'ACTIVE' &&
+      analysis.conditions.active.value === 'yes' &&
+      eligibility.allowed &&
+      eligibility.intent === 'COMPANY_INQUIRY';
     if (
-      o.decision === 'REJECTED' ||
+      (o.decision === 'REJECTED' && !separateInquiry) ||
       !o.email ||
+      !eligibility.allowed ||
       !(recruitmentContact || prospectContact) ||
-      this.companyHistoryBlocked(o.company_id)
-    )
+      blocked
+    ) {
+      this.draftDisposition(
+        item,
+        blocked
+          ? 'HISTORY_BLOCKED'
+          : o.decision === 'REJECTED'
+            ? 'REJECTED'
+            : !o.email
+              ? 'NO_CONTACT'
+              : 'CONTACT_NOT_ALLOWED',
+      );
       return;
+    }
     const existing = this.store.one(
       'SELECT d.*,r.profile_hash FROM drafts d JOIN research_drafts r ON r.draft_id=d.id WHERE d.company_id=?',
       o.company_id,
@@ -1822,8 +2047,10 @@ export class ResearchJobHunter extends JobHunter {
       if (
         !this.draftMaterialIssues(existing).length ||
         (material && ['PENDING', 'ERROR', 'RUNNING'].includes(material.review_status))
-      )
+      ) {
+        this.draftDisposition(item, 'REUSED');
         return;
+      }
     }
     const count = this.store.get<number>(
       `draftedInRun:${item.run_id}`,
@@ -1833,7 +2060,10 @@ export class ResearchJobHunter extends JobHunter {
       )!.n,
     );
     const config = this.store.one('SELECT * FROM research_run_config WHERE run_id=?', item.run_id)!;
-    if (count >= config.max_drafts && !regeneration) return;
+    if (count >= config.max_drafts && !regeneration) {
+      this.draftDisposition(item, 'BUDGET_DEFERRED');
+      return;
+    }
     const evidence = this.store.all(
       'SELECT e.id,e.fragment,e.canonical_url,r.source_id AS sourceId FROM evidence e JOIN research_evidence r ON r.evidence_id=e.id WHERE e.company_id=? AND r.source_id IN (SELECT value FROM json_each(?))',
       o.company_id,
@@ -1863,8 +2093,10 @@ export class ResearchJobHunter extends JobHunter {
         item.run_id,
         signal,
       ))
-    )
+    ) {
+      this.draftDisposition(item, 'REUSED');
       return;
+    }
     const template = this.profile().message_template;
     const recent = this.store
       .all(
@@ -1872,18 +2104,15 @@ export class ResearchJobHunter extends JobHunter {
         this.campaignId,
         existing?.id ?? '',
       )
-      .map((d) => ({
-        subject: d.subject,
-        opening: d.body.split('\n\n').slice(1, 2).join(' '),
-        question: d.body.split('\n').find((line: string) => line.trim().endsWith('?')) ?? '',
-      }));
+      .map(recentMessageContext);
     const prompt =
       researchInstructions +
       '\n' +
       messagePrompt({
         profile: draftProfile,
         analysis,
-        qualification: o.decision,
+        qualification:
+          o.decision === 'REJECTED' && separateInquiry ? 'PREVIEW_COMPANY_INQUIRY' : o.decision,
         evidence,
         history: o.history_status,
         template,
@@ -1999,6 +2228,7 @@ export class ResearchJobHunter extends JobHunter {
       });
     });
     await this.reviewStoredDraft(draftId, version, item.run_id, signal);
+    this.draftDisposition(item, 'DRAFTED');
   }
   private materialBinding(d: Row) {
     const profile = this.profile();
@@ -2492,7 +2722,7 @@ export class ResearchJobHunter extends JobHunter {
       1,
       Math.min(
         this.campaign().duration_minutes * 60000 - config.elapsed_ms,
-        dayWork.active ? new Date(dayWork.expiresAt).getTime() - Date.now() : Infinity,
+        dayWork.active ? new Date(dayWork.expiresAt).getTime() - this.clock().getTime() : Infinity,
       ),
     );
     // AUTO_POLICY has no inherited research-trial deadline. Each provider call
@@ -2537,7 +2767,9 @@ export class ResearchJobHunter extends JobHunter {
         const r = await this.search.search(
           `${config.search_input}\nAktualny zatwierdzony cel, dostępność i projekty: ${JSON.stringify({ goal: p.goal, availabilityMode: p.availabilityMode, hoursApprox: p.hoursApprox, hoursMin: p.hoursMin, hoursMax: p.hoursMax, facts: p.facts.filter((f) => ['education', 'availability', 'contract', ...projectKeys].includes(f.key)) })}\nJuż sprawdzone domeny: ${this.store
             .all(
-              "SELECT primary_domain FROM companies WHERE primary_domain IS NOT NULL AND history_status<>'NEW' ORDER BY updated_at DESC LIMIT 100",
+              "SELECT primary_domain FROM companies WHERE primary_domain IS NOT NULL AND (history_status<>'NEW' OR id IN (SELECT i.company_id FROM research_items i JOIN research_extractions x ON x.item_id=i.id WHERE x.profile_hash=? AND i.updated_at>?)) ORDER BY updated_at DESC LIMIT 100",
+              p.hash,
+              iso(new Date(this.clock().getTime() - 86400000)),
             )
             .map((c) => c.primary_domain)
             .join(', ')}\nOstatnie wykonane zapytania: ${recent
@@ -2559,9 +2791,13 @@ export class ResearchJobHunter extends JobHunter {
             work.active && work.hours === 1
               ? Math.min(2, Math.max(0, 10 - this.sessionUsage(work).candidates))
               : 10;
+          const alreadyQueued = this.store.one(
+            'SELECT count(*) n FROM research_items WHERE run_id=?',
+            run.id,
+          )!.n;
           for (const candidate of r.urls.slice(
             0,
-            Math.min(candidateLimit, this.campaign().max_candidates),
+            Math.max(0, Math.min(candidateLimit, this.campaign().max_candidates - alreadyQueued)),
           )) {
             try {
               this.addItem(
@@ -2630,6 +2866,14 @@ export class ResearchJobHunter extends JobHunter {
               sources.push(await this.readSource(u.href, signal));
               signal.throwIfAborted();
             }
+            const readable = sources.filter((s) => s.status === 'READ');
+            if (readable.length) {
+              this.store.set(`sourceFallback:${item.id}`, {
+                requestedURL: item.url,
+                failedSourceIds: sources.filter((s) => s.status !== 'READ').map((s) => s.id),
+              });
+              sources = readable;
+            }
             signal.throwIfAborted();
             this.store.exec(
               "UPDATE research_items SET source_ids=?,stage='EXTRACT',updated_at=? WHERE id=?",
@@ -2688,12 +2932,30 @@ export class ResearchJobHunter extends JobHunter {
             try {
               v = applyCandidateConstraints(validateAnalysis(raw, sources), this.minimalProfile());
             } catch (e) {
-              if (e instanceof DomainError && e.code === 'UNVERIFIED_TITLE')
+              if (
+                e instanceof DomainError &&
+                ['UNVERIFIED_TITLE', 'UNVERIFIED_COMPANY'].includes(e.code)
+              )
                 this.store.set(`extractionFailure:${item.id}`, {
                   code: e.code,
-                  title: cleanDiagnostic(raw.title ?? '').slice(0, 200),
-                  sourceId: cleanDiagnostic(raw.titleProof.sourceId ?? '').slice(0, 100),
-                  quote: cleanDiagnostic(raw.titleProof.quote ?? '').slice(0, 1600),
+                  ...(e.code === 'UNVERIFIED_COMPANY'
+                    ? { company: cleanDiagnostic(raw.company).slice(0, 200) }
+                    : { title: cleanDiagnostic(raw.title ?? '').slice(0, 200) }),
+                  sourceId: cleanDiagnostic(
+                    (e.code === 'UNVERIFIED_COMPANY' ? raw.companyProof : raw.titleProof)
+                      .sourceId ?? '',
+                  ).slice(0, 100),
+                  quote: cleanDiagnostic(
+                    (e.code === 'UNVERIFIED_COMPANY' ? raw.companyProof : raw.titleProof).quote ??
+                      '',
+                  ).slice(0, 1600),
+                  contentHash:
+                    sources.find(
+                      (s) =>
+                        s.id ===
+                        (e.code === 'UNVERIFIED_COMPANY' ? raw.companyProof : raw.titleProof)
+                          .sourceId,
+                    )?.content_hash ?? null,
                   validation: e.details?.result ?? 'TITLE_INVALID',
                   at: this.now(),
                 });
@@ -2723,6 +2985,9 @@ export class ResearchJobHunter extends JobHunter {
             item = this.store.one('SELECT * FROM research_items WHERE id=?', item.id)!;
           }
           if (item.stage === 'DRAFT') {
+            // Qualify the bounded research batch before choosing its best drafts.
+            // AUTO keeps its separately paced, resumable queue.
+            if (this.mode !== 'AUTO_POLICY') continue;
             if (
               this.mode === 'AUTO_POLICY' &&
               this.store.get<number>(`draftedInRun:${run.id}`, 0) >= config.max_drafts
@@ -2738,35 +3003,54 @@ export class ResearchJobHunter extends JobHunter {
             item.id,
           );
         } catch (e) {
-          this.finishAnalysis(item, false);
-          if (
-            signal.aborted ||
-            (e instanceof DomainError &&
-              [
-                'READER_ENVIRONMENT',
-                'CODEX_LIMIT',
-                'CODEX_LOGIN',
-                'CLI_MISSING',
-                'CODEX_CONFIGURATION',
-                'ISOLATION_FAILED',
-                'PROFILE_CHANGED',
-                'CODEX_TIMEOUT',
-                'CODEX_TOOLS',
-                'CLI_START',
-              ].includes(e.code))
+          this.itemFailure(item, e, signal);
+        }
+      }
+      if (this.mode !== 'AUTO_POLICY') {
+        const pending = this.store.all(
+          "SELECT * FROM research_items WHERE run_id=? AND stage='DRAFT' AND status='PENDING' ORDER BY created_at,id",
+          run.id,
+        );
+        const scores = new Map(pending.map((item) => [item.id, this.draftPriority(item)]));
+        pending.sort(
+          (a, b) =>
+            scores.get(b.id)! - scores.get(a.id)! ||
+            a.created_at.localeCompare(b.created_at) ||
+            a.id.localeCompare(b.id),
+        );
+        // Reserve at most one place for the oldest eligible deferred company.
+        const oldest = pending
+          .filter(
+            (item) =>
+              scores.get(item.id)! >= 0 &&
+              this.store.get(`researchDeferred:${item.company_id}`, null),
           )
-            throw e;
-          this.store.exec(
-            "UPDATE research_items SET status='ERROR',error=?,attempts=attempts+1,updated_at=? WHERE id=?",
-            e instanceof DomainError ? e.code : 'INVALID_MODEL_RESULT',
-            this.now(),
-            item.id,
-          );
-          this.event(
-            'ITEM_ERROR',
-            'Zapisano błąd pojedynczego kandydata; pozostałe wyniki pozostają w bazie.',
-            item.id,
-          );
+          .sort((a, b) =>
+            this.store
+              .get<Row>(`researchDeferred:${a.company_id}`, {})
+              .queuedAt.localeCompare(
+                this.store.get<Row>(`researchDeferred:${b.company_id}`, {}).queuedAt,
+              ),
+          )[0];
+        if (oldest) pending.splice(0, 0, ...pending.splice(pending.indexOf(oldest), 1));
+        for (const item of pending) {
+          signal.throwIfAborted();
+          if (!this.profile().approved_at || this.profile().profile_hash !== config.profile_hash)
+            throw new DomainError(
+              'PROFILE_CHANGED',
+              'Profil się zmienił. Zatwierdź go i wznów pracę.',
+            );
+          try {
+            this.stage(run.id, 'DRAFT');
+            await this.generate(item, signal);
+            this.store.exec(
+              "UPDATE research_items SET stage='DONE',status='DONE',error=NULL,updated_at=? WHERE id=?",
+              this.now(),
+              item.id,
+            );
+          } catch (e) {
+            this.itemFailure(item, e, signal);
+          }
         }
       }
       const incomplete = this.store.one(
@@ -2781,7 +3065,7 @@ export class ResearchJobHunter extends JobHunter {
             : 'PAUSED'
           : 'COMPLETED',
         incomplete ? 'ITEMS_NEED_REVIEW' : 'DRAFTS_READY',
-        incomplete ? null : this.now(),
+        incomplete && !this.store.get<Row>('researchDay', {}).active ? null : this.now(),
         this.now(),
         run.id,
       );
@@ -2802,9 +3086,12 @@ export class ResearchJobHunter extends JobHunter {
         run.id,
       );
     } catch (e) {
+      const deadlineReached = dayWork.active && dayWork.expiresAt <= this.now();
       const code = timeout.aborted
-        ? dayWork.hours === 1 && dayWork.expiresAt <= this.now()
-          ? 'TRIAL_FINISHED'
+        ? deadlineReached
+          ? dayWork.hours === 1
+            ? 'TRIAL_FINISHED'
+            : 'DAY_FINISHED'
           : 'TIME_BUDGET'
         : signal.aborted
           ? 'CANCELLED'
@@ -2819,8 +3106,15 @@ export class ResearchJobHunter extends JobHunter {
       );
       this.store.exec("UPDATE jobs SET status='QUEUED' WHERE run_id=?", run.id);
       this.store.set('paused', true);
+      if (deadlineReached) this.store.set('stopped', true);
       this.store.set('workerStatus', code);
-      this.store.set('researchDay', { ...this.store.get<Row>('researchDay', {}), active: false });
+      const work = this.store.get<Row>('researchDay', {});
+      this.store.set('researchDay', {
+        ...work,
+        active: false,
+        finishedAt: work.finishedAt ?? this.now(),
+        finalReason: work.finalReason ?? (deadlineReached ? 'DEADLINE' : code),
+      });
       this.event(
         'RUN_PAUSED',
         e instanceof DomainError ? e.message : `Zapisano etapy: ${code}. Można wznowić.`,
@@ -2836,6 +3130,7 @@ export class ResearchJobHunter extends JobHunter {
       this.researching = false;
       this.activeRunId = null;
       this.controller = undefined;
+      this.persistResearchReport();
     }
   }
   private stage(runId: string, stage: string) {
@@ -2853,7 +3148,12 @@ export class ResearchJobHunter extends JobHunter {
   continueAfterItemErrors() {
     if (this.researching || this.state().stopped || this.state().status !== 'ITEMS_NEED_REVIEW')
       return false;
-    this.store.exec("UPDATE runs SET status='PARTIAL' WHERE status='PAUSED' AND error IS NULL");
+    this.store.exec(
+      "UPDATE runs SET status='PARTIAL',finished_at=CASE WHEN EXISTS(SELECT 1 FROM research_items i WHERE i.run_id=runs.id AND i.status='PENDING') THEN NULL ELSE ? END,updated_at=? WHERE campaign_id=? AND status='PAUSED' AND error IS NULL",
+      this.now(),
+      this.now(),
+      this.campaignId,
+    );
     this.store.set('paused', false);
     return true;
   }
@@ -2878,6 +3178,8 @@ export class ResearchJobHunter extends JobHunter {
       item.status === 'UNAVAILABLE' ? '[]' : item.source_ids,
       item.id,
     );
+    if (item.status === 'UNAVAILABLE')
+      this.store.set(`sourceRetry:${normalizeResearchURL(item.url)}`, true);
     this.store.exec(
       "UPDATE runs SET status='PAUSED' WHERE id=? AND status IN ('COMPLETED','PARTIAL')",
       item.run_id,
@@ -2927,6 +3229,7 @@ export class ResearchJobHunter extends JobHunter {
       ),
       cost: null,
       dayWork: this.store.get('researchDay', { active: false }),
+      lastResearchReport: this.store.get('researchLastReport', null),
       workMs: this.store.one('SELECT sum(total_ms) n FROM research_run_config')!.n ?? 0,
       items: this.store.all('SELECT * FROM research_items ORDER BY created_at DESC LIMIT 100'),
       sources: this.store.all(
@@ -2944,16 +3247,40 @@ export class ResearchJobHunter extends JobHunter {
           [r.canonical_name, r.status, r.subject, r.body].map(csvCell).join(','),
         ),
       ].join('\r\n');
-    return (
-      `# JobHunter RESEARCH_ONLY — ${d.day}\n\nTen tryb nie wysyła wiadomości; szkice do ręcznego przeglądu. Koszt: brak danych.\n\n` +
-      this.draftRows()
-        .map((r) => `## ${r.canonical_name}\n\n${r.subject}\n\n${r.body}\n`)
-        .join('\n') +
-      this.store
-        .all('SELECT * FROM research_sources')
-        .map((s) => `- ${s.status}: ${s.final_url ?? s.original_url} (${s.fetched_at})`)
-        .join('\n')
-    );
+    return researchReportText(this.researchReport());
+  }
+  researchReport() {
+    return researchReport(this.store, this.now());
+  }
+  private persistResearchReport() {
+    const work = this.store.get<Row>('researchDay', {});
+    if (this.mode !== 'RESEARCH_ONLY' || !work.sessionId) return;
+    try {
+      const previous = this.store.get<Row>('researchLastReport', {});
+      let backup = previous.sessionId === work.sessionId ? previous.backup : null;
+      if (!work.active && previous.finishedAt !== work.finishedAt) backup = this.store.backup();
+      const paths = writeResearchReport(
+        join(this.store.dir, 'reports', work.sessionId),
+        this.researchReport(),
+      );
+      this.store.set('researchLastReport', {
+        ...paths,
+        backup,
+        sessionId: work.sessionId,
+        at: this.now(),
+        finishedAt: work.finishedAt ?? null,
+        finalReason: work.finalReason ?? null,
+      });
+    } catch (e) {
+      this.store.set('researchReportError', {
+        at: this.now(),
+        code: e instanceof DomainError ? e.code : 'REPORT_WRITE_FAILED',
+      });
+      this.event(
+        'RESEARCH_REPORT_ERROR',
+        'Nie udało się zapisać raportu; wyniki pozostają w bazie. Eksport jest dostępny w panelu.',
+      );
+    }
   }
   override async stopWorker() {
     this.controller?.abort();

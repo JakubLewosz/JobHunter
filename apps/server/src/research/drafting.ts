@@ -15,18 +15,16 @@ Pozdrawiam
 {{imię}}`;
 export const defaultMessageTemplate = `Dzień dobry,
 
-Nazywam się Jakub Lewosz i jestem uczniem ostatniej klasy Technikum Programistycznego INFOTECH w Białymstoku. Szukam regularnej, płatnej współpracy programistycznej.
+[Napisz naturalną wiadomość do konkretnej firmy. Wybierz otwarcie i kolejność informacji z kontekstu: aktywnej oferty, otwartych kandydatur lub rzeczowej podstawy zapytania bez rekrutacji.]
 
-[Jeden konkretny fakt o firmie lub potwierdzonej ofercie i krótki opis jednego pasującego projektu: projekt, aplikacja lub prototyp, bez domyślnego słowa demo i bez sugerowania produkcji. Bez tłumaczenia oczywistości dopasowania, prezentacji i umniejszania projektu. Przy braku dopasowania opis projektu jest pomijany. Opcjonalna wzmianka o Codexie mieści się w tej części, jeśli jest przydatna i potwierdzona.]
+[Połącz zadanie lub obszar firmy z jednym pasującym zatwierdzonym projektem. Opisz istotny związek, bez katalogu funkcji i technologii. Zachowaj edukację, cel płatnej regularnej pracy, zdalność i dostępność z zatwierdzonego profilu; umieść je tam, gdzie pasują do toku listu.]
 
-Jestem dostępny w pełni zdalnie, około 20 godzin tygodniowo, głównie po lekcjach.
+[Wyraź prośbę o współpracę lub pytanie o nierozstrzygnięty warunek tylko raz, w odpowiednim miejscu. Nie powtarzaj jej na początku i końcu. Powyższe wskazówki nie określają liczby ani kolejności akapitów i nie są treścią do wysłania.]
 
-[Jedno krótkie pytanie o możliwość takiej współpracy albo dopasowanie dostępności do potwierdzonej rekrutacji.]
-
-GitHub: https://github.com/JakubLewosz
+[GitHub z zatwierdzonego profilu]
 
 Pozdrawiam
-Jakub Lewosz`;
+[Imię i nazwisko z zatwierdzonego profilu]`;
 export const projectKeys = ['fixdesk', 'autorelay', 'codefabric', 'elektroscan'] as const;
 export const approximateAvailability = (hours: number) =>
   `Płatna praca w pełni zdalna, około ${hours} godzin tygodniowo, przede wszystkim po lekcjach.`;

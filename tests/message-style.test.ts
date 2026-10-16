@@ -6,6 +6,8 @@ import {
   messagePrompt,
   checkAvailability,
   messageStyleIssues,
+  recentMessageContext,
+  messageWritingGoal,
 } from '../apps/server/src/research/message-policy.js';
 import { relevantProjectFacts } from '../apps/server/src/research/drafting.js';
 import { conditionKeys, type Analysis } from '../apps/server/src/research/contracts.js';
@@ -135,6 +137,30 @@ test('typ kontaktu nie tworzy oferty z niepotwierdzonej rekrutacji', () => {
   unconfirmed.conditions.active.value = 'unknown';
   assert.equal(messageContactType(unconfirmed), 'GENERAL_RECRUITMENT_CONTACT');
 });
+
+test('cel redakcyjny zmienia się z warunkami w tym samym rodzaju kontaktu', () => {
+  const active = analysis('ACTIVE');
+  assert.equal(messageWritingGoal(active), 'SCHEDULE_FEASIBILITY');
+  active.conditions.hours.value = 'yes';
+  active.conditions.partTime.value = 'yes';
+  assert.equal(messageWritingGoal(active), 'PROJECT_FIT');
+  assert.equal(messageContactType(active), 'ACTIVE_JOB');
+  const open = analysis('OPEN');
+  assert.equal(messageWritingGoal(open), 'PROJECT_FIT');
+  for (const key of ['remote', 'paid', 'hours'] as const) open.conditions[key].value = 'yes';
+  assert.equal(messageWritingGoal(open), 'PROFILE_FIT');
+  assert.equal(messageContactType(open), 'OPEN_APPLICATION');
+  assert.equal(messageWritingGoal(analysis('PROSPECT')), 'COOPERATION_POSSIBILITY');
+});
+
+test('adres ogólny i konflikt nie uzyskują otwarcia udającego ofertę lub kandydaturę', () => {
+  const general = analysis('ACTIVE');
+  general.contact.kind = 'GENERAL';
+  assert.equal(messageWritingGoal(general), 'COOPERATION_POSSIBILITY');
+  const conflict = analysis('OPEN');
+  conflict.conditions.remote.value = 'conflicting';
+  assert.equal(messageWritingGoal(conflict), 'COOPERATION_POSSIBILITY');
+});
 for (const [body, code] of [
   ['Chętnie zaprezentuję projekt.', 'PROJECT_PRESENTATION'],
   ['Mogę zaprezentować portfolio.', 'PROJECT_PRESENTATION'],
@@ -230,13 +256,25 @@ test('prompt: około 20 z profilu, AI opcjonalne, różny temat i pytanie oraz p
       template: 'old template',
       recent: [{ opening: 'Poprzednie otwarcie.' }],
     });
-    assert.match(prompt, /110–170/);
+    assert.match(prompt, /80–130/);
     assert.match(prompt, /około 20 godzin/);
     assert.doesNotMatch(prompt, /15–20/);
     assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
     assert.match(prompt, /Poprzednie otwarcie/);
     assert.ok(prompt.includes(messageContactType(analysis(type))));
   }
+});
+
+test('kontekst poprzednich wiadomości udostępnia także dalszy tok, bez zmiany szkicu', () => {
+  const previous = draft(
+    'Dzień dobry,\r\n\r\nKontekst oferty.\r\n\r\nDopasowanie projektu.\r\n\r\nDostępność i edukacja.\r\n\r\nCzy taki wymiar pracy jest odpowiedni?',
+  );
+  const original = structuredClone(previous);
+  const recent = recentMessageContext(previous);
+  assert.equal(recent.opening, 'Kontekst oferty.');
+  assert.ok(recent.paragraphs.includes('Dostępność i edukacja.'));
+  assert.match(recent.question, /Czy taki wymiar pracy/);
+  assert.deepEqual(previous, original);
 });
 test('finalny styl: formalność, meta-komentarz, sprzedaż i prezentacja wymagają przeglądu bez odrzucenia', () => {
   for (const [text, code] of [
@@ -342,12 +380,13 @@ for (const [kind, requirements, hasContract] of [
       template: 'old',
       recent: [],
     });
-    assert.match(prompt, /110–170/);
-    assert.match(prompt, /Cztery krótkie części/);
-    assert.match(prompt, /bez automatycznego początkujący programista/);
+    assert.match(prompt, /80–130/);
+    assert.match(prompt, /Nie ma stałej kolejności akapitów ani obowiązkowego pierwszego zdania/);
+    assert.match(prompt, /JEDEN CEL, JEDNA PROŚBA/);
+    assert.doesNotMatch(prompt, /Cztery krótkie części|Schemat zapytania:/);
     assert.match(prompt, /Umowę zlecenie wspomnij tylko przy ACTIVE_JOB/);
   });
-test('drobny tuning języka: bezpośrednie nawiązanie, neutralny projekt, odmiana i proste tematy', () => {
+test('konstrukcja wynika z celu i dowodów, bez stałych zdań, list funkcji i losowych wariantów', () => {
   const prompt = messagePrompt({
     profile,
     analysis: analysis('ACTIVE', ['PHP Laravel']),
@@ -357,15 +396,90 @@ test('drobny tuning języka: bezpośrednie nawiązanie, neutralny projekt, odmia
     template: 'old',
     recent: [],
   });
-  assert.match(prompt, /Na Państwa stronie zwróciłem uwagę/);
-  assert.match(prompt, /Nie używaj domyślnie słowa demo/);
+  assert.match(prompt, /Nie wymagaj pary zdań Na Państwa stronie/);
+  assert.match(prompt, /ani domyślnie słowa demo/);
   assert.match(prompt, /Nie sugeruj wdrożenia produkcyjnego/);
-  assert.match(prompt, /Nazywam się \[imię i nazwisko\], z osobą/);
-  assert.match(
-    prompt,
-    /Nazwa szkoły, miejscowość i ostatnia klasa wymagają osobnych zatwierdzonych faktów/,
-  );
-  assert.match(prompt, /Kandydatura – \[rzeczywisty tytuł stanowiska\]/);
+  assert.match(prompt, /Nazwa szkoły, miejscowość i ostatnia klasa wymagają zatwierdzonych faktów/);
+  assert.match(prompt, /przy ACTIVE_JOB kandydatura i rzeczywisty tytuł stanowiska/);
   assert.match(prompt, /tylko w zakresie zatwierdzonych faktów/);
-  assert.match(prompt, /bez z pasją/);
+  assert.match(prompt, /Nie stosuj rotacji wariantów, losowego parafrazowania/);
+  assert.match(prompt, /nie ma minimalnej liczby funkcji\/technologii/);
+  assert.match(prompt, /nie skracaj kosztem edukacji, dostępności, celu/);
 });
+
+test('proste zapytanie: edukacja i dostępność razem, n8n jest faktem firmy, nie kompetencją kandydata', () => {
+  const company =
+    'Zobaczyłem, że zajmują się Państwo automatyzacjami w n8n i integracjami systemów.';
+  const candidate =
+    'Jestem uczniem ostatniej klasy technikum programistycznego i szukam płatnej pracy zdalnej na około 20 godzin tygodniowo, głównie po lekcjach.';
+  const project = 'Stworzyłem AutoRelay, projekt automatyzacji na webhookach.';
+  const body = `Dzień dobry,
+
+piszę z pytaniem, czy byliby Państwo otwarci na współpracę z początkującym programistą.
+
+${candidate}
+
+${company} ${project}
+
+Chciałbym zapytać, czy widzą Państwo możliwość współpracy w takim wymiarze.
+
+Pozdrawiam
+Fictional Candidate`;
+  const message = {
+    ...draft(body),
+    factIds: ['education', 'availability', 'autorelay'],
+    claims: [
+      {
+        text: candidate,
+        kind: 'CANDIDATE',
+        factIds: ['education', 'availability'],
+        evidenceIds: [],
+      },
+      { text: company, kind: 'COMPANY', factIds: [], evidenceIds: ['evidence'] },
+      { text: project, kind: 'CANDIDATE', factIds: ['autorelay'], evidenceIds: [] },
+    ],
+  };
+  assert.ok(
+    checkMessageRules(message, profile, analysis('PROSPECT', ['integracje API'])).some((w) =>
+      w.startsWith('REPEATED_REQUEST'),
+    ),
+  );
+  assert.throws(
+    () =>
+      checkMessageRules(
+        {
+          ...message,
+          claims: [
+            {
+              text: 'Tworzę automatyzacje w n8n.',
+              kind: 'CANDIDATE',
+              factIds: ['autorelay'],
+              evidenceIds: [],
+            },
+          ],
+        },
+        profile,
+        analysis(),
+      ),
+    (e) => e instanceof DomainError && e.code === 'UNSUPPORTED_TECHNOLOGY',
+  );
+});
+
+for (const body of [
+  'Piszę z pytaniem, czy byliby Państwo otwarci na współpracę. Chciałbym zapytać, czy widzą Państwo możliwość współpracy w takim wymiarze.',
+  'Czy rozważają Państwo taką współpracę? Proszę o informację o możliwości współpracy.',
+  'Pytam o możliwość współpracy programistycznej. Czy taki wymiar i godziny pracy są dla Państwa odpowiednie?',
+])
+  test(`dwie prośby, także zakończone kropką, wymagają przeglądu: ${body}`, () => {
+    assert.ok(messageStyleIssues(draft(body)).some((w) => w.startsWith('REPEATED_REQUEST')));
+  });
+
+for (const body of [
+  'Szukam płatnej, regularnej współpracy. Czy rozważają Państwo taką współpracę?',
+  'Piszę w sprawie oferty Junior Developer. Czy taki wymiar i godziny pracy są dla Państwa odpowiednie?',
+  'Piszę z pytaniem, czy byliby Państwo otwarci na współpracę. Jestem uczniem technikum i szukam płatnej pracy zdalnej.',
+  'Pracowałem w zespole nad aplikacją do analizy planów. Chciałbym zapytać, czy widzą Państwo możliwość współpracy.',
+])
+  test(`jedna prośba z kontekstem lub celem nie wymaga powtórzenia na końcu: ${body}`, () => {
+    assert.ok(!messageStyleIssues(draft(body)).some((w) => w.startsWith('REPEATED_REQUEST')));
+  });

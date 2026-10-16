@@ -23,6 +23,7 @@ export function backupSQLite(db: Database.Database, profileDir: string) {
 
 export class Store {
   readonly db: Database.Database;
+  companyAliasRevision = 0;
   assertExclusive: () => void = () => {};
   constructor(public readonly dir: string) {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
@@ -81,10 +82,17 @@ export class Store {
     return this.db.prepare(sql).all(...args) as Row[];
   }
   exec(sql: string, ...args: any[]) {
-    return this.db.prepare(sql).run(...args);
+    const result = this.db.prepare(sql).run(...args);
+    if (/\bcompany_aliases\b|\bDELETE\b|\bREPLACE\b/i.test(sql)) this.companyAliasRevision++;
+    return result;
   }
   atomic<T>(fn: () => T): T {
-    return this.db.transaction(fn).immediate();
+    try {
+      return this.db.transaction(fn).immediate();
+    } finally {
+      // Rollbacks must invalidate name aliases added to an in-memory lookup too.
+      this.companyAliasRevision++;
+    }
   }
   get<T>(key: string, fallback: T): T {
     const r = this.one('SELECT value FROM app_state WHERE key=?', key);

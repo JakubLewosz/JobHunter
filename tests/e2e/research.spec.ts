@@ -21,12 +21,17 @@ test('RESEARCH_ONLY UI → real backend/SQLite → offline providers → saved d
   await page.getByRole('button', { name: 'Przejrzałem — zatwierdź CV', exact: true }).click();
   await expect(page.getByText('Maksimum', { exact: true })).toHaveCount(0);
   await expect(page.getByText('identity', { exact: true })).toHaveCount(0);
-  await expect(page.getByLabel('Wiadomość bazowa')).toContainText('Nazywam się Jakub Lewosz');
+  await expect(page.getByLabel('Wiadomość bazowa')).toHaveValue(
+    /Wybierz otwarcie i kolejność informacji z kontekstu/,
+  );
   await page.screenshot({ path: 'test-results/personal-materials.png', fullPage: true });
   await page
     .getByRole('button', { name: 'Zapisz i zatwierdź moje materiały', exact: true })
     .click();
   await page.getByRole('button', { name: 'Dzisiaj', exact: true }).click();
+  await page.getByLabel('Długość sesji researchu').selectOption('15');
+  await expect(page.getByRole('button', { name: 'Start na 15 godzin', exact: true })).toBeVisible();
+  await page.getByLabel('Długość sesji researchu').selectOption('8');
   await page.getByRole('button', { name: 'Test na godzinę', exact: true }).click();
   await expect(page.getByText('Test do ', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Wiadomości', exact: true }).click();
@@ -82,4 +87,16 @@ test('RESEARCH_ONLY UI → real backend/SQLite → offline providers → saved d
     true,
   );
   await page.screenshot({ path: 'test-results/research-mobile.png', fullPage: true });
+  await page.getByLabel('Długość sesji researchu').selectOption('15');
+  await page.getByRole('button', { name: 'Start na 15 godzin', exact: true }).click();
+  await expect(page.getByText('Praca do ', { exact: false })).toBeVisible();
+  const longWork = await page.evaluate(
+    async () => (await (await fetch('/api/dashboard')).json()).state.dayWork,
+  );
+  expect(longWork.hours).toBe(15);
+  expect(longWork.intervalMinutes).toBe(15);
+  expect(longWork.maxDraftsPerCycle).toBe(5);
+  expect(longWork.queries.length).toBeGreaterThanOrEqual(60);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.getByText('Praca do ', { exact: false })).toHaveCount(0);
 });

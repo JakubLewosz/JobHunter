@@ -153,7 +153,7 @@ export class FixtureRunner implements StructuredRunner {
       );
       const projectText = project ? `${project.content}` : '';
       const companyText =
-        data.analysis?.type === 'PROSPECT'
+        data.analysis?.type === 'PROSPECT' || data.qualification === 'PREVIEW_COMPANY_INQUIRY'
           ? 'na stronie opisują Państwo automatyzacje i integracje API.'
           : 'na stronie znalazłem ofertę Junior PHP Laravel.';
       const body = `Dzień dobry,\n\nNazywam się ${data.profile.name}. Szukam płatnej, regularnej współpracy programistycznej.\n\n${companyText} ${projectText}\n\nJestem dostępny w pełni zdalnie, ${data.profile.availabilityMode === 'APPROX' ? `około ${data.profile.hoursApprox}` : `${data.profile.hoursMin}–${data.profile.hoursMax}`} godzin tygodniowo, głównie po lekcjach.\n\nCzy w Państwa zespole byłoby miejsce dla początkującego programisty o takiej dostępności?`;

@@ -15,10 +15,21 @@ export function ResearchPanel({
     [contactURL, setContactURL] = useState(''),
     [query, setQuery] = useState('');
   const [sources, setSources] = useState<Row[]>([]);
+  const [hours, setHours] = useState(8);
   useEffect(() => {
     void api('research/sources').then(setSources);
   }, [dashboard.stats.sources]);
   const work = dashboard.state.dayWork ?? {};
+  const endings: Record<string, string> = {
+    DEADLINE: 'Minął czas sesji',
+    SESSION_BUDGET: 'Osiągnięto limit testu',
+    STOPPED: 'Zatrzymano',
+    PAUSED: 'Wstrzymano',
+    PROCESS_RESTART: 'Praca przerwana przy restarcie',
+    NO_NEW_QUERIES: 'Sprawdzono wszystkie dostępne kierunki',
+    CODEX_LIMIT: 'Limit Codexa',
+    CANCELLED: 'Praca przerwana',
+  };
   const names: Record<string, string> = {
     SEARCH: 'Szuka firm',
     READ: 'Czyta strony',
@@ -27,6 +38,9 @@ export function ResearchPanel({
     DRAFT: 'Pisze wiadomość',
     QUEUED: 'Rozpoczyna pracę',
     WAITING_FOR_REVIEW: work.active ? 'Czeka na kolejny kierunek szukania' : 'Wiadomości gotowe',
+    ITEMS_NEED_REVIEW: work.active
+      ? 'Cykl częściowy — czeka na kolejny kierunek'
+      : 'Firmy do sprawdzenia',
     STOPPED: 'Zatrzymany',
     PAUSED: 'Pauza',
     DAY_FINISHED: 'Praca na dziś zakończona',
@@ -77,17 +91,29 @@ export function ResearchPanel({
           >
             Test na godzinę
           </button>
+          <label>
+            Długość sesji
+            <select
+              aria-label="Długość sesji researchu"
+              value={hours}
+              disabled={busy || !!work.active}
+              onChange={(e) => setHours(Number(e.target.value))}
+            >
+              <option value={8}>8 godzin</option>
+              <option value={15}>15 godzin</option>
+            </select>
+          </label>
           <button
             className="secondary"
             disabled={busy || !dashboard.profileApproved || !!work.active}
             onClick={() =>
               void act(
-                () => api('research/day', query ? { query } : {}),
-                'Codex będzie szukał firm przez najbliższe 8 godzin.',
+                () => api('research/day', { hours, ...(query ? { query } : {}) }),
+                `Codex będzie szukał firm przez najbliższe ${hours} godzin.`,
               )
             }
           >
-            Start na 8 godzin
+            Start na {hours} godzin
           </button>
           <button
             className="secondary"
@@ -109,9 +135,28 @@ export function ResearchPanel({
           </p>
         )}
         <p className="muted">
-          Wiadomości znajdziesz w „Wiadomościach”. Gmail jeszcze nie jest podłączony; ta próba
-          przygotowuje szkice.
+          Wiadomości znajdziesz w „Wiadomościach”. Ta próba przygotowuje szkice bez korzystania z
+          Gmaila.
         </p>
+        {work.active && work.nextAt && work.nextAt < work.expiresAt && (
+          <p className="muted">
+            Kolejny kierunek: {new Date(work.nextAt).toLocaleTimeString('pl-PL')}. Oczekiwanie jest
+            częścią ustalonego tempa.
+          </p>
+        )}
+        {work.finalReason && (
+          <p className="muted">
+            {endings[work.finalReason] ?? 'Praca przerwana — wyniki zapisane'} ·{' '}
+            {new Date(work.finishedAt).toLocaleString('pl-PL')}.
+          </p>
+        )}
+        {dashboard.state.lastResearchReport && (
+          <p className="muted">
+            Raport zapisany:{' '}
+            {new Date(dashboard.state.lastResearchReport.at).toLocaleString('pl-PL')}.
+            {!work.active && ' Program jest zatrzymany; otwarcie raportu nie wznawia pracy.'}
+          </p>
+        )}
         {dashboard.events.length > 0 && <p className="muted">{dashboard.events[0].message}</p>}
       </section>
       <details className="panel research-panel personal-details">
@@ -159,7 +204,8 @@ export function ResearchPanel({
         </label>
         <p>
           Test na godzinę: kolejne kierunki co 10 minut, do 10 kandydatów i 3 szkiców łącznie. Praca
-          na 8 godzin: do 8 cykli, najwyżej jeden nowy cykl na godzinę. Limit Codexa lub brak
+          na 8 lub 15 godzin: kolejne cykle co 15 minut, do 10 nowych propozycji i 5 szkiców na
+          cykl, z powrotem do odłożonych szkiców i poszerzaniem kierunków. Limit Codexa lub brak
           logowania wstrzymuje pracę.
         </p>
         <p>
@@ -209,8 +255,11 @@ export function ResearchPanel({
           >
             Zakończ niepełny cykl
           </button>
-          <a className="secondary" href="/api/reports/export">
+          <a className="secondary" href="/api/reports/export?format=txt">
             Pobierz raport
+          </a>
+          <a className="secondary" href="/api/reports/export?format=json">
+            Dane raportu
           </a>
         </div>
         {sources.map((source) => (
