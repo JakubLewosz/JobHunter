@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pl">
+  <meta charset="utf-8" /><title>Fictional Gmail compose fixture</title>
+  <style>
+    [role='textbox'] {
+      white-space: pre-wrap;
+    }
+  </style>
+  <button aria-label="Konto Google: Test (owner@example.test)">Konto testowe</button>
+  <button id="compose">Utwórz</button>
+  <main role="main">
+    <div data-legacy-message-id="1111111111111111">Unrelated fixture row</div>
+  </main>
+  <output id="click-count">0</output>
+  <script>
+    let clicks = 0;
+    document.querySelector('#compose').onclick = () => {
+      const d = document.createElement('div');
+      d.role = 'dialog';
+      d.innerHTML = `
+ <input name="composeid" value="fixture-compose" type="hidden"><input name="from" value="" type="hidden">
+ <div name="to"><div role="listbox"><input role="combobox" aria-label="Adresaci w polu Do"></div></div>
+ <div name="cc"></div><div name="bcc"></div><input name="subjectbox" aria-label="Temat">
+ <div contenteditable="true" role="textbox" aria-label="Treść wiadomości"></div>
+ <button aria-label="Dołącz pliki">Dołącz pliki</button><input hidden type="file" name="Filedata">
+ <button aria-label="Wyślij (Ctrl+Enter)">Wyślij</button>`;
+      document.body.append(d);
+      // Model Gmail's plain-text insertion surface, rather than Chromium's
+      // unstyled generic contenteditable block/paragraph insertion behavior.
+      d.querySelector('[role="textbox"]').onbeforeinput = (event) => {
+        if (event.inputType === 'insertText' && event.data?.includes('\n')) {
+          event.preventDefault();
+          event.currentTarget.replaceChildren(document.createTextNode(event.data));
+        }
+      };
+      const to = d.querySelector('[role="combobox"]');
+      to.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const chip = document.createElement('span');
+          chip.role = 'option';
+          chip.setAttribute('data-hovercard-id', to.value);
+          chip.textContent = to.value;
+          to.before(chip);
+          to.value = '';
+        }
+      };
+      const file = d.querySelector('[type="file"]');
+      d.querySelector('[aria-label="Dołącz pliki"]').onclick = () => file.click();
+      file.onchange = () => {
+        const box = document.createElement('div');
+        box.className = 'dL';
+        const name = document.createElement('span');
+        name.className = 'vI';
+        name.textContent = file.files[0].name;
+        box.append(name);
+        const progress = document.createElement('div');
+        progress.role = 'progressbar';
+        box.append(progress);
+        d.append(box);
+        setTimeout(() => {
+          progress.remove();
+          const ready = document.createElement('input');
+          ready.type = 'hidden';
+          ready.name = 'attach';
+          box.append(ready);
+        }, 100);
+      };
+      d.querySelector('[aria-label^="Wyślij"]').onclick = () => {
+        clicks++;
+        document.querySelector('#click-count').textContent = String(clicks);
+        d.remove();
+        const ack = document.createElement('div');
+        ack.role = 'alert';
+        ack.textContent = 'Wiadomość została wysłana';
+        if (new URL(location.href).searchParams.has('view')) {
+          const a = document.createElement('a');
+          a.href = '#sent/own';
+          a.textContent = 'Wyświetl wiadomość';
+          a.onclick = () => {
+            document.querySelector('main').innerHTML =
+              '<div data-legacy-message-id="abcdef0123456789">Own fictional message</div>';
+          };
+          ack.append(a);
+        } else if (!new URL(location.href).searchParams.has('no-id')) {
+          const own = document.createElement('span');
+          own.setAttribute('data-legacy-message-id', 'abcdef0123456789');
+          ack.append(own);
+        }
+        document.body.append(ack);
+      };
+    };
+  </script>
+</html>

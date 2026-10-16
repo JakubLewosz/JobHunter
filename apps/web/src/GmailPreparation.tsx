@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
+import { BrowserDeliverySettings } from './BrowserDeliverySettings';
 export function GmailPreparation({ delivery = false }: { delivery?: boolean }) {
   const [email, setEmail] = useState<string>();
   const [development, setDevelopment] = useState(false);
@@ -20,6 +21,7 @@ export function GmailPreparation({ delivery = false }: { delivery?: boolean }) {
     return (
       <section className="panel research-panel gmail-preparation">
         <h2>Gmail — odczyt i wysyłka</h2>
+        <BrowserDeliverySettings />
         <p>
           {email
             ? `Zapisane konto: ${email}`

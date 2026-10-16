@@ -33,6 +33,7 @@ export async function createApp(options: {
 }) {
   const profileLock = acquireProfileLock(options.dir);
   let opened: Store | undefined;
+  let browser: GmailJobHunter['browserDelivery'] | undefined;
   try {
     const app = Fastify({ logger: false, bodyLimit: 7 * 1024 * 1024, requestTimeout: 30000 });
     const store = new Store(options.dir);
@@ -54,6 +55,17 @@ export async function createApp(options: {
           : options.mode === 'RESEARCH_ONLY'
             ? new ResearchJobHunter(store, options.researchOptions)
             : new JobHunter(store);
+    if (service instanceof GmailJobHunter) {
+      browser = service.browserDelivery;
+      if (
+        service.sendTransport() === 'GMAIL_BROWSER' &&
+        !service.fictionalProviders &&
+        options.runtime?.kind === 'WORKSTATION'
+      ) {
+        options.runtime.assertNative();
+        await browser.listen();
+      }
+    }
     const token = options.launchToken ?? randomBytes(32).toString('hex');
     const sessions = new Map<string, { csrf: string; expires: number }>();
     const allowedHost = `127.0.0.1:${options.port}`;
@@ -300,6 +312,9 @@ export async function createApp(options: {
       .min(1)
       .max(3);
     app.get('/api/gmail/state', async () => gmailService().deliveryState());
+    app.post('/api/gmail/transport', async (request) =>
+      gmailService().setSendTransport(request.body),
+    );
     app.post('/api/gmail/quota/reset', async (request) =>
       gmailService(true).resetDailyQuota(
         z
@@ -744,12 +759,14 @@ export async function createApp(options: {
       );
     if (options.worker !== false) service.startWorker();
     app.addHook('onClose', async () => {
+      if (service instanceof GmailJobHunter) await service.browserDelivery.close();
       await service.stopWorker();
       store.close();
       profileLock.release();
     });
     return { app, service, store, launchToken: token };
   } catch (error) {
+    await browser?.close();
     opened?.close();
     profileLock.release();
     throw error;

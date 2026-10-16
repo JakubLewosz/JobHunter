@@ -1,5 +1,83 @@
 # Zadania
 
+## Pierwszy transport Gmail UI — 16 października 2026
+
+- [x] Dodać opcjonalny transport GMAIL_BROWSER do istniejącego sendera,
+      addytywną migrację 020 i prywatny broker named pipe. Zachować
+      rezerwacje, historię, limity, kontrolę materiałów, Stop i brak retry.
+- [x] Dodać wykonawcę korzystającego z narzędzia przeglądarki aktywnej sesji
+      Codexa, bez tokenu panelu/Codexa, cookie, sekretów OAuth, CDP lub
+      osłabienia izolacji runnera researchu. Odrębna próba CLI readonly bez
+      wtyczek nie udostępniła UI; nie rozstrzyga innych konfiguracji CLI.
+      Obecny wykonawca nie jest samodzielnym demonem po zamknięciu Codexa.
+- [x] W ustawieniach dodać jawny wybór transportu i status wykonawcy,
+      ze zmianą tylko przy zatrzymanym programie i bez nierozstrzygniętych
+      prób. Stare podglądy/polityka wymagają ponownego zatwierdzenia;
+      AUTO_POLICY nie dostaje przeglądu każdego zgodnego maila.
+- [x] Na prośbę użytkownika otworzyć logowanie Gmaila w Codexie. Użytkownik
+      zalogował się sam. Sprawdzić faktyczny widok i przygotować przez
+      adapter fikcyjny szkic .test z fikcyjnym PDF; bez kliknięcia Wyślij.
+- [x] Dokończyć pełny check Windows i zapisać zakres oraz niezależne
+      porównanie głównej bazy z backupem sprzed rozwoju.
+      Wynik: typecheck/build PASS, 542 backend + 12 performance + 19 UI;
+      po rozszerzeniu testu niepustego starego MIME i ścieżki Unix ponownie
+      10/10 celowanych + typecheck PASS. 51 tabel głównej bazy/backup zgodne,
+      FK=0, integralność OK, PDF zgodny. Rzeczywistego macOS nie uruchamiano.
+- [ ] Osobno zlecony SELF_TEST nowym transportem: prawdziwy komunikat UI,
+      identyfikator konkretnej własnej wiadomości, celowane potwierdzenie
+      payloadu/PDF oraz wynik folderu odbiorcy. Następnie mały pilot.
+      Brak obecnej zgody na rzeczywiste wysyłki lub uruchomienie kampanii.
+- [ ] Później adapter jednego portalu ofert oraz kwalifikacja potencjalnych
+      zleceń usługowych. Tych modułów nie wdrożono w etapie Gmail UI.
+
+Opis użycia, ograniczenia i rozdzielenie EML odniesienia od MIME Gmaila:
+[GMAIL_BROWSER](GMAIL_BROWSER.md). Główna konfiguracja transportu/OAuth,
+profil, CV i produkcyjne szkice pozostają bez zmian podczas rozwoju.
+
+## Przyszły kierunek: oferty i potencjalne zlecenia — 16 października 2026
+
+- [x] Zapisać nowy kierunek wskazany przez użytkownika: poza dotychczasowymi
+      zapytaniami o współpracę, w przyszłości obsługa ofert pracy i formularzy
+      portali (np. Pracuj.pl) oraz wyszukiwanie potencjalnych potrzeb stron
+      internetowych/automatyzacji. To plan rozszerzenia dotychczasowego
+      zakresu, nie zlecenie obecnego researchu lub składania aplikacji.
+- [ ] Po etapie poczty zaprojektować trzy odrębne ścieżki: aplikacja na ofertę,
+      zapytanie o współpracę programistyczną i potencjalne zlecenie usługi.
+      Wspólna tożsamość firmy/historia/blokady; odrębne cele, kwalifikacja
+      i zatwierdzone zasady treści. Nie przekształcać szkiców pracy w oferty
+      usług ani nie przedstawiać hipotezy potrzeby jako zlecenia od firmy.
+- [ ] Najpierw ograniczony adapter jednego portalu na fikcyjnych formularzach:
+      identyfikacja oferty, konto, zatwierdzone odpowiedzi i CV, nieznane
+      pola do wyjaśnienia, dowód złożenia/niepewność, Stop i duplikaty między
+      kanałami. Przed rzeczywistym użyciem sprawdzić dostępne możliwości
+      i zasady konkretnego portalu. Obecnych blokad kontaktu nie obchodzić.
+- [ ] Wykonawca przeglądarkowy otrzymuje wyłącznie konkretne zadanie;
+      kwalifikacja, uprawnienie sesji, tempo, historia i Stop pozostają
+      w kodzie. Docelowy automat po konfiguracji/Start bez akceptacji każdej
+      zgodnej czynności; błędy, nieznane odpowiedzi i niepewny wynik wymagają
+      zatrzymania właściwej operacji. Bez uruchamiania tych funkcji teraz.
+
+## Analiza Gmail API i wysyłki przez przeglądarkę — 16 października 2026
+
+- [x] Na prośbę użytkownika porównać nadawanie przez API i Computer/Browser
+      Use bez rzeczywistych operacji poczty. Przegląd oficjalnej dokumentacji
+      oraz kodu: izolowany runner researchu celowo wyłącza UI; obecne próby
+      zakładają dokładne MIME i identyfikatory dostawcy. GUI potrzebuje
+      osobnego wykonawcy/mostu kolejki i jawnego dowodu wyniku. Nie usuwać
+      izolacji generatora i nie przypisywać lokalnego MIME jako bajtów GUI.
+- [x] Jedna nowa fikcyjna próba offline: Nodemailer z domyślnym ID domeny
+      nadawcy zachowuje identyczne pełne części tekst/HTML/PDF; obecny
+      walidator przyjmuje tylko .local. Dwa lokalne MIME, zero sieci/bazy;
+      nie jest to dowód poprawy folderu. Prywatna analiza i plan poza Git.
+- [ ] Propozycja do kolejnego zlecenia: opcjonalny transport przeglądarkowy
+      na tej samej historii; kontrola konta/odbiorcy/CV, rezerwacji, Stop,
+      niepewnego kliknięcia, restartu i duplikatów w izolowanym prototypie.
+      API można pozostawić do celowanego odczytu przy odpowiedniej zgodzie.
+      Wariant bez API wymaga odrębnego rozwiązania kontroli historii.
+      Bez cichego failover po niepewnej próbie, zmiany prywatności skrzynki
+      lub włączania AUTO_POLICY. Transport nie został wdrożony ani wybrany
+      jako aktywny; nowe zlecenie analizy nie upoważnia do wysyłki.
+
 ## Zamknięcie prac stylistycznych — 16 października 2026
 
 - [x] Mała korekta instrukcji: pierwszy kontakt domyślnie „Państwo”,
@@ -177,9 +255,34 @@
       Lokalny audyt MIME nie wykazał oczywistego błędu w zbadanej strukturze;
       nie zawiera jednak nagłówków dostarczenia. Oryginały i wstępna analiza
       pozostają poza Git. Bez nowych wysyłek, odczytu poczty lub zmian kodu.
-- [ ] Porównać oryginały .eml odebrane w Spam i Odebranych: uwierzytelnienie,
-      nagłówki i MIME. Nie uznawać Message-ID lub wieku konta za potwierdzoną
-      przyczynę bez danych; otwarcie PDF w tej próbie nadal niepotwierdzone.
+- [x] Porównać trzy oryginały odbiorcze: jeden Spam z programu i dwa ręczne
+      Odebrane. Natywny audyt i niezależny Python potwierdzają identyczne pełne
+      bajty tekstu, HTML i zatwierdzonego PDF, From i temat. Według serwerów
+      odbiorczych SPF/DKIM/DMARC/ARC PASS, body hash DKIM zgodny; ten sam IP
+      Google i domena końcowych Message-ID. Tylko program ma dodatkowe wpisy
+      Gmail API. Różni odbiorcy/czas, w tym skrzynka domeny szkolnej; brak
+      dowodu przyczyny Spamu. Wspólna niezgodność długości encoded-word tematu
+      nie rozróżnia wyników. Prywatny raport poza Git, zero operacji Gmail,
+      zmian kodu lub bazy. Bajty PDF zgodne, jego otwarcie w tej próbie
+      niepotwierdzone. Szczegóły zakresu w TEST_REPORT.md.
+- [x] Użytkownik przekazał komunikat Gmaila: podobieństwo do wiadomości
+      wykrytych przez filtr spamu. Ogólne uzasadnienie nie wskazuje cechy
+      ani nie rozstrzyga wpływu API, treści lub wieku konta. Uzupełniono
+      prywatny raport; bez odczytu skrzynki lub nowej wysyłki.
+- [x] Po uwadze użytkownika sprawdzić ścieżkę nadania bez kolejnych wysyłek:
+      zachowany oryginał zgodny z hashem zapisanej próby; osiem przełamań
+      plain i końcowe CRLF pojawiają się między oryginałem a kopią odbiorcy.
+      Subject w oryginale 48/52/25, bez przekroczenia limitu encoded-word.
+      Prześledzono MIME -> zapisany pakiet -> gateway -> JSON raw/base64url.
+      **12/12 celowanych testów Windows offline PASS**, fikcyjny transport.
+      Kod aplikacji bez zmian; zero Gmaila, bazy i rzeczywistych wysyłek.
+- [ ] Rozstrzygnąć wpływ własnego Message-ID .local i drogi nadania.
+      Zgodne kopie odbiorcze nie wykluczają znaczenia formatu wejściowego;
+      brak dowodu, że ten identyfikator powoduje Spam. Nie zmieniać go jako
+      rzekomo potwierdzonej naprawy i nie osłabiać reconcile/deduplikacji.
+      Kolejna wysyłka nie jest warunkiem audytu kodu; brak zgody na nową
+      serię lub kontaktowanie firm. Ewentualną próbę po konkretnej zmianie
+      uzgodnić osobno, zachowując historię i wszystkie blokady.
 
 ## Nowa sesja RESEARCH_ONLY 8 h po odzyskaniu internetu — 16 października 2026
 

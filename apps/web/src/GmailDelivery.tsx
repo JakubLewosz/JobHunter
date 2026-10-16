@@ -56,6 +56,14 @@ export function GmailDelivery({
   return (
     <section className="panel gmail-delivery">
       <h2>Gmail z moim CV</h2>
+      {state?.sendTransport === 'GMAIL_BROWSER' && (
+        <p className="inline-note">
+          Gmail w przeglądarce: wykonawca{' '}
+          {state.browserExecutor?.connected ? 'połączony' : 'niepołączony'}. Zapisany EML jest
+          materiałem odniesienia; końcowy MIME tworzy Gmail. Wynik wymaga potwierdzenia tej
+          konkretnej próby.
+        </p>
+      )}
       <p>
         {state?.account
           ? `Nadawca: ${state.account.email}`

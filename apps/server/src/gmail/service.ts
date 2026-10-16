@@ -12,6 +12,9 @@ import { compareMime } from './inspection.js';
 import { gmailReadScope, gmailSendScope, setupInfo, type AccountInfo } from './oauth.js';
 import { nativeGmail, disabledGmail, type GmailGateway, type GmailMessage } from './reader.js';
 import { developmentRuntime, type Runtime } from '../runtime.js';
+import { BrowserDeliveryBroker } from '../browser/broker.js';
+import { transportSchema, type SendTransport } from '../browser/contracts.js';
+import { browserReceiptMatches } from '../browser/verification.js';
 import {
   manualHistoryBlocks,
   gmailHistoryBlocks,
@@ -49,6 +52,7 @@ function explain(codes: string[]) {
   return `Wysyłka zablokowana: ${[...new Set(codes)].map((c) => labels[c] ?? 'przygotuj nowy podgląd').join('; ')}.`;
 }
 export class GmailJobHunter extends ResearchJobHunter {
+  readonly browserDelivery: BrowserDeliveryBroker;
   protected gateway: GmailGateway;
   protected sending = false;
   protected activeSendingOutbox: string | null = null;
@@ -93,6 +97,7 @@ export class GmailJobHunter extends ResearchJobHunter {
             return setupInfo(join(store.dir, '..', 'gmail-preparation'));
           }
         : () => null);
+    this.browserDelivery = new BrowserDeliveryBroker(store);
     store.set('gmailSenderPaused', true);
     this.revokeApprovals('Po restarcie wysyłka wymaga ponownego przeglądu');
     store.exec(
@@ -103,9 +108,14 @@ export class GmailJobHunter extends ResearchJobHunter {
     const account = this.accountInfo();
     return {
       account,
+      sendTransport: this.sendTransport(),
+      browserExecutor: this.browserDelivery.status(),
       testRecipient: this.store.get<string>('gmailTestRecipient', account?.email ?? ''),
       readReady: !!account?.scopes.includes(gmailReadScope),
-      sendReady: !!account?.scopes.includes(gmailSendScope),
+      sendReady:
+        this.sendTransport() === 'GMAIL_BROWSER'
+          ? !!account?.scopes.includes(gmailReadScope) && this.browserDelivery.status().connected
+          : !!account?.scopes.includes(gmailSendScope),
       paused: this.store.get('gmailSenderPaused', true),
       priorApplications: priorApplicationException(this.store),
       dailyQuota: this.dailyQuota(),
@@ -127,6 +137,55 @@ export class GmailJobHunter extends ResearchJobHunter {
         })),
       outbox: this.outboxRows(),
     };
+  }
+  sendTransport(): SendTransport {
+    return transportSchema.parse(this.store.get('gmailSendTransport', 'GMAIL_API'));
+  }
+  async setSendTransport(raw: unknown) {
+    const v = z
+      .object({
+        transport: transportSchema,
+        confirmed: z.literal(true),
+        outgoingViewConsent: z.boolean(),
+      })
+      .strict()
+      .parse(raw);
+    if (
+      this.sending ||
+      this.researching ||
+      (this.mode === 'AUTO_POLICY' && !this.state().stopped) ||
+      !this.store.get('gmailSenderPaused', true) ||
+      this.store.one(
+        "SELECT id FROM outbox WHERE status IN ('QUEUED','SENDING','SEND_UNKNOWN','SENT_PROVIDER')",
+      )
+    )
+      throw new DomainError(
+        'SESSION_ACTIVE',
+        'Zatrzymaj program i rozstrzygnij oczekujące próby przed zmianą sposobu wysyłki.',
+      );
+    if (v.transport === 'GMAIL_BROWSER' && !v.outgoingViewConsent)
+      throw new DomainError(
+        'BROWSER_VIEW_CONSENT',
+        'Potwierdź dostęp wykonawcy wyłącznie do przygotowywanej wiadomości i jej wyniku.',
+      );
+    if (v.transport === 'GMAIL_BROWSER' && !this.fictionalProviders) {
+      this.runtime.assertNative();
+      await this.browserDelivery.listen();
+    }
+    if (v.transport === 'GMAIL_API') await this.browserDelivery.close();
+    this.revokeApprovals('Zmiana sposobu wysyłki');
+    this.store.set('gmailSendTransport', v.transport);
+    this.store.exec(
+      'UPDATE campaigns SET policy_version=policy_version+1 WHERE id=?',
+      this.campaignId,
+    );
+    this.event(
+      'SEND_TRANSPORT_CHANGED',
+      'Użytkownik wybrał sposób wysyłki; nie uruchomiono sendera.',
+      null,
+      'user',
+    );
+    return this.deliveryState();
   }
   dailyQuota() {
     const c = this.campaign(),
@@ -615,6 +674,11 @@ export class GmailJobHunter extends ResearchJobHunter {
       );
     const account = await this.gateway.account();
     this.sameAccount(account);
+    if (this.sendTransport() === 'GMAIL_BROWSER' && !this.browserDelivery.status().connected)
+      throw new DomainError(
+        'BROWSER_EXECUTOR_REQUIRED',
+        'Podłącz wykonawcę Codexa w przeglądarce.',
+      );
     const p = this.minimalProfile(),
       { cv, bytes } = this.cvBytes(input.cvId);
     if (!cv.approved_at)
@@ -1042,6 +1106,11 @@ export class GmailJobHunter extends ResearchJobHunter {
       if (count('run_id=?', o.run_id) >= Math.min(c.cycle_limit, 3)) problems.push('CYCLE_LIMIT');
     }
     if (problems.length) throw new DomainError(problems[0], explain(problems));
+    if (this.sendTransport() === 'GMAIL_BROWSER' && !this.browserDelivery.status().connected)
+      throw new DomainError(
+        'BROWSER_EXECUTOR_REQUIRED',
+        'Wykonawca przeglądarki nie jest podłączony.',
+      );
   }
   override async dispatchOne(expectedOutboxId?: string) {
     if (this.sending || this.historyBusy || this.store.get('gmailSenderPaused', true)) return;
@@ -1087,17 +1156,28 @@ export class GmailJobHunter extends ResearchJobHunter {
         );
         reserved = true;
       });
-      const result = await this.gateway.send(
-        {
-          messageId: o.message_id,
-          recipient: o.recipient,
-          mime: o.mime,
-          mimeHash: o.mime_hash,
-          scenario: 'NORMAL',
-        },
-        account,
-        () => this.gates(this.packet(o.id), account, true),
-      );
+      const frozen = {
+        messageId: o.message_id,
+        recipient: o.recipient,
+        mime: o.mime,
+        mimeHash: o.mime_hash,
+        scenario: 'NORMAL',
+      };
+      const guard = () => this.gates(this.packet(o.id), account, true);
+      const result =
+        this.sendTransport() === 'GMAIL_BROWSER'
+          ? await this.browserDelivery.send(frozen, account.email, guard)
+          : await this.gateway.send(
+              {
+                messageId: o.message_id,
+                recipient: o.recipient,
+                mime: o.mime,
+                mimeHash: o.mime_hash,
+                scenario: 'NORMAL',
+              },
+              account,
+              guard,
+            );
       this.store.atomic(() => {
         this.setOutbox(o.id, 'SENT_PROVIDER');
         this.store.exec(
@@ -1292,6 +1372,22 @@ export class GmailJobHunter extends ResearchJobHunter {
         : m.messageId === o.message_id &&
           !!candidates.find((c) => c.providerId === m.id)?.comparison?.decodedPartsLF,
     );
+    const browser = this.store.one('SELECT * FROM browser_deliveries WHERE outbox_id=?', o.id);
+    if (
+      browser &&
+      (browser.state !== 'ACKNOWLEDGED' ||
+        !attempt.provider_id ||
+        matching.length !== 1 ||
+        !browserReceiptMatches(o.mime, matching[0].raw))
+    ) {
+      this.event(
+        'GMAIL_RECONCILE_PENDING',
+        'Wynik przeglądarki wymaga jednoznacznego potwierdzenia własnej próby; bez ponowienia.',
+        o.id,
+        'user',
+      );
+      return { confirmed: false };
+    }
     if (matching.length !== 1) {
       const similar = candidates.filter((c) => c.comparison?.decodedPartsLF).length;
       if (similar)
@@ -1428,6 +1524,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     }
     super.control(action);
     this.store.set('gmailSenderPaused', true);
+    this.browserDelivery.cancel();
     if (action === 'emergency-stop') this.store.set('killSwitch', true);
     if (action === 'stop' || action === 'emergency-stop') this.revokeApprovals('Stop wysyłki');
   }

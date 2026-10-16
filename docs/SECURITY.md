@@ -1,5 +1,14 @@
 # Bezpieczeństwo JobHunter — 12 października 2026
 
+Rozszerzenie 16 października: opcjonalne nadawanie przez Gmail UI opisano
+w [GMAIL_BROWSER](GMAIL_BROWSER.md). Broker zachowuje wspólną próbę,
+rezerwację, blokady i Stop. Prywatny named pipe jest dostępny dopiero po
+jawnym wyborze transportu na WORKSTATION; bez tokenu panelu/Codexa,
+przejmowania cookie lub poszerzania izolowanego runnera researchu. UI nie
+gwarantuje atomowości Stop względem zdalnego kliknięcia. Niepewny wynik
+blokuje powtórny kontakt; bez automatycznego retry/failover. Rzeczywiste
+SELF_TEST/pilot pozostają oddzielnymi operacjami wymagającymi autoryzacji.
+
 ## Lokalna instalacja
 
 LOCAL_ONLY jest domyślną strategią, niezależną od trybu. Jedna SQLite na domowym Windowsie;

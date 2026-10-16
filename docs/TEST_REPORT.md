@@ -1,3 +1,142 @@
+# Pierwszy transport Gmail UI — Windows, 16 października 2026
+
+Opcjonalny GMAIL_BROWSER dodano do istniejącego sendera: te same rezerwacje,
+historia, blokady i bramki. Osobny broker named pipe, wykonawca aktywnej sesji
+narzędzia przeglądarki Codexa oraz jawny wybór transportu w ustawieniach.
+Bez cookie, tokenu panelu/Codexa, sekretów OAuth, CDP lub osłabienia runnera
+researchu. Nowa tabela 020 zachowuje stare dane i standardowy backup.
+
+Pierwszy pełny `npm run check`: **typecheck PASS, 542/542 backend,
+12/12 performance, build PASS, 19/19 UI**. Następnie uzupełniono ochronę
+utrwalonego SEND_UNKNOWN podczas sprzątania oraz porównanie całej treści
+HTML, bez parsera stron pomijającego stopki. Celowane **10/10 PASS** obejmuje
+kontroler/SQLite/IPC, dokładne pola i CV, Stop, restart, pojedyncze kliknięcie,
+brak retry/API POST w ścieżce UI, brak własnego dowodu, ustawienia i AUTO
+bez indywidualnego przeglądu zgodnych maili. Odrzucono dodatkową stopkę,
+ukryty tekst, obraz, podmieniony href przy tej samej etykiecie i drugi załącznik.
+Końcowy pełny check po uzupełnieniu kontroli HTML: **typecheck/build PASS,
+542/542 backend, 12/12 performance, 19/19 UI**. Następnie rozszerzono test
+migracji o utrwalony niepusty MIME/próbę i skrócono ścieżkę socketu Unix
+dla fikcyjnych testów na innych systemach: ponowne **10/10 + typecheck PASS**
+na Windowsie. Rzeczywistego uruchomienia macOS nie wykonano.
+
+Użytkownik ręcznie zalogował się do Gmaila w przeglądarce Codexa. W faktycznym
+UI adapter przygotował fikcyjny szkic .test z fikcyjnym plikiem PDF. Nadawca,
+Do/DW/UDW, temat, pełny tekst, zakończenie uploadu i identyfikator okna przeszły
+obserwację/schemat. **Nie kliknięto Wyślij w prawdziwym Gmailu**. Wysyłkę,
+awarie i receipt testowano na imitacji UI z przechwyconą całą siecią oraz
+fikcyjnych providerach, bez rzeczywistej poczty.
+
+Niezależny audyt readonly głównej bazy i spójnego backupu: **51 tabel,
+integrity=ok, FK=0, changedTables=[]**, zgodne hashe wszystkich dawnych
+wartości oraz PDF. Produkcyjnej migracji/transportu nie uruchomiono; profil,
+9 faktów, CV, szkice/wersje, historia, aliasy, blokady, shared i dawne próby
+pozostały bez zmian. Prywatne raporty i screenshot poza Git.
+
+Granice: wykonawca wymaga aktywnej sesji Codexa, a potwierdzenie nadal używa
+celowanego odczytu API w zakresie zgody. Nie sprawdzono prawdziwego receipt
+po wysyłce UI, identyfikatora wiadomości ani dostarczalności/folderu. EML
+jest materiałem odniesienia; MIME tworzy Gmail. Bez exactly-once, retry lub
+failover. SELF_TEST i pilot wymagają osobnego zlecenia/podglądu; nie
+uruchomiono kampanii, AUTO_POLICY lub nowego publicznego researchu.
+Opis: [GMAIL_BROWSER](GMAIL_BROWSER.md).
+
+# Analiza wariantów transportu Gmail — Windows, 16 października 2026
+
+Poniżej zapis wcześniejszej analizy, poprzedzającej powyższy etap wdrożenia.
+
+Przegląd kodu i oficjalnej dokumentacji, bez sterowania zalogowaną skrzynką.
+Natywny runner researchu wyłącza Computer/Browser Use; transport przez GUI
+nie jest gotowym zamiennikiem pojedynczej funkcji. Wymaga mostu tej samej
+kolejki, rozróżnienia oczekiwanej treści i zaobserwowanego MIME, dowodu
+wyniku oraz zachowania Stop/SEND_UNKNOWN/historii. Rozważono wariant GUI
+nadawania z celowanym odczytem przez API oraz wariant całkowicie bez API.
+Wybór nie zmienia obecnego trybu, zatwierdzeń ani zasad AUTO_POLICY.
+
+Jedna nowa próba konstrukcji MIME na fikcyjnych danych .test: dwa lokalne
+warianty Message-ID, obecny .local i domyślny mechanizm zainstalowanego
+Nodemailera z domeną From. **PASS: pełne zdekodowane tekst/HTML/PDF i temat
+identyczne**; obecny walidator odrzuca alternatywny ID. Brak sieci, sekretów,
+prawdziwego CV lub bazy; nie testowano dostarczalności. Nie zmieniono kodu
+aplikacji/builda ani zależności. Wcześniejsze 12/12 testów transportu pozostaje
+oddzielnym uruchomieniem, bez nowego pełnego checka w tym etapie.
+
+Wynik: opcjonalne nadawanie przez przeglądarkę jest uzasadnionym kierunkiem
+pilotażu; gotowości lokalnej sesji Gmail i poprawy Spamu nie zweryfikowano.
+Plan poza Git obejmuje fikcyjne testy wykonawcy, zachowanie starej historii,
+a dopiero potem osobno zlecony SELF_TEST i pilot. Wdrożenia nie wykonano.
+Zero odczytu poczty, tokenu panelu/Codexa, keyring/OAuth, bazy produkcyjnej,
+wysyłek, zmian historii/liczników/blokad lub uruchomienia AUTO_POLICY.
+
+# Audyt MIME przed nadaniem i transportu — Windows, 16 października 2026
+
+Bez kolejnych wysyłek prześledzono tworzenie MIME, zamrożony pakiet podglądu,
+gateway i wywołanie Gmail API. Zachowany oryginał pasuje hashem do zapisu
+jednej próby SENT_CONFIRMED; metadane odpowiadają kopii odbiorczej. Brak
+odczytu bazy/skrzynki/sekretów lub uruchomienia natywnego transportu.
+
+Oryginał ma Message-ID w domenie .local; kopia odbiorcza w mail.gmail.com.
+Subject oryginału **48/52/25**, w odbiorczej **84/28**. Przekroczenie limitu
+encoded-word nie występuje w oryginale. Plain **850 -> 860 B**: osiem spacji
+zastąpionych CRLF i końcowy CRLF; HTML **942 -> 944 B**, końcowy CRLF.
+PDF identyczny. To jawne różnice, także po normalizacji samych CRLF;
+diagnostyka zmian białych znaków nie osłabia kontroli reconcile.
+Bez pośredniej kopii Wysłanych nie wskazujemy dokładnego etapu transformacji.
+
+**12/12 celowanych testów offline PASS na Windowsie**: MIME polskie/długie
+tematy, tekst/HTML/PDF, błędne wejścia i audytor CLI; adapter używa dokładnie
+przygotowanych bajtów w JSON raw/base64url, pojedynczego POST do właściwego
+endpointu, bez retry po błędzie/timeout. Fikcyjni odbiorcy i transport;
+to nie test klasyfikacji spamu. Pełnego checka nie powtarzano, kod/build
+aplikacji bez zmian. Zgodność z dokumentowanym wywołaniem API nie gwarantuje
+Odebranych. Wyniki i prywatny audyt przed/po poza Git.
+
+Składnia i zachowanie adaptera nie ujawniły w tym zakresie błędu tłumaczącego
+Spam. Własny Message-ID i droga nadania pozostają punktami diagnostyki;
+zgodne kopie odbiorcze nie wykluczają wpływu formatu wejściowego. Nie uznawać
+.local za potwierdzoną przyczynę ani spekulacyjnej zmiany za naprawę.
+Bez zmian OAuth, materiałów, historii, liczników, blokad i ustawień wysyłki.
+
+# Porównanie trzech odbiorczych EML — Windows, 16 października 2026
+
+Offline: jeden test programu zgłoszony jako Spam oraz dwa ręczne Odebrane,
+od tego samego nadawcy do trzech różnych odbiorców. Brak wcześniejszego
+kontaktu jest deklaracją użytkownika, nie wnioskiem z EML. Jeden pozytywny
+odbiorca ma domenę szkolną obsługiwaną przez Google; bez odczytu jego reguł.
+
+Natywny `scripts/audit-eml.ts --private` i niezależny Python 3.12 `email`:
+**PASS porównania trzech plików**. Pełne zdekodowane bajty text/plain
+**860 B**, text/html **944 B**, PDF **77338 B** i nazwa PDF są identyczne,
+także bez normalizacji białych znaków. PDF ma hash wcześniej zatwierdzonego
+CV; nie sprawdzano otwarcia u odbiorcy. From i Subject identyczne. Jedyny
+link portfolio i brak obrazków/skryptów/formularzy we wszystkich trzech.
+Hashe źródeł zgodne w obu kontrolach; oryginały bez zmian.
+
+Według Authentication-Results serwera odbiorcy **SPF/DKIM/DMARC/ARC PASS**
+we wszystkich; obliczony body hash DKIM zgodny, bez nowej kryptograficznej
+weryfikacji podpisu/DNS. Ten sam publiczny IP Google i domena końcowych
+Message-ID. Tylko wiadomość programu ma dwa dodatkowe Received przez Gmail
+API. To różnica ścieżki, nie dowód wpływu na Spam; różnią się także odbiorcy
+i czas. Dodatkowy DARA FAIL dotyczy jednej wiadomości Odebrane, bez ustalonej
+roli. Nie znaleziono nagłówka etykiety, oceny spamu lub przyczyny filtra.
+
+Wspólne zastrzeżenie: encoded-word tematu **84/28**, pierwsze przekracza
+limit RFC 2047. Występuje we wszystkich trzech, więc nie rozróżnia wyników;
+nie ustalono etapu jego utworzenia z samych kopii odbiorczych. Parsery
+przetworzyły strukturę, Python defects=[] i bare LF=0; to nie deklaracja
+pełnej zgodności RFC. Brak wykazanego błędu kodu wyjaśniającego Spam.
+
+Uzupełnienie z relacji użytkownika: Gmail uzasadnia Spam podobieństwem
+do wiadomości wykrytych przez filtr. Komunikat nie wskazuje konkretnego
+składnika ani przyczyny różnicy między metodami. Prywatny raport uzupełniony,
+bez bezpośredniego odczytu skrzynki lub interfejsu. Przyczyna i rozwiązanie
+nadal nieustalone; nie uznawać wieku konta lub samego API za dowód.
+Ewentualny test porównawczy wymaga osobnego uzgodnienia, bez nowego send.
+Prywatny pełny raport i dane poza Git. Zero odczytu skrzynki,
+OAuth/sekretów, bazy, zmian kodu/builda, ustawień, materiałów, historii,
+liczników lub wysyłek. Brak nowego pełnego checka — tylko audyt offline
+i kontrola diffu dokumentacji, nie nowy wynik testów aplikacji.
+
 # Zamknięcie stylu: forma kontaktu i ograniczenia faktów — Windows, 16 października 2026
 
 Korekta wyłącznie instrukcji generatora i doprecyzowanie kontroli semantycznej.

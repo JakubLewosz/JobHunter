@@ -14,6 +14,31 @@ Przy świadomie wybranej nowej kampanii można dopuścić jeden kontakt po dawny
 
 Kod można rozwijać na Windowsie i MacBooku. Prawdziwy research i poczta pracują tylko na domowym Windowsie, ze świadomie skonfigurowaną instalacją i jedną trwałą lokalną historią poza repo. LOCAL_ONLY nie wymaga prywatnego origin lub handoff. MacBook jest developerski: osobne dane syntetyczne i brak natywnego Gmaila. Prywatny Git pozostaje opcjonalnym, odłożonym kierunkiem. Stop odwołuje zgodę sesji; restart nie wznawia sendera. Push kodu nie jest deploymentem, aktualizacja odbywa się po Stop i backupie.
 
-Dwa główne widoki: Praca programu i Historia firm. Materiały, połączenia i polityka w Ustawieniach. Bez CRM, AI do odpowiedzi, follow-upów, kalendarza, LinkedIn, Useme i formularzy. Nowe źródła są późniejszym rozszerzeniem istniejących adapterów.
+Dwa główne widoki: Praca programu i Historia firm. Materiały, połączenia i polityka w Ustawieniach. Bieżący zakres pozostaje bez CRM, AI do odpowiedzi, follow-upów, kalendarza, LinkedIn, Useme i formularzy. Nowe źródła są późniejszym rozszerzeniem istniejących adapterów.
 
 Wdrożenie i granice weryfikacji: [TASKS](TASKS.md), [TEST_REPORT](TEST_REPORT.md), [SECURITY](SECURITY.md). Prośba o rozwój nie zleca rzeczywistych wysyłek ani publikacji prywatnej historii. Sesja wymaga konfiguracji i świadomego Start użytkownika.
+
+## Przyszłe rozszerzenie wskazane 16 października 2026
+
+Użytkownik chce w przyszłości aplikować na konkretne oferty przez portale
+pracy (np. Pracuj.pl) oraz wyszukiwać firmy z potencjalną potrzebą strony
+internetowej lub automatyzacji. Formularze stają się planowanym późniejszym
+rozszerzeniem, nie częścią obecnie uruchamianego zakresu. Nie wdrożono ich
+i nie sprawdzono jeszcze integracji konkretnego portalu.
+
+Obsługa przeglądarki jest rozwijaną warstwą wykonania działań. Pierwszy
+adapter Gmail UI dodano do kodu i próby fikcyjnej; wymaga aktywnego wykonawcy
+w Codexie i nie został włączony w głównej instalacji. Faktyczna wysyłka
+przeglądarkowa i jej dostarczalność pozostają do osobnego SELF_TEST/pilotażu.
+Opis i ograniczenia: [GMAIL_BROWSER](GMAIL_BROWSER.md). Kod JobHuntera
+nadal odpowiada za kwalifikację, zatwierdzone fakty i odpowiedzi, niezmienne
+CV, politykę, tempo, wspólną historię, blokady i Stop. Oddzielamy aplikację
+na ofertę, zapytanie o współpracę oraz propozycję wykonania usługi. Hipoteza
+potrzeby strony/automatyzacji nie jest deklaracją zainteresowania firmy.
+Nie zmieniamy automatycznie istniejących szkiców lub celu kampanii.
+
+Rozwój etapami: poczta i pilot, potem jeden adapter ofert/formularzy,
+następnie wyszukiwanie potencjalnych zleceń usługowych. Docelowo konfiguracja
+i świadomy Start mogą obejmować automatyczne zgodne działania bez przeglądu
+każdego z nich. Nieznane odpowiedzi formularza i niepewne złożenie wymagają
+wyjaśnienia; zmiana kanału nie obchodzi historii, odmów lub niepewnej próby.

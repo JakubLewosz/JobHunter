@@ -49,7 +49,7 @@ export interface GmailGateway {
     input: FrozenMessage,
     account: AccountInfo,
     beforeSend: () => void,
-  ): Promise<{ id: string; threadId: string; confirmed: boolean }>;
+  ): Promise<{ id: string | null; threadId: string | null; confirmed: boolean }>;
 }
 const providerId = z
   .string()
