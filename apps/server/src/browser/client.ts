@@ -1,7 +1,7 @@
 import { connect } from 'node:net';
 import { readFileSync, realpathSync } from 'node:fs';
 import { join, resolve, dirname, basename } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir, platform } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { browserDescriptorName } from './contracts.js';
 import type { BrowserPayload, BrowserReceipt, ComposeObservation } from './contracts.js';
@@ -18,7 +18,7 @@ export class BrowserExecutorClient {
       typeof d.secret !== 'string' ||
       !/^[a-f0-9]{64}$/.test(d.secret) ||
       typeof d.address !== 'string' ||
-      !(process.platform === 'win32'
+      !(platform() === 'win32'
         ? /^\\\\\.\\pipe\\jobhunter-browser-[a-f0-9-]+$/.test(d.address)
         : dirname(d.address) === realpathSync(tmpdir()) &&
           /^jh-[a-f0-9]{16}\.sock$/u.test(basename(d.address)))

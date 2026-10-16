@@ -4,6 +4,9 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, readdirSy
 import { join, basename } from 'node:path';
 import { tmpdir } from 'node:os';
 import { connect } from 'node:net';
+import { createRequire } from 'node:module';
+import { runInNewContext } from 'node:vm';
+import { transpileModule, ModuleKind, ScriptTarget } from 'typescript';
 import { Store } from '../apps/server/src/db.js';
 import { GmailJobHunter } from '../apps/server/src/gmail/service.js';
 import { BrowserDeliveryBroker } from '../apps/server/src/browser/broker.js';
@@ -110,6 +113,11 @@ test('Browser: exact payload, CV bytes and own readonly receipt use one shared a
   f.service.browserDelivery.check('worker-fixture', payload.id);
   assert.throws(() => f.service.browserDelivery.check('worker-fixture', payload.id));
   ownMessage(f, payload);
+  const sent = f.gateway.sent.bind(f.gateway);
+  f.gateway.sent = async (query) => {
+    assert.equal(query.includeRaw, true);
+    return sent(query);
+  };
   f.service.browserDelivery.complete('worker-fixture', payload.id, {
     acknowledged: true,
     url: 'https://mail.google.com/mail/u/0/#sent/own',
@@ -266,6 +274,33 @@ test('Browser IPC: authenticated named pipe preserves Polish text and does not e
   assert.equal(JSON.parse(denial).ok, false);
   assert.ok(!denial.includes(descriptor.secret));
   assert.equal(existsSync(join(f.dir, 'launch.json')), false);
+});
+
+test('Browser IPC: executor realm does not need the global process object', async (t) => {
+  const f = await setup(t);
+  await f.service.browserDelivery.close();
+  await f.service.browserDelivery.listen();
+  const require = createRequire(import.meta.url);
+  const source = readFileSync('apps/server/src/browser/client.ts', 'utf8');
+  const compiled = transpileModule(source, {
+    compilerOptions: { module: ModuleKind.CommonJS, target: ScriptTarget.ES2022 },
+  }).outputText;
+  const realm = {
+    exports: {} as { BrowserExecutorClient?: new (dir: string) => BrowserExecutorClient },
+    Buffer,
+    setTimeout,
+    clearTimeout,
+    require: (name: string) => {
+      if (name === './contracts.js') return { browserDescriptorName: 'browser-executor.json' };
+      assert.ok(name.startsWith('node:'));
+      return require(name);
+    },
+  };
+  runInNewContext(compiled, realm);
+  assert.equal('process' in realm, false);
+  const client = new realm.exports.BrowserExecutorClient!(f.dir);
+  await client.attach();
+  assert.equal(f.service.browserDelivery.status().connected, true);
 });
 test('Browser: transport change revokes old previews, requires Stop/consent and is unavailable without executor', async (t) => {
   const f = await setup(t);

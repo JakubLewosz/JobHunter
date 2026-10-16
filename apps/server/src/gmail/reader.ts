@@ -26,6 +26,7 @@ export interface GmailMessage {
 export interface SentQuery {
   messageId: string;
   providerId?: string | null;
+  includeRaw?: boolean; // Browser receipts require exact payload, only inside the consented scope.
   scope?: {
     accountSubject: string;
     accountEmail: string;
@@ -377,6 +378,7 @@ export class GmailApi implements GmailGateway {
     )
       throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Konto zmieniło się przed odczytem.');
     if (input.providerId) {
+      if (input.includeRaw) this.assertSentScope(scope);
       providerId.parse(input.providerId);
       const params = new URLSearchParams({ format: 'metadata' });
       for (const name of ['From', 'To', 'Cc', 'Bcc', 'Subject', 'Message-ID'])
@@ -387,7 +389,9 @@ export class GmailApi implements GmailGateway {
       );
       if (known.id !== input.providerId)
         throw new DomainError('GMAIL_MESSAGE', 'Niezgodna wiadomość.');
-      return [known];
+      if (!input.includeRaw) return [known];
+      if (!this.sentInScope(known, scope!)) return [];
+      return [await this.sentRaw(known, expected)];
     }
     const results: GmailMessage[] = [];
     if (!scope) {
@@ -398,17 +402,7 @@ export class GmailApi implements GmailGateway {
       );
       return results;
     }
-    if (
-      ![scope.accountEmail, scope.recipient].every(
-        (email) =>
-          z.email().safeParse(email).success && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$/.test(email),
-      ) ||
-      !Number.isFinite(scope.after) ||
-      !Number.isFinite(scope.before) ||
-      scope.before <= scope.after ||
-      scope.before - scope.after > 720000
-    )
-      throw new DomainError('GMAIL_MESSAGE', 'Brak bezpiecznego zakresu tej próby.');
+    this.assertSentScope(scope);
     const deadline = Date.now() + 45000;
     await this.scan(
       `in:sent from:${scope.accountEmail} to:${scope.recipient} after:${Math.floor(scope.after / 1000)} before:${Math.ceil(scope.before / 1000)}`,
@@ -419,58 +413,80 @@ export class GmailApi implements GmailGateway {
     let bytes = 0;
     const complete: GmailMessage[] = [];
     for (const m of results) {
-      if (
-        !m.labels.includes('SENT') ||
-        m.from.length !== 1 ||
-        m.from[0] !== scope.accountEmail.toLowerCase() ||
-        m.to.length !== 1 ||
-        m.to[0] !== scope.recipient.toLowerCase() ||
-        Date.parse(m.at) < scope.after ||
-        Date.parse(m.at) > scope.before
-      )
-        continue;
+      if (!this.sentInScope(m, scope)) continue;
       if (Date.now() > deadline)
         throw new DomainError('GMAIL_HISTORY_LIMIT', 'Nie ukończono odczytu kandydatów.');
-      const value = z
-        .object({
-          id: providerId,
-          threadId: providerId,
-          labelIds: z.array(z.string()),
-          internalDate: z.string().regex(/^\d+$/),
-          raw: z
-            .string()
-            .min(1)
-            .max(Math.ceil((maxMimeBytes * 4) / 3))
-            .regex(/^[a-zA-Z0-9_-]+={0,2}$/),
-        })
-        .parse(
-          await this.read(
-            `messages/${m.id}`,
-            new URLSearchParams({ format: 'raw' }),
-            expected,
-            16 * 1024 * 1024,
-          ),
-        );
-      const raw = Buffer.from(value.raw, 'base64url');
-      if (raw.toString('base64url') !== value.raw.replace(/=+$/, ''))
-        throw new DomainError('GMAIL_MESSAGE', 'Niekompletne kodowanie RAW.');
-      bytes += raw.length;
+      const message = await this.sentRaw(m, expected);
+      bytes += message.raw!.length;
       if (bytes > 24 * 1024 * 1024)
         throw new DomainError('GMAIL_HISTORY_LIMIT', 'Kandydaci przekraczają limit odczytu.');
-      const mime = inspectMime(raw);
-      const parsed = parseGmailMessage({
-        ...value,
-        payload: {
-          headers: Object.entries(mime.headers).flatMap(([name, values]) =>
-            values.map((value) => ({ name, value })),
-          ),
-        },
-      });
-      if (parsed.id !== m.id || parsed.threadId !== m.threadId || parsed.at !== m.at)
-        throw new DomainError('GMAIL_MESSAGE', 'Metadane i RAW nie dotyczą tej samej wiadomości.');
-      complete.push({ ...parsed, raw });
+      complete.push(message);
     }
     return complete;
+  }
+  private assertSentScope(
+    scope: SentQuery['scope'],
+  ): asserts scope is NonNullable<SentQuery['scope']> {
+    if (
+      !scope ||
+      ![scope.accountEmail, scope.recipient].every(
+        (email) =>
+          z.email().safeParse(email).success && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$/.test(email),
+      ) ||
+      !Number.isFinite(scope.after) ||
+      !Number.isFinite(scope.before) ||
+      scope.before <= scope.after ||
+      scope.before - scope.after > 720000
+    )
+      throw new DomainError('GMAIL_MESSAGE', 'Brak bezpiecznego zakresu tej próby.');
+  }
+  private sentInScope(m: GmailMessage, scope: NonNullable<SentQuery['scope']>) {
+    return (
+      m.labels.includes('SENT') &&
+      m.from.length === 1 &&
+      m.from[0] === scope.accountEmail.toLowerCase() &&
+      m.to.length === 1 &&
+      m.to[0] === scope.recipient.toLowerCase() &&
+      Date.parse(m.at) >= scope.after &&
+      Date.parse(m.at) <= scope.before
+    );
+  }
+  private async sentRaw(m: GmailMessage, expected: AccountInfo): Promise<GmailMessage> {
+    const value = z
+      .object({
+        id: providerId,
+        threadId: providerId,
+        labelIds: z.array(z.string()),
+        internalDate: z.string().regex(/^\d+$/),
+        raw: z
+          .string()
+          .min(1)
+          .max(Math.ceil((maxMimeBytes * 4) / 3))
+          .regex(/^[a-zA-Z0-9_-]+={0,2}$/),
+      })
+      .parse(
+        await this.read(
+          `messages/${m.id}`,
+          new URLSearchParams({ format: 'raw' }),
+          expected,
+          16 * 1024 * 1024,
+        ),
+      );
+    const raw = Buffer.from(value.raw, 'base64url');
+    if (raw.toString('base64url') !== value.raw.replace(/=+$/, ''))
+      throw new DomainError('GMAIL_MESSAGE', 'Niekompletne kodowanie RAW.');
+    const mime = inspectMime(raw);
+    const parsed = parseGmailMessage({
+      ...value,
+      payload: {
+        headers: Object.entries(mime.headers).flatMap(([name, values]) =>
+          values.map((value) => ({ name, value })),
+        ),
+      },
+    });
+    if (parsed.id !== m.id || parsed.threadId !== m.threadId || parsed.at !== m.at)
+      throw new DomainError('GMAIL_MESSAGE', 'Metadane i RAW nie dotyczą tej samej wiadomości.');
+    return { ...parsed, raw };
   }
   async send(input: FrozenMessage, expected: AccountInfo, beforeSend: () => void) {
     const provider = new GmailMailProvider(

@@ -1,3 +1,42 @@
+# Rzeczywiste SELF_TEST Gmail UI — Windows, 16 października 2026
+
+Po osobnym zatwierdzeniu dokładnego podglądu wykonano **dwie wysyłki przez
+Gmail w przeglądarce** z istniejącego konta. Każda ma ACKNOWLEDGED z UI i
+**SENT_CONFIRMED** po celowanym sprawdzeniu własnego ID, nadawcy, odbiorcy,
+tematu, czasu, SENT, pełnej treści/linku i bajtów PDF. Użytkownik potwierdził
+**2/2 Odebrane i 2/2 poprawnie otwierane CV**. Nie gwarantuje to folderów
+przy innych odbiorcach lub przyszłych wiadomościach.
+
+W rzeczywistym środowisku wykonawcy wykryto brak globalnego `process`.
+Klient IPC używa teraz `node:os.platform()` bez zmiany dozwolonych ścieżek.
+Regresja odtwarza realm bez `process`; wcześniejsza wersja nie wykonuje
+żadnego żądania IPC, poprawiona wykonuje jedno uwierzytelnione żądanie.
+Pełny Windows check tej poprawki: **543 backend, 12 performance, 19 UI,
+typecheck/build PASS**. W przygotowaniu przed poprawką nie rezerwowano próby.
+
+Pierwszy faktycznie przyjęty mail pozostawiono w SENT_PROVIDER, ponieważ
+odczyt przez znany ID zwracał tylko metadane. Sender zatrzymał drugą próbę.
+RAW pobrany wyłącznie dla dokładnego własnego ID potwierdził zgodność
+tekstu, HTML/linku i PDF. Poprawiono żądanie RAW dla receipt UI, po weryfikacji
+konta, odbiorcy, SENT i przedziału czasu. Zachowano domyślną ścieżkę metadanych
+API, limity RAW i ścisłe porównanie payloadu; żadnej kontroli nie osłabiono.
+Pierwszą próbę uzgodniono **bez ponownej wysyłki**, następnie drugi mail
+został nadany i potwierdzony. Celowane **93/93 PASS**, typecheck/build PASS;
+pełny końcowy check po tej poprawce na Windowsie: **550/550 backend,
+12/12 performance, 19/19 UI, typecheck/build PASS**.
+
+Końcowy niezależny audyt readonly: **52 tabele, integralność OK, FK=0,
+changedOldRows=[], unexpectedStateKeys=[]**, wszystkie tabele zgodne
+ze spójnym backupem po nadaniu. Migracja 020 była addytywna, 51 → 52 tabel.
+Profil v4/9 zatwierdzonych faktów, CV i jego plik/hash, szkice/wersje, firmy,
+kontakty, historia, granica kampanii, aliasy, blokady i shared zachowane.
+Sześć starych prób/liczników pozostało bez zmian; dopisano dwa SELF_TEST.
+Końcowo RESEARCH_ONLY, stopped=true, senderPaused=true, brak aktywnych
+runów/zadań i nierozstrzygnięć. Brak wysyłki do firm, AUTO_POLICY, nowego OAuth
+lub publicznego researchu. Odczyt poczty objął wyłącznie własne zatwierdzone
+próby; bez historii firm i wiadomości przychodzących. Rzeczywistego macOS
+nie uruchamiano. Wiadomości, adresy, dowody i raport pozostają poza Git.
+
 # Pierwszy transport Gmail UI — Windows, 16 października 2026
 
 Opcjonalny GMAIL_BROWSER dodano do istniejącego sendera: te same rezerwacje,

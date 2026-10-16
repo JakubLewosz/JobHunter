@@ -4,6 +4,100 @@ import { GmailApi } from '../apps/server/src/gmail/reader.js';
 import { FixtureGmail } from './gmail-fixture.js';
 import { prepareMime } from '../apps/server/src/gmail/mime.js';
 
+for (const scenario of [
+  'valid',
+  'wrong-recipient',
+  'not-sent',
+  'outside-window',
+  'no-scope',
+  'missing-raw',
+  'raw-id-mismatch',
+] as const)
+  test(`browser direct-ID receipt: ${scenario}, payload requires exact consented SENT metadata`, async () => {
+    const info = new FixtureGmail().info,
+      now = Date.now(),
+      calls: URL[] = [];
+    const p = await prepareMime({
+      sender: info.email,
+      recipient: 'hr@example.test',
+      subject: 'Próba',
+      body: 'Dokładny tekst',
+      cv: null,
+    });
+    const g = new GmailApi(
+      async () => ({ account: info, bearer: 'fictional' }),
+      async (url) => {
+        const u = new URL(String(url));
+        calls.push(u);
+        assert.ok(u.pathname.endsWith('/messages/known')); // No search or unrelated message.
+        const raw = u.searchParams.get('format') === 'raw';
+        return Response.json({
+          id: raw && scenario === 'raw-id-mismatch' ? 'different' : 'known',
+          threadId: 'thread',
+          labelIds: scenario === 'not-sent' ? ['INBOX'] : ['SENT'],
+          internalDate: String(scenario === 'outside-window' ? now - 3600000 : now),
+          ...(raw
+            ? scenario === 'missing-raw'
+              ? {}
+              : { raw: p.mime.toString('base64url') }
+            : {
+                payload: {
+                  headers: [
+                    { name: 'From', value: info.email },
+                    {
+                      name: 'To',
+                      value:
+                        scenario === 'wrong-recipient' ? 'other@example.test' : 'hr@example.test',
+                    },
+                    { name: 'Subject', value: 'Próba' },
+                    { name: 'Message-ID', value: '<rewritten@mail.gmail.com>' },
+                  ],
+                },
+              }),
+        });
+      },
+    );
+    const call = () =>
+      g.sent({
+        messageId: p.messageId,
+        providerId: 'known',
+        includeRaw: true,
+        ...(scenario === 'no-scope'
+          ? {}
+          : {
+              scope: {
+                accountSubject: info.subject,
+                accountEmail: info.email,
+                recipient: 'hr@example.test',
+                after: now - 120000,
+                before: now + 600000,
+              },
+            }),
+      });
+    if (scenario === 'valid') {
+      const result = await call();
+      assert.equal(result.length, 1);
+      assert.deepEqual(result[0].raw, p.mime);
+      assert.deepEqual(
+        calls.map((u) => u.searchParams.get('format')),
+        ['metadata', 'raw'],
+      );
+    } else if (
+      scenario === 'no-scope' ||
+      scenario === 'missing-raw' ||
+      scenario === 'raw-id-mismatch'
+    ) {
+      await assert.rejects(call);
+      if (scenario === 'no-scope') assert.equal(calls.length, 0);
+    } else {
+      assert.deepEqual(await call(), []);
+      assert.deepEqual(
+        calls.map((u) => u.searchParams.get('format')),
+        ['metadata'],
+      );
+    }
+  });
+
 test('reconcile reader: utrata odpowiedzi i zmiana RFC ID nadal wskazuje ograniczonego kandydata', async () => {
   const info = new FixtureGmail().info;
   const now = Date.now();

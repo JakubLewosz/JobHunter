@@ -92,6 +92,18 @@ tej granicy nie cofnie już przyjętej akcji. Bez obietnicy exactly-once.
 
 ## Granice przeprowadzonej próby
 
+Po opisanym niżej etapie wdrożenia użytkownik osobno zatwierdził dwa
+rzeczywiste SELF_TEST. Oba przeszły potwierdzenie UI i celowany odczyt własnego
+ID z kontrolą pełnego payloadu/PDF; użytkownik zgłosił dwa Odebrane i działające
+CV. Klient IPC obsługuje środowisko bez globalnego `process`. Potwierdzenie
+przez znany ID żąda RAW tylko dla transportu przeglądarkowego i po sprawdzeniu
+zakresu konta/odbiorcy/SENT/czasu; domyślna ścieżka API pozostaje metadanymi.
+Pierwszy przyjęty mail uzgodniono po tej poprawce bez ponowienia. Program
+pozostał zatrzymany w RESEARCH_ONLY. Mały pilot do firm i AUTO_POLICY nie
+zostały uruchomione. Pełny aktualny zakres: [TEST_REPORT](TEST_REPORT.md).
+
+Historyczny etap samego wdrożenia:
+
 16 października sprawdzono prawdziwe logowanie i redagowanie w Gmailu
 na fikcyjnym adresie .test, fikcyjnej treści oraz fikcyjnym PDF. Nie
 kliknięto Wyślij w prawdziwym Gmailu. Kliknięcie, awarie i rozstrzyganie

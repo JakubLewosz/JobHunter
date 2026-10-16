@@ -1323,9 +1323,11 @@ export class GmailJobHunter extends ResearchJobHunter {
         manualReviewRequired: true,
         candidates: [],
       });
+    const browser = this.store.one('SELECT * FROM browser_deliveries WHERE outbox_id=?', o.id);
     const results = await this.gateway.sent({
       messageId: o.message_id,
       providerId: attempt.provider_id,
+      includeRaw: !!browser,
       scope: {
         accountSubject: o.account_subject,
         accountEmail: o.account_email,
@@ -1372,7 +1374,6 @@ export class GmailJobHunter extends ResearchJobHunter {
         : m.messageId === o.message_id &&
           !!candidates.find((c) => c.providerId === m.id)?.comparison?.decodedPartsLF,
     );
-    const browser = this.store.one('SELECT * FROM browser_deliveries WHERE outbox_id=?', o.id);
     if (
       browser &&
       (browser.state !== 'ACKNOWLEDGED' ||

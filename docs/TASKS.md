@@ -1,5 +1,31 @@
 # Zadania
 
+## Rzeczywiste SELF_TEST transportu przeglądarkowego — 16 października 2026
+
+- [x] Po osobnej zgodzie na pełny podgląd wykonać dwie pojedyncze próby
+      przez Gmail UI i potwierdzić każdą w Wysłanych. Obie SENT_CONFIRMED;
+      użytkownik potwierdził Odebrane i poprawne otwieranie obu PDF.
+- [x] Usunąć zależność klienta IPC od globalnego `process` w środowisku
+      wykonawcy; zachować tę samą walidację named pipe/socketu. Test realm
+      bez tej zmiennej i pełny check Windows 543/12/19 PASS.
+- [x] Poprawić potwierdzenie własnego znanego ID dla transportu UI: pobrać
+      RAW po sprawdzeniu konta, literalnego odbiorcy, SENT i okna czasu.
+      Domyślna ścieżka metadanych API i ścisła kontrola payloadu bez zmian.
+      Pierwszą przyjętą próbę uzgodniono bez ponowienia; dopiero potem
+      nadano drugą. Celowane 93 PASS, typecheck/build PASS.
+- [x] Sprawdzić spójne backupy i historię: 52 tabele, FK=0, integrity=ok,
+      wszystkie stare wiersze/wersje zachowane, profil v4/9 faktów/PDF
+      zgodne; dodano wyłącznie dwie próby do sześciu dawnych. Główne dane
+      researchu, historia, granica kampanii, shared, aliasy i blokady bez zmian.
+      Program zatrzymany w RESEARCH_ONLY, sender paused, brak nierozstrzygnięć.
+- [x] Dokończyć końcowy `npm run check` po poprawce RAW: rzeczywisty Windows,
+      **550 backend / 12 performance / 19 UI, typecheck/build PASS**.
+- [ ] Osobno przygotować mały rzeczywisty pilot do firm, po aktualnych
+      źródłach i osobno dopuszczonym celowanym sprawdzeniu historii.
+      Zgoda na dwa SELF_TEST została wykorzystana; kampania pozostaje wyłączona.
+
+Dokładne wiadomości, adresy, potwierdzenia i prywatny raport pozostają poza Git.
+
 ## Pierwszy transport Gmail UI — 16 października 2026
 
 - [x] Dodać opcjonalny transport GMAIL_BROWSER do istniejącego sendera,
@@ -23,10 +49,9 @@
       po rozszerzeniu testu niepustego starego MIME i ścieżki Unix ponownie
       10/10 celowanych + typecheck PASS. 51 tabel głównej bazy/backup zgodne,
       FK=0, integralność OK, PDF zgodny. Rzeczywistego macOS nie uruchamiano.
-- [ ] Osobno zlecony SELF_TEST nowym transportem: prawdziwy komunikat UI,
-      identyfikator konkretnej własnej wiadomości, celowane potwierdzenie
-      payloadu/PDF oraz wynik folderu odbiorcy. Następnie mały pilot.
-      Brak obecnej zgody na rzeczywiste wysyłki lub uruchomienie kampanii.
+- [x] Osobno zlecone SELF_TEST nowym transportem: dwa prawdziwe komunikaty
+      UI, identyfikatory własnych wiadomości, celowane potwierdzenie
+      payloadu/PDF i wynik folderów. Wynik oraz dalszy pilot opisano powyżej.
 - [ ] Później adapter jednego portalu ofert oraz kwalifikacja potencjalnych
       zleceń usługowych. Tych modułów nie wdrożono w etapie Gmail UI.
 
