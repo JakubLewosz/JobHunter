@@ -1,6 +1,7 @@
 import { mkdirSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
 import type { Store } from '../db.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import { DomainError } from '../util.js';
@@ -14,8 +15,63 @@ const parse = (value: string | null, fallback: any = null) => {
     return fallback;
   }
 };
-export function researchReport(store: ReportStore, at = new Date().toISOString(), scope?: Row) {
+const controllerResultSchema = z
+  .object({
+    phase: z.literal('FINISHED'),
+    reason: z.string().regex(/^[A-Z][A-Z0-9_]{0,99}$/),
+    at: z.iso.datetime(),
+    sessionId: z.string().min(1).optional(),
+    audit: z
+      .object({ sessionId: z.string().min(1) })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export function researchReport(
+  store: ReportStore,
+  at = new Date().toISOString(),
+  scope?: Row,
+  controllerResult?: unknown,
+) {
   const session = scope ?? store.get<Row>('researchDay', {});
+  let controller: z.infer<typeof controllerResultSchema> | undefined;
+  if (controllerResult !== undefined) {
+    const parsed = controllerResultSchema.safeParse(controllerResult);
+    if (!parsed.success)
+      throw new DomainError(
+        'INVALID_REPORT_RESULT',
+        'Wymagany końcowy wynik kontrolera z kodem przyczyny i datą.',
+      );
+    controller = parsed.data;
+    const ids = [controller.sessionId, controller.audit?.sessionId].filter(Boolean);
+    if (
+      session.active ||
+      !session.sessionId ||
+      !ids.length ||
+      ids.some((id) => id !== session.sessionId)
+    )
+      throw new DomainError(
+        'REPORT_SCOPE_MISMATCH',
+        'Wynik kontrolera nie dotyczy tej zakończonej sesji.',
+      );
+  }
+  // STOPPED/PAUSED can be cleanup states after an external controller failure.
+  // Do not infer a transport failure (or an operator decision) from those states.
+  const sessionReason =
+    session.finalReason && !['STOPPED', 'PAUSED'].includes(session.finalReason)
+      ? session.finalReason
+      : null;
+  const termination = {
+    recordedState: session.finalReason ?? null,
+    reason: controller?.reason ?? sessionReason,
+    reasonSource: controller
+      ? 'CONTROLLER_RESULT'
+      : sessionReason
+        ? 'SESSION_STATE'
+        : 'UNAVAILABLE',
+    controllerRecordedAt: controller?.at ?? null,
+  };
   const ids =
     session.runIds ??
     store
@@ -116,6 +172,7 @@ export function researchReport(store: ReportStore, at = new Date().toISOString()
     generatedAt: at,
     mode: 'RESEARCH_ONLY',
     session,
+    termination,
     stopped: store.get('stopped', true),
     paused: store.get('paused', true),
     lastProgressAt:
@@ -160,6 +217,7 @@ export function researchReportText(report: ReturnType<typeof researchReport>) {
   const lines = [
     'JobHunter — raport RESEARCH_ONLY',
     `Stan: ${session.finalReason ?? (session.active ? 'W TRAKCIE' : 'ZATRZYMANY')}`,
+    `Przyczyna zakończenia: ${report.termination.reason ?? 'brak osobno zapisanej przyczyny; sam stan nie rozstrzyga powodu'}; źródło: ${report.termination.reasonSource}`,
     `Początek: ${session.startedAt ?? 'brak danych'}; koniec: ${session.finishedAt ?? 'brak danych'}; deadline: ${session.expiresAt ?? 'brak danych'}`,
     `Ostatni postęp: ${report.lastProgressAt ?? 'brak danych'}; aktualizacja raportu: ${report.generatedAt}`,
     `Cykle: ${s.cycles}; wpisy kandydatów: ${s.candidateEntries}; różne URL: ${s.distinctURLs}; firmy: ${s.companies}`,

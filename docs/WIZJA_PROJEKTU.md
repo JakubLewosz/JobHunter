@@ -26,10 +26,11 @@ internetowej lub automatyzacji. Formularze stają się planowanym późniejszym
 rozszerzeniem, nie częścią obecnie uruchamianego zakresu. Nie wdrożono ich
 i nie sprawdzono jeszcze integracji konkretnego portalu.
 
-Obsługa przeglądarki jest rozwijaną warstwą wykonania działań. Pierwszy
-adapter Gmail UI dodano do kodu i próby fikcyjnej; wymaga aktywnego wykonawcy
-w Codexie i nie został włączony w głównej instalacji. Faktyczna wysyłka
-przeglądarkowa i jej dostarczalność pozostają do osobnego SELF_TEST/pilotażu.
+Obsługa przeglądarki jest warstwą wykonania działań. Adapter Gmail UI został
+wdrożony i wybrany w głównej instalacji; wymaga aktywnego wykonawcy w Codexie.
+Dwa osobno zatwierdzone SELF_TEST zostały potwierdzone w Wysłanych, a odbiorcy
+zgłosili Odebrane i działające CV. Pilot do firm pozostaje osobnym etapem.
+Ten wynik nie gwarantuje dalszej dostarczalności ani nie ustala przyczyny Spamu.
 Opis i ograniczenia: [GMAIL_BROWSER](GMAIL_BROWSER.md). Kod JobHuntera
 nadal odpowiada za kwalifikację, zatwierdzone fakty i odpowiedzi, niezmienne
 CV, politykę, tempo, wspólną historię, blokady i Stop. Oddzielamy aplikację
@@ -42,3 +43,14 @@ następnie wyszukiwanie potencjalnych zleceń usługowych. Docelowo konfiguracja
 i świadomy Start mogą obejmować automatyczne zgodne działania bez przeglądu
 każdego z nich. Nieznane odpowiedzi formularza i niepewne złożenie wymagają
 wyjaśnienia; zmiana kanału nie obchodzi historii, odmów lub niepewnej próby.
+
+## Preferencja operacyjna z 16 października 2026
+
+Użytkownik chce móc zbierać firmy i szkice nocą w RESEARCH_ONLY, a potem
+osobnym poleceniem uruchamiać dzienną wysyłkę przygotowanej partii w ustalonym
+zakresie i tempie. Wysyłka ponownie sprawdza źródła, historię, materiały i blokady.
+Nie każdy zapisany szkic jest gotowy. Po udanym pilocie jedna jawna decyzja
+o zakresie i tempie oraz Start może obejmować kolejne zgodne wiadomości, bez
+indywidualnej akceptacji każdego maila. Osobna skończona partia i ciągłe
+„szukaj i wysyłaj” powinny mieć wyraźnie różne granice. To kierunek dalszego
+rozwoju; nie deklarować tej osobnej funkcji partii jako już ukończonej.

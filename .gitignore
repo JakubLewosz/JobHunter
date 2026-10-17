@@ -3,7 +3,6 @@ dist/
 test-results/
 playwright-report/
 .env
-*.sqlite*
 *.log
 .DS_Store
 coverage/
@@ -38,3 +37,8 @@ history.pending
 *.raw
 workstation.json
 development.json
+launch.json
+browser-executor.json
+oauth-*.json
+profile.lock/
+profile-acquire.lock/

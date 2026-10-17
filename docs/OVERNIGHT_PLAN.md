@@ -1,39 +1,17 @@
-# Stabilizacja — 11 października 2026
+# Długie sesje RESEARCH_ONLY
 
-Ten plan jest historyczny. Od 12 października aktualny zakres jest w TASKS:
-LOCAL_ONLY na jednym domowym Windowsie. Rozwój macOS/Windows bez prawdziwej poczty;
-PRIVATE_GIT i jego dalsza macierz handoff są opcjonalne, odłożone i nie blokują pilotażu.
+Obecny stan i ostatnia awaria: [TEST_REPORT](TEST_REPORT.md).
+Otwarte warunki kolejnego startu: [TASKS](TASKS.md), [KNOWN_ISSUES](KNOWN_ISSUES.md).
 
-Gałąź `codex/overnight-stabilization`, punkt wyjścia `4e6b864`. Czysty checkout;
-zgoda obejmuje kod/testy/dokumentację i push do JakubLewosz/JobHunter.
-Testy wyłącznie na fikcyjnych providerach, osobnych bazach i lokalnych repo Git.
+Natywny startDay przyjmuje 1–24 h. Długie sesje mają nieodnawialny deadline,
+cykle co 15 min i do 5 szkiców/cykl. Czas operacji może ograniczyć liczbę cykli.
+Praca jest bez Gmaila/send; źródła, historia, blokady i wersje zostają w bazie.
+Utrata sieci, limit modelu, Stop, uśpienie/restart lub naruszenie ochrony nie
+udzielają zgody na automatyczne wznowienie. Nie zmieniać zasilania komputera.
 
-| Priorytet | Zadanie                                                         | Stan             | Test odbioru / następny krok                                                           |
-| --------- | --------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------- |
-| baza      | Rozpoznanie i `npm run check` Windows                           | GOTOWE           | 237/237 + 7/7, typecheck/build PASS                                                    |
-| P0        | Wcześniejszy kontakt pomija firmę; kontekst błędu i wersji      | GOTOWE           | FAIL→PASS, A/B także przed POST; edycja/Stop i dokładna wersja                         |
-| P0        | Osobna intencja zapytania i dopasowanie oferty                  | GOTOWE           | Macierz A–F i treść; odmowy/scope/adres dalej blokowane                                |
-| P0        | Trwały planer po ośmiu kierunkach                               | GOTOWE           | 10 kierunków, tematy według wyników, cooldown/scope/restart; backlog zachowany         |
-| P1        | Celowana historia Gmail i granice sesji                         | GOTOWE OFFLINE   | Bounded scan/retry, account/paginacja; manual endpoint i handoff race                  |
-| P1        | Historia A → B → A                                              | CZĘŚCIOWO        | Dwa klony, aliasy i syntetyczne kontakty/liczniki PASS; pełna macierz awarii pozostaje |
-| P1        | Deterministyczna symulacja doby i diagnostyka UI                | CZĘŚCIOWO        | 3×30h PASS, panel/UI; mieszany handoff/OPEN/429 w jednym soak pozostaje                |
-| P2        | Pobieranie danych i CI                                          | CZĘŚCIOWO        | UI 7/7, workflow przygotowany; wynik CI po push, duża historia/Stop pozostają          |
-| koniec    | Przegląd, instrukcja rano, kontrola sekretów, commity/push/CI   | KOD OPUBLIKOWANY | Check 282/282 + 7/7, skan blobów i ref PASS; CI w raporcie czatu                       |
-| external  | Prawdziwy Gmail, repo historii, macOS/live research/pełny dzień | BLOCKED_EXTERNAL | Wymagają urządzenia/użytkownika; żadnej prawdziwej wysyłki w tej sesji                 |
+Ostatni prywatny guard zatrzymał prawidłowo zapisany proces z powodu
+uzupełnienia pustej domeny. Przed następną sesją wymaga poprawki i testów.
+Nie usuwać całej kontroli tożsamości i nie zerować historii.
 
-Niezależny agent wykonuje tylko przegląd wyścigów i historii, bez edycji plików.
-Nie oznaczać zakresu jako gotowego do całodziennej pracy z Google na podstawie symulacji.
-
-Końcowy npm run check: **282/282 backend + 7/7 UI**, typecheck/build/diff check PASS.
-Log poza repo: %TEMP%/jobhunter-publish-check.log. Kod zamrożony po sprawdzonym wyniku.
-Zachowano dotychczasową deduplikację godzinnego RESEARCH_ONLY; cache nowych źródeł
-ograniczono do AUTO_POLICY. Próba skrócenia kontroli historii przez fingerprint
-wycofana po przeglądzie; pełny Git i konserwatywne blokady pozostają.
-Kod/UI opublikowane: d10e42f7989a2d3af5cc8bba0d1caf12fa6e67a6.
-Zdalny ref zgodny; main bez scalenia. Skan 31 blobów dwóch commitów PASS.
-Dodatkowy commit dokumentacji zapisuje wynik publikacji; jego ref i CI będą odczytane.
-Wynik publikacji/CI konkretnego SHA w końcowym raporcie czatu.
-
-Poprawka CI Windows: różnica wielkości litery dysku odtworzona FAIL→PASS;
-tożsamość katalogu sprawdzana przez dev/ino, inne repo nadal blokowane.
-Końcowy check po poprawce: 282/282 backend + 7/7 UI. Nowy push/CI w raporcie czatu.
+[Plan publikacji z 11 października](archive/2026-10-17/OVERNIGHT_PLAN.md)
+pozostaje historią; jego zgody i wyniki nie dotyczą kolejnego startu.

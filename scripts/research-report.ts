@@ -1,10 +1,20 @@
 import Database from 'better-sqlite3';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { researchReport, writeResearchReport } from '../apps/server/src/research/report.js';
 
 const [database, directory, ...extra] = process.argv.slice(2);
-if (!database || !directory || extra.length)
-  throw new Error('Użycie: npm run research:report -- PLIK_SQLITE KATALOG_POZA_REPO');
+if (
+  !database ||
+  !directory ||
+  (extra.length !== 0 && (extra.length !== 2 || extra[0] !== '--controller-result'))
+)
+  throw new Error(
+    'Użycie: npm run research:report -- PLIK_SQLITE KATALOG_POZA_REPO [--controller-result RESULT_JSON]',
+  );
+const controllerResult = extra.length
+  ? JSON.parse(readFileSync(resolve(extra[1]), 'utf8'))
+  : undefined;
 // No Store constructor, migrations, providers, credentials or work/resume permission.
 const db = new Database(resolve(database), { readonly: true, fileMustExist: true });
 try {
@@ -16,7 +26,9 @@ try {
       return row ? JSON.parse(row.value) : fallback;
     },
   };
-  const report = db.transaction(() => researchReport(store))();
+  const report = db.transaction(() =>
+    researchReport(store, undefined, undefined, controllerResult),
+  )();
   console.log(
     JSON.stringify({ ...writeResearchReport(resolve(directory), report), summary: report.summary }),
   );

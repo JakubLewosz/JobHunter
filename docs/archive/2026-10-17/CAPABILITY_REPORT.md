@@ -1,0 +1,78 @@
+> Archiwum stanu sprzed porządkowania 17 października 2026. Historyczne wymagania i liczby nie zastępują [bieżącego kontekstu](../../REVIEW_HANDOFF.md).
+
+# Możliwości — 8–9 października 2026
+
+## Aktualizacja 12 października — LOCAL_ONLY
+
+Nowa gałąź codex/local-windows-pilot obejmuje overnight 810b860. Lokalny AUTO bez
+repo historii/Gita, atomowa blokada profilu między procesami/portami, backup SQLite
+przed migracją i odtworzenie bez zgody. Domyślny development ma osobne dane i brak
+native Gmaila; WORKSTATION tylko po jawnej lokalnej konfiguracji Windowsa. HTML DOM,
+wersjonowane konteksty konkretnych adresów i nowa kontrola starego cache. Panel ma
+trzy widoki, lokalną gotowość i nie zatrzymuje backendu po zamknięciu karty.
+Pomiar realnego HTTP Stop pod obciążeniem oraz wyniki check/soak: TEST_REPORT.
+
+Jedna publiczna próba z syntetycznym profilem: 5 kandydatów/5 stron, zero kwalifikacji
+lub szkiców przez odrzucenie schematu ekstrakcji CLI. Schemat naprawiony i sprawdzony
+rzeczywistym Codexem na fikcyjnym wejściu. Nie powtarzano publicznej próby; pełny
+research nowej wersji pozostaje do potwierdzenia na Windowsie. Bez Gmaila i prywatnego
+runtime. Niższe sekcje są historyczne, nie przywracają obowiązkowego prywatnego origin.
+
+## Aktualizacja — 11 października 2026
+
+Na Windows win32/x64: Node 24.19.0, npm 11.17.0, SQLite 3.53.4, Codex CLI 0.162.0-alpha.17.2. Faktyczne version/exec help/features potwierdzają użyte flagi i ograniczenia; nie uruchamiano rzeczywistego researchu lub Gmaila. `npm ci` działa dzięki dołączonym bibliotekom i wyłączeniu zależnościowych lifecycle scripts w .npmrc. Doctor ładuje SQLite. Start/health/stop PowerShell PASS w osobnym DEMO ze ścieżką zawierającą spacje i polskie znaki.
+
+Zaimplementowano AUTO_POLICY, ciągłą sesję, osobny sender, aktualne dowody/GENERAL, minimalny prywatny Git z właścicielem, inicjalizacją i przekazaniem, uproszczony panel. Najnowsze wyniki check: TEST_REPORT. Testy fixture i lokalny Git potwierdzają kod, nie dostarczalność, działanie natywnego modelu lub niezależną izolację całego procesu OS. Nowy kod nie był uruchamiany na macOS. Nie ma skonfigurowanego rzeczywistego repo historii w tym checkout.
+
+Poniższe sekcje są historyczne; ich wcześniejsza blokada AUTO_POLICY i stan Windows nie zastępują aktualizacji powyżej.
+
+9 października, po publikacji `db12c29`: naprawiona odtworzona utrata blokady znanego kontaktu Gmail po zmianie nadawcy. Historia firmy działa między kontami, z wyłączeniem odpowiedzi przypisanych do SELF_TEST; pięć nowych regresji offline PASS. Pełny `npm run check`: **206 backend / 6 UI PASS**, typecheck/build/diff check PASS. Bez migracji lub zmian runtime; nowe zmiany lokalne. Diagnoza dwóch dawnych SEMANTIC_REVIEW_FAILED potwierdza poprawne strukturalnie odpowiedzi modelu, lecz brak zachowanych szkiców/issues uniemożliwia ocenę konkretnych zdań. Obecne false/null już zachowywane w NEEDS_REVIEW i blokowane przy send, istniejący test PASS. Prywatny roboczy przegląd dwóch szkiców i dwóch świeżych publicznych źródeł gotowy; kontakty GENERAL nadal NEEDS_REVIEW, historia Gmail firm nieodczytana. Jawny przegląd ogólnego kontaktu pozostaje brakującym krokiem produktu. Zero operacji Gmail i automatycznego researchu; szczegóły w TEST_REPORT.
+
+Kontrola przed zleconą publikacją aktualnych zmian: **201 backend / 6 UI PASS**, typecheck/build/diff check PASS. Audytor prywatnych raportów blokuje również dowiązania kierujące do repo, z nową syntetyczną regresją; EML dodano do ignorowanych plików. Prywatny runtime/tokeny/CV pozostają lokalnie. Windows nadal nieprzetestowany. Szczegóły: [TEST_REPORT](TEST_REPORT.md).
+
+## Bieżący nadawca — nowa decyzja 9 października
+
+Użytkownik zdecydował, aby na razie korzystać ze wskazanego starszego konta. OAuth, konfiguracja kampanii i From nowego niezatwierdzonego podglądu zweryfikowane; test do siebie na wybrane konto. Bez nowej wysyłki lub odczytu wiadomości, sender/research zatrzymane, APPROVAL_REQUIRED i limity zachowane. Wciąż 19 prób/rezerwacji; wcześniejsze bufory, historia, szkice/fakty/CV bez zmian. Decyzja operacyjna po 5/5 Odebrane starszego konta, bez dowodu wyizolowanego wpływu wieku. Nie przywracać automatycznie nadawcy projektu. Kod bez zmian, dokumentacja/diff check PASS. [Szczegóły](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Zlecone porównanie dwóch nadawców — 9 października
+
+Po wskazaniu dokładnych odbiorców wykonano pięć pojedynczych SELF_TEST starszego konta (mail1–mail5) oraz trzy konta projektu (mail2/mail4/mail5); projekt mail1/mail3 pominięto z powodu dawnych prób. Użytkownik potwierdził brak historii ręcznej projektu z pozostałą trójką. **8/8 SENT_CONFIRMED**, dokładnie zatwierdzone bufory, ta sama treść/CV, bez ponowienia send. Pełne MIME części porównane CLI, bez nowej zmiany kodu lub generatora. Po przełączeniu OAuth konto projektu ponownie aktywne; sender/research zatrzymane, kolejka pusta, limity 10/3/50 bez zmian/resetu. Aktualnie 19 historycznych prób/rezerwacji, dziś 8/10, kampania 19/50. Użytkownik zgłosił 5/5 Odebrane starszego konta i 3/3 Spam projektu; na mail2/mail4/mail5 zgodna różnica we wszystkich parach. Wzmacnia hipotezę czynnika związanego z kontem lub relacją nadawca–odbiorca, bez wyizolowania samego wieku/historii/reputacji i wpływu kolejności. Nie zmieniono kodu MIME; przy zapisie wyniku zero nowych operacji Gmail/send. [Raport](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Nowo zlecony reset dzienny i pojedyncza próba Gmail — 21:50
+
+Na wyraźne polecenie użytkownika dostępny ręczny reset dziennego wykorzystania przez app_state i lokalny uwierzytelniony endpoint. Bez kasowania prób/rezerwacji, ze zgodą, audytem, kontrolą bieżącego dnia/licznika i braku aktywnych/niepewnych prób; bez samoczynnej pauzy off, kasowania kill switcha lub resetu limitu kampanii. Pełny `npm run check`: **200 backend / 6 UI PASS**, typecheck/build PASS. Po resecie i nowym podglądzie tej samej treści/CV wykonano wcześniej zleconą **jedną wysyłkę Gmail o 21:50**, SENT_CONFIRMED, dokładnie zatwierdzony bufor, bez retry. Sender zatrzymany; 11 historycznych prób/rezerwacji, bieżące wykorzystanie po resecie 1/10 i kampania 11/50. Dawna historia i materiały bez zmian, brak nowych migracji lub zmian konta/OAuth. Użytkownik następnie zgłosił Spam i dostarczył oba EML: A/B body identyczne, C auth PASS i pełne zdekodowane części zgodne z pozytywnym WP. Brak wykazanej przyczyny lub koniecznego wieku konta. Sender/research zatrzymane; dalsze próby wstrzymane na prośbę użytkownika. Analiza plików miała zero nowych operacji Gmail. [Szczegóły](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Osobno zlecona próba WP — 20:41
+
+Po audycie offline wykonano jedną nową wyraźnie zleconą wiadomość aplikacji na mail2, przez istniejący podgląd/zgodę SELF_TEST z niezmienionym CV. SENT_CONFIRMED, jedna próba, wysłany dokładnie zatwierdzony bufor; w tym etapie 10 prób/rezerwacji przy niezmienionym limicie dziennym 10. Potwierdzono konkretną wiadomość w Wysłanych i zachowano jej RAW poza repo. Użytkownik następnie wysłał wariant ręczny na mail1 i dostarczył cztery EML: **obie wiadomości od razu Odebrane**, oba odbiorcze X-WP-SPAM NO, pełne zdekodowane plain/HTML/PDF wraz z nazwą identyczne. Aplikacja A/B Subject 48/52/29, oba C i ręczne B 84/32; lokalnego generatora nie zmieniono. Kod (U9) występuje także przy NO. Wynik potwierdza udany pierwszy kontakt aplikacji na WP bez poprzedzającego ręcznego maila na ten sam adres, lecz nie wyjaśnia wcześniejszego Spamu ani zachowania odbiorców Gmail. Trzy lokalne audyty CLI i diff check PASS; analiza wyników miała zero nowych operacji Gmail. Sender pozostaje zatrzymany, research wyłączony. Kod bez nowych zmian, pełnych testów po operacjach runtime/dokumentacji nie powtarzano. Szczegóły: [raport](GMAIL_DELIVERABILITY_AUDIT.md).
+
+## Audyt Gmail offline — 8 października 2026
+
+Aktualny generator MIME przechodzi regresje RFC 2047 i pełnych części/PDF. Ograniczony reconcile wskazuje kandydatów przy utracie odpowiedzi i przepisanym RFC ID, lecz identyczna treść nie daje automatycznego SENT_CONFIRMED. Znany Gmail id, zgody, pojedynczy send, limity i blokady zachowane. 197 backend / 6 UI PASS. Dodano lokalny audytor EML bez sieci. Zero rzeczywistych operacji Gmail; brak dowodu naprawy folderu Spam. Konkretne ograniczenia oraz źródła: [audyt](GMAIL_DELIVERABILITY_AUDIT.md). Poniżej zachowano historię wcześniejszych kontroli.
+
+Host: macOS arm64, Node 24.11.0. Punkt wyjścia: `main`, `109effa`, brak lokalnych zmian. Windows nieprzetestowany.
+
+Dostępny krótki diagnostyczny SELF_TEST bez CV i linków, z zamrożonym MIME, zgodą i istniejącymi limitami; wyłącznie na zapisany adres prób. Oba zlecone testy na WP mają SENT_CONFIRMED, a użytkownik zgłosił Spam dla obu, także wariantu bez HTML. EML drugiej próby zgodny z zapisanym identyfikatorem i treścią: MIME bez błędów, DKIM good według WP oraz X-WP-SPAM YES (U9); brak osobnych wyników SPF/DMARC. Przyczyna i znaczenie U9 nieustalone. Następny krok to sprawdzenie reguł odbiorcy przed wyborem dalszej próby. Łącznie dziewięć prób i rezerwacji; 157 backend / 6 UI PASS. Brak zmian generatora lub formatu maili do firm. Szczegóły: TEST_REPORT.md.
+
+## Potwierdzone rzeczywistymi próbami
+
+- Codex CLI 0.160.1: `/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex`.
+- `codex exec --help`, `codex login status`, lista lokalnych feature flags: stdin, JSONL, output schema, ephemeral, ignore-user-config/rules, read-only, strict config. Logowanie przez ChatGPT. Nie czytano plików auth.
+- Mały wynik strukturalny na fikcyjnych danych przeszedł schemat oraz backend. Metryki wejścia/wyjścia tokenów dostępne; model i koszt mogą pozostawać nieznane.
+- Natywny web search zwrócił zdarzenie `item.completed/web_search` i publiczny URL. Przy wyłączonym `code_mode_host` narzędzie było niedostępne; URL wygenerowany bez zdarzenia został odrzucony. Host narzędzi pozostaje włączony, shell/exec, pluginy, apps, hooks, browser, computer use i subagenci wyłączone.
+- Publiczny fetcher rzeczywiście odczytał stronę Node.js przez HTTPS, z metadanymi i SHA-256. Początkowy błąd kontraktu DNS `all:true` w Node 24 został usunięty.
+- Próba dostępu modelu do osobnego fikcyjnego pliku poza zadaniem: read=null, wrote=false, plik niezmieniony. Nie testowano odczytu rzeczywistych prywatnych plików. To potwierdza tę próbę przy tej konfiguracji, nie pełną izolację procesu systemowego.
+
+## Stan produktu
+
+DEMO pozostaje lokalną symulacją E0–E2. RESEARCH_ONLY ma rzeczywiste adaptery i osobną bazę, brak transportu poczty, prywatnej skrzynki i formularzy. Możliwość/konfiguracja/test są oddzielne; gotowość wynika z udanej próby, nie samej obecności binarki.
+
+Wcześniejszy `npm run smoke:research` zakończył się `WAITING_FOR_PROFILE` po sprawdzeniu CLI i wyszukiwarki. Później użytkownik zatwierdził materiały w panelu i uruchomił rzeczywisty research. Ograniczony test z godzinnym terminem zakończył się automatycznie po około 42 minutach: 5 tur, 10 kandydatów i 3 szkice, zero wysyłek. Potwierdzono rzeczywisty przepływ firma → szkic. Dwie próby generowania pozostają błędami SEMANTIC_REVIEW_FAILED. Szkice wymagają przeglądu, skrócenia powtarzanych warunków i mocniejszego wyeksponowania AI. Szerokie szukanie obejmuje także firmy PROSPECT bez wakatu: szkic zapytania na literalnie potwierdzony kontakt ogólny, bez stwierdzania rekrutacji lub zgodności nieznanych warunków. Nie wykonano pełnej godziny ani wysyłek; szczegóły w TEST_REPORT.md.
+
+APPROVAL_REQUIRED ma implementację ręcznie zatwierdzanej wysyłki Gmail z CV, celowanej historii, odczytu znanych własnych wątków i reconcile. Konto send połączono rzeczywiście 7 października, a użytkownik zakończył rozszerzenie OAuth o readonly/send 8 października. Nową ścieżkę sprawdzono na fikcyjnej skrzynce z rzeczywistym kontrolerem i SQLite. Na wyraźną instrukcję użytkownika wysłano jeden test na wskazany adres osobisty: potwierdzony w Wysłanych, bez ponowienia. Użytkownik potwierdził odbiór i otwarcie CV, ale mail trafił do Spamu; przyczyna pozostaje do diagnozy. Rzeczywiste historie firm i odpowiedzi nadal nieprzetestowane. RESEARCH_ONLY nie inicjalizuje Gmaila ani zgód. Start APPROVAL_REQUIRED zachowuje osobiste dane researchu, unieważnia stare zgody i nie wznawia wysyłek po restarcie. Test do siebie nie oznacza firmy jako skontaktowanej. Wiadomości z Gmaila nie trafiają do Codexa. Szczegóły i ograniczenia: GMAIL_SETUP.md i TEST_REPORT.md.
+
+Nie ma SMTP, płatnej wyszukiwarki ani automatycznego przejścia na API key. AUTO_POLICY zablokowany. Pełne ograniczenia odczytu hosta, Windows ACL i izolacja OS niepotwierdzone.
+
+Ręczna wiadomość użytkownika z identyczną treścią i bajtami CV trafiła do Odebranych; oba EML mają SPF/DKIM/DMARC/ARC PASS. W aplikacji dodano nazwę z zatwierdzonego profilu i escapowany HTML obok tekstu, zachowując zamrożony MIME, zatwierdzone CV i kontrolę wysyłki. 153 backend / 6 UI PASS, rzeczywisty podgląd z nowym formatem sprawdzony niezależnym parserem. Na kolejne wyraźne zlecenie użytkownika wysłano drugi test: SENT_CONFIRMED, bez ponowienia; użytkownik potwierdził Odebrane. Trzeci osobno zlecony test na inny wskazany adres ma SENT_CONFIRMED, lecz użytkownik zgłosił Spam. Zamrożone treść, HTML i PDF obu ostatnich prób identyczne; nie potwierdzono rozwiązania dostarczalności. Ponownie dostarczony EML drugiego odbiorcy ma SPF/DKIM/DMARC/ARC PASS, zgodny identyfikator, treść i CV oraz brak błędów MIME. Użytkownik zgłosił następnie Odebrane dla ręcznego maila na drugi adres. Czwarty osobno zlecony test aplikacji po tej wiadomości ma SENT_CONFIRMED, jedną próbę i rezerwację oraz identyczną treść/HTML/PDF jak poprzedni; użytkownik potwierdził Odebrane. Na obu adresach między nieudaną pierwszą i udaną kolejną próbą aplikacji była ręczna korespondencja. Brak dowodu uniwersalnej zasady „drugiego maila”; przyczyna spamu pozostaje nieustalona. Kolejna para aplikacji na nowym wskazanym adresie: 14:05:15 i 14:10:33 Europe/Warsaw, oba etapy SENT_CONFIRMED, po jednej próbie/rezerwacji, identyczna treść/HTML/PDF i niezmienione materiały. Łącznie sześć prób aplikacji; użytkownik zgłosił Spam obu wiadomości z pary. Brak historii/interakcji nie został niezależnie potwierdzony. Model proponuje treść, zwykły backend wysyła przez Gmail API bez dodatkowego oznaczenia autorstwa AI. Użytkownik potwierdził świeże konto nadawcy utworzone do projektu, używane wyłącznie do tych testów. Wpływ historii konta pozostaje hipotezą. Jednorazowy test porównawczy nadawcy był SENT_CONFIRMED i według użytkownika trafił do Odebranych przy stałej treści/HTML/PDF i odbiorcy. Dane tymczasowego konta osobistego usunięto na prośbę użytkownika: cofnięta zgoda Google, usunięty tester i lokalny adres/MIME; zachowane anonimowe terminalne stany i siedem wykorzystanych rezerwacji. Jedynym połączonym nadawcą jest konto projektu. Gmail API nie potwierdza folderu wiadomości po stronie odbiorcy.
+
+Aktualny generator używa czterech krótkich części naturalnego zgłoszenia, z opcjonalnym Codexem, jednym krótkim projektem i jednym pytaniem. Styl i długość zaakceptowane przez Jakuba; krótszy mail bez wypełniaczy. Uwagi stylistyczne i semantyczna niepewność zachowują NEEDS_REVIEW; błędy faktów nadal blokowane. Nowe wersje są dopisywane bez nadpisywania historii. Testy backendu i UI PASS (bieżące liczby w TEST_REPORT.md); rzeczywisty Codex wygenerował pięć kontrolnych szkiców dla fikcyjnych firm/odbiorców, bez zmiany rzeczywistego profilu, historii i bez wysyłek. Dostępność około 20 pozostała zgodna z osobną decyzją użytkownika. Szczegóły: MESSAGE_STYLE.md i TEST_REPORT.md.

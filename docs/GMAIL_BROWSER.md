@@ -112,7 +112,7 @@ Rzeczywistego komunikatu po wysyłce, identyfikatora własnej wiadomości,
 dostarczalności i folderu odbiorcy jeszcze nie sprawdzono tym transportem.
 Pełny zakres testów i ograniczenia: [TEST_REPORT](TEST_REPORT.md).
 
-Przed produkcyjnym wyborem transportu potrzebny jest osobno zlecony
-SELF_TEST z konkretnym podglądem, a potem mały pilot. Zalogowanie się i
-rozwój aplikacji nie są zgodą na rzeczywistą wysyłkę. Adaptery portali pracy
-i potencjalnych zleceń pozostają kolejnymi etapami.
+Powyższe dwa SELF_TEST zostały wykonane po osobnym zleceniu i dokładnym
+podglądzie; ich zgody zostały wykorzystane. Kolejnym etapem jest osobno
+zatwierdzony mały pilot. Zalogowanie się i rozwój aplikacji nie są zgodą
+na nowe wysyłki. Adaptery portali i potencjalnych zleceń pozostają przyszłością.

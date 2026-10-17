@@ -1,12 +1,19 @@
 JOBHUNTER — JEDEN KOMPUTER ROBOCZY
 
+Dla analizy całego projektu przez AI zacznij od docs/REVIEW_HANDOFF.md,
+docs/KNOWN_ISSUES.md i JobHunter_PROMPT_CODEX.txt. Bieżące zadania i wyniki:
+docs/TASKS.md / docs/TEST_REPORT.md. Dawne raporty zachowano w docs/archive;
+ich stare zgody, liczniki i ograniczenia nie są aktualnym stanem produktu.
+
 Specyfikacja 2.1 (12 października): kod Windows/macOS, prawdziwy research i poczta
 tylko na domowym Windowsie, jedna trwała historia LOCAL_ONLY poza repo.
 
 Development: npm ci, npm run check, npm run doctor, npm start i npm run open.
 Domyślnie DEVELOPMENT/DEMO, osobne dane syntetyczne, bez natywnego Gmaila.
 
-Domowy Windows: ustal oryginalną historię, history:local doctor/backup, następnie configure.
+Nowa instalacja Windows: ustal oryginalną historię, history:local doctor/backup,
+następnie jawne configure. Istniejący domowy Windows jest już skonfigurowany;
+nie inicjalizuj nowej historii i nie powtarzaj konfiguracji jako kroku analizy.
 WORKSTATION i tryb ustaw jawnie. Materiały/CV/nadawcę/politykę zatwierdza użytkownik;
 Start jest osobną decyzją sesji. Brak prywatnego origin nie blokuje AUTO.
 
@@ -14,3 +21,8 @@ Push kodu nie aktualizuje kampanii. Stop, koniec operacji, backup, dopiero aktua
 Restart zatrzymany. Nigdy nie resetuj historii lub SEND_UNKNOWN.
 Procedury A/B/C: docs/URUCHOMIENIE_RANO.md. Wyniki: docs/TEST_REPORT.md.
 Rozwój nie autoryzuje prawdziwej poczty lub zmian prywatnych danych.
+
+Stan 17 października: program zatrzymany w RESEARCH_ONLY, sender paused,
+brak zgody na maile do firm. Znany problem prywatnego guarda długich sesji
+wymaga poprawki przed kolejnym uruchomieniem. Kontakty, CV, historia i sekrety
+pozostają poza GitHubem. Push nie uruchamia ani nie aktualizuje pracującej sesji.

@@ -2,7 +2,27 @@
 
 Osobiste narzędzie do pierwszego kontaktu z firmami działającymi w Polsce: płatna, regularna współpraca programistyczna, w pełni zdalnie, około 20 godzin tygodniowo po lekcjach. Zatwierdzone fakty/CV i polskie wiadomości. Odpowiedzi użytkownik obsługuje w Gmailu.
 
-Od 12 października 2026 kod rozwijamy na Windows/macOS, lecz prawdziwy research i poczta pracują na **jednym domowym Windowsie**. GitHub przenosi kod, nie lokalną historię, CV, szkice lub poświadczenia. Push nie jest deploymentem. Gałąź `codex/local-windows-pilot` obejmuje nocne poprawki `810b860`.
+Kod rozwijamy na Windows/macOS, lecz prawdziwy research i poczta pracują na **jednym domowym Windowsie**. GitHub przenosi kod, nie lokalną historię, CV, szkice lub poświadczenia. Push nie jest deploymentem. Gałąź robocza: `codex/local-windows-pilot`.
+
+## Analiza projektu — zacznij tutaj
+
+**[Pełny kontekst dla AI](docs/REVIEW_HANDOFF.md)** opisuje wymagania, architekturę,
+ostatnią sesję, wyniki Gmaila, prywatny runtime i brakujące elementy.
+**[Znane problemy](docs/KNOWN_ISSUES.md)** rozdzielają błędy, hipotezy i ograniczenia.
+Aktualne [zadania](docs/TASKS.md) i [wyniki](docs/TEST_REPORT.md) są oddzielone od
+[archiwum historycznych raportów](docs/archive/2026-10-17/README.md).
+Gotowy prompt przeglądu: [JobHunter_PROMPT_CODEX.txt](JobHunter_PROMPT_CODEX.txt).
+
+Stan z 17 października: ostatni RESEARCH_ONLY planowany na 8 h zatrzymał prywatny
+guard po 3 h 32 min; późniejsze rozłączenie sieci jest osobnym zdarzeniem.
+Dodano 43 rekordy firm / 37 kontaktów / 19 szkiców. Dane robocze są zachowane,
+program zatrzymany; problem guarda pozostaje otwarty. Dwa wcześniej autoryzowane
+SELF_TEST przez Gmail UI trafiły do Odebranych według odbiorców; pilota do firm
+nie uruchomiono. Nie wnioskować z tego przyczyny wcześniejszego Spamu.
+
+Klon repozytorium służy do DEVELOPMENT/DEMO. Nie zawiera rzeczywistej SQLite,
+CV, kontaktów, tokenów lub OAuth. Publiczne historyczne pakiety niżej pozostają
+datowanym wyjątkiem publikacji, nie bieżącą biblioteką lub zgodą na wysyłkę.
 
 [Specyfikacja](JobHunter_SPEC.md), [wizja](docs/WIZJA_PROJEKTU.md), [styl](docs/MESSAGE_STYLE.md), [zadania](docs/TASKS.md), [testy](docs/TEST_REPORT.md). Rozwój nie upoważnia do prawdziwej poczty, również SELF_TEST, lub zmian prywatnego runtime.
 
@@ -128,9 +148,15 @@ migracji lub providerów:
 
 ```powershell
 npm run research:report -- "C:\ścieżka\jobhunter.sqlite" "C:\katalog-poza-repo\raport"
+# Jeżeli istnieje końcowy wynik kontrolera tej samej zakończonej sesji:
+npm run research:report -- "C:\ścieżka\jobhunter.sqlite" "C:\katalog-poza-repo\raport" --controller-result "C:\prywatny-katalog\result.json"
 ```
 
-Odczyt raportu nie uruchamia researchu ani wysyłki. Statystyki odróżniają zapisane
+Odczyt raportu nie uruchamia researchu ani wysyłki. Stan STOPPED/PAUSED nie jest
+sam w sobie przyczyną awarii. Opcjonalny wynik kontrolera wymaga FINISHED,
+zgodnego sessionId i poprawnego kodu przyczyny; nie może opisać innej aktywnej sesji.
+Datę wygenerowania raportu odróżniaj od końca sesji i czasu kontroli aktualności.
+Statystyki odróżniają zapisane
 źródła, cache, bezpośrednie próby HTTP i przekierowania; brak dawnego pomiaru to
 brak danych. Techniczne SIZE_LIMIT ma ograniczony cooldown, bez uciętego READ,
 podnoszenia limitu pobierania lub traktowania błędu strony jako odmowy firmy.

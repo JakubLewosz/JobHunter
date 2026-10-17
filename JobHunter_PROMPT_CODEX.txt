@@ -1,9 +1,11 @@
-Kontynuuj istniejący JobHunter, nie buduj od zera. Obowiązują AGENTS.md, JobHunter_SPEC.md (2.1, 12 października 2026), README.md i aktualny stan docs/TASKS.md / docs/TEST_REPORT.md.
+Przeanalizuj istniejący JobHunter, nie buduj go od zera. Najpierw przeczytaj README.md, AGENTS.md, docs/REVIEW_HANDOFF.md, docs/KNOWN_ISSUES.md, JobHunter_SPEC.md, docs/WIZJA_PROJEKTU.md oraz bieżące docs/TASKS.md i docs/TEST_REPORT.md. Archiwalne raporty służą historii i nie zastępują aktualnych wymagań.
+
+Zbadaj kod, migracje i testy. Oddziel potwierdzone błędy od hipotez i niewdrożonych funkcji. Dla ustaleń podaj plik/linijkę, odtwarzalny scenariusz, wpływ, priorytet i małą proponowaną poprawkę z właściwym testem. Uwzględnij zewnętrzny prywatny guard ostatniej sesji: jego błąd jest opisany, ale sama poprawka eksportera nie naprawia kontrolera. Nie zakładaj, że masz prywatne logi lub bazę. Prace stylistyczne generatora są zamknięte.
 
 AUTO_POLICY używa jawnej polityki i Start — szukaj i wysyłaj. Nie przywracaj akceptacji każdego maila. DEMO, RESEARCH_ONLY i opcjonalny APPROVAL_REQUIRED pozostają odrębne. Brak limitu użytkownika oznacza pracę ciągłą w określonym tempie. Odpowiedzi użytkownik obsługuje sam w Gmailu.
 
 Zachowaj fakty/CV, literalne dowody i lokalny kontekst kontaktów, historię/aliasy/Fingoweb, rezerwację przed pojedynczym POST i SEND_UNKNOWN. Jedna trwała historia LOCAL_ONLY i prawdziwa poczta pracują na domowym Windowsie. MacBook/development ma syntetyczne dane i technicznie niedostępny natywny Gmail. Brak origin nie blokuje AUTO; PRIVATE_GIT jest opcjonalny i odłożony. Nie przenoś aktywnej zgody ani sekretów. Stop/backup przed aktualizacją, push nie jest deploymentem.
 
-Sprawdź kod i status Git, wdrażaj małymi etapami i wykonuj właściwe testy oraz npm run check. Nie resetuj ani nie nadpisuj pracy użytkownika. Rozwój nie upoważnia do rzeczywistych wysyłek, także testowych, zmiany nadawcy/kwot/OAuth, tworzenia zdalnego repo historii lub publikowania prywatnych danych. Nie naprawiaj CLI przez full access lub płatny API key.
+Sprawdź kod i status Git. Sam przegląd nie upoważnia do przebudowy lub wdrożenia; jeżeli użytkownik zleci poprawki, wdrażaj je małymi etapami, z właściwymi testami i npm run check. Nie resetuj ani nie nadpisuj pracy użytkownika. Nie uruchamiaj publicznego researchu, Gmaila lub Start w celu analizy. Rozwój nie upoważnia do rzeczywistych wysyłek, także testowych, zmiany nadawcy/kwot/OAuth, tworzenia zdalnego repo historii lub publikowania prywatnych danych. Nie czytaj tokenu panelu, keyring, cookies, OAuth, poczty ani prywatnego CV. Nie naprawiaj CLI przez full access lub płatny API key.
 
 Ten plik zastępuje historyczny prompt E0–E2 dla budowania nowej aplikacji.

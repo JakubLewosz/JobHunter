@@ -1,51 +1,31 @@
-# Windows smoke — do wykonania przez użytkownika
+# Windows — zakres potwierdzony i lista następnej kontroli
 
-## Nowa wersja 12 października 2026
+Aktualne wyniki: [TEST_REPORT](TEST_REPORT.md). Potwierdzono rzeczywisty
+domowy Windows, Node 24, SQLite, native CLI, publiczny research i dwa osobno
+zlecone SELF_TEST Gmail UI. Nie oznacza to pełnego dnia produkcyjnego AUTO.
+Nowy kod/testy należy przypisać do faktycznie uruchomionej rewizji.
 
-LOCAL_ONLY/WORKSTATION i poprawka HTML zostały rozwinięte na macOS arm64, Node 24.11.0.
-Nie wykonano lokalnego smoke Windows/PowerShell nowej wersji ani prywatnej instalacji.
-Wynik CI Windows dla finalnego SHA podawany jest osobno po faktycznym zakończeniu.
-Wcześniejsze Windows PASS poniżej nie są zaliczeniem nowego runtime.
-Aktualna procedura A/B/C i pilotażu: URUCHOMIENIE_RANO. Development domyślnie bez Gmaila;
-prawdziwy sender wymaga lokalnie skonfigurowanego domowego Windowsa i świadomego Start.
+Poniższa lista jest procedurą przyszłej kontroli, nie zapisem wykonania wszystkich
+punktów. Domyślny nowy checkout to DEVELOPMENT/DEMO, bez natywnego Gmaila.
 
-## Rzeczywiste próby z 11 października 2026
+1. Sprawdzić AGENTS, czystość/gałąź i brak aktywnego sendera przed zmianą/buildem.
+2. Node 24, npm ci, npm run check. Zachować dokładny log/zakres i wynik każdej części.
+3. npm run doctor rzeczywiście ładuje SQLite. CLI potwierdzić version/help;
+   używać native exe, bez poszerzania uprawnień lub API key.
+4. Start/health/open/Stop w osobnym syntetycznym DEMO; ścieżka ze spacjami,
+   zwolnienie locka, brak auto-resume. Nie odczytywać tokenu panelu do modelu.
+5. Publiczny smoke tylko po osobnym zleceniu. RESEARCH_ONLY, poprawne CA,
+   reader/search preflight, zatwierdzone materiały, określony deadline i raport.
+6. Rejestrować literalne kontakty/przeznaczenie, dowody, cache, odłożenia,
+   pełne wersje szkiców, czas kontroli i wszystkie błędy. Nie liczyć PENDING jako wyniku.
+7. Przy końcu/przerwaniu readonly audyt, spójny backup z WAL, stare ID/wersje/
+   materiały/historia/blokady/kwoty zachowane. Nie wznawiać samoczynnie.
+8. Gmail/SELF_TEST/pilot to oddzielne uprawnienia; fixture nie jest realną dostawą.
 
-Windows win32 x64 / Node 24.19.0: npm ci, doctor (SQLite 3.53.4), typecheck/build, backend fixture tests i Playwright Chromium uruchomiono rzeczywiście na Windowsie. Panel sprawdzony przy 1440 i 390 px. `scripts/start.ps1 -NoBrowser` → rzeczywisty backend DEMO/health → `scripts/stop.ps1` i zwolnienie blokady PASS, w nowym tymczasowym katalogu „JobHunter smoke Łódź …”. Bez otwarcia zwykłej przeglądarki użytkownika i bez Gmaila. Dokładne liczby końcowego zestawu są w TEST_REPORT.
+Prawdziwy WORKSTATION ma istniejącą historię i lokalny marker. Nie tworzyć nowej
+bazy lub configure w celu obejścia problemu. Nie zmieniać zasilania/autostartu.
+Przed kolejną długą sesją rozstrzygnąć problem zewnętrznego guarda i checkpoint.
 
-Native Codex CLI 0.162.0-alpha.17.2: version/exec help/features PASS. Nie wykonano natywnego researchu modelu, próby logowania/izolacji na prywatnych plikach, Gmaila ani pełnego dnia pracy. Testy adaptera CLI używają fikcyjnego procesu. Nie zaliczamy całej poniższej listy ani macOS na podstawie testów Windows.
-
-## Pozostała instrukcja pełnego smoke
-
-Nie zaliczono na macOS. Wymagany Node 24 LTS i natywny Codex CLI z obsługą użytych flag. Uruchamiaj na jednym komputerze naraz. Git przenosi kod, nie dane aplikacji.
-
-1. Pobierz kod do ścieżki ze spacjami i polskimi znakami. W PowerShell:
-
-```powershell
-npm ci
-npm run check
-npm run doctor
-codex --version
-codex exec --help
-codex login status
-```
-
-2. Zamknij backend poprzedniego trybu przez `node scripts/stop.mjs` w jego środowisku. Ustaw jawnie:
-
-```powershell
-$env:JOBHUNTER_MODE = 'RESEARCH_ONLY'
-# Jeżeli CLI nie jest w PATH, wskaż pełną ścieżkę do NATYWNEGO codex.exe:
-# $env:JOBHUNTER_CODEX_PATH = 'C:\...\codex.exe'
-.\scripts\start.ps1
-```
-
-Plik `.cmd`/`.bat` jest odrzucany: nie uruchamiamy promptów przez shell. Jeśli brakuje natywnego CLI, import URL nadal działa, a model podaje czytelny błąd. Nie naprawiaj przez full access.
-
-3. Sprawdź etykietę RESEARCH_ONLY, pustą osobną bazę i propozycje profilu. Nie kopiuj SQLite demo. W Integracjach wykonaj oba testy (może zużywać dostępny limit planu).
-4. Przejrzyj fakty, popraw je i zatwierdź profil samodzielnie. Uruchom jeden cykl maks. 10 kandydatów / 3 szkice lub import publicznego URL.
-5. Sprawdź pierwotny/końcowy URL, hash, cytaty, unknown/conflicting, cel kontaktu i brak zgadywanych adresów. Sprawdź różne źródła oferty/kontaktu i Fingoweb/HISTORY_TO_VERIFY.
-6. Edytuj i skopiuj temat/treść, oznacz przegląd. Licznik wysyłek powinien pozostawać zero; API approve-batch nie może działać.
-7. Pauza w trakcie modelu i stop powinny zakończyć wyłącznie proces zadania i jego dzieci. Inne rozmowy Codexa muszą pozostać aktywne. Uruchom ponownie backend, wznów etap, sprawdź brak duplikatów.
-8. `node scripts/stop.mjs`, potem powrót do `$env:JOBHUNTER_MODE='DEMO'`: stare dane demo zachowane, nowe dane researchu niewidoczne w demo.
-
-Zapisz datę, Windows/Node/CLI, wynik każdego punktu i błąd bez tokenów. Testu nie uznawaj za zaliczony tylko dlatego, że build się powiódł.
+[Dawna instrukcja i datowane wyniki Windows](archive/2026-10-17/WINDOWS_SMOKE.md)
+pozostały zachowane. Stwierdzenie z 12 października „Windows nieprzetestowany”
+dotyczyło tamtego etapu, nie obecnego stanu.

@@ -1156,7 +1156,7 @@ export class ResearchJobHunter extends JobHunter {
   override updateCampaign(input: unknown) {
     throw new DomainError(
       'RESEARCH_SETTINGS',
-      'W RESEARCH_ONLY limit to 10 kandydatów i 3 szkice; harmonogram wysyłek niedostępny.',
+      'RESEARCH_ONLY używa ustawień własnej sesji badawczej; harmonogram wysyłek jest niedostępny.',
     );
   }
   sourcesFor(item: Row): Source[] {
