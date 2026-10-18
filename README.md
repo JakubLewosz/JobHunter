@@ -1,5 +1,15 @@
 # JobHunter
 
+Pakiet kodu i publicznych danych do analizy przez AI: [AI_REVIEW](docs/AI_REVIEW.md).
+Publikację na `codex/core-completion` oraz eksport firm/kontaktów/źródeł
+z osobno wskazanego backupu zlecono po zakończeniu lokalnej implementacji.
+
+Lokalna implementacja po diagnostyce z 18.10.2026: [zakres i uruchomienie nowych funkcji](docs/CORE_IMPLEMENTATION.md).
+Osobny worktree `codex/core-completion`, baza `f37afc077c0d7c80f231ef0e9ad2f4dcac17363c`.
+Dodano guard/lifecycle, audytor snapshotu, odnowienie szkiców i zamknięte partie AUTO.
+Wyniki bieżącego zmienionego kodu: [TEST_REPORT](docs/TEST_REPORT.md).
+Prywatna instalacja nie została zaktualizowana; rzeczywiste research/Gmail i audyt prywatnej kopii nie były uruchamiane.
+
 Osobiste narzędzie do pierwszego kontaktu z firmami działającymi w Polsce: płatna, regularna współpraca programistyczna, w pełni zdalnie, około 20 godzin tygodniowo po lekcjach. Zatwierdzone fakty/CV i polskie wiadomości. Odpowiedzi użytkownik obsługuje w Gmailu.
 
 Kod rozwijamy na Windows/macOS, lecz prawdziwy research i poczta pracują na **jednym domowym Windowsie**. GitHub przenosi kod, nie lokalną historię, CV, szkice lub poświadczenia. Push nie jest deploymentem. Gałąź robocza: `codex/local-windows-pilot`.
@@ -16,7 +26,7 @@ Gotowy prompt przeglądu: [JobHunter_PROMPT_CODEX.txt](JobHunter_PROMPT_CODEX.tx
 Stan z 17 października: ostatni RESEARCH_ONLY planowany na 8 h zatrzymał prywatny
 guard po 3 h 32 min; późniejsze rozłączenie sieci jest osobnym zdarzeniem.
 Dodano 43 rekordy firm / 37 kontaktów / 19 szkiców. Dane robocze są zachowane,
-program zatrzymany; problem guarda pozostaje otwarty. Dwa wcześniej autoryzowane
+program zatrzymany; prywatny historyczny guard pozostaje bez zmian. Nowy guard w repo jest opisany wyżej. Dwa wcześniej autoryzowane
 SELF_TEST przez Gmail UI trafiły do Odebranych według odbiorców; pilota do firm
 nie uruchomiono. Nie wnioskować z tego przyczyny wcześniejszego Spamu.
 

@@ -31,6 +31,7 @@ function fixture(
     fragment: parsed.text,
     content_hash: hash(parsed.text),
     parser_version: parsed.parserVersion,
+    completeness: parsed.completeness,
     address_contexts: JSON.stringify(parsed.contexts),
     error: null,
   };

@@ -1,8 +1,10 @@
 import { parseDocument } from 'htmlparser2';
 
-export const parserVersion = 2;
-const emailPattern = /[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}/giu;
-const emails = (text: string) => [...text.matchAll(emailPattern)].map((m) => m[0].toLowerCase());
+export const parserVersion = 3;
+const emailPattern =
+  /(?<![\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-])[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]{1,64}@[a-z0-9.-]+\.[a-z]{2,}/giu;
+const emails = (text: string) =>
+  text.includes('@') ? [...text.matchAll(emailPattern)].map((m) => m[0].toLowerCase()) : [];
 type Node = ReturnType<typeof parseDocument>['children'][number];
 const ignored = new Set(['script', 'style', 'noscript', 'svg', 'template']);
 const blocks = new Set([
@@ -40,11 +42,45 @@ const normalize = (text: string) =>
     .replace(/ *\n */g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-export type AddressContext = { email: string; text: string };
+export type AddressContext = { email: string; text: string; complete?: boolean };
 
 // Plain-text sources and multi-address containers keep the preceding label until the previous address.
 export function addressContexts(text: string): AddressContext[] {
+  // In a single-address row/card the label may follow the mailbox. Keeping only
+  // preceding lines silently loses billing/privacy restrictions.
+  const distinct = [...new Set(emails(text))];
+  if (distinct.length === 1) {
+    const value = normalize(text);
+    return [{ email: distinct[0], text: value.slice(0, 2000), complete: value.length <= 2000 }];
+  }
   const lines = text.split(/\n|;|(?<=[.!?])\s+/u);
+  const nonempty = lines.map((line, index) => ({ line, index })).filter((x) => x.line.trim());
+  const addressed = nonempty.filter((x) => emails(x.line).length);
+  const labelPair = (label: string, email: string) =>
+    (/kontakt(?: ogólny)?|contact|general/iu.test(label) &&
+      !/faktur|rozlicze|sprzeda|sales|privacy|security/iu.test(label)) ||
+    [
+      [/sprzeda|sales/iu, /^(sales|sprzedaz)@/i],
+      [/faktur|rozlicze|billing|invoice/iu, /^(faktur\w*|billing|invoice)@/i],
+      [/rekrut|career|recruit/iu, /^(hr|jobs|career\w*|rekrut\w*)@/i],
+      [/privacy|rodo|dpo/iu, /^(privacy|rodo|dpo|iod)@/i],
+      [/security|bezpieczeń/iu, /^security@/i],
+    ].some(([purpose, mailbox]) => purpose.test(label) && mailbox.test(email));
+  // Keep clearly paired label/address BR lists separate. In an ambiguous flat
+  // container, retain following labels conservatively instead of dropping them.
+  const precedingPairs =
+    addressed.length > 1 &&
+    nonempty.at(-1)?.index === addressed.at(-1)?.index &&
+    addressed.every((x) => {
+      const previous = nonempty[nonempty.indexOf(x) - 1];
+      const found = emails(x.line);
+      return (
+        found.length === 1 &&
+        previous &&
+        !emails(previous.line).length &&
+        labelPair(previous.line, found[0])
+      );
+    });
   const result: AddressContext[] = [];
   for (let i = 0; i < lines.length; i++) {
     const found = emails(lines[i]);
@@ -58,13 +94,22 @@ export function addressContexts(text: string): AddressContext[] {
       !emails(lines[first - 1]).length
     )
       first--;
+    let last = i + 1;
+    while (
+      !precedingPairs &&
+      last < lines.length &&
+      last - i <= 2 &&
+      lines[last].trim() &&
+      lines[last].length <= 180 &&
+      !emails(lines[last]).length
+    )
+      last++;
+    const value = lines.slice(first, last).join('\n');
     for (const email of found)
       result.push({
         email,
-        text: lines
-          .slice(first, i + 1)
-          .join('\n')
-          .slice(0, 2000),
+        text: value.slice(0, 2000),
+        complete: value.length <= 2000,
       });
   }
   return result;
@@ -73,8 +118,12 @@ export function parsePublicHTML(html: string) {
   const dom = parseDocument(html),
     texts = new WeakMap<object, string>(),
     occurrences: { node: Node; email: string }[] = [];
+  let depthLimited = false;
   const render = (node: Node, depth = 0): string => {
-    if (depth > 128) return '';
+    if (depth > 128) {
+      depthLimited = true;
+      return '';
+    }
     if (node.type === 'text') {
       const text = node.data.replace(/\s+/g, ' ');
       for (const email of emails(text)) occurrences.push({ node, email });
@@ -96,7 +145,8 @@ export function parsePublicHTML(html: string) {
   };
   const rendered = dom.children.map((node) => render(node)).join('');
   texts.set(dom, rendered);
-  const text = normalize(rendered).slice(0, 100000);
+  const fullText = normalize(rendered),
+    text = fullText.slice(0, 100000);
   const summaries = new WeakMap<object, { value: string; distinct: number }>();
   const contexts: AddressContext[] = [];
   const groupedContexts = new Map<string, Map<string, AddressContext[]>>();
@@ -115,6 +165,9 @@ export function parsePublicHTML(html: string) {
       }
       const { value, distinct } = summary;
       if ('name' in parent) {
+        // A labelled cell/card inside a multi-address structure has its own
+        // purpose. Do not leak an unrelated sibling's label into it.
+        if (distinct > 1 && chosen.replace(emailPattern, '').trim()) break;
         if (groups.has(parent.name)) {
           chosen = value;
           break;
@@ -171,10 +224,36 @@ export function parsePublicHTML(html: string) {
     }
   }
   const literalText = text.toLowerCase();
+  const limitation =
+    fullText.length > 100000
+      ? 'TEXT_LIMIT'
+      : depthLimited
+        ? 'DEPTH_LIMIT'
+        : occurrences.length > 2000
+          ? 'ADDRESS_LIMIT'
+          : contexts.some((c) => c.complete === false)
+            ? 'CONTEXT_LIMIT'
+            : 'COMPLETE';
+  const outboundLinks: { url: string; context: string }[] = [];
+  const visitLinks = (node: Node, depth = 0) => {
+    if (depth > 128 || ('name' in node && ignored.has(node.name))) return;
+    if ('name' in node && node.name === 'a' && 'attribs' in node && node.attribs?.href) {
+      const context = normalize(texts.get(node.parent ?? node) ?? texts.get(node) ?? '');
+      if (outboundLinks.length < 2000)
+        outboundLinks.push({
+          url: node.attribs.href.slice(0, 2000),
+          context: context.slice(0, 2000),
+        });
+    }
+    if ('children' in node) for (const child of node.children) visitLinks(child, depth + 1);
+  };
+  for (const node of dom.children) visitLinks(node);
   return {
     text,
     contexts: contexts.filter((c) => literalText.includes(c.email)),
     parserVersion,
+    completeness: limitation,
+    outboundLinks,
   };
 }
 

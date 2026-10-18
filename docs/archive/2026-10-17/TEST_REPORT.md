@@ -22,7 +22,7 @@ Nazwa/ID/historia/blokady nie uległy zmianie. Nie cofano tej zmiany,
 nie poprawiano kodu, nie wznawiano, nie odnawiano deadline. STOPPED w stanie
 researchDay jest wynikiem sprzątania; przyczynę zachowano z kontrolera.
 
-15 rozpoczętych cykli: **10 COMPLETED, 4 PARTIAL, 1 PAUSED**. Zapisano
+15 rozpoczętych cykli: **9 COMPLETED, 5 PARTIAL, 1 PAUSED**. Zapisano
 **43 nowe rekordy firm / 37 kontaktów / 19 szkiców**, bez doliczania bazowych
 472/376/221. Końcowo **515/413/240**, wersje 254 → 285. Raport obejmuje
 96 odwiedzonych rekordów firm (43 nowe, 53 wcześniejsze), 44 szkice
@@ -3429,3 +3429,5 @@ Zakres ograniczony do generatora, stylu, walidacji i testów; bez zmian architek
 Testy obejmują aktywne PHP z potwierdzonym zleceniem, otwarte integracje, LLM bez naboru, firmę bez związku z AI i aktywne PDF z nieznaną umową. Sprawdzają sensownie krótki mail, długość, powtórzenia, jedno pytanie, stylistyczne NEEDS_REVIEW i zachowanie wszystkich dotychczasowych zabezpieczeń. `npm run check`: typecheck/build PASS, 124/124 backend i 5/5 UI.
 
 Rzeczywisty Codex wygenerował pięć podglądów dla fikcyjnych firm/odbiorców: 85, 80, 78, 73 i 78 słów. Wszystkie zachowują komplet części i mają pustą listę uwag stylistycznych. Dwa review=null odnoszą się do fikcyjnych źródeł, więc nadal wymagają przeglądu; pozostałe review=true nie są zgodą na wysyłkę. Podglądy poza repo, bez zapisu do żywego profilu lub szkiców, bez używania Gmaila i bez wysyłek.
+
+Korekta narracji z 18.10.2026: 9 COMPLETED / 5 PARTIAL / 1 PAUSED pochodzi z dwóch raportów JSON zakończonej sesji i guarda, porównanych w diagnostyce z 18.10. Wcześniejsze 10/4/1 było błędem opisu; nie zmieniano danych runów.

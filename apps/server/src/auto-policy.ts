@@ -8,6 +8,7 @@ import { Store } from './db.js';
 import { DomainError, hash, id, iso, day, companyDomain } from './util.js';
 import { validateAnalysis, compact, contactEligibility } from './research/contracts.js';
 import { QueryPlanner } from './research/query-planner.js';
+import { contactSourceAuthority } from './research/source-policy.js';
 import { priorApplicationException } from './prior-applications.js';
 
 export const autoPolicySchema = z
@@ -42,6 +43,17 @@ type Operation = {
   contactBinding: string;
   outboxId?: string;
 };
+type BatchSummary = Row & {
+  items: (Row & { state: string; packets: Row[] })[];
+  counts: {
+    total: number;
+    sent: number;
+    remaining: number;
+    skipped: number;
+    needsPreparation: number;
+    uncertain: number;
+  };
+};
 export function autoErrorDecision(
   code: string,
 ): 'company' | 'draft' | 'read-retry' | 'review-wait' | 'sender' | 'session' {
@@ -74,6 +86,8 @@ export function autoErrorDecision(
       'INVALID_RECIPIENT',
       'MIME_CHANGED',
       'DRAFT_MATERIAL_STALE',
+      'BATCH_MATERIALS_CHANGED',
+      'BATCH_SCOPE_CHANGED',
     ].includes(code)
   )
     return 'draft';
@@ -104,9 +118,35 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   private sessionEnabled = false;
   private preparing = false;
   private starting = false;
+  private startingBatch = false;
+  private approvalOperation?: Operation & { batchId: string | null };
   private transferring = false;
   private controlEpoch = 0;
   private preparationController?: AbortController;
+  private activeBatchId: string | null = null;
+  private libraryResearch = false;
+  protected override researchOnlySession() {
+    return this.libraryResearch;
+  }
+  async startLibraryResearch(query: string | undefined, hours: number, resume = false) {
+    if (this.sessionId || this.preparing || this.sending || this.researching || this.starting)
+      throw new DomainError('BUSY', 'Zatrzymaj nadawanie przed researchem biblioteki.');
+    if (!this.policyConfig())
+      throw new DomainError('POLICY_REQUIRED', 'Zapisz zakres i materiały biblioteki w polityce.');
+    this.libraryResearch = true;
+    try {
+      await this.researchController().start(
+        () =>
+          resume
+            ? ResearchJobHunter.prototype.resumeSession.call(this)
+            : ResearchJobHunter.prototype.startDay.call(this, query, hours),
+        resume,
+      );
+    } catch (e) {
+      this.libraryResearch = false;
+      throw e;
+    }
+  }
   constructor(store: Store, options: ConstructorParameters<typeof GmailJobHunter>[1] = {}) {
     super(store, { ...options, mode: 'AUTO_POLICY' });
     this.queryPlanner = new QueryPlanner(store, this.clock, (d) => this.draftMaterialIssues(d));
@@ -117,6 +157,319 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     store.set('stopped', true);
     store.set('paused', false);
     store.set('workerStatus', 'STOPPED');
+    store.exec(
+      "UPDATE auto_batches SET state='STOPPED',reason='RESTART',updated_at=? WHERE state='RUNNING'",
+      this.now(),
+    );
+    const context = store.get<Row | null>('browserExecutionContext', null);
+    if (context) store.set('browserExecutionContext', { ...context, state: 'STOPPED' });
+  }
+  batches() {
+    return this.store
+      .all('SELECT * FROM auto_batches ORDER BY prepared_at DESC LIMIT 50')
+      .map((b) => this.batchSummary(b.id));
+  }
+  batchSummary(batchId: string): BatchSummary {
+    const batch = this.store.one('SELECT * FROM auto_batches WHERE id=?', batchId);
+    if (!batch) throw new DomainError('NOT_FOUND', 'Brak partii.', 404);
+    const items: (Row & { state: string; packets: Row[] })[] = this.store
+      .all('SELECT * FROM auto_batch_items WHERE batch_id=? ORDER BY ordinal', batchId)
+      .map((item) => {
+        const packets = this.store.all(
+          'SELECT o.id,o.status,a.id attempt_id FROM auto_batch_outbox b JOIN outbox o ON o.id=b.outbox_id LEFT JOIN send_attempts a ON a.outbox_id=o.id WHERE b.item_id=? ORDER BY o.created_at DESC',
+          item.id,
+        );
+        const uncertain = packets.some((p) => ['SENDING', 'SEND_UNKNOWN'].includes(p.status));
+        const sent = packets.some((p) => ['SENT_PROVIDER', 'SENT_CONFIRMED'].includes(p.status));
+        return { ...item, state: uncertain ? 'UNRESOLVED' : sent ? 'SENT' : item.state, packets };
+      });
+    const uncertain = items.some((i) => i.state === 'UNRESOLVED');
+    return {
+      ...batch,
+      state: uncertain ? 'NEEDS_RESOLUTION' : batch.state,
+      approvalHash: this.batchHash(batchId),
+      items,
+      counts: {
+        total: items.length,
+        sent: items.filter((i) => i.state === 'SENT').length,
+        remaining: items.filter((i) => i.state === 'READY').length,
+        skipped: items.filter((i) => i.state === 'SKIPPED').length,
+        needsPreparation: items.filter((i) => i.state === 'NEEDS_REPREPARATION').length,
+        uncertain: items.filter((i) => i.state === 'UNRESOLVED').length,
+      },
+    };
+  }
+  private batchHash(batchId: string) {
+    const b = this.store.one('SELECT * FROM auto_batches WHERE id=?', batchId)!;
+    const items = this.store.all(
+      'SELECT id,ordinal,company_id,contact_id,recipient,draft_id,draft_version,payload_hash,binding,contact_binding,material_binding,qualified_at FROM auto_batch_items WHERE batch_id=? ORDER BY ordinal',
+      batchId,
+    );
+    return hash(JSON.stringify({ revision: b.revision, policy: b.policy_hash, items }));
+  }
+  prepareBatch(raw: unknown) {
+    const input = z
+      .object({
+        drafts: z
+          .array(z.object({ id: z.string(), version: z.number().int().positive() }).strict())
+          .min(1)
+          .max(200),
+      })
+      .strict()
+      .parse(raw);
+    if (
+      !this.state().stopped ||
+      this.preparing ||
+      this.sending ||
+      this.researching ||
+      this.starting
+    )
+      throw new DomainError('BUSY', 'Zatrzymaj pracę przed przygotowaniem partii.');
+    const policy = this.assertPolicy(false),
+      batchId = id(),
+      seen = new Set<string>();
+    this.store.assertHealthy();
+    this.store.atomic(() => {
+      this.store.exec(
+        "INSERT INTO auto_batches VALUES (?,'PREPARED',?,1,?,?,?,NULL,NULL,NULL,?)",
+        batchId,
+        this.now(),
+        policy.policyHash,
+        JSON.stringify(policy),
+        policy.scopeHash,
+        this.now(),
+      );
+      input.drafts.forEach((selection, ordinal) => {
+        if (seen.has(selection.id))
+          throw new DomainError('DUPLICATE_DRAFT', 'Szkic występuje więcej niż raz.');
+        seen.add(selection.id);
+        const d = this.draft(selection.id, selection.version);
+        const problems = [
+          ...this.issues(d, 'FIRST_CONTACT', this.deliveryState().account!, false, policy),
+          ...(!this.store.one(
+            'SELECT draft_id FROM research_draft_materials WHERE draft_id=? AND version=?',
+            d.id,
+            d.version,
+          )
+            ? ['DRAFT_MATERIAL_UNVERIFIED']
+            : []),
+          ...(!this.inScope(d) ? ['SCOPE_CHANGED'] : []),
+          ...(this.companyHistoryBlocked(d.company_id) ? ['CONTACT_HISTORY'] : []),
+        ];
+        this.store.exec(
+          'INSERT INTO auto_batch_items VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          id(),
+          batchId,
+          ordinal,
+          d.company_id,
+          d.contact_id,
+          d.email,
+          d.id,
+          d.version,
+          d.payload_hash,
+          this.binding(d),
+          this.contactBinding(d),
+          this.draftMaterialContext(d),
+          problems.length ? 'NEEDS_REPREPARATION' : 'READY',
+          problems[0] ?? null,
+          this.now(),
+        );
+      });
+    });
+    return { ...this.batchSummary(batchId), approvalHash: this.batchHash(batchId) };
+  }
+  approveClosedBatch(batchId: string, raw: unknown) {
+    const input = z
+      .object({ approvalHash: z.string().length(64), confirmed: z.literal(true) })
+      .strict()
+      .parse(raw);
+    if (!this.state().stopped)
+      throw new DomainError('BUSY', 'Zatrzymaj pracę przed zatwierdzeniem.');
+    if (this.batchHash(batchId) !== input.approvalHash)
+      throw new DomainError('BATCH_CHANGED', 'Zakres partii się zmienił.');
+    this.assertPolicy(false);
+    this.store.exec(
+      "UPDATE auto_batches SET approved_hash=?,approved_at=?,state='APPROVED',updated_at=? WHERE id=?",
+      input.approvalHash,
+      this.now(),
+      this.now(),
+      batchId,
+    );
+    return this.batchSummary(batchId);
+  }
+  reprepareBatch(batchId: string) {
+    if (!this.state().stopped || this.preparing || this.sending || this.researching)
+      throw new DomainError('BUSY', 'Zatrzymaj pracę.');
+    const batch = this.batchSummary(batchId),
+      policy = this.assertPolicy(false);
+    if (batch.counts.uncertain)
+      throw new DomainError('SEND_UNKNOWN', 'Rozstrzygnij istniejącą próbę.');
+    this.store.atomic(() => {
+      this.revokeApprovals('Ponowne przygotowanie zamkniętej partii');
+      for (const item of batch.items.filter((i) => i.state !== 'SENT')) {
+        const d = this.draftRows().find((d) => d.id === item.draft_id)!;
+        const problems = [
+          ...this.issues(d, 'FIRST_CONTACT', this.deliveryState().account!, false, policy),
+          ...(!this.store.one(
+            'SELECT draft_id FROM research_draft_materials WHERE draft_id=? AND version=?',
+            d.id,
+            d.version,
+          )
+            ? ['DRAFT_MATERIAL_UNVERIFIED']
+            : []),
+          ...(!this.inScope(d) ? ['SCOPE_CHANGED'] : []),
+          ...(this.companyHistoryBlocked(d.company_id) ? ['CONTACT_HISTORY'] : []),
+        ];
+        this.store.exec(
+          'UPDATE auto_batch_items SET contact_id=?,recipient=?,draft_version=?,payload_hash=?,binding=?,contact_binding=?,material_binding=?,state=?,code=?,qualified_at=? WHERE id=?',
+          d.contact_id,
+          d.email,
+          d.version,
+          d.payload_hash,
+          this.binding(d),
+          this.contactBinding(d),
+          this.draftMaterialContext(d),
+          problems.length ? 'NEEDS_REPREPARATION' : 'READY',
+          problems[0] ?? null,
+          this.now(),
+          item.id,
+        );
+        this.store.set(`autoSkipped:${d.id}:${d.version}`, false);
+      }
+      this.store.exec(
+        "UPDATE auto_batches SET state='PREPARED',revision=revision+1,policy_hash=?,policy_json=?,scope_hash=?,approved_hash=NULL,approved_at=NULL,reason=NULL,updated_at=? WHERE id=?",
+        policy.policyHash,
+        JSON.stringify(policy),
+        policy.scopeHash,
+        this.now(),
+        batchId,
+      );
+    });
+    return { ...this.batchSummary(batchId), approvalHash: this.batchHash(batchId) };
+  }
+  async startBatch(batchId: string) {
+    if (
+      this.startingBatch ||
+      this.starting ||
+      this.preparing ||
+      this.sending ||
+      (this.sessionId &&
+        !this.state().paused &&
+        !this.state().stopped &&
+        !this.store.get('autoSenderWait', null))
+    )
+      throw new DomainError('BUSY', 'Trwa Start lub praca poprzedniej sesji.');
+    if (
+      this.researching ||
+      this.libraryResearch ||
+      this.store.get<Row>('researchDay', {}).active ||
+      this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')")
+    )
+      throw new DomainError('ACTIVE_RUN', 'Zakończ research przed Start partii.');
+    const batch = this.batchSummary(batchId),
+      policy = this.assertPolicy(false);
+    if (
+      !batch.approved_at ||
+      batch.approved_hash !== this.batchHash(batchId) ||
+      batch.policy_hash !== policy.policyHash
+    )
+      throw new DomainError(
+        'BATCH_APPROVAL_REQUIRED',
+        'Sprawdź podsumowanie i zatwierdź bieżący zakres partii.',
+      );
+    if (batch.counts.uncertain)
+      throw new DomainError('SEND_UNKNOWN', 'Rozstrzygnij istniejącą próbę.');
+    if (!batch.counts.remaining)
+      throw new DomainError('BATCH_EMPTY', 'Brak pozycji dopuszczonych do wykonania.');
+    if (this.sessionId) this.control('stop');
+    this.startingBatch = true;
+    this.activeBatchId = batchId;
+    const epoch = this.controlEpoch;
+    try {
+      await this.startAuto(true);
+      if (epoch !== this.controlEpoch || !this.sessionId || !this.sessionEnabled)
+        throw new DomainError('SESSION_STOPPED', 'Start partii został odwołany.');
+      const sessionId = this.sessionId;
+      this.store.atomic(() => {
+        this.store.exec('INSERT INTO auto_batch_sessions VALUES (?,?)', batchId, sessionId);
+        this.store.exec(
+          "UPDATE auto_batches SET state='RUNNING',reason=NULL,updated_at=? WHERE id=?",
+          this.now(),
+          batchId,
+        );
+        this.store.set('browserExecutionContext', {
+          batchId,
+          sessionId,
+          state: 'RUNNING',
+        });
+      });
+    } catch (e) {
+      this.revokeSessionAuthority();
+      this.revokeDeliveryAuthority();
+      try {
+        this.control('stop');
+      } catch {}
+      try {
+        this.store.assertExclusive();
+        this.store.exec(
+          "UPDATE auto_batches SET state='STOPPED',reason=?,updated_at=? WHERE id=?",
+          e instanceof DomainError ? e.code : 'BATCH_START_FAILED',
+          this.now(),
+          batchId,
+        );
+      } catch {}
+      throw e;
+    } finally {
+      this.startingBatch = false;
+    }
+  }
+  private frozenBatchIssues(d: Row) {
+    if (!this.activeBatchId) return [];
+    const item = this.store.one(
+      'SELECT * FROM auto_batch_items WHERE batch_id=? AND draft_id=?',
+      this.activeBatchId,
+      d.id,
+    );
+    if (!item || item.state !== 'READY') return ['BATCH_SCOPE_CHANGED'];
+    return item.draft_version !== d.version ||
+      item.recipient !== d.email ||
+      item.payload_hash !== d.payload_hash ||
+      item.binding !== this.binding(d) ||
+      item.contact_binding !== this.contactBinding(d) ||
+      item.material_binding !== this.draftMaterialContext(d)
+      ? ['BATCH_MATERIALS_CHANGED']
+      : [];
+  }
+  private settleBatch() {
+    if (!this.activeBatchId) return;
+    const batch = this.batchSummary(this.activeBatchId);
+    if (batch.counts.uncertain) {
+      this.store.exec(
+        "UPDATE auto_batches SET state='NEEDS_RESOLUTION',reason='SEND_UNKNOWN',updated_at=? WHERE id=?",
+        this.now(),
+        batch.id,
+      );
+      return;
+    }
+    if (batch.counts.remaining) return;
+    const state = batch.counts.needsPreparation
+      ? 'NEEDS_REPREPARATION'
+      : batch.counts.skipped
+        ? 'COMPLETED_WITH_SKIPS'
+        : 'COMPLETED';
+    this.control('stop');
+    this.store.exec(
+      'UPDATE auto_batches SET state=?,reason=?,updated_at=? WHERE id=?',
+      state,
+      state,
+      this.now(),
+      batch.id,
+    );
+    this.store.set('browserExecutionContext', {
+      batchId: batch.id,
+      sessionId: this.store.get<Row>('browserExecutionContext', {}).sessionId,
+      state,
+    });
   }
   policyConfig() {
     return this.store.get<Row | null>('autoPolicy', null);
@@ -366,7 +719,11 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   override async start(_query?: string) {
     await this.startAuto();
   }
-  async startAuto() {
+  async startAuto(closedBatch = false) {
+    if (this.startingBatch && !closedBatch)
+      throw new DomainError('BUSY', 'Trwa Start zamkniętej partii.');
+    if (!closedBatch && this.activeBatchId)
+      throw new DomainError('BATCH_ACTIVE', 'Zatrzymaj partię przed rozpoczęciem ciągłego AUTO.');
     if (
       this.sessionId &&
       !this.state().paused &&
@@ -378,7 +735,10 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       throw new DomainError('BUSY', 'Trwa kończenie poprzedniej operacji.');
     const p = this.assertPolicy(false);
     this.store.assertHealthy();
-    if (!this.capability('codexCapability').tested || !this.capability('searchCapability').tested)
+    if (
+      !closedBatch &&
+      (!this.capability('codexCapability').tested || !this.capability('searchCapability').tested)
+    )
       throw new DomainError(
         'SEARCH_NOT_TESTED',
         'Sprawdź bieżącą integrację Codexa i wyszukiwanie w Ustawieniach.',
@@ -428,7 +788,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
           : this.now(),
       );
       const run = this.store.one("SELECT id FROM runs WHERE status='PAUSED'");
-      if (run) await ResearchJobHunter.prototype.start.call(this, p.searchScope);
+      if (run && !closedBatch) await ResearchJobHunter.prototype.start.call(this, p.searchScope);
       if (epoch !== this.controlEpoch)
         throw new DomainError('CANCELLED', 'Uprawnienie Start zostało odwołane.');
       this.assertPolicy(false);
@@ -450,6 +810,21 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     this.controlEpoch++;
     this.preparationController?.abort();
     super.control(action);
+    if (this.activeBatchId) {
+      this.store.exec(
+        "UPDATE auto_batches SET state='STOPPED',reason=?,updated_at=? WHERE id=?",
+        action,
+        this.now(),
+        this.activeBatchId,
+      );
+      this.store.set('browserExecutionContext', {
+        batchId: this.activeBatchId,
+        sessionId: this.sessionId,
+        state: 'STOPPED',
+      });
+      this.activeBatchId = null;
+    }
+    this.libraryResearch = false;
     if (action === 'pause')
       this.revokeApprovals('Pauza sesji automatycznej: przygotuj świeże pakiety przy wznowieniu');
     if (this.sessionId)
@@ -464,6 +839,12 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   }
   protected revokeSessionAuthority() {
     this.sessionEnabled = false;
+  }
+  protected override deliveryOwnershipLost() {
+    this.revokeSessionAuthority();
+    this.controlEpoch++;
+    this.preparationController?.abort();
+    super.deliveryOwnershipLost();
   }
   async handoff() {
     if (this.historyMode() === 'LOCAL_ONLY')
@@ -514,10 +895,15 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       "SELECT count(*) n FROM shared_usage s WHERE s.day=? AND s.kind='FIRST_CONTACT' AND NOT EXISTS (SELECT 1 FROM usage_ledger u WHERE u.id=s.id)",
       today,
     )!.n;
-    const session = this.store.one(
-      'SELECT count(*) n FROM usage_ledger u JOIN auto_outbox a ON a.outbox_id=u.outbox_id WHERE a.session_id=?',
-      this.sessionId,
-    )!.n;
+    const session = this.activeBatchId
+      ? this.store.one(
+          'SELECT count(*) n FROM usage_ledger u JOIN auto_batch_outbox b ON b.outbox_id=u.outbox_id JOIN auto_batch_items i ON i.id=b.item_id WHERE i.batch_id=?',
+          this.activeBatchId,
+        )!.n
+      : this.store.one(
+          'SELECT count(*) n FROM usage_ledger u JOIN auto_outbox a ON a.outbox_id=u.outbox_id WHERE a.session_id=?',
+          this.sessionId,
+        )!.n;
     return [
       ...(p.dailyLimit !== null && local + transferred >= p.dailyLimit ? ['DAILY_LIMIT'] : []),
       ...(p.sessionLimit !== null && session >= p.sessionLimit ? ['SESSION_LIMIT'] : []),
@@ -528,13 +914,15 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     kind: DeliveryKind,
     account: AccountInfo,
     requireHistory = true,
+    preparedPolicy?: Row,
   ) {
     const problems = super.issues(d, kind, account, requireHistory);
+    problems.push(...this.frozenBatchIssues(d));
     if (kind !== 'FIRST_CONTACT') return [...problems, 'AUTO_FIRST_CONTACT_ONLY'];
     try {
-      const p = this.assertPolicy();
+      const p = preparedPolicy ?? this.assertPolicy();
       if (!this.inScope(d)) problems.push('SCOPE_CHANGED');
-      this.assertHistory();
+      if (!preparedPolicy) this.assertHistory();
       if (account.subject !== p.accountSubject || account.email !== p.senderEmail)
         problems.push('ACCOUNT_CHANGED');
       const o = this.store.one('SELECT * FROM opportunities WHERE id=?', d.opportunity_id)!;
@@ -545,17 +933,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       );
       const sources = this.sourcesForDraft(d);
       for (const s of sources) {
-        const last = this.store.one(
-          'SELECT v.* FROM source_verifications v JOIN research_sources r ON r.id=v.source_id WHERE r.original_url=? ORDER BY v.checked_at DESC,v.rowid DESC LIMIT 1',
-          s.original_url,
-        );
-        if (
-          last &&
-          (last.status !== 'READ' ||
-            last.content_hash !== s.content_hash ||
-            last.final_url !== s.final_url)
-        )
-          problems.push('STALE_EVIDENCE');
+        if (!this.sourceIsCurrent(s)) problems.push('STALE_EVIDENCE');
       }
       const verified = validateAnalysis(analysis, sources as any);
       const company = this.store.one('SELECT * FROM companies WHERE id=?', d.company_id)!;
@@ -581,19 +959,16 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         problems.push('SEMANTIC_REVIEW_REQUIRED');
       const contactSource = sources.find((s) => s.id === verified.contact.proof.sourceId);
       if (contactSource && domain) {
-        const sourceDomain = companyDomain(
-          new URL(contactSource.final_url ?? contactSource.original_url).hostname,
-        );
-        const emailDomain = companyDomain(t.email.split('@')[1]);
-        const related =
-          sourceDomain === domain ||
-          emailDomain === domain ||
-          sourceDomain?.endsWith('.' + domain) ||
-          emailDomain?.endsWith('.' + domain);
-        const namedRecruiter =
-          t.kind === 'RECRUITMENT' &&
-          compact(contactSource.text).includes(compact(verified.company));
-        if (!related && !namedRecruiter) problems.push('CONTACT_POLICY');
+        const domains = [
+          company.primary_domain,
+          ...this.store
+            .all(
+              "SELECT value FROM company_aliases WHERE company_id=? AND kind='DOMAIN' AND verified_at IS NOT NULL",
+              company.id,
+            )
+            .map((r) => r.value),
+        ].filter(Boolean);
+        if (!contactSourceAuthority(verified, sources, domains)) problems.push('CONTACT_POLICY');
       }
       if (
         !p.contactKinds.includes(t.kind) ||
@@ -724,12 +1099,56 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       throw new DomainError('SESSION_STOPPED', 'Uprawnienie wybranej operacji zostało odwołane.');
     this.assertPolicy();
     const d = this.draft(op.draftId, op.draftVersion);
+    const frozen = this.frozenBatchIssues(d);
+    if (frozen.length)
+      throw new DomainError(
+        frozen[0],
+        'Zatwierdzone materiały partii się zmieniły. Przygotuj i zatwierdź pozostały zakres.',
+      );
     if (this.binding(d) !== op.binding || this.contactBinding(d) !== op.contactBinding)
       throw new DomainError('VERSION_CONFLICT', 'Treść lub kontakt wybranej wersji zmieniły się.');
     return d;
   }
+  protected override deliveryPacketCreated(outboxId: string, draftId: string) {
+    const op = this.approvalOperation;
+    if (
+      !op ||
+      op.draftId !== draftId ||
+      op.sessionId !== this.sessionId ||
+      op.epoch !== this.controlEpoch ||
+      !this.sessionEnabled
+    )
+      throw new DomainError('SESSION_STOPPED', 'Pakiet nie należy do aktualnej operacji AUTO.');
+    this.store.assertExclusive();
+    this.store.exec('INSERT INTO auto_outbox VALUES (?,?)', outboxId, op.sessionId);
+    if (op.batchId) {
+      const member = this.store.one(
+        'SELECT id FROM auto_batch_items WHERE batch_id=? AND draft_id=?',
+        op.batchId,
+        draftId,
+      );
+      if (!member) throw new DomainError('BATCH_SCOPE_CHANGED', 'Brak pozycji zamkniętej partii.');
+      this.store.exec('INSERT INTO auto_batch_outbox VALUES (?,?)', member.id, outboxId);
+    }
+  }
   private skip(op: Operation, code: string, message: string) {
     this.store.atomic(() => {
+      if (this.activeBatchId)
+        this.store.exec(
+          'UPDATE auto_batch_items SET state=?,code=? WHERE batch_id=? AND draft_id=?',
+          [
+            'BATCH_MATERIALS_CHANGED',
+            'VERSION_CONFLICT',
+            'DRAFT_MATERIAL_STALE',
+            'STALE_EVIDENCE',
+            'STALE_CONTACT',
+          ].includes(code)
+            ? 'NEEDS_REPREPARATION'
+            : 'SKIPPED',
+          code,
+          this.activeBatchId,
+          op.draftId,
+        );
       const inserted = this.store.exec(
         'INSERT OR IGNORE INTO auto_skips VALUES (?,?,?,?,?,?,?,?)',
         op.draftId,
@@ -772,6 +1191,21 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     );
   }
   private wait(reason: string) {
+    if (this.activeBatchId) {
+      const state = reason === 'SEND_UNKNOWN' ? 'NEEDS_RESOLUTION' : 'PAUSED';
+      this.store.exec(
+        'UPDATE auto_batches SET state=?,reason=?,updated_at=? WHERE id=?',
+        state,
+        reason,
+        this.now(),
+        this.activeBatchId,
+      );
+      this.store.set('browserExecutionContext', {
+        batchId: this.activeBatchId,
+        sessionId: this.sessionId,
+        state,
+      });
+    }
     if (autoErrorDecision(reason) === 'sender' && reason !== 'SESSION_LIMIT' && this.sessionId) {
       this.store.exec('UPDATE auto_sessions SET reason=? WHERE id=?', reason, this.sessionId);
       this.store.set('autoSenderWait', reason);
@@ -819,16 +1253,25 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         "SELECT o.id FROM outbox o JOIN auto_outbox a ON a.outbox_id=o.id WHERE o.status='QUEUED' AND a.session_id=?",
         this.sessionId,
       );
+      const batchIds = this.activeBatchId
+        ? new Set(
+            this.batchSummary(this.activeBatchId)
+              .items.filter((i) => i.state === 'READY')
+              .map((i) => i.draft_id),
+          )
+        : null;
       const candidate = queued
         ? null
         : this.draftRows().find(
             (d) =>
               d.status !== 'SENT' &&
+              (!batchIds || batchIds.has(d.id)) &&
               this.inScope(d) &&
               !this.awaitingDraftReview(d) &&
               !this.store.get(`autoSkipped:${d.id}:${d.version}`, false),
           );
       if (!queued && !candidate) {
+        this.settleBatch();
         this.store.set(
           'autoNextSendAt',
           iso(new Date(this.clock().getTime() + p.sendIntervalSeconds * 1000)),
@@ -870,14 +1313,17 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
           kind: 'FIRST_CONTACT',
         });
         this.selected(operation);
-        await super.approveDelivery({
-          previewId: preview.id,
-          previewHash: preview.previewHash,
-          confirmed: true,
-        });
+        this.approvalOperation = { ...operation, batchId: this.activeBatchId };
+        try {
+          await super.approveDelivery({
+            previewId: preview.id,
+            previewHash: preview.previewHash,
+            confirmed: true,
+          });
+        } finally {
+          this.approvalOperation = undefined;
+        }
         this.selected(operation);
-        for (const item of this.preview(preview.id).items)
-          this.store.exec('INSERT INTO auto_outbox VALUES (?,?)', item.outbox_id, this.sessionId);
         queued = { id: this.preview(preview.id).items[0].outbox_id };
         operation.outboxId = queued.id;
       }
@@ -933,9 +1379,15 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     } finally {
       this.preparing = false;
       this.preparationController = undefined;
+      this.settleBatch();
     }
   }
   override async tick() {
+    if (this.activeBatchId) return;
+    if (this.libraryResearch) {
+      await ResearchJobHunter.prototype.tick.call(this);
+      return;
+    }
     if (
       this.pumping ||
       this.researching ||
@@ -1043,12 +1495,19 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       senderReason: this.store.get('autoSenderReason', null),
       researching: this.researching,
       sending: this.sending || this.preparing,
-      queueSize: this.draftRows().filter(
-        (d) =>
-          d.status !== 'SENT' &&
-          this.inScope(d) &&
-          !this.store.get(`autoSkipped:${d.id}:${d.version}`, false),
-      ).length,
+      queueSize: this.store.one(
+        "SELECT count(*) n FROM drafts d JOIN auto_draft_scope s ON s.draft_id=d.id WHERE d.status<>'SENT' AND s.scope_hash=? AND NOT EXISTS(SELECT 1 FROM auto_skips k WHERE k.draft_id=d.id AND k.draft_version=d.version)",
+        this.policyConfig()?.scopeHash ?? '',
+      )!.n,
+      activeBatch: this.activeBatchId ? this.batchSummary(this.activeBatchId) : null,
+      latestBatch:
+        this.store.one(
+          'SELECT id,state,prepared_at FROM auto_batches ORDER BY prepared_at DESC LIMIT 1',
+        ) ?? null,
+      libraryResearch: this.libraryResearch,
+      browser: this.browserDelivery.status(),
+      sendTransport: this.sendTransport(),
+      databaseHealth: this.store.healthStatus(),
       readiness: {
         materials: !!this.profile().approved_at,
         cv:
@@ -1071,8 +1530,8 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         history: this.historyState().configured,
         database: (() => {
           try {
-            this.store.assertHealthy();
-            return true;
+            this.store.assertExclusive();
+            return this.store.healthStatus().ok;
           } catch {
             return false;
           }
@@ -1102,23 +1561,39 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     )!.n;
     return d;
   }
-  override companies(): (Row & { researchDetails: any })[] {
+  override companies(
+    query?: Parameters<ResearchJobHunter['companies']>[0],
+  ): (Row & { researchDetails: any })[] {
+    const rows = super.companies(query),
+      ids = JSON.stringify(rows.map((c) => c.id));
     const contexts = new Map(
-      this.store.all('SELECT * FROM shared_company_context').map((r) => [r.company_id, r]),
+      this.store
+        .all(
+          'SELECT * FROM shared_company_context WHERE company_id IN (SELECT value FROM json_each(?))',
+          ids,
+        )
+        .map((r) => [r.company_id, r]),
     );
     const attempts = new Map<string, Row>();
-    for (const row of this.store.all('SELECT * FROM shared_attempts ORDER BY created_at DESC'))
+    for (const row of this.store.all(
+      'SELECT * FROM shared_attempts WHERE company_id IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC',
+      ids,
+    ))
       if (!attempts.has(row.company_id)) attempts.set(row.company_id, row);
     const sourcesByCompany = new Map<string, Row[]>(),
       skipsByCompany = new Map<string, Row[]>();
     for (const row of this.store.all(
-      'SELECT company_id,canonical_url,fetched_at,fragment FROM evidence',
+      'SELECT company_id,canonical_url,fetched_at,fragment FROM evidence WHERE company_id IN (SELECT value FROM json_each(?))',
+      ids,
     )) {
       const list = sourcesByCompany.get(row.company_id) ?? [];
       list.push(row);
       sourcesByCompany.set(row.company_id, list);
     }
-    for (const row of this.store.all('SELECT * FROM auto_skips ORDER BY created_at DESC')) {
+    for (const row of this.store.all(
+      'SELECT * FROM auto_skips WHERE company_id IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC',
+      ids,
+    )) {
       const list = skipsByCompany.get(row.company_id) ?? [];
       list.push(row);
       skipsByCompany.set(row.company_id, list);
@@ -1131,12 +1606,13 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       UNION ALL SELECT company_id,created_at at FROM shared_attempts WHERE state<>'FAILED_NOT_SENT'
       UNION ALL SELECT company_id,occurred_at at FROM history_records WHERE status<>'SUGGESTED'
       UNION ALL SELECT m.company_id,m.sent_at at FROM gmail_messages m LEFT JOIN outbox o ON o.id=m.outbox_id WHERE m.outbox_id IS NULL OR o.kind='FIRST_CONTACT'
-    ) GROUP BY company_id`,
+    ) WHERE company_id IN (SELECT value FROM json_each(?)) GROUP BY company_id`,
+          ids,
         )
         .map((r) => [r.company_id, r.at]),
     );
     const unique = new Map<string, Row & { researchDetails: any }>();
-    for (const c of super.companies())
+    for (const c of rows)
       if (!unique.has(c.id)) {
         const sharedContext = contexts.get(c.id);
         const sources = sourcesByCompany.get(c.id) ?? [];

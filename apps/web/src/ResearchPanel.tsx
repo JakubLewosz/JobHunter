@@ -69,7 +69,7 @@ export function ResearchPanel({
         <div className="research-metrics">
           {[
             ['Nowe firmy', dashboard.stats.companies],
-            ['Wiadomości gotowe', dashboard.stats.drafts],
+            ['Zapisane szkice', dashboard.stats.drafts],
             ['Do sprawdzenia', dashboard.stats.review],
           ].map(([name, value]) => (
             <div key={name}>

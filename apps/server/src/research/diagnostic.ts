@@ -1,4 +1,7 @@
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, copyFileSync, rmSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { assertOutsideRepository } from '../safe-paths.js';
+import { acquireProfileLock } from '../backend-lock.js';
 import { join } from 'node:path';
 import { Store } from '../db.js';
 import { ResearchJobHunter, type SearchProvider } from './service.js';
@@ -86,18 +89,56 @@ export function reopenPublicDiagnostic(
   runner: StructuredRunner,
   reader: SourceReader,
 ) {
+  dir = assertOutsideRepository(dir);
   if (!existsSync(join(dir, 'jobhunter.sqlite'))) throw new Error('DIAGNOSTIC_DATABASE_REQUIRED');
-  const store = new Store(dir);
-  if (!store.get('diagnosticOnly', false)) {
-    store.close();
-    throw new Error('DIAGNOSTIC_ONLY_REQUIRED');
+  const preflight = () => {
+    const temp = mkdtempSync(join(tmpdir(), 'jh-diagnostic-preflight-'));
+    let db: Database.Database | undefined;
+    try {
+      copyFileSync(join(dir, 'jobhunter.sqlite'), join(temp, 'snapshot.sqlite'));
+      db = new Database(join(temp, 'snapshot.sqlite'), { readonly: true, fileMustExist: true });
+      const marker = db
+        .prepare("SELECT value FROM app_state WHERE key='diagnosticOnly'")
+        .get() as any;
+      if (!marker || JSON.parse(marker.value) !== true) throw Error('DIAGNOSTIC_ONLY_REQUIRED');
+    } catch {
+      throw Error('DIAGNOSTIC_ONLY_REQUIRED');
+    } finally {
+      db?.close();
+      rmSync(temp, { recursive: true, force: true });
+    }
+  };
+  preflight();
+  const lock = acquireProfileLock(dir);
+  let store: Store;
+  try {
+    assertOutsideRepository(dir);
+    lock.assert();
+    preflight();
+    store = new Store(dir);
+    store.assertExclusive = lock.assert;
+  } catch (e) {
+    lock.release();
+    throw e;
   }
-  const service = new DiagnosticResearch(store, { mode: 'AUTO_POLICY', runner, reader });
-  if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service) {
+  const close = store.close.bind(store);
+  store.close = () => {
+    try {
+      close();
+    } finally {
+      lock.release();
+    }
+  };
+  try {
+    const service = new DiagnosticResearch(store, { mode: 'AUTO_POLICY', runner, reader });
+    if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service) {
+      throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
+    }
+    return { store, service, summary: () => publicDiagnosticSummary(store, service) };
+  } catch (e) {
     store.close();
-    throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
+    throw e;
   }
-  return { store, service, summary: () => publicDiagnosticSummary(store, service) };
 }
 
 export function createPublicDiagnostic(
@@ -110,38 +151,62 @@ export function createPublicDiagnostic(
     materials?: Materials;
   } = {},
 ) {
+  dir = assertOutsideRepository(dir);
   if (existsSync(join(dir, 'jobhunter.sqlite')))
     throw new Error('DIAGNOSTIC_REQUIRES_NEW_DIRECTORY');
-  const store = new Store(dir),
-    runner = options.runner ?? new ExecCodexRunner();
-  const maximum = Math.min(10, Math.max(1, options.maxCompanies ?? 5));
-  store.set('skipLegacyHistorySeed', true);
-  // AUTO's public qualification/drafting branch, instantiated without GmailJobHunter or a gateway.
-  const service = new DiagnosticResearch(store, {
-    mode: 'AUTO_POLICY',
-    runner,
-    reader: options.reader,
-    search: options.search,
-  });
-  if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service)
-    throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
-  const synthetic: Record<string, string> = {
-    identity:
-      'Alex Testowy — fikcyjny kandydat do technicznej diagnostyki, nie rzeczywisty użytkownik.',
-    education: 'Fikcyjny uczeń technikum programistycznego.',
-    contract: 'Fikcyjny cel: płatna, regularna współpraca programistyczna.',
-    ai: 'W fikcyjnym projekcie korzysta z Codexa przy kodowaniu i samodzielnie sprawdza kod.',
-    portfolio: 'Fikcyjne portfolio: https://github.com/FixtureExample',
-    fixdesk:
-      'FixtureDesk: fikcyjny lokalny projekt obsługi usterek PHP/Laravel, bez wdrożenia produkcyjnego.',
-    autorelay:
-      'FixtureRelay: fikcyjny lokalny projekt webhooków i integracji API, bez wdrożenia produkcyjnego.',
-    codefabric:
-      'FixtureModels: fikcyjny prototyp lokalnych modeli językowych, bez wdrożenia produkcyjnego.',
-    elektroscan:
-      'FixturePDF: fikcyjny lokalny projekt analizy dokumentów PDF, bez wdrożenia produkcyjnego.',
+  if (existsSync(dir) && readdirSync(dir).length)
+    throw new Error('DIAGNOSTIC_REQUIRES_NEW_DIRECTORY');
+  const lock = acquireProfileLock(dir);
+  let store: Store;
+  try {
+    assertOutsideRepository(dir);
+    lock.assert();
+    if (existsSync(join(dir, 'jobhunter.sqlite')))
+      throw new Error('DIAGNOSTIC_REQUIRES_NEW_DIRECTORY');
+    store = new Store(dir);
+    store.assertExclusive = lock.assert;
+  } catch (e) {
+    lock.release();
+    throw e;
+  }
+  const close = store.close.bind(store);
+  store.close = () => {
+    try {
+      close();
+    } finally {
+      lock.release();
+    }
   };
-  const syntheticTemplate = `Dzień dobry,
+  const runner = options.runner ?? new ExecCodexRunner();
+  try {
+    const maximum = Math.min(10, Math.max(1, options.maxCompanies ?? 5));
+    store.set('skipLegacyHistorySeed', true);
+    // AUTO's public qualification/drafting branch, instantiated without GmailJobHunter or a gateway.
+    const service = new DiagnosticResearch(store, {
+      mode: 'AUTO_POLICY',
+      runner,
+      reader: options.reader,
+      search: options.search,
+    });
+    if (!(service.mail instanceof DisabledMailProvider) || 'gateway' in service)
+      throw new Error('DIAGNOSTIC_MAIL_DISABLED_REQUIRED');
+    const synthetic: Record<string, string> = {
+      identity:
+        'Alex Testowy — fikcyjny kandydat do technicznej diagnostyki, nie rzeczywisty użytkownik.',
+      education: 'Fikcyjny uczeń technikum programistycznego.',
+      contract: 'Fikcyjny cel: płatna, regularna współpraca programistyczna.',
+      ai: 'W fikcyjnym projekcie korzysta z Codexa przy kodowaniu i samodzielnie sprawdza kod.',
+      portfolio: 'Fikcyjne portfolio: https://github.com/FixtureExample',
+      fixdesk:
+        'FixtureDesk: fikcyjny lokalny projekt obsługi usterek PHP/Laravel, bez wdrożenia produkcyjnego.',
+      autorelay:
+        'FixtureRelay: fikcyjny lokalny projekt webhooków i integracji API, bez wdrożenia produkcyjnego.',
+      codefabric:
+        'FixtureModels: fikcyjny prototyp lokalnych modeli językowych, bez wdrożenia produkcyjnego.',
+      elektroscan:
+        'FixturePDF: fikcyjny lokalny projekt analizy dokumentów PDF, bez wdrożenia produkcyjnego.',
+    };
+    const syntheticTemplate = `Dzień dobry,
 
 Nazywam się Alex Testowy i jestem fikcyjnym uczniem technikum programistycznego. Szukam regularnej, płatnej współpracy programistycznej.
 
@@ -155,43 +220,47 @@ GitHub: https://github.com/FixtureExample
 
 Pozdrawiam
 Alex Testowy`;
-  if (options.materials) {
-    const keys = Object.keys(options.materials.facts);
-    const required = ['identity', 'education', 'availability', 'contract', 'ai', 'portfolio'];
-    const known = service.profile().facts.map((f) => f.fact_key);
-    if (
-      required.some((key) => !options.materials!.facts[key]?.trim()) ||
-      keys.some((key) => !known.includes(key))
-    ) {
-      store.close();
-      throw new Error('APPROVED_FACTS_INCOMPLETE');
+    if (options.materials) {
+      const keys = Object.keys(options.materials.facts);
+      const required = ['identity', 'education', 'availability', 'contract', 'ai', 'portfolio'];
+      const known = service.profile().facts.map((f) => f.fact_key);
+      if (
+        required.some((key) => !options.materials!.facts[key]?.trim()) ||
+        keys.some((key) => !known.includes(key))
+      ) {
+        store.close();
+        throw new Error('APPROVED_FACTS_INCOMPLETE');
+      }
+      // Only the fresh diagnostic database: an unapproved project is absent, never a fallback fact.
+      for (const fact of service.profile().facts)
+        if (!keys.includes(fact.fact_key))
+          store.exec('DELETE FROM candidate_facts WHERE id=?', fact.id);
     }
-    // Only the fresh diagnostic database: an unapproved project is absent, never a fallback fact.
-    for (const fact of service.profile().facts)
-      if (!keys.includes(fact.fact_key))
-        store.exec('DELETE FROM candidate_facts WHERE id=?', fact.id);
+    const p = service.profile();
+    service.updateProfile({
+      name: options.materials?.name ?? 'Alex Testowy',
+      goal:
+        options.materials?.goal ??
+        'Fikcyjny kandydat: płatna zdalna współpraca około 20 godzin po lekcjach.',
+      hours_approx: options.materials?.hoursApprox ?? 20,
+      version: p.version,
+      message_template: options.materials?.template ?? syntheticTemplate,
+      facts: p.facts.map((f) => ({
+        id: f.id,
+        content:
+          (options.materials?.facts ?? synthetic)[f.fact_key] ??
+          'Fikcyjna dostępność około 20 godzin tygodniowo, po lekcjach.',
+      })),
+    });
+    service.approveProfile();
+    store.set('diagnosticOnly', true);
+    store.set('diagnosticSynthetic', !options.materials);
+    store.exec('UPDATE campaigns SET max_candidates=? WHERE id=?', maximum, service.campaignId);
+    return { service, store, summary: () => publicDiagnosticSummary(store, service) };
+  } catch (e) {
+    store.close();
+    throw e;
   }
-  const p = service.profile();
-  service.updateProfile({
-    name: options.materials?.name ?? 'Alex Testowy',
-    goal:
-      options.materials?.goal ??
-      'Fikcyjny kandydat: płatna zdalna współpraca około 20 godzin po lekcjach.',
-    hours_approx: options.materials?.hoursApprox ?? 20,
-    version: p.version,
-    message_template: options.materials?.template ?? syntheticTemplate,
-    facts: p.facts.map((f) => ({
-      id: f.id,
-      content:
-        (options.materials?.facts ?? synthetic)[f.fact_key] ??
-        'Fikcyjna dostępność około 20 godzin tygodniowo, po lekcjach.',
-    })),
-  });
-  service.approveProfile();
-  store.set('diagnosticOnly', true);
-  store.set('diagnosticSynthetic', !options.materials);
-  store.exec('UPDATE campaigns SET max_candidates=? WHERE id=?', maximum, service.campaignId);
-  return { service, store, summary: () => publicDiagnosticSummary(store, service) };
 }
 export function publicDiagnosticSummary(store: Store, service: ResearchJobHunter) {
   const run = store.one('SELECT status,stage,error FROM runs ORDER BY started_at DESC LIMIT 1');

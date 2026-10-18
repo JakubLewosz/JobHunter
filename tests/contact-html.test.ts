@@ -264,7 +264,7 @@ for (const previousVersion of [0, 1])
     assert.equal(contactEligibility(validateAnalysis(a, [old]), [old]).allowed, false);
     const refreshed = await f.service.readSource(old.original_url);
     assert.notEqual(refreshed.id, old.id);
-    assert.equal(refreshed.parser_version, 2);
+    assert.equal(refreshed.parser_version, 3);
     assert.equal(
       f.store.one('SELECT parser_version FROM research_sources WHERE id=?', old.id)?.parser_version,
       previousVersion,

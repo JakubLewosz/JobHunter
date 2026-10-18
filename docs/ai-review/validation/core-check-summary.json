@@ -1,0 +1,641 @@
+{
+  "counts": [
+    {
+      "tests": 650,
+      "pass": 650,
+      "fail": 0
+    },
+    {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0
+    }
+  ],
+  "isolatedStopMeasurements": [
+    {
+      "scenario": "slow-read",
+      "requestReceivedMs": 72.53,
+      "rightsRevokedMs": 73.72,
+      "responseMs": 92.89,
+      "inflightFinishedMs": null,
+      "companies": 34,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:51.865Z",
+          "sqlDriverMs": 4.026499999999032,
+          "sqlPrepareMs": 4.403299999999945,
+          "materializationAndRulesMs": 11.878800000001092,
+          "serializationMs": 0.0986000000000331,
+          "eventLoopP99Ms": 45.809663,
+          "eventLoopMaxMs": 45.809663,
+          "healthMs": 1.5947000000001026
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:51.884Z",
+          "sqlDriverMs": 3.8601999999978034,
+          "sqlPrepareMs": 4.207400000000689,
+          "materializationAndRulesMs": 10.370700000001534,
+          "serializationMs": 0.11860000000001492,
+          "eventLoopP99Ms": 45.809663,
+          "eventLoopMaxMs": 45.809663,
+          "healthMs": 1.5947000000001026
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:51.909Z",
+          "sqlDriverMs": 4.9263999999998305,
+          "sqlPrepareMs": 6.428700000000845,
+          "materializationAndRulesMs": 12.26479999999924,
+          "serializationMs": 0.13149999999995998,
+          "eventLoopP99Ms": 45.809663,
+          "eventLoopMaxMs": 45.809663,
+          "healthMs": 1.5947000000001026
+        }
+      ]
+    },
+    {
+      "scenario": "slow-model",
+      "requestReceivedMs": 64.77,
+      "rightsRevokedMs": 65.01,
+      "responseMs": 85.57,
+      "inflightFinishedMs": null,
+      "companies": 34,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:52.217Z",
+          "sqlDriverMs": 3.6749000000017986,
+          "sqlPrepareMs": 4.6031999999995605,
+          "materializationAndRulesMs": 10.492999999998574,
+          "serializationMs": 0.08330000000000837,
+          "eventLoopP99Ms": 47.284223,
+          "eventLoopMaxMs": 47.284223,
+          "healthMs": 1.5561999999999898
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:52.239Z",
+          "sqlDriverMs": 3.7621999999980744,
+          "sqlPrepareMs": 4.711200000002691,
+          "materializationAndRulesMs": 11.957899999999427,
+          "serializationMs": 0.11059999999997672,
+          "eventLoopP99Ms": 47.284223,
+          "eventLoopMaxMs": 47.284223,
+          "healthMs": 1.5561999999999898
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:52.257Z",
+          "sqlDriverMs": 3.2213999999999032,
+          "sqlPrepareMs": 4.298999999999296,
+          "materializationAndRulesMs": 10.329500000000962,
+          "serializationMs": 0.10040000000003602,
+          "eventLoopP99Ms": 47.284223,
+          "eventLoopMaxMs": 47.284223,
+          "healthMs": 1.5561999999999898
+        }
+      ]
+    },
+    {
+      "scenario": "large-history",
+      "requestReceivedMs": 516.23,
+      "rightsRevokedMs": 516.64,
+      "responseMs": 528.41,
+      "inflightFinishedMs": null,
+      "companies": 10035,
+      "historyBuildMs": 5.93,
+      "historyRows": 100,
+      "historyBytes": 75673,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:56.929Z",
+          "sqlDriverMs": 3.8893000000043685,
+          "sqlPrepareMs": 4.26610000000619,
+          "materializationAndRulesMs": 9.64699999998993,
+          "serializationMs": 0.15059999999994034,
+          "eventLoopP99Ms": 4412.407807,
+          "eventLoopMaxMs": 4412.407807,
+          "healthMs": 1.497400000000198
+        },
+        {
+          "route": "/api/companies",
+          "at": "2026-10-18T16:47:56.939Z",
+          "sqlDriverMs": 5.746000000001004,
+          "sqlPrepareMs": 0.6913000000004104,
+          "materializationAndRulesMs": 2.1336999999984982,
+          "serializationMs": 0.21079999999983556,
+          "eventLoopP99Ms": 4412.407807,
+          "eventLoopMaxMs": 4412.407807,
+          "healthMs": 1.497400000000198
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:56.958Z",
+          "sqlDriverMs": 3.600399999997535,
+          "sqlPrepareMs": 4.253999999995358,
+          "materializationAndRulesMs": 10.560800000007475,
+          "serializationMs": 0.09789999999975407,
+          "eventLoopP99Ms": 4412.407807,
+          "eventLoopMaxMs": 4412.407807,
+          "healthMs": 1.497400000000198
+        }
+      ]
+    },
+    {
+      "scenario": "inflight-post",
+      "requestReceivedMs": 102.72,
+      "rightsRevokedMs": 102.9,
+      "responseMs": 115.3,
+      "inflightFinishedMs": 362.42,
+      "companies": 35,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:57.538Z",
+          "sqlDriverMs": 3.77389999999923,
+          "sqlPrepareMs": 4.17030000000068,
+          "materializationAndRulesMs": 9.621399999999994,
+          "serializationMs": 0.11589999999978318,
+          "eventLoopP99Ms": 176.816127,
+          "eventLoopMaxMs": 176.816127,
+          "healthMs": 1.425799999999981
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:57.557Z",
+          "sqlDriverMs": 3.64560000000165,
+          "sqlPrepareMs": 4.149699999996301,
+          "materializationAndRulesMs": 9.308200000002216,
+          "serializationMs": 0.10580000000027212,
+          "eventLoopP99Ms": 176.816127,
+          "eventLoopMaxMs": 176.816127,
+          "healthMs": 1.425799999999981
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:57.576Z",
+          "sqlDriverMs": 4.069000000004962,
+          "sqlPrepareMs": 4.743899999997666,
+          "materializationAndRulesMs": 8.96969999999692,
+          "serializationMs": 0.08410000000003492,
+          "eventLoopP99Ms": 176.816127,
+          "eventLoopMaxMs": 176.816127,
+          "healthMs": 1.425799999999981
+        }
+      ]
+    },
+    {
+      "scenario": "slow-read",
+      "requestReceivedMs": 58.98,
+      "rightsRevokedMs": 59.25,
+      "responseMs": 75.15,
+      "inflightFinishedMs": null,
+      "companies": 34,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:58.093Z",
+          "sqlDriverMs": 3.309199999996963,
+          "sqlPrepareMs": 4.072000000001935,
+          "materializationAndRulesMs": 9.673900000000685,
+          "serializationMs": 0.08190000000013242,
+          "eventLoopP99Ms": 36.110335,
+          "eventLoopMaxMs": 36.110335,
+          "healthMs": 1.3998000000001412
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:58.111Z",
+          "sqlDriverMs": 3.685200000003533,
+          "sqlPrepareMs": 4.41950000000179,
+          "materializationAndRulesMs": 9.549999999994725,
+          "serializationMs": 0.06930000000011205,
+          "eventLoopP99Ms": 36.110335,
+          "eventLoopMaxMs": 36.110335,
+          "healthMs": 1.3998000000001412
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:58.130Z",
+          "sqlDriverMs": 3.547700000001896,
+          "sqlPrepareMs": 4.531099999999242,
+          "materializationAndRulesMs": 9.814399999999296,
+          "serializationMs": 0.08849999999983993,
+          "eventLoopP99Ms": 36.110335,
+          "eventLoopMaxMs": 36.110335,
+          "healthMs": 1.3998000000001412
+        }
+      ]
+    },
+    {
+      "scenario": "slow-model",
+      "requestReceivedMs": 58.59,
+      "rightsRevokedMs": 58.82,
+      "responseMs": 78.82,
+      "inflightFinishedMs": null,
+      "companies": 34,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:58.402Z",
+          "sqlDriverMs": 3.1654999999964275,
+          "sqlPrepareMs": 3.8839000000052692,
+          "materializationAndRulesMs": 9.501999999998588,
+          "serializationMs": 0.08129999999982829,
+          "eventLoopP99Ms": 46.923775,
+          "eventLoopMaxMs": 46.923775,
+          "healthMs": 1.5240999999996347
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:58.419Z",
+          "sqlDriverMs": 3.157600000002276,
+          "sqlPrepareMs": 3.933099999994738,
+          "materializationAndRulesMs": 9.394700000003468,
+          "serializationMs": 0.19659999999930733,
+          "eventLoopP99Ms": 46.923775,
+          "eventLoopMaxMs": 46.923775,
+          "healthMs": 1.5240999999996347
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:47:58.439Z",
+          "sqlDriverMs": 3.6100000000014916,
+          "sqlPrepareMs": 4.600899999995818,
+          "materializationAndRulesMs": 10.436600000002727,
+          "serializationMs": 0.10360000000036962,
+          "eventLoopP99Ms": 46.923775,
+          "eventLoopMaxMs": 46.923775,
+          "healthMs": 1.5240999999996347
+        }
+      ]
+    },
+    {
+      "scenario": "large-history",
+      "requestReceivedMs": 473.69,
+      "rightsRevokedMs": 473.93,
+      "responseMs": 550.67,
+      "inflightFinishedMs": null,
+      "companies": 10035,
+      "historyBuildMs": 5.97,
+      "historyRows": 100,
+      "historyBytes": 75657,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:02.786Z",
+          "sqlDriverMs": 4.242700000004334,
+          "sqlPrepareMs": 4.490699999998469,
+          "materializationAndRulesMs": 10.028499999996711,
+          "serializationMs": 0.1632000000008702,
+          "eventLoopP99Ms": 3936.354303,
+          "eventLoopMaxMs": 3936.354303,
+          "healthMs": 1.2492000000002008
+        },
+        {
+          "route": "/api/companies",
+          "at": "2026-10-18T16:48:02.796Z",
+          "sqlDriverMs": 5.804299999999785,
+          "sqlPrepareMs": 0.9226000000035128,
+          "materializationAndRulesMs": 1.5381999999972322,
+          "serializationMs": 0.3875000000007276,
+          "eventLoopP99Ms": 3936.354303,
+          "eventLoopMaxMs": 3936.354303,
+          "healthMs": 1.2492000000002008
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:02.816Z",
+          "sqlDriverMs": 3.844600000007631,
+          "sqlPrepareMs": 4.509999999991123,
+          "materializationAndRulesMs": 10.792700000001787,
+          "serializationMs": 0.18399999999928696,
+          "eventLoopP99Ms": 3936.354303,
+          "eventLoopMaxMs": 3936.354303,
+          "healthMs": 1.2492000000002008
+        }
+      ]
+    },
+    {
+      "scenario": "inflight-post",
+      "requestReceivedMs": 57.12,
+      "rightsRevokedMs": 57.27,
+      "responseMs": 68.79,
+      "inflightFinishedMs": 356.89,
+      "companies": 35,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:03.308Z",
+          "sqlDriverMs": 3.6323000000011234,
+          "sqlPrepareMs": 4.316900000010719,
+          "materializationAndRulesMs": 9.080499999989115,
+          "serializationMs": 0.09999999999854481,
+          "eventLoopP99Ms": 144.179199,
+          "eventLoopMaxMs": 144.179199,
+          "healthMs": 1.5051000000003114
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:03.326Z",
+          "sqlDriverMs": 3.6604000000097585,
+          "sqlPrepareMs": 4.388999999991938,
+          "materializationAndRulesMs": 9.50329999999849,
+          "serializationMs": 0.09150000000045111,
+          "eventLoopP99Ms": 144.179199,
+          "eventLoopMaxMs": 144.179199,
+          "healthMs": 1.5051000000003114
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:03.344Z",
+          "sqlDriverMs": 3.9615000000067084,
+          "sqlPrepareMs": 4.6895000000004075,
+          "materializationAndRulesMs": 9.069699999992736,
+          "serializationMs": 0.09540000000015425,
+          "eventLoopP99Ms": 144.179199,
+          "eventLoopMaxMs": 144.179199,
+          "healthMs": 1.5051000000003114
+        }
+      ]
+    },
+    {
+      "scenario": "slow-read",
+      "requestReceivedMs": 56.7,
+      "rightsRevokedMs": 56.86,
+      "responseMs": 76.81,
+      "inflightFinishedMs": null,
+      "companies": 34,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:03.897Z",
+          "sqlDriverMs": 3.2272000000084518,
+          "sqlPrepareMs": 4.344199999999546,
+          "materializationAndRulesMs": 9.10339999999269,
+          "serializationMs": 0.08259999999972933,
+          "eventLoopP99Ms": 35.717119,
+          "eventLoopMaxMs": 35.717119,
+          "healthMs": 1.3057000000007974
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:03.914Z",
+          "sqlDriverMs": 3.201200000003155,
+          "sqlPrepareMs": 4.181200000000899,
+          "materializationAndRulesMs": 9.233899999995629,
+          "serializationMs": 0.06869999999980791,
+          "eventLoopP99Ms": 35.717119,
+          "eventLoopMaxMs": 35.717119,
+          "healthMs": 1.3057000000007974
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:03.931Z",
+          "sqlDriverMs": 3.1167999999997846,
+          "sqlPrepareMs": 3.9548000000067987,
+          "materializationAndRulesMs": 9.816699999992125,
+          "serializationMs": 0.11679999999978463,
+          "eventLoopP99Ms": 36.798463,
+          "eventLoopMaxMs": 36.798463,
+          "healthMs": 1.3057000000007974
+        }
+      ]
+    },
+    {
+      "scenario": "slow-model",
+      "requestReceivedMs": 55.54,
+      "rightsRevokedMs": 55.69,
+      "responseMs": 77.75,
+      "inflightFinishedMs": null,
+      "companies": 34,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:04.200Z",
+          "sqlDriverMs": 2.986399999985224,
+          "sqlPrepareMs": 3.8932000000149856,
+          "materializationAndRulesMs": 8.830599999999322,
+          "serializationMs": 0.07530000000042492,
+          "eventLoopP99Ms": 47.841279,
+          "eventLoopMaxMs": 47.841279,
+          "healthMs": 1.2652999999991152
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:04.217Z",
+          "sqlDriverMs": 3.0001000000065687,
+          "sqlPrepareMs": 3.911099999993894,
+          "materializationAndRulesMs": 8.863100000000486,
+          "serializationMs": 0.07049999999981083,
+          "eventLoopP99Ms": 47.841279,
+          "eventLoopMaxMs": 47.841279,
+          "healthMs": 1.2652999999991152
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:04.235Z",
+          "sqlDriverMs": 3.234200000013516,
+          "sqlPrepareMs": 4.2435999999979686,
+          "materializationAndRulesMs": 10.218999999990046,
+          "serializationMs": 0.07209999999940919,
+          "eventLoopP99Ms": 47.841279,
+          "eventLoopMaxMs": 47.841279,
+          "healthMs": 1.2652999999991152
+        }
+      ]
+    },
+    {
+      "scenario": "large-history",
+      "requestReceivedMs": 364.66,
+      "rightsRevokedMs": 364.84,
+      "responseMs": 375.49,
+      "inflightFinishedMs": null,
+      "companies": 10035,
+      "historyBuildMs": 6.25,
+      "historyRows": 100,
+      "historyBytes": 75665,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:08.333Z",
+          "sqlDriverMs": 3.3251000000091153,
+          "sqlPrepareMs": 4.121800000008079,
+          "materializationAndRulesMs": 9.335299999984272,
+          "serializationMs": 0.09029999999984284,
+          "eventLoopP99Ms": 3854.565375,
+          "eventLoopMaxMs": 3854.565375,
+          "healthMs": 1.260999999998603
+        },
+        {
+          "route": "/api/companies",
+          "at": "2026-10-18T16:48:08.341Z",
+          "sqlDriverMs": 6.20260000000053,
+          "sqlPrepareMs": 0.8526999999958207,
+          "materializationAndRulesMs": 0.6878000000033353,
+          "serializationMs": 0.2381999999997788,
+          "eventLoopP99Ms": 3854.565375,
+          "eventLoopMaxMs": 3854.565375,
+          "healthMs": 1.260999999998603
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:08.358Z",
+          "sqlDriverMs": 3.289999999982683,
+          "sqlPrepareMs": 3.9336000000221247,
+          "materializationAndRulesMs": 8.996099999993021,
+          "serializationMs": 0.08829999999943539,
+          "eventLoopP99Ms": 3854.565375,
+          "eventLoopMaxMs": 3854.565375,
+          "healthMs": 1.260999999998603
+        }
+      ]
+    },
+    {
+      "scenario": "inflight-post",
+      "requestReceivedMs": 61.48,
+      "rightsRevokedMs": 61.63,
+      "responseMs": 72.51,
+      "inflightFinishedMs": 350.65,
+      "companies": 35,
+      "historyBuildMs": 0,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "timingMode": "ISOLATED",
+      "requestPhases": [
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:08.788Z",
+          "sqlDriverMs": 4.472700000020268,
+          "sqlPrepareMs": 5.511499999982334,
+          "materializationAndRulesMs": 10.90849999999773,
+          "serializationMs": 0.10540000000037253,
+          "eventLoopP99Ms": 137.756671,
+          "eventLoopMaxMs": 137.756671,
+          "healthMs": 1.7139999999999418
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:08.807Z",
+          "sqlDriverMs": 3.8779000000031374,
+          "sqlPrepareMs": 4.396400000012363,
+          "materializationAndRulesMs": 9.810699999983626,
+          "serializationMs": 0.10740000000077998,
+          "eventLoopP99Ms": 137.756671,
+          "eventLoopMaxMs": 137.756671,
+          "healthMs": 1.7139999999999418
+        },
+        {
+          "route": "/api/dashboard",
+          "at": "2026-10-18T16:48:08.825Z",
+          "sqlDriverMs": 3.515900000009424,
+          "sqlPrepareMs": 4.28709999999046,
+          "materializationAndRulesMs": 9.245699999999488,
+          "serializationMs": 0.09749999999985448,
+          "eventLoopP99Ms": 137.756671,
+          "eventLoopMaxMs": 137.756671,
+          "healthMs": 1.7139999999999418
+        }
+      ]
+    }
+  ],
+  "isolatedStopSummary": [
+    {
+      "scenario": "slow-read",
+      "samples": 3,
+      "maxRequestReceivedMs": 72.53,
+      "maxRevokeAfterReceptionMs": 1.19,
+      "maxResponseMs": 92.89,
+      "companies": 34,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "maxHistoryBuildMs": 0
+    },
+    {
+      "scenario": "slow-model",
+      "samples": 3,
+      "maxRequestReceivedMs": 64.77,
+      "maxRevokeAfterReceptionMs": 0.24,
+      "maxResponseMs": 85.57,
+      "companies": 34,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "maxHistoryBuildMs": 0
+    },
+    {
+      "scenario": "large-history",
+      "samples": 3,
+      "maxRequestReceivedMs": 516.23,
+      "maxRevokeAfterReceptionMs": 0.41,
+      "maxResponseMs": 550.67,
+      "companies": 10035,
+      "historyRows": 100,
+      "historyBytes": 75673,
+      "maxHistoryBuildMs": 6.25
+    },
+    {
+      "scenario": "inflight-post",
+      "samples": 3,
+      "maxRequestReceivedMs": 102.72,
+      "maxRevokeAfterReceptionMs": 0.18,
+      "maxResponseMs": 115.3,
+      "companies": 35,
+      "historyRows": 0,
+      "historyBytes": 0,
+      "maxHistoryBuildMs": 0
+    }
+  ],
+  "observedRequestPhaseMaxima": {
+    "sqlPrepareMs": 6.429,
+    "sqlDriverMs": 6.203,
+    "materializationAndRulesMs": 12.265,
+    "serializationMs": 0.388,
+    "eventLoopP99Ms": 4412.408,
+    "eventLoopMaxMs": 4412.408,
+    "healthMs": 1.714
+  },
+  "ui": [
+    {
+      "pass": 20,
+      "duration": "58.2s"
+    }
+  ]
+}

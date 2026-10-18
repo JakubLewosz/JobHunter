@@ -12,7 +12,7 @@ import {
   projectKeys,
 } from './drafting.js';
 import { Store } from '../db.js';
-import { DomainError, hash, id, iso, csvCell, normalizeName } from '../util.js';
+import { DomainError, hash, id, iso, csvCell, normalizeName, companyDomain } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import {
   ExecCodexRunner,
@@ -55,7 +55,12 @@ import {
   type Analysis,
 } from './contracts.js';
 import { parserVersion } from './html.js';
+import { sourceComplete } from './source-policy.js';
+import { enrichCompanyDomain } from './domain-enrichment.js';
+import { ResearchSessionController } from './session-controller.js';
 import { sessionQueries } from './session-plan.js';
+import { fairWorkOrder } from './work-metrics.js';
+import { materialBinding, materialRecordIssues } from './material-binding.js';
 const analysisPolicyVersion = 8;
 const researchInstructions =
   baseResearchInstructions +
@@ -115,6 +120,17 @@ export const dayQueries = [
 ];
 const defaultQuery = dayQueries[0];
 export class ResearchJobHunter extends JobHunter {
+  protected researchOnlySession() {
+    return this.mode === 'RESEARCH_ONLY';
+  }
+  private sessionLifecycle?: ResearchSessionController;
+  researchController() {
+    return (this.sessionLifecycle ??= new ResearchSessionController(
+      this.store,
+      () => this.now(),
+      () => this.control('stop'),
+    ));
+  }
   readonly runner: StructuredRunner;
   readonly reader: SourceReader;
   readonly search: SearchProvider;
@@ -420,11 +436,17 @@ export class ResearchJobHunter extends JobHunter {
     };
   }
   saveSource(source: Source): Source {
+    const completeness =
+      source.completeness ?? (source.method === 'PUBLIC_HTTP' ? 'LEGACY_UNKNOWN' : 'COMPLETE');
+    if (source.method === 'PUBLIC_HTTP' && source.status === 'READ' && completeness !== 'COMPLETE')
+      source = { ...source, status: 'INCOMPLETE' };
     const existing = this.store.one(
-      'SELECT * FROM research_sources WHERE original_url=? AND content_hash=? AND parser_version=?',
+      'SELECT * FROM research_sources WHERE original_url=? AND content_hash=? AND parser_version=? AND status=? AND completeness=?',
       source.original_url,
       source.content_hash,
       source.parser_version ?? 0,
+      source.status,
+      completeness,
     );
     if (existing) {
       this.store.atomic(() => {
@@ -463,7 +485,7 @@ export class ResearchJobHunter extends JobHunter {
       return this.store.one('SELECT * FROM research_sources WHERE id=?', existing.id) as Source;
     }
     this.store.exec(
-      'INSERT INTO research_sources VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO research_sources (id,original_url,final_url,title,fetched_at,method,status,http_status,fragment,content_hash,text,error,parser_version,address_contexts,completeness,outbound_links) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
       source.id,
       source.original_url,
       source.final_url,
@@ -478,6 +500,8 @@ export class ResearchJobHunter extends JobHunter {
       source.error,
       source.parser_version ?? 0,
       source.address_contexts ?? null,
+      source.completeness ?? (source.method === 'PUBLIC_HTTP' ? 'LEGACY_UNKNOWN' : 'COMPLETE'),
+      source.outbound_links ?? '[]',
     );
     this.event('SOURCE_READ', `${source.status}: ${source.original_url}`, source.id);
     this.store.exec(
@@ -499,6 +523,33 @@ export class ResearchJobHunter extends JobHunter {
     return source;
   }
   private failedReads = new Map<string, { at: number; source: Source }>();
+  async probeReader(urls?: string[]) {
+    if (
+      this.researching ||
+      this.probing ||
+      (!this.state().paused && !this.state().stopped) ||
+      this.store.get<Row>('researchDay', {}).active
+    )
+      throw new DomainError(
+        'SESSION_ACTIVE',
+        'Zatrzymaj lub wstrzymaj pracę przed testem czytnika.',
+      );
+    if (!this.reader.recover)
+      throw new DomainError('READER_PROBE_UNAVAILABLE', 'Czytnik nie obsługuje jawnego probe.');
+    this.probing = true;
+    this.controller = new AbortController();
+    try {
+      this.store.set('readerRecoveryRequired', true);
+      const result = await this.reader.recover(urls, this.controller.signal);
+      this.controller.signal.throwIfAborted();
+      this.store.set('readerRecoveryRequired', !result.ok);
+      this.store.set('readerProbe', { at: this.now(), ...result });
+      return result;
+    } finally {
+      this.probing = false;
+      this.controller = undefined;
+    }
+  }
   private observedRead(kind: 'FETCH' | 'CACHE' | 'FAILURE_CACHE', source: Source) {
     const key = `readerMetrics:${this.activeRunId ?? 'manual'}`;
     const stats = this.store.get<Row>(key, {});
@@ -517,17 +568,23 @@ export class ResearchJobHunter extends JobHunter {
     });
     return source;
   }
-  private sourceIsCurrent(source: Source) {
-    return !this.store.one(
-      'SELECT id FROM research_sources WHERE (original_url IN (?,?) OR final_url IN (?,?)) AND fetched_at>? AND (status<>? OR content_hash IS NOT ? OR final_url IS NOT ?) LIMIT 1',
+  protected sourceIsCurrent(source: Source) {
+    const latest = this.store.one(
+      'SELECT v.status,v.content_hash,v.final_url,r.parser_version,r.completeness FROM source_verifications v JOIN research_sources r ON r.id=v.source_id WHERE r.original_url IN (?,?) OR r.final_url IN (?,?) ORDER BY v.checked_at DESC,v.rowid DESC LIMIT 1',
       source.original_url,
       source.final_url,
       source.original_url,
       source.final_url,
-      source.fetched_at,
-      'READ',
-      source.content_hash,
-      source.final_url,
+    );
+    return (
+      !latest ||
+      (latest.status === 'READ' &&
+        latest.content_hash === source.content_hash &&
+        latest.final_url === source.final_url &&
+        latest.parser_version === (source.parser_version ?? 0) &&
+        latest.completeness ===
+          (source.completeness ??
+            (source.method === 'PUBLIC_HTTP' ? 'LEGACY_UNKNOWN' : 'COMPLETE')))
     );
   }
   async readSource(url: string, signal?: AbortSignal) {
@@ -539,11 +596,7 @@ export class ResearchJobHunter extends JobHunter {
       normalized,
       iso(new Date(this.clock().getTime() - 24 * 3600000)),
     );
-    if (
-      existing &&
-      this.sourceIsCurrent(existing as Source) &&
-      (existing.method !== 'PUBLIC_HTTP' || existing.parser_version === parserVersion)
-    )
+    if (existing && this.sourceIsCurrent(existing as Source) && sourceComplete(existing as Source))
       return this.observedRead('CACHE', existing as Source);
     signal?.throwIfAborted();
     const failure = this.store.one(
@@ -635,7 +688,7 @@ export class ResearchJobHunter extends JobHunter {
       sources.some(
         (s) =>
           !s ||
-          s.status !== 'READ' ||
+          !sourceComplete(s) ||
           !s.content_hash ||
           !s.final_url ||
           !this.sourceIsCurrent(s) ||
@@ -688,7 +741,7 @@ export class ResearchJobHunter extends JobHunter {
       );
       if (
         checked &&
-        (source.method !== 'PUBLIC_HTTP' || source.parser_version === parserVersion) &&
+        sourceComplete(source) &&
         this.clock().getTime() - Date.parse(source.fetched_at) <= 86400000
       )
         continue;
@@ -726,6 +779,95 @@ export class ResearchJobHunter extends JobHunter {
         this.now(),
         t.id,
       );
+  }
+  private refreshingLibrary = false;
+  private refreshController?: AbortController;
+  async refreshLibraryDrafts(raw: unknown) {
+    const input = z
+      .object({ draftIds: z.array(z.string().min(1)).min(1).max(10) })
+      .strict()
+      .parse(raw);
+    if (
+      this.refreshingLibrary ||
+      this.researching ||
+      this.probing ||
+      !this.state().stopped ||
+      this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')")
+    )
+      throw new DomainError(
+        'BUSY',
+        'Zatrzymaj pracę i zakończ bieżący cykl przed odnowieniem szkiców.',
+      );
+    this.refreshingLibrary = true;
+    this.refreshController = new AbortController();
+    const signal = AbortSignal.any([
+        this.refreshController.signal,
+        AbortSignal.timeout(10 * 60000),
+      ]),
+      results: Row[] = [];
+    try {
+      for (const draftId of [...new Set(input.draftIds)]) {
+        signal.throwIfAborted();
+        const d = this.draftRows().find((d) => d.id === draftId);
+        if (!d) throw new DomainError('NOT_FOUND', 'Brak szkicu.', 404);
+        if (
+          this.companyHistoryBlocked(d.company_id) ||
+          this.store.one(
+            "SELECT id FROM outbox WHERE draft_id=? AND status IN ('QUEUED','SENDING','SEND_UNKNOWN','SENT_PROVIDER','SENT_CONFIRMED')",
+            d.id,
+          )
+        ) {
+          results.push({ draftId, code: 'CONTACT_HISTORY' });
+          continue;
+        }
+        const previous = this.sourcesForDraft(d);
+        if (!previous.length || previous.length > 6) {
+          results.push({ draftId, code: 'SOURCE_BUDGET' });
+          continue;
+        }
+        const sources: Source[] = [];
+        this.probing = true;
+        this.controller = this.refreshController;
+        try {
+          for (const s of previous) {
+            signal.throwIfAborted();
+            sources.push(this.saveSource(await this.reader.read(s.original_url, signal)));
+          }
+        } finally {
+          this.probing = false;
+          this.controller = undefined;
+        }
+        signal.throwIfAborted();
+        if (sources.some((s) => !sourceComplete(s))) {
+          results.push({ draftId, code: 'STALE_EVIDENCE' });
+          continue;
+        }
+        const runId = this.enqueue('refresh-' + id(), null, 1);
+        this.addItem(
+          runId,
+          previous[0].original_url,
+          sources.map((s) => s.id),
+        );
+        await this.tickResearchNative(signal);
+        signal.throwIfAborted();
+        const current = this.draftRows().find((row) => row.id === draftId)!;
+        const issues = this.draftMaterialIssues(current);
+        results.push({
+          draftId,
+          previousVersion: d.version,
+          version: current.version,
+          sameText: current.subject === d.subject && current.body === d.body,
+          code: issues[0] ?? 'CHECKED',
+          checkedAt: this.now(),
+        });
+        this.store.set('stopped', true);
+      }
+      return { results, sendAuthority: false };
+    } finally {
+      this.store.set('stopped', true);
+      this.refreshingLibrary = false;
+      this.refreshController = undefined;
+    }
   }
   reviewContact(contactId: string, confirmed: boolean) {
     if (!confirmed)
@@ -806,6 +948,10 @@ export class ResearchJobHunter extends JobHunter {
         query,
       );
       this.store.set(`draftedInRun:${runId}`, 0);
+      this.store.set(
+        'researchBaselineCompanies:' + runId,
+        this.store.all('SELECT id FROM companies').map((c) => c.id),
+      );
       this.store.set('stopped', false);
       this.store.set('paused', false);
       this.store.set('workerStatus', 'QUEUED');
@@ -815,11 +961,17 @@ export class ResearchJobHunter extends JobHunter {
         runId,
         this.mode === 'AUTO_POLICY' ? 'policy' : 'user',
       );
-      if (query && this.mode === 'RESEARCH_ONLY') {
+      if (query && this.researchOnlySession()) {
         const deferred = this.store
           .all("SELECT value FROM app_state WHERE key LIKE 'researchDeferred:%'")
           .map((row) => JSON.parse(row.value))
-          .filter(Boolean)
+          .filter(
+            (entry) =>
+              entry &&
+              (entry.attempts ?? 0) < 3 &&
+              (!entry.nextAt || entry.nextAt <= this.now()) &&
+              (!entry.companyId || !this.companyHistoryBlocked(entry.companyId)),
+          )
           .sort((a, b) => a.queuedAt.localeCompare(b.queuedAt));
         for (const entry of deferred.slice(0, Math.min(maxDrafts, 5))) {
           const previous = this.store.one('SELECT * FROM research_items WHERE id=?', entry.itemId);
@@ -852,6 +1004,34 @@ export class ResearchJobHunter extends JobHunter {
       this.now(),
       this.now(),
     );
+    const item = this.store.one(
+      'SELECT id FROM research_items WHERE run_id=? AND url=?',
+      runId,
+      normalizeResearchURL(url),
+    );
+    if (item) {
+      const domain = companyDomain(new URL(url).hostname),
+        known = this.store.one(
+          "SELECT id FROM companies WHERE primary_domain=? UNION SELECT company_id id FROM company_aliases WHERE kind='DOMAIN' AND value=? AND verified_at IS NOT NULL",
+          domain,
+          domain,
+        );
+      const saved = this.store.one(
+        "SELECT * FROM research_sources WHERE (original_url=? OR final_url=?) AND status='READ' ORDER BY fetched_at DESC LIMIT 1",
+        normalizeResearchURL(url),
+        normalizeResearchURL(url),
+      );
+      const reusable =
+        saved &&
+        sourceComplete(saved as Source) &&
+        Date.parse(saved.fetched_at) > this.clock().getTime() - 86400000;
+      this.store.exec(
+        'INSERT OR IGNORE INTO research_work_items(item_id,category,queued_at) VALUES (?,?,?)',
+        item.id,
+        sourceIds.length || (known && reusable) ? 'REUSE' : known ? 'REFRESH' : 'DISCOVERY',
+        this.now(),
+      );
+    }
   }
   override async start(query = defaultQuery) {
     const p = this.minimalProfile();
@@ -895,6 +1075,15 @@ export class ResearchJobHunter extends JobHunter {
     this.enqueue(`search-${id()}`, query, 3);
   }
   async startDay(query?: string, hours = 8) {
+    if (this.mode === 'RESEARCH_ONLY' && !this.store.get<Row>('researchDay', {}).active) {
+      await this.researchController().start(() => this.startDayNative(query, hours));
+      return;
+    }
+    return this.startDayNative(query, hours);
+  }
+  private async startDayNative(query?: string, hours = 8) {
+    if (this.store.get('readerRecoveryRequired', false))
+      throw new DomainError('READER_ENVIRONMENT', 'Najpierw wykonaj udany jawny probe czytnika.');
     const profile = this.minimalProfile();
     z.number().int().min(1).max(24).parse(hours);
     if (this.store.get<Row>('researchDay', {}).active) return;
@@ -931,7 +1120,7 @@ export class ResearchJobHunter extends JobHunter {
     this.store.set('stopped', false);
     this.store.set('paused', false);
     if (this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')")) {
-      await this.start();
+      await ResearchJobHunter.prototype.start.call(this);
       const work = this.store.get<Row>('researchDay', {});
       const run = this.store.one("SELECT id FROM runs WHERE status='QUEUED'")!;
       this.store.exec(
@@ -976,6 +1165,18 @@ export class ResearchJobHunter extends JobHunter {
     };
   }
   async resumeSession() {
+    const work = this.store.get<Row>('researchDay', {});
+    if (!work.expiresAt || work.expiresAt <= this.now())
+      throw new DomainError('SESSION_EXPIRED', 'Czas tej sesji już minął.');
+    if (this.mode === 'RESEARCH_ONLY') {
+      await this.researchController().start(() => this.resumeSessionNative(), true);
+      return;
+    }
+    return this.resumeSessionNative();
+  }
+  private async resumeSessionNative() {
+    if (this.store.get('readerRecoveryRequired', false))
+      throw new DomainError('READER_ENVIRONMENT', 'Wznowienie wymaga udanego probe czytnika.');
     this.minimalProfile();
     if (this.researching || this.probing)
       throw new DomainError('BUSY', 'Poczekaj na zakończenie bieżącego zadania.');
@@ -985,7 +1186,7 @@ export class ResearchJobHunter extends JobHunter {
     if (!this.capability('searchCapability').tested)
       throw new DomainError('SEARCH_NOT_TESTED', 'Najpierw sprawdź wyszukiwanie w Połączeniach.');
     if (this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','PAUSED')"))
-      await this.start();
+      await ResearchJobHunter.prototype.start.call(this);
     this.store.set('researchDay', {
       ...work,
       active: true,
@@ -1080,6 +1281,9 @@ export class ResearchJobHunter extends JobHunter {
     });
   }
   override control(action: 'pause' | 'stop' | 'emergency-stop' | 'resume-sender') {
+    this.refreshController?.abort();
+    this.controller?.abort();
+    this.sessionLifecycle?.control(action);
     if (action === 'resume-sender') this.requireDemo();
     this.controller?.abort();
     const dayWork = this.store.get<Row>('researchDay', {});
@@ -1087,12 +1291,22 @@ export class ResearchJobHunter extends JobHunter {
       ...dayWork,
       active: false,
       finishedAt: this.now(),
-      finalReason: action === 'pause' ? 'PAUSED' : 'STOPPED',
+      finalReason:
+        this.sessionLifecycle?.state().primaryReason ?? (action === 'pause' ? 'PAUSED' : 'STOPPED'),
     });
     if (action === 'stop' || action === 'emergency-stop') {
       // Keep checkpoints resumable. No send approvals or transport exist in this mode.
       this.store.set('stopped', true);
-      this.store.set('workerStatus', 'STOPPED');
+      this.store.set(
+        'workerStatus',
+        dayWork.expiresAt &&
+          dayWork.expiresAt <= this.now() &&
+          this.sessionLifecycle?.state().primaryReason === 'DEADLINE'
+          ? dayWork.hours === 1
+            ? 'TRIAL_FINISHED'
+            : 'DAY_FINISHED'
+          : 'STOPPED',
+      );
     } else {
       this.store.set('paused', true);
       this.store.set('workerStatus', 'PAUSED');
@@ -1104,6 +1318,7 @@ export class ResearchJobHunter extends JobHunter {
     this.store.set('nextCycle', null);
     this.event('CONTROL', 'Przerwano własne zadanie; zapisane etapy można wznowić.', null, 'user');
     if (!this.researching && !this.probing) this.persistResearchReport();
+    if (!this.researching && !this.probing) this.sessionLifecycle?.finalize();
   }
   override updateProfile(input: unknown) {
     this.controller?.abort();
@@ -1297,7 +1512,7 @@ export class ResearchJobHunter extends JobHunter {
       sources.length > 0 &&
       sources.every(
         (s) =>
-          s.status === 'READ' &&
+          sourceComplete(s) &&
           s.content_hash &&
           s.final_url &&
           this.sourceIsCurrent(s) &&
@@ -1472,8 +1687,40 @@ export class ResearchJobHunter extends JobHunter {
             domain = u.hostname;
         } catch {}
       }
-      const found = this.findOrCreateCompany(name, name === 'Fingoweb' ? null : domain);
-      const c = found.company;
+      const normalizedDomain = name === 'Fingoweb' ? null : companyDomain(domain);
+      const known = this.findKnownCompany(name, normalizedDomain);
+      if (known?.primary_domain === '' && normalizedDomain)
+        throw new DomainError(
+          'EMPTY_DOMAIN_REQUIRES_REVIEW',
+          'Historyczny pusty string wymaga jawnej decyzji.',
+        );
+      const needsEnrichment = known?.primary_domain === null && normalizedDomain;
+      const found = needsEnrichment
+        ? { company: known!, duplicate: true }
+        : this.findOrCreateCompany(name, normalizedDomain);
+      let c = found.company;
+      if (needsEnrichment) {
+        this.store.exec(
+          "INSERT OR IGNORE INTO company_aliases VALUES (?,?,'NAME',?,?,?)",
+          id(),
+          c.id,
+          name,
+          this.now(),
+          this.now(),
+        );
+        enrichCompanyDomain(this.store, {
+          companyId: c.id,
+          expectedVersion: c.version,
+          domain: normalizedDomain!,
+          operationId:
+            item.id + ':' + this.store.get<Row>(`analysisOperation:${item.id}`, {}).sequence,
+          companyName: name,
+          sourceId: v.companyProof.sourceId!,
+          quote: v.companyProof.quote!,
+          now: this.now(),
+        });
+        c = this.store.one('SELECT * FROM companies WHERE id=?', c.id)!;
+      }
       const token = this.store.get<Row>(`analysisOperation:${item.id}`, {});
       if (token.sequence < this.store.get<number>(`analysisCommitted:${c.id}`, 0))
         throw new DomainError('ANALYSIS_SUPERSEDED', 'Starsza analiza nie może zastąpić nowszej.');
@@ -1888,6 +2135,7 @@ export class ResearchJobHunter extends JobHunter {
       profileHash: this.profile().profile_hash,
       at: this.now(),
       queuedAt: previous?.queuedAt ?? this.now(),
+      attempts: (previous?.attempts ?? 0) + (reason === 'BUDGET_DEFERRED' ? 1 : 0),
     };
     this.store.set(`draftDisposition:${item.id}`, value);
     if (reason === 'BUDGET_DEFERRED') this.store.set(key, value);
@@ -2240,32 +2488,14 @@ export class ResearchJobHunter extends JobHunter {
       'SELECT details FROM research_qualifications WHERE opportunity_id=?',
       d.opportunity_id,
     );
-    const sources = this.sourcesForDraft(d).map((s) => ({
-      id: s.id,
-      hash: s.content_hash,
-      url: s.final_url,
-      method: s.method,
-      parser: s.parser_version,
-      text: hash(s.text),
-      contexts: hash(s.address_contexts ?? ''),
-    }));
-    return hash(
-      JSON.stringify({
-        version: d.version,
-        payload: d.payload_hash,
-        subject: d.subject,
-        body: d.body,
-        facts: d.fact_ids,
-        evidence: d.evidence_ids,
-        claims: this.store.one('SELECT claims FROM research_drafts WHERE draft_id=?', d.id)?.claims,
-        profileHash: profile.profile_hash,
-        approved: profile.approved_at,
-        factsHash: hash(JSON.stringify(profile.facts)),
-        contact,
-        qualification,
-        sources,
-      }),
-    );
+    return materialBinding({
+      draft: d,
+      profile,
+      contact,
+      qualification,
+      claims: this.store.one('SELECT claims FROM research_drafts WHERE draft_id=?', d.id)?.claims,
+      sources: this.sourcesForDraft(d),
+    });
   }
   protected draftMaterialContext(d: Row) {
     return this.materialBinding(d);
@@ -2314,14 +2544,7 @@ export class ResearchJobHunter extends JobHunter {
       return this.store.one('SELECT draft_id FROM research_draft_materials WHERE draft_id=?', d.id)
         ? ['DRAFT_MATERIAL_STALE']
         : [];
-    if (
-      material.context_hash !== this.materialBinding(d) ||
-      material.payload_hash !== d.payload_hash
-    )
-      return ['DRAFT_MATERIAL_STALE'];
-    return material.code_status === 'PASS' && material.review_status === 'COMPLETED'
-      ? []
-      : ['DRAFT_MATERIAL_UNVERIFIED'];
+    return materialRecordIssues(material, d, this.materialBinding(d));
   }
   async retryDraftReview(draftId: string, version: number, signal?: AbortSignal) {
     if (this.researching || this.probing)
@@ -2671,13 +2894,20 @@ export class ResearchJobHunter extends JobHunter {
     });
     return { runId, queued: true };
   }
-  override companies(): (Row & { researchDetails: any })[] {
+  override companies(
+    query?: Parameters<JobHunter['companies']>[0],
+  ): (Row & { researchDetails: any })[] {
+    const rows = super.companies(query),
+      ids = JSON.stringify(rows.map((c) => c.opportunity_id).filter(Boolean));
     const details = new Map(
       this.store
-        .all('SELECT opportunity_id,details FROM research_qualifications')
+        .all(
+          'SELECT opportunity_id,details FROM research_qualifications WHERE opportunity_id IN (SELECT value FROM json_each(?))',
+          ids,
+        )
         .map((r) => [r.opportunity_id, JSON.parse(r.details)]),
     );
-    return super.companies().map((c) => ({
+    return rows.map((c) => ({
       ...c,
       researchDetails: details.get(c.opportunity_id) ?? null,
     }));
@@ -2704,6 +2934,24 @@ export class ResearchJobHunter extends JobHunter {
     );
   }
   override async tick() {
+    if (this.refreshingLibrary) return;
+    if (this.sessionLifecycle && !this.researching && !this.probing) {
+      const work = this.store.get<Row>('researchDay', {});
+      const state = this.sessionLifecycle.state();
+      const due =
+        work.expiresAt !== state.deadline ||
+        work.expiresAt <= this.now() ||
+        this.clock().getTime() - Date.parse(state.lastGuardFinishedAt ?? '') >= 15000 ||
+        this.store.one("SELECT id FROM runs WHERE status='QUEUED'");
+      if (work.active && due && !this.sessionLifecycle.check()) return;
+    }
+    try {
+      await this.tickResearchNative();
+    } finally {
+      this.sessionLifecycle?.afterTick();
+    }
+  }
+  private async tickResearchNative(externalSignal?: AbortSignal) {
     if (this.researching || this.probing || this.state().paused || this.state().stopped) return;
     const run = this.store.one(
       "SELECT * FROM runs WHERE status='QUEUED' ORDER BY started_at LIMIT 1",
@@ -2728,8 +2976,20 @@ export class ResearchJobHunter extends JobHunter {
     // AUTO_POLICY has no inherited research-trial deadline. Each provider call
     // retains its own timeout, and the session's controller still implements Stop.
     const timeout =
-      this.mode === 'AUTO_POLICY' ? new AbortController().signal : AbortSignal.timeout(remaining);
-    const signal = AbortSignal.any([this.controller.signal, timeout]);
+      this.mode === 'AUTO_POLICY' && !this.researchOnlySession()
+        ? new AbortController().signal
+        : AbortSignal.timeout(remaining);
+    const signal = AbortSignal.any([
+      this.controller.signal,
+      timeout,
+      ...(externalSignal ? [externalSignal] : []),
+    ]);
+    this.store.set('researchBudget:' + run.id, {
+      cycleMs: remaining,
+      deadline: dayWork.expiresAt ?? null,
+      maxDrafts: config.max_drafts,
+      maxCandidates: this.campaign().max_candidates,
+    });
     try {
       this.minimalProfile();
       this.store.exec(
@@ -2738,6 +2998,7 @@ export class ResearchJobHunter extends JobHunter {
         run.id,
       );
       this.store.exec("UPDATE jobs SET status='RUNNING' WHERE run_id=?", run.id);
+      this.stage(run.id, run.stage);
       if (run.stage === 'SEARCH') {
         const p = this.minimalProfile();
         const recent = this.store.all(
@@ -2817,9 +3078,21 @@ export class ResearchJobHunter extends JobHunter {
           this.store.exec("UPDATE runs SET stage='READ' WHERE id=?", run.id);
         });
       }
-      for (const snapshot of this.store.all(
+      const queuedItems = this.store.all(
         "SELECT * FROM research_items WHERE run_id=? AND status='PENDING' ORDER BY created_at,id",
         run.id,
+      );
+      const categories = new Map(
+        this.store
+          .all(
+            'SELECT w.item_id,w.category FROM research_work_items w JOIN research_items i ON i.id=w.item_id WHERE i.run_id=?',
+            run.id,
+          )
+          .map((r) => [r.item_id, r.category]),
+      );
+      for (const snapshot of fairWorkOrder(
+        queuedItems,
+        (item) => categories.get(item.id) ?? 'DISCOVERY',
       )) {
         signal.throwIfAborted();
         if (!this.profile().approved_at || this.profile().profile_hash !== config.profile_hash)
@@ -2828,6 +3101,7 @@ export class ResearchJobHunter extends JobHunter {
             'Profil się zmienił. Zatwierdź go i wznów pracę.',
           );
         let item = snapshot;
+        const itemStarted = performance.now();
         if (['READ', 'EXTRACT', 'QUALIFY'].includes(item.stage)) this.beginAnalysis(item);
         try {
           let sources = this.sourcesFor(item);
@@ -2987,7 +3261,7 @@ export class ResearchJobHunter extends JobHunter {
           if (item.stage === 'DRAFT') {
             // Qualify the bounded research batch before choosing its best drafts.
             // AUTO keeps its separately paced, resumable queue.
-            if (this.mode !== 'AUTO_POLICY') continue;
+            if (this.mode !== 'AUTO_POLICY' || this.researchOnlySession()) continue;
             if (
               this.mode === 'AUTO_POLICY' &&
               this.store.get<number>(`draftedInRun:${run.id}`, 0) >= config.max_drafts
@@ -3004,9 +3278,15 @@ export class ResearchJobHunter extends JobHunter {
           );
         } catch (e) {
           this.itemFailure(item, e, signal);
+        } finally {
+          this.store.exec(
+            'UPDATE research_work_items SET elapsed_ms=elapsed_ms+?,attempts=attempts+1 WHERE item_id=?',
+            performance.now() - itemStarted,
+            item.id,
+          );
         }
       }
-      if (this.mode !== 'AUTO_POLICY') {
+      if (this.mode !== 'AUTO_POLICY' || this.researchOnlySession()) {
         const pending = this.store.all(
           "SELECT * FROM research_items WHERE run_id=? AND stage='DRAFT' AND status='PENDING' ORDER BY created_at,id",
           run.id,
@@ -3098,6 +3378,49 @@ export class ResearchJobHunter extends JobHunter {
           : e instanceof DomainError
             ? e.code
             : 'RESEARCH_FAILED';
+      if (code === 'READER_ENVIRONMENT') this.store.set('readerRecoveryRequired', true);
+      if (
+        code === 'TIME_BUDGET' &&
+        dayWork.active &&
+        dayWork.hours > 1 &&
+        !deadlineReached &&
+        !this.controller.signal.aborted
+      ) {
+        this.store.exec(
+          "UPDATE runs SET status='PARTIAL',error='TIME_BUDGET',finished_at=?,updated_at=? WHERE id=?",
+          this.now(),
+          this.now(),
+          run.id,
+        );
+        this.store.exec("UPDATE jobs SET status='DONE' WHERE run_id=?", run.id);
+        for (const item of this.store.all(
+          "SELECT * FROM research_items WHERE run_id=? AND status IN ('PENDING','ERROR')",
+          run.id,
+        )) {
+          const key = 'researchDeferred:' + (item.company_id ?? item.id);
+          const previous = this.store.get<Row | null>(key, null);
+          this.store.set(key, {
+            ...previous,
+            itemId: item.id,
+            companyId: item.company_id,
+            opportunityId: item.opportunity_id,
+            queuedAt: previous?.queuedAt ?? item.created_at,
+            at: this.now(),
+            reason: 'TIME_BUDGET',
+            profileHash: this.profile().profile_hash,
+            attempts: (previous?.attempts ?? 0) + 1,
+            nextAt: iso(new Date(this.clock().getTime() + dayWork.intervalMinutes * 60000)),
+          });
+        }
+        this.store.set('paused', false);
+        this.store.set('workerStatus', 'CYCLE_BUDGET_FINISHED');
+        this.event(
+          'CYCLE_BUDGET_FINISHED',
+          'Zachowano checkpoint cyklu; sesja czeka na kolejny termin.',
+          run.id,
+        );
+        return;
+      }
       this.store.exec(
         "UPDATE runs SET status='PAUSED',error=?,updated_at=? WHERE id=?",
         code,
@@ -3121,6 +3444,7 @@ export class ResearchJobHunter extends JobHunter {
         run.id,
       );
     } finally {
+      this.flushStage();
       this.store.exec(
         'UPDATE research_run_config SET elapsed_ms=elapsed_ms+?,total_ms=total_ms+? WHERE run_id=?',
         Date.now() - started,
@@ -3134,6 +3458,8 @@ export class ResearchJobHunter extends JobHunter {
     }
   }
   private stage(runId: string, stage: string) {
+    this.flushStage();
+    this.stageTimer = { runId, stage, started: performance.now() };
     this.store.exec(
       'UPDATE runs SET stage=?,heartbeat=?,updated_at=? WHERE id=?',
       stage,
@@ -3142,6 +3468,18 @@ export class ResearchJobHunter extends JobHunter {
       runId,
     );
     this.store.set('workerStatus', stage);
+  }
+  private stageTimer?: { runId: string; stage: string; started: number };
+  private flushStage() {
+    if (!this.stageTimer) return;
+    const s = this.stageTimer;
+    this.stageTimer = undefined;
+    this.store.exec(
+      'INSERT INTO research_stage_timings VALUES (?,?,?,1) ON CONFLICT(run_id,stage) DO UPDATE SET elapsed_ms=elapsed_ms+excluded.elapsed_ms,segments=segments+1',
+      s.runId,
+      s.stage,
+      performance.now() - s.started,
+    );
   }
   // Shared AUTO/public-diagnostic continuation: preserve failed items and release only this cycle.
   // Explicit Pause/Stop/provider failures never pass this guard.
@@ -3221,7 +3559,7 @@ export class ResearchJobHunter extends JobHunter {
       "SELECT count(*) n FROM opportunities WHERE decision='NEEDS_REVIEW'",
     )!.n;
     d.stats.offers = this.store.one('SELECT count(*) n FROM opportunities')!.n;
-    d.stats.drafts = this.draftRows().length;
+    d.stats.drafts = this.store.one('SELECT count(*) n FROM drafts')!.n;
     d.state = {
       ...d.state,
       usage: this.store.one(
@@ -3286,5 +3624,6 @@ export class ResearchJobHunter extends JobHunter {
     this.controller?.abort();
     while (this.researching || this.probing) await new Promise((r) => setTimeout(r, 10));
     await super.stopWorker();
+    this.sessionLifecycle?.finalize();
   }
 }

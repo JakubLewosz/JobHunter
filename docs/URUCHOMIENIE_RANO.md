@@ -1,5 +1,13 @@
 # Uruchomienie i aktualizacja — jeden domowy Windows
 
+18.10: nowy kod sprawdzono jako lokalny diff w osobnym worktree, następnie
+osobno zlecono publikację gałęzi i eksport danych: [AI_REVIEW](AI_REVIEW.md).
+[CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md) podaje fixture CLI, audyt snapshotu,
+przepływ zamkniętej partii i pełną procedurę późniejszej aktualizacji.
+Nie wykonano teraz aktualizacji ani Start/Resume rzeczywistej instalacji.
+Po nowych rzeczywistych próbach nie wolno wracać do starszej bazy i zgubić
+późniejszej historii. Preferować poprawkę naprzód; powrót kodu wymaga zgodności schematu.
+
 Stan 17 października: instalacja jest skonfigurowana; główna historia,
 zatwierdzone materiały i konto są poza Git. Research i sender zatrzymane,
 pozostaje PAUSED checkpoint ostatniej sesji. Przed kolejnym długim startem

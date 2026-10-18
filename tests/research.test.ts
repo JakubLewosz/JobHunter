@@ -28,12 +28,12 @@ import {
 import { DomainError } from '../apps/server/src/util.js';
 import { z } from 'zod';
 import { FixtureReader, FixtureRunner } from './research-fixture.js';
-function setup(t: TestContext) {
+function setup(t: TestContext, clock?: () => Date) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-research-'));
   const store = new Store(dir);
   const runner = new FixtureRunner(),
     reader = new FixtureReader();
-  const service = new ResearchJobHunter(store, { runner, reader });
+  const service = new ResearchJobHunter(store, { runner, reader, clock });
   t.after(() => {
     store.close();
     rmSync(dir, { recursive: true, force: true });
@@ -851,7 +851,8 @@ test('generator: edycja podczas ponownej generacji nie jest nadpisywana', async 
 });
 
 test('personal day: kolejne kierunki, brak lawiny zaległych cykli i ograniczenie do 8 godzin', async (t) => {
-  const { service, store } = setup(t);
+  let time = Date.now();
+  const { service, store } = setup(t, () => new Date(time));
   service.approveProfile();
   await service.probe('search');
   await service.startDay();
@@ -867,10 +868,7 @@ test('personal day: kolejne kierunki, brak lawiny zaległych cykli i ograniczeni
   await service.tick();
   assert.equal(store.all('SELECT * FROM runs').length, 2);
   assert.equal(service.draftRows().length, 1);
-  store.set('researchDay', {
-    ...store.get<any>('researchDay', {}),
-    expiresAt: new Date(Date.now() - 1).toISOString(),
-  });
+  time = Date.parse(work.expiresAt) + 1;
   await service.tick();
   assert.equal(store.get<any>('researchDay', {}).active, false);
   assert.equal(service.state().status, 'DAY_FINISHED');
@@ -953,7 +951,8 @@ test('godzinny test: kierunki co 10 minut, maksymalnie 10 kandydatów łącznie 
 });
 
 test('godzinny test: deadline zatrzymuje dalsze kierunki, wcześniejszy szkic zużywa wspólny limit', async (t) => {
-  const { service, store } = setup(t);
+  let time = Date.now();
+  const { service, store } = setup(t, () => new Date(time));
   service.approveProfile();
   await service.probe('search');
   await service.startDay(undefined, 1);
@@ -961,7 +960,7 @@ test('godzinny test: deadline zatrzymuje dalsze kierunki, wcześniejszy szkic zu
   assert.equal(service.draftRows().length, 1);
   store.set('researchDay', {
     ...store.get<any>('researchDay', {}),
-    nextAt: new Date(Date.now() - 1).toISOString(),
+    nextAt: new Date(time - 1).toISOString(),
   });
   await service.tick();
   assert.equal(
@@ -971,10 +970,7 @@ test('godzinny test: deadline zatrzymuje dalsze kierunki, wcześniejszy szkic zu
     2,
   );
   await service.tick();
-  store.set('researchDay', {
-    ...store.get<any>('researchDay', {}),
-    expiresAt: new Date(Date.now() - 1).toISOString(),
-  });
+  time = Date.parse(store.get<any>('researchDay', {}).expiresAt) + 1;
   await service.tick();
   assert.equal(service.state().status, 'TRIAL_FINISHED');
   assert.equal(store.get<any>('researchDay', {}).active, false);

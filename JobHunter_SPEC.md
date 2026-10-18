@@ -2,6 +2,15 @@
 
 Wersja 2.1, 12 października 2026. Zastępuje obowiązkową synchronizację między urządzeniami. Zachowuje AUTO_POLICY bez akceptacji każdego maila i granice danych/prawdziwości/niezamówionych wysyłek.
 
+Rozszerzenie 18.10.2026: [rdzeń po diagnostyce](docs/CORE_IMPLEMENTATION.md).
+Zamknięta partia jest osobnym rodzajem pracy AUTO_POLICY: przygotowany, wersjonowany
+skład i materiały → zatwierdzenie zakresu → świadomy Start → zakończenie po
+wyczerpaniu listy. Nie prowadzi discovery i nie dopisuje firm. Ciągły AUTO nadal
+pracuje bez ukrytego końca przy braku limitu użytkownika. Stop/restart odwołują
+prawo sesji; wznowienie zachowuje próby, rezerwacje i limity. Wersja parsera,
+kompletność, autorytet publikacji i aktualne materiały są warunkami przyszłego użycia.
+Audyt snapshotu nie ustanawia gotowości produkcyjnej ani prawa do nadawania.
+
 ## Produkt
 
 Osobiste narzędzie Jakuba do znalezienia płatnej, regularnej współpracy programistycznej: firmy przede wszystkim z Polski, wiadomości po polsku, w pełni zdalnie, około 20 h tygodniowo głównie po lekcjach. Rano użytkownik włącza Start; program szuka, czyta publiczne źródła, dobiera zatwierdzony projekt, sprawdza kontakt, tworzy wiadomość z CV i przechodzi dalej. Pracuje do Stop, ustawionego limitu lub wymagającego reakcji problemu. Odpowiedzi użytkownik obsługuje sam w Gmailu.

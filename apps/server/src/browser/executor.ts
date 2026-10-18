@@ -285,22 +285,26 @@ export async function connectBrowserExecutor(profileDir: string) {
   return client;
 }
 export async function runBrowserDelivery(client: BrowserExecutorClient, tab: BrowserTab) {
-  await client.attach();
-  const payload = await client.next();
-  if (!payload) return { status: 'IDLE' };
-  const heartbeat = setInterval(() => void client.attach().catch(() => {}), 10000);
+  let payload: BrowserPayload | null = null,
+    heartbeat: ReturnType<typeof setInterval> | undefined,
+    uncertain = false;
   try {
+    await client.attach();
+    payload = await client.next();
+    if (!payload) return { status: 'IDLE' };
+    heartbeat = setInterval(() => void client.attach().catch(() => {}), 10000);
     const driver = new GmailBrowserExecutor(tab);
     const observation = await driver.prepare(payload);
     await client.authorize(payload.id, observation);
-    await driver.clickSend(observation, () => client.check(payload.id)); // one action only; no catch-and-click-again.
+    uncertain = true;
+    await driver.clickSend(observation, () => client.check(payload!.id)); // one action only; no catch-and-click-again.
     await client.complete(payload.id, await driver.receipt());
     return { status: 'RECORDED', jobId: payload.id };
   } catch (e) {
-    await client.fail(payload.id).catch(() => {});
+    if (payload) await client.fail(payload.id).catch(() => {});
     const code =
       e instanceof Error && /^[A-Z_]{1,80}$/u.test(e.message) ? e.message : 'BROWSER_ACTION_FAILED';
-    return { status: 'STOPPED', jobId: payload.id, code };
+    return { status: 'STOPPED', jobId: payload?.id, code, uncertain };
   } finally {
     clearInterval(heartbeat);
   }
@@ -319,7 +323,8 @@ export async function serveBrowserDeliveries(
   let completed = 0;
   while (Date.now() < deadline) {
     const result = await runBrowserDelivery(client, tab);
-    if (result.status === 'STOPPED') return { status: 'STOPPED', completed };
+    if (result.status === 'STOPPED')
+      return { status: 'STOPPED', completed, code: result.code, uncertain: result.uncertain };
     if (result.status === 'RECORDED') completed++;
     else await new Promise((resolve) => setTimeout(resolve, 1000));
   }

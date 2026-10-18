@@ -1,4 +1,11 @@
-# Bieżące zadania — 17 października 2026
+# Bieżące zadania — 18 października 2026
+
+Implementację sprawdzono na osobnym worktree `codex/core-completion`.
+Później osobno zlecono commit/push i publiczny eksport wybranej kopii:
+[AI_REVIEW](AI_REVIEW.md). Bez wdrożenia prywatnej instalacji.
+[Zakres, komendy i procedura aktualizacji](CORE_IMPLEMENTATION.md).
+Weryfikacja zintegrowanego diffu: [TEST_REPORT](TEST_REPORT.md).
+Poniższe historyczne próby nie są testem nowych zmian.
 
 Źródła wymagań: [specyfikacja](../JobHunter_SPEC.md), [wizja](WIZJA_PROJEKTU.md),
 [AGENTS](../AGENTS.md). Kontekst do analizy całego projektu:
@@ -33,19 +40,20 @@
 
 ## Przed następnym długim researchem
 
-- [ ] Naprawić prywatny guard sesji: odróżnić potwierdzone uzupełnienie
+- [x] Nowy guard w repo odróżnia potwierdzone uzupełnienie
       null → domena od podmiany istniejącej tożsamości. Nie wystarczy usunięcie
       pola z porównania; wymagane źródło, alias, niezmienione ID/nazwa/historia/
       blokady i negatywne testy konfliktów. Szczegóły: [KNOWN_ISSUES](KNOWN_ISSUES.md).
-      **Nie naprawiono tego przez zmianę eksportera.** Stary kontroler i jego
+      Dowód jest atomowo zapisany przy kwalifikacji i przechodzi powtarzane
+      porównania ze stałym baseline. Stary kontroler i jego
       prywatne pliki pozostają materiałem historycznym poza Git.
-- [ ] Zastąpić doraźne prywatne launchery jedną przeglądalną, testowaną ścieżką
+- [x] Dodano wspólną przeglądalną, testowaną ścieżkę
       sesji/audytu w repo; bez sekretów, autostartu, odnowienia deadline lub
-      automatycznego wznowienia po awarii. Obecny natywny mechanizm jest w kodzie,
-      lecz cała otoczka ostatnich długich prób nie jest częścią repozytorium.
+      automatycznego wznowienia po awarii. `research:session` i panel korzystają
+      z natywnego startDay/tick oraz nowego lifecycle; historycznych helperów nie wdrażano.
 - [ ] Przy nowym zleceniu rozstrzygnąć pozostawiony PAUSED checkpoint;
       backup przed operacją, bez kasowania danych lub samoczynnego wznowienia.
-- [ ] Ograniczyć ponowne propozycje znanych firm i udział odświeżeń w sesji;
+- [x] Dodano przeplatanie DISCOVERY/REFRESH/REUSE, pomiary etapów/HTTP/cache/modeli,
       mierzyć nowe rekordy osobno od odwiedzin i wersji. Bez obchodzenia deduplikacji.
 
 ## Przed pilotem do firm
@@ -64,8 +72,18 @@
 
 ## Późniejsze rozszerzenia
 
-- [ ] Rozdzielić „wyślij przygotowaną partię” od „szukaj i wysyłaj ciągle”.
+- [x] Rozdzielono „wyślij przygotowaną partię” od „szukaj i wysyłaj ciągle”.
       Użytkownik preferuje nocny research i osobno uruchamianą dzienną wysyłkę.
+      Model trwałej partii korzysta ze wspólnego sendera i historii. Panel
+      prowadzi przez przygotowanie, zatwierdzenie zakresu, Start, Stop i wznowienie.
+
+## Pozostałe operacje poza zakresem tej implementacji
+
+- [ ] Dopuszczony przez użytkownika audyt konkretnego prywatnego backupu.
+- [ ] Aktualizacja zatrzymanego WORKSTATION zgodnie z procedurą; nie wykonywano jej teraz.
+- [ ] Weryfikacja rzeczywistego hosta browser przez całą zatwierdzoną partię.
+      Kontroler/lease/IPC sprawdzamy syntetycznie; nie deklarować ciągłości po zamknięciu Codexa.
+- [ ] Osobna ocena materiałów wybranej partii oraz świadomy Start dopuszczonego pilota.
       Nie deklarować osobnego produktu do partii jako już wdrożonego.
 - [ ] Jeden adapter ofert/formularzy pracy, później kwalifikacja potencjalnych
       zleceń stron/automatyzacji. To przyszły zakres; bez CRM/AI odpowiedzi/follow-upów.

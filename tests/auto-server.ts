@@ -4,14 +4,16 @@ import { AutoPolicyJobHunter } from '../apps/server/src/auto-policy.js';
 import { FixtureRunner, FixtureReader } from './research-fixture.js';
 import { FixtureGmail } from './gmail-fixture.js';
 const root = process.env.JOBHUNTER_E2E_DIR!;
+const batchFixture = process.env.JOBHUNTER_BATCH_FIXTURE === '1',
+  port = batchFixture ? 4332 : 4331;
 const gateway = new FixtureGmail(),
   runner = new FixtureRunner(),
   reader = new FixtureReader();
 runner.prospect = reader.prospect = true;
 let time = Date.now();
 const { app, service: base } = await createApp({
-  dir: join(root, 'auto-data'),
-  port: 4331,
+  dir: join(root, batchFixture ? 'batch-data' : 'auto-data'),
+  port,
   mode: 'AUTO_POLICY',
   worker: false,
   launchToken: 'auto-e2e-token',
@@ -51,5 +53,5 @@ app.post('/api/fixture/advance', async () => {
   await service.dispatchOne();
   return { posts: gateway.posts.length };
 });
-await app.listen({ host: '127.0.0.1', port: 4331 });
+await app.listen({ host: '127.0.0.1', port });
 process.once('SIGTERM', () => void app.close().then(() => process.exit(0)));

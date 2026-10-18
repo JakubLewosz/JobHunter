@@ -19,6 +19,8 @@ import type { Mode } from '../../../packages/shared/types.js';
 import { AutoPolicyJobHunter } from './auto-policy.js';
 import { acquireProfileLock } from './backend-lock.js';
 import { developmentRuntime, type Runtime } from './runtime.js';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
+import { companySelection } from './company-query.js';
 
 export async function createApp(options: {
   dir: string;
@@ -39,6 +41,59 @@ export async function createApp(options: {
     const store = new Store(options.dir);
     opened = store;
     store.assertExclusive = profileLock.assert;
+    store.assertHealthy();
+    const eventLoop = monitorEventLoopDelay({ resolution: 10 });
+    eventLoop.enable();
+    app.addHook('onClose', async () => eventLoop.disable());
+    const measurements: Record<string, number | string | null>[] = [];
+    const requestMetrics = new WeakMap<
+      object,
+      {
+        started: number;
+        sql: number;
+        prepare: number;
+        serialize?: number;
+        handlerMs?: number;
+        driverMs?: number;
+        prepareMs?: number;
+      }
+    >();
+    app.addHook('onRequest', async (request) => {
+      if (['/api/companies', '/api/dashboard'].includes(request.url.split('?')[0]))
+        requestMetrics.set(request, {
+          started: performance.now(),
+          sql: store.timings.sqlDriverMs,
+          prepare: store.timings.prepareMs,
+        });
+    });
+    app.addHook('preSerialization', async (request, _reply, payload) => {
+      const m = requestMetrics.get(request);
+      if (m) {
+        m.serialize = performance.now();
+        m.handlerMs = m.serialize - m.started;
+        m.driverMs = store.timings.sqlDriverMs - m.sql;
+        m.prepareMs = store.timings.prepareMs - m.prepare;
+      }
+      return payload;
+    });
+    app.addHook('onSend', async (request, _reply, payload) => {
+      const m = requestMetrics.get(request);
+      if (m?.serialize) {
+        measurements.push({
+          route: request.url.split('?')[0],
+          at: new Date().toISOString(),
+          sqlDriverMs: m.driverMs!,
+          sqlPrepareMs: m.prepareMs!,
+          materializationAndRulesMs: Math.max(0, m.handlerMs! - m.driverMs! - m.prepareMs!),
+          serializationMs: performance.now() - m.serialize,
+          eventLoopP99Ms: eventLoop.percentile(99) / 1e6,
+          eventLoopMaxMs: eventLoop.max / 1e6,
+          healthMs: store.healthStatus().elapsedMs,
+        });
+        if (measurements.length > 50) measurements.shift();
+      }
+      return payload;
+    });
     const service =
       options.mode === 'AUTO_POLICY'
         ? new AutoPolicyJobHunter(store, {
@@ -157,6 +212,10 @@ export async function createApp(options: {
       dashboard.state.runtime = (options.runtime ?? developmentRuntime).kind;
       return dashboard;
     });
+    app.get('/api/performance', async () => ({
+      measurements,
+      databaseHealth: store.healthStatus(),
+    }));
     app.get('/api/profile', async () => service.profile());
     app.put('/api/profile', async (request) => {
       service.updateProfile(request.body);
@@ -184,9 +243,31 @@ export async function createApp(options: {
         .header('Content-Disposition', 'inline; filename="CV.pdf"')
         .send(bytes);
     });
-    app.get('/api/companies', async () => service.companies());
+    app.get('/api/companies', async (request, reply) => {
+      const query = z
+        .object({
+          limit: z.coerce.number().int().min(1).max(200).default(100),
+          offset: z.coerce.number().int().min(0).default(0),
+          search: z.string().max(200).optional(),
+          status: z.string().max(80).optional(),
+          filter: z.string().max(80).optional(),
+        })
+        .strict()
+        .parse(request.query);
+      const selection = companySelection(query);
+      reply.header(
+        'X-Total-Count',
+        store.one('SELECT count(*) n FROM companies c WHERE ' + selection.where, ...selection.args)!
+          .n,
+      );
+      return service.companies(query);
+    });
     app.get<{ Params: { id: string } }>('/api/companies/:id', async (request) => ({
-      company: service.companies().find((c) => c.id === request.params.id),
+      company: service.companies({ id: request.params.id, limit: 1 })[0],
+      opportunities: store.all(
+        'SELECT * FROM opportunities WHERE company_id=? ORDER BY updated_at DESC,id',
+        request.params.id,
+      ),
       aliases: store.all('SELECT * FROM company_aliases WHERE company_id=?', request.params.id),
       suppressions: store.all('SELECT * FROM suppressions WHERE company_id=?', request.params.id),
       evidence: store.all('SELECT * FROM evidence WHERE company_id=?', request.params.id),
@@ -470,7 +551,10 @@ export async function createApp(options: {
       service instanceof ResearchJobHunter
         ? {
             mode: service.mode,
-            liveEnabled: service instanceof GmailJobHunter,
+            liveEnabled:
+              service instanceof GmailJobHunter &&
+              service.deliveryState().readReady &&
+              service.deliveryState().sendReady,
             items: [
               {
                 name: 'Codex runtime',
@@ -484,8 +568,8 @@ export async function createApp(options: {
                 name: 'Import publicznego URL',
                 available: true,
                 configured: true,
-                tested: true,
-                status: 'READY',
+                tested: !!store.get<any>('readerProbe', null)?.ok,
+                status: store.get<any>('readerProbe', null)?.ok ? 'TESTED' : 'AVAILABLE_NOT_TESTED',
                 detail:
                   'Bezpieczny odczyt stron; zapis źródeł przed analizą. To odrębne wejście od wyszukiwarki.',
               },
@@ -494,20 +578,30 @@ export async function createApp(options: {
                 available: service instanceof GmailJobHunter,
                 configured: service instanceof GmailJobHunter && service.deliveryState().readReady,
                 tested: false,
-                status: service instanceof GmailJobHunter ? 'MANUAL_APPROVAL' : 'BLOCKED',
+                status:
+                  service instanceof AutoPolicyJobHunter
+                    ? 'AUTO_POLICY'
+                    : service instanceof GmailJobHunter
+                      ? 'MANUAL_APPROVAL'
+                      : 'BLOCKED',
                 detail:
-                  service instanceof GmailJobHunter
-                    ? 'Dokładny podgląd z CV, zgoda na konkretną wersję i celowany odczyt historii. Rzeczywista próba wymaga połączenia Google oraz Twojej akceptacji.'
-                    : 'Brak transportu, odczytu poczty i zgód na wysyłkę w RESEARCH_ONLY.',
+                  service instanceof AutoPolicyJobHunter
+                    ? 'Zatwierdzona polityka i świadomy Start uprawniają zgodne pierwsze wiadomości. Konto, historia, materiały i wykonawca są sprawdzane przed każdą próbą.'
+                    : service instanceof GmailJobHunter
+                      ? 'Dokładny podgląd z CV, zgoda na konkretną wersję i celowany odczyt historii. Rzeczywista próba wymaga połączenia Google oraz Twojej akceptacji.'
+                      : 'Brak transportu, odczytu poczty i zgód na wysyłkę w RESEARCH_ONLY.',
               },
               {
                 name: 'Izolacja / AUTO_POLICY',
-                available: null,
-                configured: false,
+                available: service instanceof AutoPolicyJobHunter,
+                configured: service instanceof AutoPolicyJobHunter && !!service.policyConfig(),
                 tested: false,
-                status: 'BLOCKED',
+                status:
+                  service instanceof AutoPolicyJobHunter
+                    ? 'EXPLICIT_START_REQUIRED'
+                    : 'SEPARATE_MODE',
                 detail:
-                  'Shell, pluginy, aplikacje, hooks, browser i agenci wyłączone w runtime. Pełna izolacja procesu OS i Windows pozostają niepotwierdzone. AUTO_POLICY niedostępny.',
+                  'Runner researchu nie otrzymuje poczty ani sekretów. Browser to osobny wykonawca aktywnego zadania Codexa. Dostępność kodu nie potwierdza rzeczywistej integracji tej instalacji.',
               },
             ],
           }
@@ -612,6 +706,95 @@ export async function createApp(options: {
     app.post('/api/auto/start', async () => {
       await autoService().startAuto();
       return { ok: true };
+    });
+    app.post('/api/auto/library-research', async (request) => {
+      const v = z
+        .object({
+          query: z.string().min(10).max(3000).optional(),
+          hours: z.number().int().min(1).max(24).default(8),
+          resume: z.boolean().default(false),
+        })
+        .strict()
+        .parse(request.body);
+      await autoService().startLibraryResearch(v.query, v.hours, v.resume);
+      return { ok: true };
+    });
+    app.get('/api/auto/batches', async () => autoService().batches());
+    app.post('/api/auto/batches', async (request) => autoService().prepareBatch(request.body));
+    app.get<{ Params: { id: string } }>('/api/auto/batches/:id', async (request) =>
+      autoService().batchSummary(request.params.id),
+    );
+    app.post<{ Params: { id: string } }>('/api/auto/batches/:id/approve', async (request) =>
+      autoService().approveClosedBatch(request.params.id, request.body),
+    );
+    app.post<{ Params: { id: string } }>('/api/auto/batches/:id/reprepare', async (request) =>
+      autoService().reprepareBatch(request.params.id),
+    );
+    app.post<{ Params: { id: string } }>('/api/auto/batches/:id/start', async (request) => {
+      await autoService().startBatch(request.params.id);
+      return { ok: true };
+    });
+    app.get('/api/library/drafts', async (request) => {
+      researchService();
+      const v = z
+        .object({
+          offset: z.coerce.number().int().min(0).default(0),
+          limit: z.coerce.number().int().min(1).max(100).default(50),
+          search: z.string().max(200).default(''),
+        })
+        .strict()
+        .parse(request.query);
+      const search = `%${v.search}%`;
+      const selected = store.all(
+        `SELECT d.*,r.profile_hash,r.claims,r.warnings,r.semantic_review,c.canonical_name,t.email,m.code_status,m.review_status,m.updated_at checked_at FROM drafts d JOIN companies c ON c.id=d.company_id JOIN contacts t ON t.id=d.contact_id LEFT JOIN research_drafts r ON r.draft_id=d.id LEFT JOIN research_draft_materials m ON m.draft_id=d.id AND m.version=d.version WHERE c.canonical_name LIKE ? ORDER BY d.created_at DESC,d.id LIMIT ? OFFSET ?`,
+        search,
+        v.limit,
+        v.offset,
+      );
+      return {
+        items: selected.map((d) => {
+          let issues: string[];
+          try {
+            issues = researchService().draftMaterialIssues(d);
+            if (!d.code_status || !d.review_status) issues.push('DRAFT_MATERIAL_UNVERIFIED');
+            const review = JSON.parse(d.semantic_review ?? 'null');
+            if (review?.supported !== true || review.issues?.length)
+              issues.push('SEMANTIC_REVIEW_REQUIRED');
+          } catch {
+            issues = ['DRAFT_MATERIAL_UNVERIFIED'];
+          }
+          return {
+            id: d.id,
+            company_id: d.company_id,
+            version: d.version,
+            subject: d.subject,
+            status: d.status,
+            canonical_name: d.canonical_name,
+            email: d.email,
+            code_status: d.code_status,
+            review_status: d.review_status,
+            checked_at: d.checked_at,
+            material_issues: [...new Set(issues)],
+            assessed_at: service.now(),
+          };
+        }),
+        total: store.one(
+          'SELECT count(*) n FROM drafts d JOIN companies c ON c.id=d.company_id WHERE c.canonical_name LIKE ?',
+          search,
+        )!.n,
+        offset: v.offset,
+        limit: v.limit,
+      };
+    });
+    app.post('/api/library/refresh', async (request) =>
+      researchService().refreshLibraryDrafts(request.body),
+    );
+    app.post('/api/research/reader-probe', async (request) => {
+      const v = z
+        .object({ urls: z.array(z.string().max(2000)).min(2).max(3).optional() })
+        .strict()
+        .parse(request.body ?? {});
+      return researchService().probeReader(v.urls);
     });
     app.post('/api/auto/handoff', async () => autoService().handoff());
     app.post('/api/auto/history/prepare', async () => autoService().prepareHistory());

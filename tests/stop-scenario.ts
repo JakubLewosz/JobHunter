@@ -48,9 +48,9 @@ export async function stopScenario(
     done(null, payload);
   });
   const originalCompanies = result.service.companies.bind(result.service);
-  result.service.companies = () => {
+  result.service.companies = (query) => {
     const start = performance.now();
-    const rows = originalCompanies();
+    const rows = originalCompanies(query);
     historyBuildMs += performance.now() - start;
     historyRows = rows.length;
     return rows;
@@ -211,6 +211,9 @@ export async function stopScenario(
   const posts = gateway.posts.length;
   await operation;
   await Promise.all(refreshes);
+  const performanceReport = (await (
+    await fetch(url + '/api/performance', { headers })
+  ).json()) as any;
   await service.dispatchOne();
   assert.equal(gateway.posts.length, posts, 'Stop prevents any new POST');
   assert.equal(
@@ -229,6 +232,7 @@ export async function stopScenario(
     historyRows,
     historyBytes,
     timingMode: checkLatency ? 'ISOLATED' : 'FULL_SUITE',
+    requestPhases: performanceReport.measurements,
   };
   t.diagnostic(JSON.stringify(measurements));
   assert.ok(revoked >= received, 'authority was revoked after reception');

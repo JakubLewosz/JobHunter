@@ -10,6 +10,13 @@ Fakty, projekty i CV zatwierdza się w konfiguracji i po istotnej zmianie. Nie z
 
 Polityka określa nadawcę, materiały, kontakty, zakres, tempo i opcjonalne limity. GENERAL może być dopuszczony do zapytania, zachowując rzeczywiste przeznaczenie. Brak limitu oznacza pracę ciągłą w określonym tempie. DEMO, RESEARCH_ONLY i ręczny APPROVAL_REQUIRED pozostają odrębne.
 
+Osobny rodzaj pracy AUTO pozwala najpierw prowadzić research biblioteki bez
+poczty, a później przygotować zamkniętą partię wskazanych wersji. Użytkownik
+zatwierdza podsumowanie materiałów, odbiorców, nadawcy, zakresu i tempa, potem
+używa Start. Partia kończy się po wyczerpaniu swojego składu; zwykły ciągły AUTO
+zachowuje dotychczasowe działanie. Zapisane szkice nie oznaczają trwałej gotowości
+do wysyłki. [Lokalna implementacja i granice weryfikacji](CORE_IMPLEMENTATION.md).
+
 Przy świadomie wybranej nowej kampanii można dopuścić jeden kontakt po dawnych ręcznych zgłoszeniach. Nie przepisujemy historii jako pustej: zachowujemy zapisany, nieodnawiany początek tej kampanii i wszystkie istniejące rekordy. Każda nowa wysyłka JobHuntera blokuje kolejne wiadomości do firmy także po restarcie i zmianie dnia. Fingoweb, odmowy kontaktu i niepewne próby pozostają blokujące. Zatwierdzenie tego wyjątku nie jest Start ani zgodą na wysyłkę.
 
 Kod można rozwijać na Windowsie i MacBooku. Prawdziwy research i poczta pracują tylko na domowym Windowsie, ze świadomie skonfigurowaną instalacją i jedną trwałą lokalną historią poza repo. LOCAL_ONLY nie wymaga prywatnego origin lub handoff. MacBook jest developerski: osobne dane syntetyczne i brak natywnego Gmaila. Prywatny Git pozostaje opcjonalnym, odłożonym kierunkiem. Stop odwołuje zgodę sesji; restart nie wznawia sendera. Push kodu nie jest deploymentem, aktualizacja odbywa się po Stop i backupie.

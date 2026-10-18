@@ -1,10 +1,96 @@
-# Wyniki i zakres weryfikacji — 17 października 2026
+# Wyniki i zakres weryfikacji — 18 października 2026
 
-Ten dokument opisuje bieżący stan. Pełny dziennik poprzednich etapów:
+## Lokalna implementacja po diagnostyce — bieżąca weryfikacja
+
+Osobny worktree `codex/core-completion`, baza
+`f37afc077c0d7c80f231ef0e9ad2f4dcac17363c`, niezacommitowane zmiany i nowe
+pliki w chwili testów. Później osobno zlecono commit/push oraz ograniczony
+eksport wskazanego backupu: [AI_REVIEW](AI_REVIEW.md). Oryginalny checkout
+`codex/local-windows-pilot` pozostaje bez zmian.
+[CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md) opisuje pakiety A–J i komendy.
+Raport poza repo `JOBHUNTER_IMPLEMENTACJA_DO_PRZEGLADU.md` zawiera pełny patch,
+manifest SHA-256 wszystkich zmienionych/nowych plików i logi. Sam HEAD nie
+identyfikuje testowanego kodu. Fingerprint plików kodu/testów/migracji/konfiguracji:
+`8b0bcf8f493eb6128466b555565ec94aef43d1db4e0be6e8b065333eabad311d`.
+
+Windows x64 10.0.26300, Node 24.19.0, npm 11.17.0, SQLite 3.53.4,
+Codex CLI 0.163.0-alpha.10.2. Zależności zgodne z lockfile, osobny offline
+cache, bez install scripts i bez zmiany wersji zależności. Izolowany runner
+przekazuje allowlistę środowiska, własne HOME/APPDATA/TEMP/data oraz
+DEVELOPMENT/DEMO; każdy E2E ma nowy syntetyczny katalog. Testowy Chromium,
+pełne fikcyjne providery, bez modelu, publicznego researchu, Gmaila/OAuth/send.
+`NODE_USE_SYSTEM_CA=1`, bez wyłączenia TLS.
+
+Końcowy pełny `npm run check` (`check-1792341350035`): **PASS, exit 0**,
+650/650 backend, 12/12 izolowany performance, 20/20 UI, typecheck/build PASS.
+18.10.2026 16:35:50.078–16:49:16.214 UTC (18:35–18:49 Europe/Warsaw),
+13 min 26,136 s. Backend 708,152 s, performance 18,907 s, UI 58,2 s.
+Kod przez cały check pozostał zgodny z powyższym fingerprintem; dokumentację
+uzupełniono osobno. To pierwszy uruchomiony izolowany benchmark tego etapu,
+bez powtarzania go do PASS.
+
+Maksima z trzech powtórzeń każdego scenariusza (ms):
+
+| Scenariusz    | Przyjęcie HTTP od żądania | Odwołanie od przyjęcia | Odpowiedź HTTP |
+| ------------- | ------------------------: | ---------------------: | -------------: |
+| slow-read     |                     72,53 |                   1,19 |          92,89 |
+| slow-model    |                     64,77 |                   0,24 |          85,57 |
+| large-history |                    516,23 |                   0,41 |         550,67 |
+| inflight-post |                    102,72 |                   0,18 |         115,30 |
+
+Duża fixture ma 10 035 firm (10 000 dodanych w teście); zapytanie strony
+zwraca 100 wierszy, nie ładuje całej historii. Maks. budowa strony 6,25 ms,
+odpowiedź listy 75 673 B. Obserwowane maksima faz żądań: SQL prepare 6,429 ms,
+SQLite/driver 6,203 ms, materializacja/reguły JS 12,265 ms, serializacja
+0,388 ms; zapamiętana kontrola zdrowia 1,714 ms. P99/max pętli 4412,408 ms
+obejmuje także synchroniczne przygotowanie dużej fixture; nie jest latencją
+Stop ani dowodem braku długich blokad pętli w całym lifecycle.
+
+Po check kontrola PID/czasów, własnych ścieżek i portów: 0 własnych procesów
+testowych oraz 0 listenerów 4328–4332. Oryginalny checkout pozostał czysty
+na tej samej gałęzi i pełnym HEAD. Nie czytano produkcyjnej bazy w celu
+takiego porównania; prywatna instalacja nie była przedmiotem uruchomień.
+
+Pierwszy zintegrowany check (`check-1792337968451`): typecheck PASS,
+**637 backend: 625 PASS / 12 FAIL**; nie doszedł do izolowanego performance,
+builda ani UI. Poprawiono rzeczywisty kontekst etykiet HTML, fixture starego
+schematu z nowym UNIQUE, liczenie samych backupów SQLite po dodaniu manifestu,
+zachowanie ustalonego kodu błędu ścieżki i teardown fikcyjnego locka.
+Drugi (`check-1792340803934`) przerwano podczas backendu na potrzeby nowego
+odtworzenia fałszywego stopu po zmianie zakresu; nie doszedł do benchmarku.
+Nie przedstawiać go jako pełnego wyniku. Zakończono tylko własne drzewo tego
+uruchomienia; nie zatrzymywano prywatnego backendu.
+
+Nowa regresja (`test-1792340907490`) wykazała nieprawidłową ochronę bieżącego
+powiązania zakresu szkicu. Naprawa wymaga nowej zgodnej immutable wersji
+i polityki zatwierdzonej przed baseline, bez wyłączenia ochrony starych wersji.
+Po niej `test-1792341307930`: **56/56 PASS** (guard, partie, audytor, natywny
+punkt wejścia i długa sesja), `typecheck-1792341324651` PASS. Testowane są
+także usunięcie powiązania, regres/brak nowej wersji, zły zakres, brak zgodnego
+rekordu wersji i zmiana polityki. Wcześniejsze celowane niepowodzenia i poprawki
+są zachowane w logach, nie zastąpione ostatnim PASS.
+
+Wcześniejszy Playwright `test-e2e-1792340597324`: **20/20 PASS**, także pełny
+fikcyjny przepływ partii i mobilny widok. `doctor-1792341552566`: PASS,
+DEVELOPMENT/DEMO, SQLite w pamięci oraz `codex --version`; nie test loginu.
+Backend ma jawne `--test-concurrency=4`, izolowany Stop nadal concurrency=1,
+3 powtórzenia × 4 scenariusze, te same 10 000 rekordów i progi: przyjęcie
+HTTP <1000 ms oraz odwołanie prawa od przyjęcia <100 ms. Nie powtarzać
+benchmarku do pierwszego PASS; pierwszy wynik tego etapu zostaje w raporcie.
+
+Audyt prywatnej kopii: **SKIP**, nie wskazano konkretnego backupu dopuszczonego
+do odczytu. Rzeczywisty research, Gmail/SELF_TEST/pilot i browser przez całą
+partię: **NIEWYKONANE/NIEWERYFIKOWANE**. Macierz IPC i kontroler sprawdzone
+syntetycznie nie potwierdzają życia narzędzia po zamknięciu Codexa. Bez nowego
+wyniku realnego macOS, GitHub CI, wdrożenia lub migracji WORKSTATION.
+
+## Wyniki historyczne do 17 października — odrębny zakres
+
+Poniższe zapisy opisują wcześniejsze etapy. Ich pełny dziennik:
 [archiwalny TEST_REPORT](archive/2026-10-17/TEST_REPORT.md).
 Nie sumować dawnych kampanii, baz i różnych systemów jako jednej próby.
 
-## Obecne porządkowanie i poprawka raportów
+## Porządkowanie i poprawka raportów z 17 października
 
 Zmiana kodu ograniczona do eksportera pochodzenia przyczyny zakończenia
 oraz komunikatu o ustawieniach RESEARCH_ONLY. Bez migracji, generatora stylu,
@@ -45,7 +131,7 @@ przyczyny niestabilności i nie stanowią gwarancji czasu na każdym sprzęcie.
 ## Rzeczywista sesja RESEARCH_ONLY — 16/17 października
 
 Plan 8 h, rzeczywiście **23:52:43 → 03:24:51 Europe/Warsaw**, 3 h 32 min 8 s.
-15 rozpoczętych cykli: 10 COMPLETED, 4 PARTIAL, 1 PAUSED. Zakończenie
+15 rozpoczętych cykli: 9 COMPLETED, 5 PARTIAL, 1 PAUSED. Zakończenie
 PROTECTED_DATA_CHANGED: prywatny kontroler zatrzymał się po potwierdzonym
 uzupełnieniu pustej domeny istniejącej firmy. Stan sprzątania: STOPPED.
 Kontroler był doraźnym plikiem poza repo; nie należy przypisywać tego błędu
@@ -104,3 +190,5 @@ samodzielny wykonawca po zamknięciu Codexa, adapter portalu/formularzy,
 kwalifikacja zleceń usługowych, pełna izolacja OS i nowy realny macOS.
 GitHub CI dla przygotowywanego commitu nie został sprawdzony. Push kodu
 nie jest deploymentem lub zgodą na Start.
+
+Korekta narracji z 18.10.2026: 9 COMPLETED / 5 PARTIAL / 1 PAUSED pochodzi z dwóch raportów JSON zakończonej sesji i guarda, porównanych w diagnostyce z 18.10. Wcześniejsze 10/4/1 było błędem opisu; nie zmieniano danych runów.

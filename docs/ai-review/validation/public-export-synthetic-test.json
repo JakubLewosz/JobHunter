@@ -1,0 +1,11 @@
+{
+  "syntheticExport": "PASS",
+  "allowlistedCounts": {
+    "companies": 1,
+    "contacts": 1,
+    "sources": 1
+  },
+  "privateSentinelsAbsent": true,
+  "inputUnchanged": true,
+  "overwriteRejected": true
+}

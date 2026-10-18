@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 import { Store } from './db.js';
+import { companySelection } from './company-query.js';
 import { companyHistoryBlocks } from './prior-applications.js';
 import { projectKeys } from './research/drafting.js';
 import {
@@ -332,42 +333,48 @@ export class JobHunter {
     const normalized = normalizeName(name);
     const d = companyDomain(domain);
     const verifiedNames = this.verifiedCompanyNames();
-    const byAlias =
-      d &&
-      this.store.one(
-        "SELECT c.* FROM company_aliases a JOIN companies c ON c.id=a.company_id WHERE a.kind='DOMAIN' AND a.value=? AND a.verified_at IS NOT NULL",
-        d,
-      );
-    if (byAlias) return byAlias;
-    // A verified legal-name alias may supersede a preserved, archived company row.
-    // Otherwise a name-only history import could miss the canonical company's blocks.
-    const nameOwners = verifiedNames.get(normalized) ?? new Set<string>();
-    if (nameOwners.size > 1)
+    const nameOwners = new Set(verifiedNames.get(normalized) ?? []);
+    const byKey = this.store.one('SELECT * FROM companies WHERE normalized_key=?', normalized);
+    // An explicitly archived duplicate may retain its old key. Its confirmed aliases
+    // carry the resolution; all other canonical keys remain authoritative.
+    if (byKey && (byKey.suppression_reason !== 'DUPLICATE_COMPANY_ALIAS' || !nameOwners.size))
+      nameOwners.add(byKey.id);
+    const domainOwners = new Set<string>(
+      d
+        ? this.store
+            .all(
+              "SELECT company_id id FROM company_aliases WHERE kind='DOMAIN' AND value=? AND verified_at IS NOT NULL UNION SELECT id FROM companies WHERE primary_domain=?",
+              d,
+              d,
+            )
+            .map((r) => r.id)
+        : [],
+    );
+    const conflict = () => {
       throw new DomainError(
         'COMPANY_IDENTITY_CONFLICT',
-        'Potwierdzone aliasy nazwy wskazują różne firmy. Wymagany przegląd tożsamości.',
+        'Nazwa i domena nie wskazują jednej potwierdzonej firmy. Wymagany przegląd tożsamości.',
       );
-    const byKey = this.store.one(
-      'SELECT * FROM companies WHERE normalized_key=? OR (primary_domain IS NOT NULL AND primary_domain=?)',
-      normalized,
-      d,
-    );
-    if (nameOwners.size) {
-      const owner = [...nameOwners][0];
-      if (byKey && byKey.id !== owner && byKey.suppression_reason !== 'DUPLICATE_COMPANY_ALIAS')
-        throw new DomainError(
-          'COMPANY_IDENTITY_CONFLICT',
-          'Alias nazwy koliduje z istniejącą firmą. Wymagane jawne rozstrzygnięcie duplikatu.',
-        );
-      return this.store.one('SELECT * FROM companies WHERE id=?', owner);
-    }
-    return byKey;
+    };
+    if (domainOwners.size > 1) conflict();
+    const domainOwner = [...domainOwners][0];
+    // A real, already confirmed domain can disambiguate a shared name, but may
+    // never override a different known name owner (including its history/blocks).
+    if (domainOwner && nameOwners.size && !nameOwners.has(domainOwner)) conflict();
+    if (!domainOwner && nameOwners.size > 1) conflict();
+    const owner = domainOwner ?? [...nameOwners][0];
+    return owner ? this.store.one('SELECT * FROM companies WHERE id=?', owner) : undefined;
   }
   findOrCreateCompany(name: string, domain: string | null, historyStatus = 'NEW') {
     const normalized = normalizeName(name);
     const d = companyDomain(domain);
     const found = this.findKnownCompany(name, domain);
     if (found) {
+      if (d && found.primary_domain === '')
+        throw new DomainError(
+          'EMPTY_DOMAIN_REQUIRES_REVIEW',
+          'Historyczny pusty string wymaga jawnego przeglądu.',
+        );
       const byAlias =
         d &&
         this.store.one(
@@ -388,7 +395,7 @@ export class JobHunter {
         this.now(),
         this.now(),
       );
-      if (d && !found.primary_domain) {
+      if (d && found.primary_domain === null) {
         this.store.exec(
           'UPDATE companies SET primary_domain=?,version=version+1,updated_at=? WHERE id=?',
           d,
@@ -1627,7 +1634,18 @@ export class JobHunter {
     });
     return { imported: preview.rows.length };
   }
-  companies() {
+  companies(query?: import('./company-query.js').CompanyQuery) {
+    if (query) {
+      const limit = Math.min(200, Math.max(1, query.limit ?? 100)),
+        offset = Math.max(0, query.offset ?? 0);
+      const selection = companySelection(query);
+      return this.store.all(
+        `SELECT c.*,o.id opportunity_id,o.title,o.type,o.remote,o.part_time,o.paid,o.junior,o.hours,o.decision,o.reasons,e.canonical_url,e.fetched_at,e.fragment,t.email FROM companies c LEFT JOIN opportunities o ON o.id=(SELECT id FROM opportunities WHERE company_id=c.id ORDER BY updated_at DESC,id LIMIT 1) LEFT JOIN evidence e ON e.id=o.evidence_id LEFT JOIN contacts t ON t.id=o.contact_id WHERE c.id IN (SELECT c.id FROM companies c WHERE ${selection.where} ORDER BY c.created_at DESC,c.id LIMIT ? OFFSET ?) ORDER BY c.created_at DESC,c.id`,
+        ...selection.args,
+        limit,
+        offset,
+      );
+    }
     return this.store.all(
       `SELECT c.*,o.id opportunity_id,o.title,o.type,o.remote,o.part_time,o.paid,o.junior,o.hours,o.decision,o.reasons,e.canonical_url,e.fetched_at,e.fragment,t.email FROM companies c LEFT JOIN opportunities o ON o.company_id=c.id LEFT JOIN evidence e ON e.id=o.evidence_id LEFT JOIN contacts t ON t.id=o.contact_id ORDER BY CASE WHEN o.id IS NULL THEN 1 ELSE 0 END,c.created_at DESC`,
     );
@@ -1695,9 +1713,9 @@ export class JobHunter {
     };
   }
   protected recentCompanies() {
-    return this.companies()
-      .filter((c) => c.opportunity_id)
-      .slice(0, 4);
+    return this.store.all(
+      'SELECT c.*,o.id opportunity_id,o.title,o.decision FROM opportunities o JOIN companies c ON c.id=o.company_id ORDER BY c.created_at DESC LIMIT 4',
+    );
   }
   report(format: 'md' | 'csv') {
     const d = this.dashboard();

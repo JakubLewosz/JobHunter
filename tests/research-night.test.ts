@@ -420,13 +420,20 @@ test('eight-hour session survives the eighth cycle and finishes at its immutable
   assert.equal(f.store.all('SELECT * FROM send_attempts').length, 0);
 });
 test('deadline during an operation stops the session and preserves its checkpoint', async (t) => {
-  const f = setup(t);
+  let time = Date.now();
+  const f = setup(t, () => new Date(time));
   await f.service.probe('search');
   await f.service.startDay();
   const work = f.store.get<any>('researchDay', {});
-  f.store.set('researchDay', { ...work, expiresAt: new Date(Date.now() + 40).toISOString() });
+  const abort = new AbortController(),
+    timeout = AbortSignal.timeout;
+  AbortSignal.timeout = () => abort.signal;
+  t.after(() => {
+    AbortSignal.timeout = timeout;
+  });
   f.runner.beforeCall = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 75));
+    time = Date.parse(work.expiresAt) + 1;
+    abort.abort();
   };
   await f.service.tick();
   assert.equal(f.service.state().stopped, true);

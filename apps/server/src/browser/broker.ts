@@ -36,6 +36,7 @@ export class BrowserDeliveryBroker {
   private worker: { id: string; seen: number } | null = null;
   private server?: Server;
   private secret = randomBytes(32).toString('hex');
+  private backendId = id();
   private descriptor?: string;
   constructor(
     private store: Store,
@@ -58,11 +59,15 @@ export class BrowserDeliveryBroker {
       connected: !!this.worker && this.time() - this.worker.seen < 45000,
       listening: !!this.server,
       pending: this.pending.size,
+      backendId: this.backendId,
+      execution: this.store.get('browserExecutionContext', null),
     };
   }
   attach(workerId: string) {
     if (!/^[a-zA-Z0-9-]{8,100}$/.test(workerId))
       throw new DomainError('BROWSER_WORKER', 'Nieprawidłowy wykonawca.');
+    if (this.worker?.id === workerId && !this.status().connected)
+      throw new DomainError('BROWSER_LEASE_EXPIRED', 'Połączenie wykonawcy wygasło.');
     if (this.status().connected && this.worker!.id !== workerId)
       throw new DomainError('BROWSER_BUSY', 'Jeden wykonawca przeglądarki jest już podłączony.');
     this.worker = { id: workerId, seen: this.time() };
@@ -87,7 +92,14 @@ export class BrowserDeliveryBroker {
         'FAILED_NOT_SENT',
         'Podłącz wykonawcę Codexa przed wysyłką przez przeglądarkę.',
       );
-    guard();
+    try {
+      guard();
+    } catch {
+      throw new DomainError(
+        'FAILED_NOT_SENT',
+        'Odwołano prawo przed przekazaniem akcji przeglądarce.',
+      );
+    }
     const attempt = this.store.one(
       'SELECT * FROM send_attempts WHERE message_id=?',
       input.messageId,

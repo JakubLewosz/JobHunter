@@ -912,12 +912,33 @@ function DailyChart({ data }: { data: Dashboard }) {
 function CompaniesView({ data, act }: { data: Data; act: Act }) {
   const [filter, setFilter] = useState('results');
   const [query, setQuery] = useState('');
+  const [companyPage, setCompanyPage] = useState<Row[]>(data.companies),
+    [offset, setOffset] = useState(0),
+    [pageError, setPageError] = useState('');
+  useEffect(() => {
+    setOffset(0);
+  }, [query, filter]);
+  useEffect(() => {
+    let current = true;
+    void api<Row[]>(
+      `companies?limit=100&offset=${offset}&search=${encodeURIComponent(query)}&filter=${encodeURIComponent(filter)}`,
+    )
+      .then((rows) => {
+        if (current) setCompanyPage(rows);
+      })
+      .catch((e) => {
+        if (current) setPageError(e.message);
+      });
+    return () => {
+      current = false;
+    };
+  }, [offset, query, filter, data.companies]);
   const [selected, setSelected] = useState<Row>();
   const [csv, setCsv] = useState('');
   const [preview, setPreview] = useState<Row>();
   const [importOpen, setImportOpen] = useState(false);
   const research = data.dashboard.mode !== 'DEMO';
-  const rows = data.companies.filter(
+  const rows = companyPage.filter(
     (c) =>
       (filter === 'history'
         ? !c.opportunity_id
@@ -930,6 +951,16 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
     ({ yes: 'Tak', no: 'Nie', unknown: 'Nieznane', conflicting: 'Sprzeczne' })[v] ?? '—';
   return (
     <>
+      {pageError && <p role="alert">{pageError}</p>}
+      <div className="button-row">
+        <button disabled={!offset} onClick={() => setOffset(Math.max(0, offset - 100))}>
+          Poprzednia strona firm
+        </button>
+        <span>Strona {offset / 100 + 1}</span>
+        <button disabled={companyPage.length < 100} onClick={() => setOffset(offset + 100)}>
+          Następna strona firm
+        </button>
+      </div>
       <div className="toolbar">
         <div className="tabs">
           {[

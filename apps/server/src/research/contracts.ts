@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { DomainError, normalizeName } from '../util.js';
 import type { Source } from './fetcher.js';
 import { addressContexts, parserVersion, type AddressContext } from './html.js';
+import { sourceHasCompleteText } from './source-policy.js';
 
 const proof = z
   .object({
@@ -113,7 +114,7 @@ export function verifyQuote(
   sources: Source[],
 ): boolean {
   if (!p.sourceId || !p.quote || p.quote.trim().length < 4) return false;
-  const source = sources.find((s) => s.id === p.sourceId && s.status === 'READ');
+  const source = sources.find((s) => s.id === p.sourceId && sourceHasCompleteText(s));
   return !!source && compact(source.text).includes(compact(p.quote));
 }
 export function validateAnalysis(raw: unknown, sources: Source[]): Analysis {
@@ -358,7 +359,10 @@ export function contactPurposeAllowed(v: Analysis, sources: Source[]) {
   return (
     concrete.length > 0 &&
     concrete.every(
-      (c) => compact(c.text).includes(email.toLowerCase()) && !restrictedPurpose.test(c.text),
+      (c) =>
+        c.complete !== false &&
+        compact(c.text).includes(email.toLowerCase()) &&
+        !restrictedPurpose.test(c.text),
     )
   );
 }

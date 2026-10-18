@@ -60,6 +60,38 @@ export class GmailJobHunter extends ResearchJobHunter {
   private accountInfo: () => AccountInfo | null;
   readonly runtime: Runtime;
   readonly fictionalProviders: boolean;
+  private sendGeneration = 0;
+  private sendEnabled = false;
+  private outboxGenerations = new Map<string, number>();
+  protected revokeDeliveryAuthority() {
+    this.sendEnabled = false;
+    this.sendGeneration++;
+    this.outboxGenerations.clear();
+  }
+  deliveryAuthority() {
+    return { enabled: this.sendEnabled, generation: this.sendGeneration };
+  }
+  private assertDeliveryGeneration(generation: number) {
+    if (generation !== this.sendGeneration)
+      throw new DomainError('SESSION_STOPPED', 'Prawo tej operacji zostało odwołane.');
+    this.assertDeliveryOwnership();
+  }
+  protected deliveryOwnershipLost() {
+    this.revokeDeliveryAuthority();
+  }
+  private assertDeliveryOwnership() {
+    try {
+      this.store.assertExclusive();
+    } catch (e) {
+      this.deliveryOwnershipLost();
+      throw e;
+    }
+  }
+  protected assertDeliveryAuthority(outboxId: string) {
+    this.assertDeliveryOwnership();
+    if (!this.sendEnabled || this.outboxGenerations.get(outboxId) !== this.sendGeneration)
+      throw new DomainError('SESSION_STOPPED', 'Brak bieżącego prawa wysyłki dla tego pakietu.');
+  }
   constructor(
     store: Store,
     options: ConstructorParameters<typeof ResearchJobHunter>[1] & {
@@ -810,15 +842,19 @@ export class GmailJobHunter extends ResearchJobHunter {
     };
   }
   async approveDelivery(input: { previewId: string; previewHash: string; confirmed: boolean }) {
+    const generation = this.sendGeneration;
+    this.assertDeliveryGeneration(generation);
     if (!input.confirmed)
       throw new DomainError(
         'SEND_CONFIRMATION_REQUIRED',
         'Potwierdź treści, odbiorców, nadawcę i CV.',
       );
-    const account = await this.gateway.account(),
-      preview = this.preview(input.previewId);
+    const account = await this.gateway.account();
+    this.assertDeliveryGeneration(generation);
+    const preview = this.preview(input.previewId);
     this.sameAccount(account, preview.account_subject, preview.account_email);
     this.store.atomic(() => {
+      this.assertDeliveryGeneration(generation);
       const current = this.preview(input.previewId);
       if (
         current.previewHash !== input.previewHash ||
@@ -901,6 +937,7 @@ export class GmailJobHunter extends ResearchJobHunter {
           account.subject,
           iso(new Date(this.clock().getTime() + 3600000)),
         );
+        this.deliveryPacketCreated(outboxId, d.id);
         if (current.kind === 'FIRST_CONTACT')
           this.store.exec(
             "UPDATE drafts SET status='APPROVED',updated_at=? WHERE id=?",
@@ -917,10 +954,16 @@ export class GmailJobHunter extends ResearchJobHunter {
         );
       }
       this.store.exec('UPDATE gmail_previews SET approved_at=? WHERE id=?', this.now(), current.id);
+      this.assertDeliveryGeneration(generation);
       this.store.set('gmailSenderPaused', false);
     });
+    this.assertDeliveryGeneration(generation);
+    for (const item of this.preview(input.previewId).items)
+      this.outboxGenerations.set(item.outbox_id, generation);
+    this.sendEnabled = true;
     return { queued: true };
   }
+  protected deliveryPacketCreated(_outboxId: string, _draftId: string) {}
   override approveBatch(_input: { id: string; version: number }[]) {
     throw new DomainError('PREVIEW_REQUIRED', 'Najpierw przygotuj podgląd Gmaila z CV.');
   }
@@ -1070,6 +1113,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     )!;
   }
   protected gates(o: Row, account: AccountInfo, reserved = false) {
+    this.assertDeliveryAuthority(o.id);
     this.sameAccount(account, o.account_subject, o.account_email);
     const d = this.draft(o.draft_id, o.draft_version),
       a = this.store.one('SELECT * FROM draft_approvals WHERE id=?', o.approval_id)!;
@@ -1279,6 +1323,8 @@ export class GmailJobHunter extends ResearchJobHunter {
     } finally {
       this.sending = false;
       this.activeSendingOutbox = null;
+      if (this.store.one('SELECT status FROM outbox WHERE id=?', first.id)?.status !== 'QUEUED')
+        this.outboxGenerations.delete(first.id);
     }
   }
   override async reconcile(outboxId: string) {
@@ -1511,10 +1557,16 @@ export class GmailJobHunter extends ResearchJobHunter {
   }
   override control(action: 'pause' | 'stop' | 'emergency-stop' | 'resume-sender') {
     if (action === 'resume-sender') {
+      this.store.assertExclusive();
       if (this.store.one("SELECT id FROM outbox WHERE status='SEND_UNKNOWN'"))
         throw new DomainError('SEND_UNKNOWN', 'Najpierw rozstrzygnij niepewne wysyłki.');
       this.store.set('killSwitch', false);
       this.store.set('gmailSenderPaused', false);
+      for (const row of this.store.all(
+        "SELECT o.id FROM outbox o JOIN draft_approvals a ON a.id=o.approval_id WHERE o.status='QUEUED' AND a.revoked_at IS NULL",
+      ))
+        this.outboxGenerations.set(row.id, this.sendGeneration);
+      this.sendEnabled = true;
       this.event(
         'SENDER_RESUMED',
         'Użytkownik wznowił wyłącznie wcześniej zatwierdzone wiadomości.',
@@ -1523,6 +1575,8 @@ export class GmailJobHunter extends ResearchJobHunter {
       );
       return;
     }
+    // Revocation cannot depend on a successful SQLite write or research state.
+    this.revokeDeliveryAuthority();
     super.control(action);
     this.store.set('gmailSenderPaused', true);
     this.browserDelivery.cancel();
@@ -1534,6 +1588,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     await super.tick();
   }
   override async stopWorker() {
+    this.revokeDeliveryAuthority();
     await super.stopWorker();
     while (this.sending || this.historyBusy) await new Promise((r) => setTimeout(r, 10));
   }

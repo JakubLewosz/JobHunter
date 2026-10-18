@@ -29,6 +29,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'node --import tsx tests/auto-server.ts',
+      url: 'http://127.0.0.1:4332/api/health',
+      reuseExistingServer: false,
+      timeout: 30000,
+      env: { JOBHUNTER_E2E_DIR: process.env.JOBHUNTER_E2E_DIR!, JOBHUNTER_BATCH_FIXTURE: '1' },
+    },
+    {
+      command: 'node --import tsx tests/auto-server.ts',
       url: 'http://127.0.0.1:4331/api/health',
       reuseExistingServer: false,
       timeout: 30000,

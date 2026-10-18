@@ -4,6 +4,7 @@ import type { Row, Dashboard } from '../../../packages/shared/types';
 import { api } from './api';
 import { PersonalMaterials } from './PersonalMaterials';
 import { GmailPreparation } from './GmailPreparation';
+import { ClosedBatchPanel } from './ClosedBatchPanel';
 
 const stateLabels: Record<string, string> = {
   STOPPED: 'Zatrzymany',
@@ -50,6 +51,28 @@ export function AutoWorkspace({
 }) {
   const [search, setSearch] = useState(''),
     [status, setStatus] = useState('');
+  const [historyPage, setHistoryPage] = useState<Row[]>(data.companies),
+    [historyOffset, setHistoryOffset] = useState(0),
+    [historyError, setHistoryError] = useState('');
+  useEffect(() => {
+    setHistoryOffset(0);
+  }, [search, status]);
+  useEffect(() => {
+    if (view !== 'history') return;
+    let current = true;
+    void api<Row[]>(
+      `companies?limit=100&offset=${historyOffset}&search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`,
+    )
+      .then((rows) => {
+        if (current) setHistoryPage(rows);
+      })
+      .catch((e) => {
+        if (current) setHistoryError(e.message);
+      });
+    return () => {
+      current = false;
+    };
+  }, [view, historyOffset, search, status, data.dashboard.events[0]?.id]);
   const d = data.dashboard,
     auto = d.state.auto ?? {},
     p = auto.policy;
@@ -137,6 +160,7 @@ export function AutoWorkspace({
         </div>
         {view === 'work' && (
           <>
+            <ClosedBatchPanel dashboard={d} act={act} busy={busy} />
             <section className="panel research-panel">
               <div className="button-row">
                 <button
@@ -170,7 +194,7 @@ export function AutoWorkspace({
                 {currentCompany ? `Obecnie: ${currentCompany}` : 'Postęp jest zapisany lokalnie.'}
               </p>
               <p>
-                Kolejka: {auto.queueSize ?? 0}/3 ·{' '}
+                Zapisane szkice w zakresie: {auto.queueSize ?? 0} ·{' '}
                 {auto.sending ? 'trwa kontrola/wysyłka' : 'sender czeka'}.
               </p>
               {auto.nextResearchAt && !d.state.stopped && (
@@ -306,6 +330,22 @@ export function AutoWorkspace({
         )}
         {view === 'history' && (
           <section className="panel">
+            {historyError && <p role="alert">{historyError}</p>}
+            <div className="button-row">
+              <button
+                disabled={!historyOffset}
+                onClick={() => setHistoryOffset(Math.max(0, historyOffset - 100))}
+              >
+                Poprzednia strona firm
+              </button>
+              <span>Strona {historyOffset / 100 + 1}</span>
+              <button
+                disabled={historyPage.length < 100}
+                onClick={() => setHistoryOffset(historyOffset + 100)}
+              >
+                Następna strona firm
+              </button>
+            </div>
             <label>
               Szukaj firmy
               <input value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -324,7 +364,7 @@ export function AutoWorkspace({
               Potwierdzenie w Wysłanych oznacza zapis u nadawcy; nie potwierdza folderu odbiorcy.
               Testy do siebie są poza licznikiem firm.
             </p>
-            {data.companies
+            {historyPage
               .filter(
                 (c) =>
                   c.canonical_name

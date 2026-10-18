@@ -1,5 +1,22 @@
 # Gmail w przeglądarce Codexa
 
+Aktualizacja 18.10.2026: `BrowserBatchController` i `serveBrowserBatch` są
+przeglądalnymi punktami wejścia dla aktywnego zadania. Kontroler przypina
+backend/sesję/partię, odnawia lease w kolejnych ograniczonych segmentach,
+zachowuje liczbę ukończonych i kończy na Stop, pauzie, zmianie tożsamości,
+wyczerpaniu partii albo błędzie. Nie przejmuje nowego backendu/sesji i nie
+ponawia niepewnej akcji. Backend pokazuje połączenie i powód zatrzymania.
+Testy obejmują pełny fikcyjny IPC, granice CLAIMED/COMMITTING/check/kliknięcie,
+wynik po ukończeniu oraz nagłą utratę własnego procesu i restart.
+
+**Ciągłość prawdziwego hosta Codexa przez całą partię jest nieweryfikowana.**
+Host musi utrzymać aktywne wywołanie oraz udokumentowany uchwyt `tab`.
+`serveBrowserBatch` sam wykonuje kolejne segmenty; użytkownik nie musi wklejać
+nowego snippet-u co minutę. Gdy host kończy wywołanie lub zadanie, nie ma demona,
+autostartu ani gwarancji dalszego działania. Nie obchodzimy ograniczeń hosta
+i nie rozszerzamy izolowanego runnera researchu. Przed pilotem trzeba osobno
+zweryfikować tę integrację na właściwym, świadomie dopuszczonym hoście.
+
 Pierwszy etap transportu przeglądarkowego. JobHunter nadal prowadzi kolejkę,
 kontroluje materiały, odbiorcę, historię, blokady, tempo i prawo sesji. Osobny
 wykonawca w aktywnej rozmowie Codexa redaguje wiadomość w zalogowanym Gmailu.
@@ -41,6 +58,8 @@ const client = await executor.connectBrowserExecutor('/ABSOLUTE/PROFILE');
 // Dopiero przy autoryzowanej kolejce i aktywnym zadaniu wykonawcy:
 // await executor.runBrowserDelivery(client, tab);
 // albo bounded loop: await executor.serveBrowserDeliveries(client, tab, 60000);
+// Dla osobno zatwierdzonej zamkniętej partii, przez życie aktywnego wywołania:
+// await executor.serveBrowserBatch(client, tab, { segmentMs: 30000 });
 ```
 
 Nie uruchamiać tego przykładu w zwykłym terminalu jako zamiennika narzędzia
@@ -48,7 +67,8 @@ przeglądarki. Backend przekazuje zadanie przez lokalny named pipe. Prywatny
 `browser-executor.json` zawiera krótkotrwałe dane tego połączenia; czyta je
 wyłącznie klient w pamięci. Nie drukować ani nie przekazywać jego zawartości
 do modelu. To odrębny plik, niezwiązany z `launch.json`. Brak aktywnego
-wykonawcy jest widoczny w panelu i blokuje przygotowanie/wysyłkę.
+wykonawcy jest widoczny w panelu i blokuje wysyłkę. Przygotowanie zakresu
+partii nie wymaga działania transportu i nie rezerwuje próby.
 Po zamknięciu backendu opis połączenia jest usuwany. Restart nie wznawia
 prób ani sesji. Zamknięcie Codexa nie powoduje przełączenia na API.
 

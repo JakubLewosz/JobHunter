@@ -1,5 +1,10 @@
 # Dostarczalność — stan wiedzy 17 października 2026
 
+Lokalna implementacja z 18.10.2026 dodaje partie, odwoływalne uprawnienie
+sendera i obsługę utraty IPC. Testy używają fikcyjnych kont i stron; nie dodają
+dowodu dostarczalności, działania rzeczywistego Gmaila ani ciągłości wykonawcy
+przez całą partię. Nie wykonywano nowych SELF_TEST lub pilota.
+
 Przyczyna klasyfikacji części wiadomości jako Spam pozostaje nieustalona.
 Użytkownik dostarczył wiadomości odebrane u różnych odbiorców; ręczne
 wiadomości trafiały do Odebranych, część prób aplikacji do Spamu.

@@ -1,5 +1,13 @@
 # Bezpieczeństwo JobHunter — 12 października 2026
 
+Rozszerzenie 18.10: [CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md). Wspólne prawo
+nadawania i generacja są odwoływane w pamięci przed zapisem Stop/Pauzy; kontrola
+locka obowiązuje przed rezerwacją i na końcu. Niepełne/stare źródło lub obcy
+katalog nie ustanawiają prawa do kontaktu. Audytor wymaga proven snapshotu,
+pracuje na izolowanej kopii bez Store/migracji i waliduje ścisłe liczbowe wyjście
+przed stdout/plikiem. Zamknięta partia wiąże wersje i materiały, a nie omija
+gates historii/kontaktu/konta/limitów. Restore nie przywraca uprawnień sesji.
+
 Rozszerzenie 16 października: opcjonalne nadawanie przez Gmail UI opisano
 w [GMAIL_BROWSER](GMAIL_BROWSER.md). Broker zachowuje wspólną próbę,
 rezerwację, blokady i Stop. Prywatny named pipe jest dostępny dopiero po

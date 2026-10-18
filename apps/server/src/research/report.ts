@@ -6,6 +6,8 @@ import type { Store } from '../db.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import { DomainError } from '../util.js';
 import { normalizeResearchURL } from './query-planner.js';
+import { workMetrics } from './work-metrics.js';
+import { assertOutsideRepository } from '../safe-paths.js';
 
 type ReportStore = Pick<Store, 'all' | 'one' | 'get'>;
 const parse = (value: string | null, fallback: any = null) => {
@@ -204,6 +206,11 @@ export function researchReport(
       cachedInputTokens: calls.reduce((n, c) => n + (c.cached_input_tokens ?? 0), 0),
     },
     companies,
+    workMetrics: workMetrics(
+      store,
+      runs.map((r) => r.id),
+      Date.parse(at),
+    ),
     runs,
     items,
     drafts,
@@ -270,6 +277,14 @@ export function researchReportText(report: ReturnType<typeof researchReport>) {
   return lines.join('\r\n') + '\r\n';
 }
 export function writeResearchReport(directory: string, report: ReturnType<typeof researchReport>) {
+  try {
+    directory = assertOutsideRepository(directory);
+  } catch {
+    throw new DomainError(
+      'PRIVATE_REPORT_PATH',
+      'Raport prywatny musi pozostać poza repozytorium.',
+    );
+  }
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const target = realpathSync(directory),
     repository = realpathSync(process.cwd());

@@ -15,6 +15,7 @@ import { restoreBackupCopy } from '../apps/server/src/backup.js';
 import { exportHistory, importHistory } from '../apps/server/src/history-sync.js';
 import { ResearchJobHunter } from '../apps/server/src/research/service.js';
 import Database from 'better-sqlite3';
+import { makePreParserFixture } from './schema-fixture.js';
 
 test('LOCAL_ONLY: full AUTO, Stop/restart and readiness never call HistorySync or Git', async (t) => {
   const f = await setup(t, true, false, false, true);
@@ -97,10 +98,7 @@ test('maintenance backup and rejected configure never migrate or mutate an older
   const root = mkdtempSync(join(tmpdir(), 'jh-readonly-backup-')),
     dir = join(root, 'research-only');
   const old = new Store(dir);
-  old.db.exec(
-    'ALTER TABLE research_sources DROP COLUMN address_contexts; ALTER TABLE research_sources DROP COLUMN parser_version;',
-  );
-  old.exec("DELETE FROM migrations WHERE name='016_address_context.sql'");
+  makePreParserFixture(old);
   old.close();
   const bytes = readFileSync(join(dir, 'jobhunter.sqlite'));
   try {
@@ -112,10 +110,17 @@ test('maintenance backup and rejected configure never migrate or mutate an older
       root,
     ]);
     assert.deepEqual(readFileSync(join(dir, 'jobhunter.sqlite')), bytes);
-    const copy = new Database(join(dir, 'backups', readdirSync(join(dir, 'backups'))[0]), {
-      readonly: true,
-      fileMustExist: true,
-    });
+    const copy = new Database(
+      join(
+        dir,
+        'backups',
+        readdirSync(join(dir, 'backups')).find((n) => n.endsWith('.sqlite'))!,
+      ),
+      {
+        readonly: true,
+        fileMustExist: true,
+      },
+    );
     try {
       assert.equal(
         copy.prepare("SELECT name FROM migrations WHERE name='016_address_context.sql'").get(),
@@ -217,17 +222,17 @@ test('SQLite: WAL backup, migration and restored copy preserve all history witho
   assert.equal(copy.get('localHistoryConfirmed', true), false);
   assert.equal(copy.one('SELECT count(*) n FROM draft_approvals WHERE revoked_at IS NULL')?.n, 0);
   // Remove only the additive fixture schema to model the immediately preceding release.
-  copy.db.exec(
-    'ALTER TABLE research_sources DROP COLUMN address_contexts; ALTER TABLE research_sources DROP COLUMN parser_version;',
-  );
-  copy.exec("DELETE FROM migrations WHERE name='016_address_context.sql'");
+  makePreParserFixture(copy);
   copy.close();
   f.extraStores.pop();
   const upgraded = new Store(restoredDir);
   f.extraStores.push(upgraded);
   assert.deepEqual(exportHistory(upgraded), before);
   assert.ok(before.records.length > 0);
-  assert.equal(readdirSync(join(restoredDir, 'backups')).length, 1);
+  assert.equal(
+    readdirSync(join(restoredDir, 'backups')).filter((n) => n.endsWith('.sqlite')).length,
+    1,
+  );
   assert.equal(upgraded.get('stopped', false), true);
 });
 test('SQLite restored copy revokes actual active fixture session and approvals without altering source', async (t) => {

@@ -85,11 +85,21 @@ export type Source = {
   error: string | null;
   parser_version?: number;
   address_contexts?: string;
-  metrics?: { httpRequests: number; redirects: number; wireBytes: number; decodedBytes: number };
+  completeness?: string;
+  outbound_links?: string;
+  metrics?: {
+    httpRequests: number;
+    redirects: number;
+    wireBytes: number;
+    decodedBytes: number;
+    elapsedMs?: number;
+    httpMs?: number;
+  };
 };
 export interface SourceReader {
   read(url: string, signal?: AbortSignal): Promise<Source>;
   relatedURLs?(url: string): string[];
+  recover?(urls?: string[], signal?: AbortSignal): Promise<{ ok: boolean; statuses: string[] }>;
 }
 type Response = {
   status: number;
@@ -130,6 +140,41 @@ const tlsCodes = new Set([
 export class PublicSourceReader implements SourceReader {
   private commonFailures = new Map<string, Set<string>>();
   private environmentFailure: string | null = null;
+  private recovering = false;
+  async recover(
+    urls = ['https://nodejs.org/', 'https://example.com/', 'https://www.wikipedia.org/'],
+    signal?: AbortSignal,
+  ) {
+    if (
+      this.recovering ||
+      urls.length < 2 ||
+      urls.length > 3 ||
+      new Set(urls.map((value) => publicURL(value).hostname)).size !== urls.length
+    )
+      throw new DomainError(
+        'READER_PROBE_INVALID',
+        'Probe wymaga dwóch lub trzech niezależnych źródeł.',
+      );
+    this.recovering = true;
+    const previous = this.environmentFailure;
+    const combined = AbortSignal.any([AbortSignal.timeout(45000), ...(signal ? [signal] : [])]);
+    try {
+      const sources: Source[] = [];
+      for (const url of urls) {
+        combined.throwIfAborted();
+        sources.push(await this.performRead(url, combined, true));
+      }
+      const ok =
+        sources.filter((s) => s.status === 'READ' && s.completeness === 'COMPLETE').length >= 2;
+      if (ok) {
+        this.environmentFailure = null;
+        this.commonFailures.clear();
+      } else this.environmentFailure = previous ?? this.environmentFailure ?? 'PROBE_FAILED';
+      return { ok, statuses: sources.map((s) => s.status) };
+    } finally {
+      this.recovering = false;
+    }
+  }
   async preflight(
     urls = ['https://nodejs.org/', 'https://example.com/', 'https://www.wikipedia.org/'],
   ) {
@@ -163,6 +208,14 @@ export class PublicSourceReader implements SourceReader {
     } = {},
   ) {}
   async read(input: string, signal?: AbortSignal): Promise<Source> {
+    return this.performRead(input, signal, false);
+  }
+  private async performRead(
+    input: string,
+    signal?: AbortSignal,
+    recovery = false,
+  ): Promise<Source> {
+    const started = performance.now();
     const original = publicURL(input).href;
     const result: Source = {
       id: id(),
@@ -186,7 +239,7 @@ export class PublicSourceReader implements SourceReader {
     let stage = 'POLICY';
     let failedHost = new URL(original).hostname;
     try {
-      if (this.environmentFailure)
+      if (this.environmentFailure && !recovery)
         throw new DomainError(
           'READER_ENVIRONMENT',
           'Podejrzenie wspólnej awarii czytnika; seria wstrzymana.',
@@ -210,11 +263,13 @@ export class PublicSourceReader implements SourceReader {
         this.options.beforeRequest?.(url.href);
         stage = 'HTTP';
         result.metrics!.httpRequests++;
+        const httpStarted = performance.now();
         const response = await (this.options.transport ?? this.download.bind(this))(
           url,
           addresses[0].address,
           combined,
         );
+        result.metrics!.httpMs = (result.metrics!.httpMs ?? 0) + performance.now() - httpStarted;
         result.metrics!.wireBytes += response.wireBytes ?? Buffer.byteLength(response.body ?? '');
         result.metrics!.decodedBytes +=
           response.decodedBytes ?? Buffer.byteLength(response.body ?? '');
@@ -267,11 +322,20 @@ export class PublicSourceReader implements SourceReader {
           response.body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
         ).slice(0, 300);
         const parsed = /^text\/plain\b/i.test(response.contentType ?? '')
-          ? { text: response.body.slice(0, 100000), contexts: addressContexts(response.body) }
+          ? {
+              text: response.body.slice(0, 100000),
+              contexts: addressContexts(response.body),
+              completeness: response.body.length > 100000 ? 'TEXT_LIMIT' : 'COMPLETE',
+              outboundLinks: [],
+            }
           : parsePublicHTML(response.body);
         result.text = parsed.text;
         result.parser_version = parserVersion;
         result.address_contexts = JSON.stringify(parsed.contexts);
+        result.completeness = parsed.completeness;
+        if (parsed.contexts.some((c) => c.complete === false))
+          result.completeness = 'CONTEXT_LIMIT';
+        result.outbound_links = JSON.stringify(parsed.outboundLinks);
         if (
           /captcha|verify you are human|just a moment|access denied|checking your browser/i.test(
             result.title + ' ' + result.text.slice(0, 600),
@@ -281,7 +345,8 @@ export class PublicSourceReader implements SourceReader {
           result.text = '';
           break;
         }
-        result.status = result.text ? 'READ' : 'EMPTY';
+        result.status =
+          result.completeness !== 'COMPLETE' ? 'INCOMPLETE' : result.text ? 'READ' : 'EMPTY';
         if (result.status === 'READ') this.commonFailures.clear();
         if (result.status === 'READ') {
           if (this.navigation.size >= 128)
@@ -348,6 +413,7 @@ export class PublicSourceReader implements SourceReader {
         if (hosts.size >= 3) this.environmentFailure = key;
       }
     } finally {
+      result.metrics!.elapsedMs = performance.now() - started;
       this.active--;
       this.waiting.shift()?.();
     }

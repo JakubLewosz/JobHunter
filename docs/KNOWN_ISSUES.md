@@ -1,12 +1,17 @@
-# Znane problemy i granice dowodów — 17 października 2026
+# Znane problemy i granice dowodów — 18 października 2026
+
+Aktualizacja implementacji: [CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md).
+Poprawki kodu są lokalne; poniższa historia nie jest deklaracją wdrożenia.
+Prywatnej kopii nie audytowano, a rzeczywista ciągłość browser nie została
+zweryfikowana. Pozostaje osobny przegląd istniejącego checkpointu i pilota.
 
 Aktualne zadania: [TASKS](TASKS.md). Kontekst: [REVIEW_HANDOFF](REVIEW_HANDOFF.md).
-Poniższe punkty są otwarte, dopóki nie ma odpowiedniej poprawki i dowodu.
+Poniżej rozdzielono lokalne poprawki od nadal otwartych operacji i granic dowodów.
 
-## 1. Fałszywe zatrzymanie prywatnego guarda długiej sesji — potwierdzone
+## 1. Historyczny fałszywy stop — poprawka w nowym guardzie repo, bez wdrożenia
 
-Warstwa: doraźny kontroler poza repo, nie sam startDay. Natywny
-`service.ts/findOrCreateCompany` dopuszcza dopisanie domeny, gdy była null,
+Historyczna warstwa: doraźny kontroler poza repo, nie sam startDay. W bazowym
+`f37afc` natywny `service.ts/findOrCreateCompany` dopuszczał dopisanie domeny, gdy była null,
 po rozpoznaniu znanej firmy i dodaniu aliasu. Prywatny guard porównywał
 wszystkie stare pola (ID/nazwa/normalized_key/domena/historia/blokada) dokładnie:
 
@@ -21,21 +26,21 @@ W sesji 16/17 października potwierdzona domena uzupełniła pustą wartość;
 ID/nazwa/historia/blokady bez zmian, mimo tego GUARD_STOP i koniec po 3 h 32 min.
 Nie naprawiono tego przez poluzowanie reguł lub zmianę eksportera raportu.
 
-Przed nowym startem potrzebna testowana kontrola, która rozpoznaje dokładnie
+Nowy kontroler i czyste porównanie snapshotów rozpoznają dokładnie
 udokumentowane uzupełnienie: wcześniej null, zgodne źródło i alias tej firmy,
 niezmienione pozostałe pola i brak kolizji właściciela. Zamiana niepustej domeny,
 utrata blokady/aliasu/historii, niepewna tożsamość i brak dowodu nadal zatrzymują.
 Nie usuwać primary_domain z kontroli bez warunków. Stary checkpoint wymaga
 osobnej jawnej operacji i backupu, nie automatycznego wznowienia.
 
-## 2. Otoczka długich prób poza repo — potwierdzona luka odtwarzalności
+## 2. Otoczka długich prób — nowy wspólny punkt wejścia w repo
 
 Repo ma natywny mechanizm sesji i jego testy, ale launchery, fingerprinty,
 zewnętrzny guard i część audytów ostatnich prób były prywatnymi helperami.
-Inne AI nie odtworzy całej próby z samego klonu. Przenieść współdzieloną,
-testowaną logikę do repo, zachowując prywatne parametry/dane poza nim.
+Historycznej próby nie odtworzy się z samego klonu. Nowy `research:session`
+i panel korzystają ze wspólnego lifecycle/guarda; parametry i dane pozostają poza repo.
 Nie kopiować bez przeglądu helperów z absolutnymi ścieżkami i materiałami.
-Nowy standardowy kontroler nie jest częścią obecnego porządkowania.
+Nowy standardowy kontroler jest częścią implementacji z 18.10, testowanej na fixture.
 
 ## 3. Domena i subdomena — zgłoszenie, tożsamość nierozstrzygnięta
 
@@ -59,8 +64,9 @@ dołączyć przyczynę tylko zgodnej zakończonej sesji. Nie wnioskuje „brak i
 
 Ostatnia sesja odwiedziła 96 rekordów, dodała 43, utworzyła 19 szkiców,
 odświeżyła 12 starych, użyła 13 w tej samej wersji. Nie wszystko jest nową firmą.
-Novelty context i deduplikacja istnieją, lecz wyniki modeli nadal mogą powracać
-do znanych podmiotów. Mierzyć rozkład czasu/HTTP/modeli, nie zwiększać limitów
+Nowe przeplatanie DISCOVERY/REFRESH/REUSE i pomiary etapów, HTTP/cache/modeli
+sprawdzono syntetycznie. Wyniki modeli nadal mogą powracać do znanych podmiotów.
+Mierzyć rzeczywisty rozkład czasu, nie zwiększać limitów
 kosztem źródeł lub zabezpieczeń. Brak dowodu liniowej wydajności 8/15 h.
 
 ## 6. Stop i transporty — ograniczenia oraz niestabilny benchmark
@@ -77,9 +83,11 @@ snapshotu z ręczną aktywnością użytkownika. Pełne gwarancje exactly-once n
 Wymaga aktywnego Codexa i zalogowanego UI. Wciąż korzysta z API do celowanego
 potwierdzenia; nie zastępuje całej integracji Google. Testowano dwa realne
 SELF_TEST i fixture awarii, nie długą kampanię do firm. UI może się zmienić.
-W jednej skończonej próbie pętla poll po zamknięciu backendu zwróciła ENOENT
-po już przyjętej wiadomości. To nie powód do retry send; ograniczyć/wyjaśnić
-zachowanie zamknięcia wykonawcy osobnym testem cyklu życia.
+Historycznie pętla poll po zamknięciu backendu zwróciła ENOENT po przyjętej
+wiadomości. Nowy klient i wykonawca kończą ją kontrolowanym statusem,
+zachowując wynik, licznik ukończonych i niepewność. Macierz IPC oraz kontroler
+partii z lease są sprawdzone syntetycznie; rzeczywista ciągłość hosta przez
+całą partię pozostaje nieweryfikowana. Zamknięcie Codexa kończy wykonawcę.
 
 ## 8. Spam — hipotezy, bez ustalonej przyczyny
 
@@ -90,7 +98,9 @@ Nie zmieniać stylu/faktów/nadawcy/OAuth lub tempa na podstawie przypuszczeń.
 
 ## 9. Niewykonane funkcje i testy
 
-Osobne wysyłanie skończonej partii biblioteki, adaptery ofert/formularzy,
+Zamknięta partia biblioteki jest lokalnie zaimplementowana i testowana na
+fikcyjnych providerach. Niewykonane pozostają: jej wdrożenie i rzeczywista
+ciągłość browser, audyt prywatnej kopii, adaptery ofert/formularzy,
 kwalifikacja zleceń, realny pilot do firm, długa produkcyjna wysyłka,
 pełna izolacja procesu OS, nowy realny macOS transportu browser oraz pełna
 macierz awarii PRIVATE_GIT. Nie są potwierdzone przez samą symulację lub build.

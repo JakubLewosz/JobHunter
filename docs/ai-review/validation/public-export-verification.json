@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-18T17:44:57.542Z",
+  "dataHashesVerified": true,
+  "strictFieldsVerified": true,
+  "relationsVerified": true,
+  "forbiddenPatterns": 0,
+  "companies": 515,
+  "contacts": 413,
+  "sources": 2370,
+  "testedCoreFilesUnchanged": 69,
+  "changedFiles": 110,
+  "localDocumentationLinks": 112,
+  "backupSha256": "d94a60f9847899b820a137792f187bbd18b8d059ee1388354fc5f2042e2f6681"
+}

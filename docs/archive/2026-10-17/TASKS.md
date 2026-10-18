@@ -23,7 +23,7 @@
       PROTECTED_DATA_CHANGED; STOPPED to stan po sprzątaniu, nie przyczyna.
       Guard wykrył uzupełnienie pustej domeny wcześniej znanej firmy;
       jej ID/nazwa/historia/blokady pozostały te same. Bez wznowienia.
-      15 rozpoczętych cykli: 10 COMPLETED, 4 PARTIAL, 1 PAUSED.
+      15 rozpoczętych cykli: 9 COMPLETED, 5 PARTIAL, 1 PAUSED.
       **43 nowe rekordy firm / 37 kontaktów / 19 szkiców**; cała baza
       515/413/240. 12 dawnych szkiców ma nowe wersje, 13 użyto bez zmiany;
       31 nowych wersji, wszystkie 254 dawne zachowane. 52 tabele,
@@ -1747,3 +1747,5 @@ Kierunek dalszego rozwoju: [Wizja projektu](../../WIZJA_PROJEKTU.md).
 Poprawka CI Windows: różnica wielkości litery dysku odtworzona FAIL→PASS;
 tożsamość katalogu sprawdzana przez dev/ino, inne repo nadal blokowane.
 Końcowy check po poprawce: 282/282 backend + 7/7 UI. Nowy push/CI w raporcie czatu.
+
+Korekta narracji z 18.10.2026: 9 COMPLETED / 5 PARTIAL / 1 PAUSED pochodzi z dwóch raportów JSON zakończonej sesji i guarda, porównanych w diagnostyce z 18.10. Wcześniejsze 10/4/1 było błędem opisu; nie zmieniano danych runów.
