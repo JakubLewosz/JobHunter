@@ -1,5 +1,18 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+## Aktualna ścieżka Windows/nightflow
+
+[Pełny opis komend, planu, etapów i granic hosta](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+`npm --silent run nightflow -- fixture --data-dir <NOWY_KATALOG>` wykonuje
+cały przebieg na kompletnych fikcyjnych providerach. Stabilne komendy:
+plan, preflight, start, status, stop, resume, report. Dla browser aktywny
+punkt wejścia to `scripts/browser-executor.mjs:runNightflowTask` z istniejącym
+taskId/tab, nie terminal bez uchwytu przeglądarki. Brak automatycznego wake.
+Stan rzeczywistego podtrzymania: **NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.
+Nie wdrożono kodu na WORKSTATION i nie zatwierdzono produkcyjnego planu.
+
+Poniżej zachowano historyczny stan sprzed gałęzi napraw (40850745).
+
 Użytkownik pracuje przez rozmowę w aplikacji Codex na domowym Windowsie.
 Komputer i Codex mają pozostać włączone. Frontend nie jest jego podstawowym
 sposobem obsługi. Ten dokument opisuje kod i dowody; nie uruchamia programu.

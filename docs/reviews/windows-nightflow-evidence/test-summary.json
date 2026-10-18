@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "scope": "SYNTHETIC_WINDOWS_CHECK",
+  "platform": "win32",
+  "release": "10.0.26300",
+  "arch": "x64",
+  "node": "v24.19.0",
+  "npm": "11.17.0",
+  "sqlite": "3.53.4",
+  "baseSha": "40850745d5677cf411072d2798a56034e3ec9873",
+  "state": "UNCOMMITTED_WORKTREE",
+  "command": "npm run check",
+  "startedAt": "2026-10-18T22:00:59.163Z",
+  "endedAt": "2026-10-18T22:12:20.876Z",
+  "elapsedMs": 681713.4578,
+  "exitCode": 0,
+  "signal": null,
+  "sourceFingerprint": "8ae15067784be0fea94c78653826e80d1b43fdfc07454e6435515e717b2d4e63",
+  "unchanged": true,
+  "counts": [
+    {
+      "metric": "tests",
+      "value": 721
+    },
+    {
+      "metric": "pass",
+      "value": 721
+    },
+    {
+      "metric": "fail",
+      "value": 0
+    },
+    {
+      "metric": "cancelled",
+      "value": 0
+    },
+    {
+      "metric": "skipped",
+      "value": 0
+    },
+    {
+      "metric": "tests",
+      "value": 12
+    },
+    {
+      "metric": "pass",
+      "value": 12
+    },
+    {
+      "metric": "fail",
+      "value": 0
+    },
+    {
+      "metric": "cancelled",
+      "value": 0
+    },
+    {
+      "metric": "skipped",
+      "value": 0
+    }
+  ],
+  "ui": [
+    "22 passed (59.7s)"
+  ],
+  "isolatedHome": true,
+  "nativeProviders": false
+}

@@ -1,3 +1,14 @@
+# Aktualizacja Windows nightflow
+
+Nowa gałąź napraw ma [własną procedurę i komendy Codexa](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Nie aktualizowano aktywnej instalacji. Obowiązuje Stop → koniec operacji →
+spójny backup SQLite/WAL i materiałów poza repo → jawne rozstrzygnięcie dawnego
+PAUSED → wybrana wersja kodu/build/doctor → migracja i audyt zachowania →
+zatrzymany backend → faktyczne odnowienie → świadomy Start zatwierdzonego planu.
+Sam push ani zapis planu nie uruchamia sendera. Nie zastępować historii z nowszymi
+wysyłkami starszym backupem. macOS jest odłożone; nie wymagać prywatnego Git
+do LOCAL_ONLY. Poniżej zachowano wcześniejsze instrukcje operatora.
+
 # Uruchomienie i aktualizacja — jeden domowy Windows
 
 18.10: nowy kod sprawdzono jako lokalny diff w osobnym worktree, następnie

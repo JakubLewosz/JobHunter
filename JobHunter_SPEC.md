@@ -1,5 +1,16 @@
 # JobHunter — aktualna specyfikacja
 
+## Etap Windows/Codex nightflow
+
+Aktualny wspierany system: **Windows**. macOS odłożono; opcjonalny PRIVATE_GIT
+i wspólne zabezpieczenia/testy pozostają. Implementacja koordynatora spełnia
+kontrakt wcześniejszej zgody na reguły wyboru przyszłej zamkniętej partii,
+odrębnej od ręcznej akceptacji konkretnej listy. Plan i wykonanie są oddzielne;
+Stop/restart/restore odwołują aktywną generację. Nie ma zgody produkcyjnej planu.
+Komendy bez frontendu, opis etapów, wyniki oraz granice hosta:
+[WINDOWS_NIGHTFLOW_IMPLEMENTATION](docs/reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Poniższe stwierdzenia o braku koordynatora opisują wcześniejszy stan 40850745.
+
 ## Doprecyzowanie operacyjne — 18 października 2026
 
 Status: wymaganie docelowe, koordynator całego przebiegu nie jest zaimplementowany.

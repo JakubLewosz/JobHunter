@@ -1,5 +1,13 @@
 # Bezpieczeństwo JobHunter — 12 października 2026
 
+Etap Windows nightflow: zgoda na reguły planu i jej pochodna dla zamkniętej
+partii są oddzielne od ręcznej akceptacji listy. Zapis APPROVED/RUNNING nie
+stanowi aktywnego prawa po restarcie. Każdy etap i końcowa bramka sprawdzają
+generację/binding, a browser również backend/session/batch. IPC sterowania ma
+lokalny sekret poza argv/stdout; HTTP Host/Origin/CSRF pozostają bez zmian.
+Przerwany refresh ma trwały znacznik, dawny PASS nie wygrywa z rozpoczętą kontrolą.
+Szczegóły i granice: [raport](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+
 Rozszerzenie 18.10: [CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md). Wspólne prawo
 nadawania i generacja są odwoływane w pamięci przed zapisem Stop/Pauzy; kontrola
 locka obowiązuje przed rezerwacją i na końcu. Niepełne/stare źródło lub obcy

@@ -1,5 +1,20 @@
 # JobHunter
 
+Aktualny etap Windows/Codex: [raport implementacji nightflow](docs/reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Gałąź `codex/windows-nightflow-fixes`, baza `40850745…`. Wspieranym środowiskiem
+jest obecnie Windows; macOS odłożono, wspólna infrastruktura pozostaje.
+Koordynator i sterowanie bez frontendu są zaimplementowane i sprawdzane na fixture.
+Pełny wynik Windows check/CI jest zapisywany oddzielnie. WORKSTATION i rzeczywisty
+nocny przebieg nie zostały wdrożone lub uruchomione.
+
+Demonstracja bez publicznego HTTP/modelu/Gmaila i rzeczywistych wiadomości:
+
+```powershell
+npm --silent run nightflow -- fixture --data-dir "$env:TEMP\JobHunter-nightflow-nowy"
+```
+
+Poniższe opisy publikacji `codex/core-completion` są historią wcześniejszego etapu.
+
 Aktualne wejście do kompletnego pakietu przeglądu: **[AI_REVIEW](docs/AI_REVIEW.md)**.
 Rozszerzony eksport obejmuje zredagowane szkice, wszystkie wersje, materiały
 i metadane historii ze wskazanej kopii. [CODEX_OPERATION](docs/CODEX_OPERATION.md)
@@ -18,7 +33,7 @@ Prywatna instalacja nie została zaktualizowana; rzeczywiste research/Gmail i au
 
 Osobiste narzędzie do pierwszego kontaktu z firmami działającymi w Polsce: płatna, regularna współpraca programistyczna, w pełni zdalnie, około 20 godzin tygodniowo po lekcjach. Zatwierdzone fakty/CV i polskie wiadomości. Odpowiedzi użytkownik obsługuje w Gmailu.
 
-Kod rozwijamy na Windows/macOS, lecz prawdziwy research i poczta pracują na **jednym domowym Windowsie**. GitHub przenosi kod, nie lokalną historię, CV, szkice lub poświadczenia. Push nie jest deploymentem. Gałąź robocza: `codex/local-windows-pilot`.
+Aktualnie wspieramy Windows; prawdziwy research i poczta pracują na **jednym domowym Windowsie**. GitHub przenosi kod, nie lokalną historię, CV, szkice lub poświadczenia. Push nie jest deploymentem. Historyczna gałąź instalacji: `codex/local-windows-pilot`.
 
 ## Analiza projektu — zacznij tutaj
 

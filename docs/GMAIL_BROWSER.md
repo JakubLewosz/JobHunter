@@ -1,5 +1,18 @@
 # Gmail w przeglądarce Codexa
 
+Nowy punkt wejścia całej sekwencji: `scripts/browser-executor.mjs:runNightflowTask`
+z istniejącym taskId/tab oraz zatwierdzonym planem. Przekazuje wynik researchu
+bezpośrednio do adaptera `ActiveTaskNightflowBrowserHost`. Scope zawiera backend,
+sesję, partię i generację; broker egzekwuje go przy claim/authorize/check.
+MANUAL jest osobnym wariantem. Testy obejmują rzeczywiste IPC i fikcyjne UI,
+również anulowanie uploadu/final check. Heartbeat odnawia lease już podczas
+researchu; Stop/close kończą timer i zwalniają własny lease. Osiem godzin
+kontrolowanego zegara/960 odnowień IPC sprawdzono syntetycznie.
+**NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**
+przez osiem godzin; brak demona lub automatycznego wake po zakończeniu tury.
+[Pełny zakres](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md). Bez wdrożenia
+WORKSTATION lub nowych rzeczywistych prób Gmaila w tym zadaniu.
+
 Aktualizacja 18.10.2026: `BrowserBatchController` i `serveBrowserBatch` są
 przeglądalnymi punktami wejścia dla aktywnego zadania. Kontroler przypina
 backend/sesję/partię, odnawia lease w kolejnych ograniczonych segmentach,

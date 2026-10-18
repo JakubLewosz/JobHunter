@@ -1,5 +1,10 @@
 # Rdzeń po diagnostyce — lokalna implementacja 18.10.2026
 
+Nowszy etap: [Windows nightflow, R1–R13 i komendy Codexa](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Migracje 026–027 zachowują starsze rekordy; nie zmieniają 001–025.
+Obecne wsparcie wydania obejmuje Windows. Opis poniżej jest historią
+implementacji `codex/core-completion`, a nie bieżącym wynikiem nowych testów.
+
 Punkt odniesienia: `f37afc077c0d7c80f231ef0e9ad2f4dcac17363c`.
 Implementację zakończono lokalnie na `codex/core-completion`, bez publikacji
 i deploymentu. Późniejsze osobne zlecenie obejmuje commit/push i ograniczony

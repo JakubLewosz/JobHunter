@@ -1,5 +1,12 @@
 # JobHunter — docelowy sposób pracy
 
+**Bieżący etap Windows/Codex:** [implementacja nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Koordynator obsługuje odnowienie/research → kontrolę → zamkniętą partię → sender
+→ raport przez jedno oczekujące wywołanie. Wsparcie wydania obejmuje Windows;
+macOS odłożono. Syntetyczny przebieg i kod adaptera nie są wdrożeniem WORKSTATION
+ani dowodem utrzymania rzeczywistego hosta przez całą noc.
+Poniżej pozostawiono datowany kontekst wymagań sprzed tej implementacji.
+
 **Aktualizacja 18.10.2026:** głównym wejściem jest rozmowa w aplikacji Codex.
 Przy włączonym komputerze i Codexie jedno świadome polecenie ma docelowo prowadzić
 przez około 8 h researchu, kontrolę i wysyłkę zgodnej zamkniętej partii, bez

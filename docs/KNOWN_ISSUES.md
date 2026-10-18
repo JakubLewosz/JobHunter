@@ -1,5 +1,15 @@
 # Znane problemy i granice dowodów — 18 października 2026
 
+Bieżący etap: [R1–R13 i nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Status rzeczywistego hosta: **WIP / NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.
+Poprawki oraz testy syntetyczne nie aktualizują prywatnej instalacji.
+Otwarte pozostają: produkcyjne ustawienia/zgoda planu, rozstrzygnięcie dawnego
+PAUSED po backupie, kontrolowana aktualizacja, faktyczne odnowienie biblioteki,
+utrzymanie prawdziwego hosta Codexa przez osiem godzin i osobno autoryzowany pilot.
+Nieznana historyczna przyczyna Linux Stop 1154 ms pozostaje historyczna;
+wsparcie tego wydania i obowiązkowy CI obejmują Windows. Nie certyfikujemy macOS.
+Poniżej zachowano wcześniejsze zgłoszenia, nie twierdzenie, że nowych napraw brak.
+
 Nowy pakiet informacji nie naprawia usterek rdzenia. Aktualna
 [macierz R1–R12](REVIEW_FINDINGS.md) zachowuje ustalenia przeglądu, w tym guard,
 kontekst kontaktów/odesłań, refresh/Start, wyścig wykonawcy, deferred, nakładające

@@ -1,5 +1,25 @@
 # Bieżące zadania — 18 października 2026
 
+## Windows nightflow — gałąź napraw
+
+- [x] Osobny worktree i syntetyczne dane; brak odczytu/migracji prywatnej bazy,
+      modeli, publicznego researchu, Gmaila lub deploymentu.
+- [x] Kod R1–R11/R13 i celowane odtworzenia usług/IPC/UI; parser 4,
+      migracje 026–027 bez zmiany dawnych plików. R12 ma osobną końcową serię niżej.
+- [x] Granice zapisu/wznowienia koordynatora: zgoda na reguły przyszłego wyboru,
+      atomowy binding, CLI, Stop/restore, fixture, aktywny browser i heartbeat
+      przez osiem godzin kontrolowanego zegara.
+- [x] Przegląd granic zapisu/wznowienia i finalny Windows check: 721/721 backend,
+      12/12 serial Stop, typecheck/build, 22/22 UI; niezmienny manifest kodu.
+- [ ] Publikacja oraz weryfikacja CI i ZIP finalnego commitu; wynik przekazania
+      poza samoodnoszącym się manifestem kodu.
+- [ ] Przed prawdziwym użyciem: zatwierdzone ustawienia planu, spójny backup,
+      rozstrzygnięcie starego PAUSED, kontrolowana aktualizacja/audyt/odnowienie,
+      utrzymanie rzeczywistego hosta browser i osobno dopuszczony pilot.
+
+[Zakres, komendy, testy i granice](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Poniższe checklisty zachowują historyczny stan sprzed bieżącej gałęzi.
+
 ## Doprecyzowanie po przeglądzie — etap pakietu informacji
 
 - [x] Eksporter readonly schematu 20–25, ścisła projekcja i redakcja przed

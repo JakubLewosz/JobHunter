@@ -1,5 +1,73 @@
 # Wyniki i zakres weryfikacji — 18 października 2026
 
+## Windows nightflow — nowy kod, osobne dowody
+
+Baza `40850745d5677cf411072d2798a56034e3ec9873`, osobny worktree
+`codex/windows-nightflow-fixes`. Node 24.19.0/npm 11.17.0, Windows.
+Komplet fikcyjnych providerów; bez publicznego HTTP/modelu, prywatnego profilu,
+Gmaila, rzeczywistych wiadomości, roboczej SQLite lub wdrożenia.
+
+Celowane wyniki przed końcowym checkiem: 52/52 regresji bibliotek/IPC/koordynatora/
+migracji/list; 41/41 parsera i autorytetu; 16/16 odnowienia, w tym osiem fake
+SELF_TEST z identycznymi dawnymi MIME/próbami/wykorzystaniem; 15/15 audytu,
+schematów 20/25 i procesów CLI; Playwright browser 5/5, w tym pełny adapter
+nightflow i anulowanie przy uploadzie/final click. Zestawy częściowo nakładają się;
+nie sumować ich jako liczby testów całego checka.
+
+Pierwszy pełny check zakończył się 709/710 backend, exit 1 (595,927 s), fingerprint
+`0e51fe0a7ef19a06124d24c5d1eb207436c811e8f9976368d9cbfaeedc4a7900`,
+niezmieniony przed/po. Nie uruchomił serial benchmarku/build/UI. Oryginalny test
+sesji ujawnił rekurencyjny `finalize` przy ponownym błędzie guarda. Dodano
+barierę reentrancy; te same asercje przechodzą, a finalGuardOk pozostaje false
+przy błędzie. Drugi check przerwano dla poprawki podtrzymania hosta w researchu.
+Trzeci check zakończył się **PASS, exit 0**: 721/721 backend, 12/12 osobny Stop,
+typecheck/build oraz 22/22 Playwright (59,7 s). Windows 10.0.26300 x64,
+SQLite 3.53.4; cały check 681,713 s, 2026-10-18 22:00:59.163–22:12:20.876 UTC.
+Fingerprint przed/po:
+`8ae15067784be0fea94c78653826e80d1b43fdfc07454e6435515e717b2d4e63`.
+`scripts/offline-check.ts` uruchamia rzeczywiste
+`npm run check` z osobnym syntetycznym HOME/APPDATA/LOCALAPPDATA/CODEX_HOME/TEMP/data
+i allowlistą środowiska. Nowy manifest obejmuje bajty kodu przed/po; dokumentacja
+jest poza jego zakresem. Dotychczasowych 660/12/20 nie przedstawiamy jako wyniku
+nowej implementacji. [Końcowe dowody](reviews/windows-nightflow-evidence/test-summary.json)
+i [manifest testowanego kodu](reviews/windows-nightflow-evidence/source-files.json)
+zachowują rzeczywistą tożsamość przed commitem; ZIP weryfikuje zgodność bajtów
+z finalnym drzewem Git. CI jest odrębnym wynikiem w przekazaniu.
+
+Pierwsza ukończona seria R12: 3 × slow-read/slow-model/large-history/inflight-post,
+12/12, bez zmiany progów i pełnej fixture 10035 firm. Maks. reception
+151,12 ms (<1000), receive→revoke 0,57 ms (<100), HTTP 228,14 ms, zero nowych
+POST po revoke we wszystkich pomiarach. Seed 2993,55–3354,79 ms jest osobną
+fazą. [Surowe pomiary faz requestu](reviews/windows-nightflow-evidence/stop-measurements.json)
+obejmują SQL/prepare, JS, serialization, health/eventloop oraz wcześniejszy
+POST kończący się po Stop. Historycznej porażki Linux nie przepisano na PASS.
+
+Po przeglądzie granic: 53/53 regresje partii/odnowienia/koordynatora/sesji;
+24/24 rozszerzona macierz koordynatora; 51/51 usługi/IPC/host/sesja po heartbeat;
+browser UI 5/5. Test podtrzymania obejmuje osiem godzin kontrolowanego zegara
+i 960 żądań przez rzeczywisty IPC, w około 60 s ściennych. Nie jest realnym
+ośmiogodzinnym testem hosta Codexa. Poprawiono też atomowy binding partii,
+wznowienie zakończonego researchu, WAIT_DEADLINE biblioteki, własny CANCELLED
+przed cudzą wysyłką i deadline podczas odnowienia.
+
+Zachowane pierwsze niepowodzenia: odtworzenia R1/R2/R3 na starej ścieżce;
+nowa fixture outbox początkowo używała nieistniejącej kolumny recipient —
+poprawiono pełne FK/approvals bez zmiany oczekiwanego kontraktu. Test parsera
+miał historyczny literal 3, zastąpiony eksportowaną wersją 4. Fixture future
+schema używa teraz 999 zamiast właśnie dodanego 26. Granica research/sender
+ujawniła PAUSED run i brak osobnego końcowego guarda — poprawiono cleanup
+kontrolera i zachowanie odłożeń. Test adaptera browser początkowo próbował
+zatwierdzić politykę przed podłączeniem fikcyjnego wykonawcy — poprawiono
+kolejność fixture. Abort file chooser ujawnił odrzucenie Promise przed jej
+await; handler jest podłączany od razu, bez ignorowania wyniku await.
+Jedną szeroką próbę przerwano podczas dalszych zmian kodu, bez ogłaszania PASS.
+
+Manifest 69 dawnych plików: PASS dla `bfbbc630f11bd02da1b00bdaf5d089af38835838`.
+40850745 daje różny package.json z późniejszego etapu, zgodnie z historią.
+Dawnych manifestów/danych nie zmieniano. [Nowy raport](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+
+Poniżej pozostają datowane wyniki wcześniejszych etapów.
+
 ## Rozszerzony pakiet przeglądu — etap po bfbbc630
 
 Zakres: eksporter/walidator i jego testy, dokumentacja wymagań/uruchamiania,

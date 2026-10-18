@@ -1,5 +1,14 @@
 # R1–R12 — zachowane ustalenia przeglądu, 18.10.2026
 
+Aktualna macierz **R1–R13**, konkretne poprawki i regresje:
+[WINDOWS_NIGHTFLOW_IMPLEMENTATION](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
+Nowa gałąź wprowadza naprawy rdzenia i syntetyczny koordynator; końcowy check
+oraz rzeczywisty CI otrzymują własne datowane dowody. Finalny Windows check:
+721/721 backend, 12/12 osobny Stop, build i 22/22 UI, exit 0. R12 ma nową
+serię Windows (reception maks. 151,12 ms, delta revoke 0,57 ms, zero nowych POST),
+bez przepisywania dawnego Linux/macOS jako PASS. Historyczne manifesty
+i poniższa macierz obserwacji sprzed napraw pozostają zachowane.
+
 Punkt odniesienia kodu aplikacji: `bfbbc630f11bd02da1b00bdaf5d089af38835838`.
 W tym etapie dodano eksporter, jego testy i dokumentację; poniższych problemów
 rdzenia nie naprawiano. „Kod” jest wnioskiem z lektury, nie uruchomieniem
