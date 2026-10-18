@@ -92,23 +92,21 @@ export function reopenPublicDiagnostic(
   dir = assertOutsideRepository(dir);
   if (!existsSync(join(dir, 'jobhunter.sqlite'))) throw new Error('DIAGNOSTIC_DATABASE_REQUIRED');
   const preflight = () => {
-    const temp = mkdtempSync(join(tmpdir(), 'jh-diagnostic-preflight-'));
     let db: Database.Database | undefined;
     try {
-      copyFileSync(join(dir, 'jobhunter.sqlite'), join(temp, 'snapshot.sqlite'));
-      db = new Database(join(temp, 'snapshot.sqlite'), { readonly: true, fileMustExist: true });
-      const marker = db
-        .prepare("SELECT value FROM app_state WHERE key='diagnosticOnly'")
-        .get() as any;
+      db = new Database(join(dir, 'jobhunter.sqlite'), { readonly: true, fileMustExist: true });
+      db.pragma('query_only=ON');
+      const marker = db.transaction(() =>
+        db!.prepare("SELECT value FROM app_state WHERE key='diagnosticOnly'").get(),
+      )() as any;
       if (!marker || JSON.parse(marker.value) !== true) throw Error('DIAGNOSTIC_ONLY_REQUIRED');
-    } catch {
-      throw Error('DIAGNOSTIC_ONLY_REQUIRED');
+    } catch (error) {
+      if (error instanceof Error && error.message === 'DIAGNOSTIC_ONLY_REQUIRED') throw error;
+      throw Error('DIAGNOSTIC_PREFLIGHT_UNREADABLE');
     } finally {
       db?.close();
-      rmSync(temp, { recursive: true, force: true });
     }
   };
-  preflight();
   const lock = acquireProfileLock(dir);
   let store: Store;
   try {

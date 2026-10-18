@@ -543,6 +543,7 @@ export class GmailJobHunter extends ResearchJobHunter {
   }
   protected issues(d: Row, kind: DeliveryKind, account: AccountInfo, requireHistory = true) {
     const issues: string[] = [];
+    if (this.refreshingLibrary) issues.push('DRAFT_MATERIAL_UNVERIFIED');
     const p = this.profile();
     if (!p.approved_at || p.facts.some((f) => f.approval_status !== 'APPROVED'))
       issues.push('PROFILE_NOT_APPROVED');

@@ -51,6 +51,10 @@ export function restoreBackupCopy(backup: string, destination: string) {
           "UPDATE auto_batches SET state='STOPPED',reason='BACKUP_RESTORED',updated_at=? WHERE state='RUNNING'",
           new Date().toISOString(),
         );
+        restored.exec(
+          "UPDATE nightflow_jobs SET state='STOPPED',reason='BACKUP_RESTORED',generation='',updated_at=? WHERE state IN ('PREPARING','REFRESHING','RESEARCHING','VALIDATING','CLOSING','WAITING_WINDOW','SENDING')",
+          new Date().toISOString(),
+        );
         const work = restored.get<any>('researchDay', {});
         restored.set('researchDay', { ...work, active: false, finalReason: 'BACKUP_RESTORED' });
         const execution = restored.get<any>('browserExecutionContext', null);

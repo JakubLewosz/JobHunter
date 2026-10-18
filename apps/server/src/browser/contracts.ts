@@ -1,5 +1,18 @@
 import { z } from 'zod';
 export const browserDescriptorName = 'browser-executor.json';
+export const executionScopeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('MANUAL'), backendId: z.string(), generation: z.string() }).strict(),
+  z
+    .object({
+      kind: z.literal('BATCH'),
+      backendId: z.string(),
+      generation: z.string(),
+      sessionId: z.string(),
+      batchId: z.string(),
+    })
+    .strict(),
+]);
+export type BrowserExecutionScope = z.infer<typeof executionScopeSchema>;
 
 export const transportSchema = z.enum(['GMAIL_API', 'GMAIL_BROWSER']);
 export type SendTransport = z.infer<typeof transportSchema>;

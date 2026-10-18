@@ -1,10 +1,13 @@
 import { BrowserExecutorClient } from './client.js';
 import { runBrowserDelivery, type BrowserTab } from './executor.js';
+import type { BrowserExecutionScope } from './contracts.js';
+import { setTimeout as delay } from 'node:timers/promises';
 
 // Lives in the active Codex task. Each segment is bounded; the same object renews
 // its pinned lease. It never claims a replacement backend/session/batch.
 export class BrowserBatchController {
   private pinned?: { backendId: string; sessionId: string; batchId: string };
+  private scope?: BrowserExecutionScope;
   private ended = false;
   private busy = false;
   private completed = 0;
@@ -12,8 +15,11 @@ export class BrowserBatchController {
     private client: BrowserExecutorClient,
     private tab: BrowserTab,
     private clock = () => Date.now(),
-    private wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
-  ) {}
+    private wait = (ms: number, signal?: AbortSignal) => delay(ms, undefined, { signal }),
+    expectedScope?: BrowserExecutionScope,
+  ) {
+    this.scope = expectedScope;
+  }
   async segment(durationMs = 30000, signal?: AbortSignal) {
     if (this.busy) throw Error('BROWSER_CONTROLLER_BUSY');
     if (!Number.isFinite(durationMs) || durationMs < 1 || durationMs > 60000)
@@ -25,6 +31,7 @@ export class BrowserBatchController {
       while (this.clock() < deadline && !signal?.aborted) {
         const state = await this.client.attach(),
           context = state.execution;
+        signal?.throwIfAborted();
         if (!context?.batchId || !context?.sessionId) throw Error('BROWSER_BATCH_REQUIRED');
         const identity = {
           backendId: state.backendId,
@@ -34,17 +41,21 @@ export class BrowserBatchController {
         if (this.pinned && JSON.stringify(this.pinned) !== JSON.stringify(identity))
           throw Error('BROWSER_SESSION_CHANGED');
         this.pinned ??= identity;
+        this.scope ??= state.scope;
         if (context.state !== 'RUNNING') {
           this.ended = true;
           return { status: context.state, completed: this.completed };
         }
-        const result = await runBrowserDelivery(this.client, this.tab);
+        const result = await runBrowserDelivery(this.client, this.tab, {
+          scope: this.scope,
+          signal,
+        });
         if (result.status === 'STOPPED') {
           this.ended = true;
           return { ...result, completed: this.completed };
         }
         if (result.status === 'RECORDED') this.completed++;
-        else await this.wait(Math.min(1000, Math.max(1, deadline - this.clock())));
+        else await this.wait(Math.min(1000, Math.max(1, deadline - this.clock())), signal);
       }
       if (signal?.aborted) this.ended = true;
       return { status: this.ended ? 'STOPPED' : 'WAITING', completed: this.completed };

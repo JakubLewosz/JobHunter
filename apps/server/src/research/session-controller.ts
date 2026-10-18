@@ -13,6 +13,8 @@ import type { Row } from '../../../../packages/shared/types.js';
 export class ResearchSessionController {
   private timer?: ReturnType<typeof setInterval>;
   private checking = false;
+  private finalizePending = false;
+  private finalizing = false;
   private emergencyReason: string | null = null;
   private baseline?: {
     data: ProtectedSnapshot;
@@ -162,6 +164,10 @@ export class ResearchSessionController {
       return false;
     } finally {
       this.checking = false;
+      if (this.finalizePending) {
+        this.finalizePending = false;
+        this.finalize();
+      }
     }
   }
   control(action: string) {
@@ -189,12 +195,28 @@ export class ResearchSessionController {
   }
   finalize() {
     clearInterval(this.timer);
+    if (this.finalizing) return;
+    if (this.checking) {
+      this.finalizePending = true;
+      return;
+    }
     if (!this.baseline || this.state().phase === 'FINISHED') return;
-    this.save({
-      phase: 'FINAL_CHECK',
-      cleanupStartedAt: this.state().cleanupStartedAt ?? this.now(),
-    });
-    this.check();
-    this.save({ phase: 'FINISHED', operationsEndedAt: this.now(), cleanupFinishedAt: this.now() });
+    this.finalizing = true;
+    try {
+      this.save({
+        phase: 'FINAL_CHECK',
+        cleanupStartedAt: this.state().cleanupStartedAt ?? this.now(),
+      });
+      const ok = this.check();
+      this.save({
+        phase: 'FINISHED',
+        operationsEndedAt: this.now(),
+        cleanupFinishedAt: this.now(),
+        finalGuardOk: ok,
+        finalGuardFinishedAt: this.now(),
+      });
+    } finally {
+      this.finalizing = false;
+    }
   }
 }

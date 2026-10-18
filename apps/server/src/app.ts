@@ -947,7 +947,16 @@ export async function createApp(options: {
       store.close();
       profileLock.release();
     });
-    return { app, service, store, launchToken: token };
+    return {
+      app,
+      service,
+      store,
+      launchToken: token,
+      resetPerformanceWindow: () => {
+        measurements.length = 0;
+        eventLoop.reset();
+      },
+    };
   } catch (error) {
     await browser?.close();
     opened?.close();

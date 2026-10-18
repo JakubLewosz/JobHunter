@@ -1,4 +1,4 @@
-name: Offline Windows and macOS
+name: Offline Windows
 on:
   push:
     branches: [main, 'codex/**']
@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     env:

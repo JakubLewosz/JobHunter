@@ -20,6 +20,7 @@ import { setup as autoSetup } from './auto-fixture.js';
 import { hash } from '../apps/server/src/util.js';
 import Database from 'better-sqlite3';
 import nodemailer from 'nodemailer';
+import { runBrowserDelivery, GmailBrowserExecutor } from '../apps/server/src/browser/executor.js';
 
 async function setup(t: TestContext) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-browser-')),
@@ -103,6 +104,84 @@ function ownMessage(f: Awaited<ReturnType<typeof setup>>, payload: BrowserPayloa
     raw: raw ?? out.mime,
   });
 }
+test('full IPC scope fence rejects a session changed after attach without claiming its replacement', async (t) => {
+  const f = await setup(t);
+  (f.service.browserDelivery as any).worker = null;
+  await f.service.browserDelivery.listen();
+  const client = new BrowserExecutorClient(f.dir);
+  const original = await client.attach();
+  f.store.set('browserExecutionContext', {
+    state: 'RUNNING',
+    sessionId: 'new-session',
+    batchId: 'new-batch',
+    generation: 'new-generation',
+  });
+  await assert.rejects(() => client.next(original.scope), /BROWSER_SESSION_CHANGED/);
+  assert.equal(
+    f.store.one("SELECT count(*) n FROM browser_deliveries WHERE state='CLAIMED'")!.n,
+    0,
+  );
+  assert.equal(f.gateway.posts.length, 0);
+});
+for (const phase of ['attach', 'claim', 'prepare', 'authorize', 'check'])
+  test(
+    'full IPC cancellation after ' +
+      phase +
+      ' produces zero send actions and preserves reservation',
+    async (t) => {
+      const f = await setup(t);
+      (f.service.browserDelivery as any).worker = null;
+      await f.service.browserDelivery.listen();
+      const client = new BrowserExecutorClient(f.dir),
+        abort = new AbortController();
+      await client.attach();
+      const p = await f.service.prepareDelivery({
+        drafts: [{ id: f.d.id, version: f.d.version }],
+        cvId: f.cv.id,
+        kind: 'SELF_TEST',
+      });
+      await f.service.approveDelivery({
+        previewId: p.id,
+        previewHash: p.previewHash,
+        confirmed: true,
+      });
+      const dispatch = f.service.dispatchOne();
+      await waitJob(f.store);
+      let clicks = 0;
+      const prepare = GmailBrowserExecutor.prototype.prepare,
+        click = GmailBrowserExecutor.prototype.clickSend;
+      GmailBrowserExecutor.prototype.prepare = async function (payload) {
+        if (phase === 'prepare') abort.abort();
+        return observation(payload);
+      };
+      GmailBrowserExecutor.prototype.clickSend = async function (_expected, check) {
+        await check?.();
+        abort.signal.throwIfAborted();
+        clicks++;
+      };
+      const method = phase === 'claim' ? 'next' : phase;
+      if (['attach', 'next', 'authorize', 'check'].includes(method)) {
+        const original = (client as any)[method].bind(client);
+        (client as any)[method] = async (...args: any[]) => {
+          const result = await original(...args);
+          abort.abort();
+          return result;
+        };
+      }
+      try {
+        const result = await runBrowserDelivery(client, {} as any, { signal: abort.signal });
+        assert.equal(result.status, 'STOPPED');
+        assert.equal(clicks, 0);
+        f.service.control('stop');
+        await dispatch;
+        assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 1);
+        assert.equal(f.gateway.posts.length, 0);
+      } finally {
+        GmailBrowserExecutor.prototype.prepare = prepare;
+        GmailBrowserExecutor.prototype.clickSend = click;
+      }
+    },
+  );
 
 test('Browser: exact payload, CV bytes and own readonly receipt use one shared attempt and zero API posts', async (t) => {
   const f = await setup(t),

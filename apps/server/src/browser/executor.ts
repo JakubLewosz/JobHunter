@@ -1,7 +1,34 @@
 import { readFileSync } from 'node:fs';
 import { hash } from '../util.js';
 import { BrowserExecutorClient } from './client.js';
-import type { BrowserPayload, ComposeObservation, BrowserReceipt } from './contracts.js';
+import type {
+  BrowserPayload,
+  ComposeObservation,
+  BrowserReceipt,
+  BrowserExecutionScope,
+} from './contracts.js';
+import { setTimeout as delay } from 'node:timers/promises';
+
+// Fence every browser action, including actions after file chooser/evaluate awaits.
+function cancellable<T extends object>(target: T, signal?: AbortSignal): T {
+  return new Proxy(target, {
+    get(object, property) {
+      const value = Reflect.get(object, property);
+      if (typeof value === 'function')
+        return (...args: unknown[]) => {
+          signal?.throwIfAborted();
+          const result = Reflect.apply(value, object, args);
+          if (result instanceof Promise)
+            return result.then((next) => {
+              signal?.throwIfAborted();
+              return next && typeof next === 'object' ? cancellable(next, signal) : next;
+            });
+          return result && typeof result === 'object' ? cancellable(result, signal) : result;
+        };
+      return value && typeof value === 'object' ? cancellable(value, signal) : value;
+    },
+  });
+}
 
 // Uses only the browser tool's documented page/locator/filechooser surface.
 // No CDP, browser profile/cookie access, script-driven clicks or page network calls.
@@ -22,7 +49,13 @@ export type BrowserTab = {
   };
 };
 export class GmailBrowserExecutor {
-  constructor(private tab: BrowserTab) {}
+  private tab: BrowserTab;
+  constructor(
+    tab: BrowserTab,
+    private signal?: AbortSignal,
+  ) {
+    this.tab = cancellable(tab, signal);
+  }
   private async assertPage() {
     const u = new URL((await this.tab.url()) ?? '');
     if (u.origin !== 'https://mail.google.com') throw Error('GMAIL_LOGIN_REQUIRED');
@@ -178,6 +211,9 @@ export class GmailBrowserExecutor {
       )
         throw Error('CV_CHANGED');
       const chooser = this.tab.playwright.waitForEvent('filechooser');
+      // The event can resolve/abort before the click promise settles. Attach a
+      // rejection handler now; the awaited chooser below still propagates it.
+      void chooser.catch(() => {});
       await this.tab.playwright.getByRole('button', { name: fields.attach, exact: true }).click();
       await (await chooser).setFiles([payload.attachment.path]);
     }
@@ -189,7 +225,7 @@ export class GmailBrowserExecutor {
         (observation.attachments.length === 1 && observation.attachments[0].complete)
       )
         return observation;
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      await delay(250, undefined, { signal: this.signal });
     }
     throw Error('GMAIL_ATTACHMENT_TIMEOUT');
   }
@@ -206,6 +242,7 @@ export class GmailBrowserExecutor {
     );
     if (controls.length !== 1) throw Error('GMAIL_SEND_AMBIGUOUS');
     await beforeClick?.();
+    this.signal?.throwIfAborted();
     await this.tab.playwright.getByRole('button', { name: controls[0], exact: true }).click();
   }
   async receipt(): Promise<BrowserReceipt> {
@@ -284,20 +321,36 @@ export async function connectBrowserExecutor(profileDir: string) {
   await client.attach();
   return client;
 }
-export async function runBrowserDelivery(client: BrowserExecutorClient, tab: BrowserTab) {
+export async function runBrowserDelivery(
+  client: BrowserExecutorClient,
+  tab: BrowserTab,
+  options: { scope?: BrowserExecutionScope; signal?: AbortSignal } = {},
+) {
   let payload: BrowserPayload | null = null,
     heartbeat: ReturnType<typeof setInterval> | undefined,
     uncertain = false;
   try {
-    await client.attach();
-    payload = await client.next();
+    options.signal?.throwIfAborted();
+    const state = await client.attach();
+    options.signal?.throwIfAborted();
+    const scope = options.scope ?? state.scope;
+    if (JSON.stringify(scope) !== JSON.stringify(state.scope))
+      throw Error('BROWSER_SESSION_CHANGED');
+    payload = await client.next(scope);
+    options.signal?.throwIfAborted();
     if (!payload) return { status: 'IDLE' };
     heartbeat = setInterval(() => void client.attach().catch(() => {}), 10000);
-    const driver = new GmailBrowserExecutor(tab);
+    const driver = new GmailBrowserExecutor(tab, options.signal);
     const observation = await driver.prepare(payload);
-    await client.authorize(payload.id, observation);
+    options.signal?.throwIfAborted();
+    await client.authorize(payload.id, observation, scope);
     uncertain = true;
-    await driver.clickSend(observation, () => client.check(payload!.id)); // one action only; no catch-and-click-again.
+    options.signal?.throwIfAborted();
+    await driver.clickSend(observation, async () => {
+      options.signal?.throwIfAborted();
+      await client.check(payload!.id, scope);
+      options.signal?.throwIfAborted();
+    }); // one action only; no catch-and-click-again.
     await client.complete(payload.id, await driver.receipt());
     return { status: 'RECORDED', jobId: payload.id };
   } catch (e) {

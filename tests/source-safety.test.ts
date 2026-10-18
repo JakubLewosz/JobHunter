@@ -85,6 +85,32 @@ test('old parser and unmarked public source cannot gain current authorization', 
   assert.equal(sourceComplete({ ...s, parser_version: parserVersion - 1 }), false);
   assert.equal(sourceComplete({ ...s, completeness: undefined }), false);
 });
+
+test('referral authority belongs to one link, never its recruiting sibling', async () => {
+  for (const label of [
+    'Wykonanie strony',
+    'Polityka prywatności',
+    'Social media',
+    'Kontakt partnera',
+  ]) {
+    const official = await page(
+      `<footer><a href="/rekrutacja">Rekrutacja</a><a href="https://outside.example.test/contact">${label}</a></footer>`,
+    );
+    const outside = await page(
+      '<p>Contact hr@outside.example.test</p>',
+      'text/html',
+      'https://outside.example.test/contact',
+    );
+    assert.equal(
+      contactSourceAuthority(
+        { contact: { proof: { sourceId: outside.id } } } as any,
+        [official, outside],
+        ['firm.example.test'],
+      ),
+      false,
+    );
+  }
+});
 test('contact publication authority requires an official host, alias or exact official referral', async () => {
   const official = await page(
     '<h1>Firm</h1><a href="https://ats.example.test/jobs/firm">Rekrutacja — aplikuj tutaj</a>',
@@ -121,6 +147,14 @@ test('contact publication authority requires an official host, alias or exact of
     false,
   );
   assert.equal(contactSourceAuthority(a, [contact], ['ats.example.test']), true);
+  const footer = await page(
+    '<footer>Rekrutacja<a href="https://ats.example.test/jobs/firm">Partner strony</a></footer>',
+  );
+  assert.equal(contactSourceAuthority(a, [footer, contact], ['firm.example.test']), false);
+  const linkedLabel = await page(
+    '<p>Rekrutacja: <a href="https://ats.example.test/jobs/firm">tutaj</a></p>',
+  );
+  assert.equal(contactSourceAuthority(a, [linkedLabel, contact], ['firm.example.test']), true);
 });
 test('AUTO rejects a directory naming the firm and publishing its mailbox', async (t) => {
   const f = await setup(t, true, false, true, true);

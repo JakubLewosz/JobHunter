@@ -44,8 +44,50 @@ test('library pages use SQL limits and details by ID; all records remain reachab
   assert.ok(total >= 251);
   const selected = app.service.companies({ search: 'Paged 250', limit: 10 });
   assert.equal(selected.length, 1);
+  app.service.approveProfile();
+  await app.service.start();
+  await app.service.tick();
+  app.service.control('stop');
+  const example = app.store.one('SELECT * FROM opportunities LIMIT 1')!;
+  const columns = Object.keys(example);
+  app.store.exec(
+    "UPDATE opportunities SET company_id=?,decision='READY_APPLICATION' WHERE id=?",
+    selected[0].id,
+    example.id,
+  );
+  app.store.exec(
+    'INSERT INTO opportunities (' +
+      columns.join(',') +
+      ') VALUES (' +
+      columns.map(() => '?').join(',') +
+      ')',
+    ...columns.map((key) =>
+      key === 'id'
+        ? 'fixture-newest'
+        : key === 'title'
+          ? 'Different newest role'
+          : key === 'company_id'
+            ? selected[0].id
+            : key === 'decision'
+              ? 'REJECTED'
+              : key === 'updated_at'
+                ? '2099-01-01T00:00:00.000Z'
+                : example[key],
+    ),
+  );
+  const filtered = await app.app.inject({
+    url: '/api/companies?search=paged250.example.test&filter=READY_APPLICATION&limit=1',
+    headers,
+  });
+  assert.equal(filtered.statusCode, 200);
+  assert.equal(filtered.headers['x-total-count'], '1');
+  assert.equal(filtered.json()[0].opportunity_id, example.id);
+  assert.equal(filtered.json()[0].decision, 'READY_APPLICATION');
+  const unfiltered = app.service.companies({ id: selected[0].id, limit: 1 });
+  assert.equal(unfiltered[0].opportunity_id, 'fixture-newest');
   const detail = await app.app.inject({ url: '/api/companies/' + selected[0].id, headers });
   assert.equal(detail.json().company.id, selected[0].id);
+  assert.equal(detail.json().opportunities.length, 2);
   let pragmas = 0;
   const pragma = app.store.db.pragma.bind(app.store.db);
   app.store.db.pragma = (...args: any[]) => {

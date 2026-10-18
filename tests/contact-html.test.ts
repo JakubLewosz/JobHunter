@@ -10,7 +10,7 @@ import { FixtureRunner } from './research-fixture.js';
 import { setup } from './auto-fixture.js';
 import type { TestContext } from 'node:test';
 import { hash } from '../apps/server/src/util.js';
-import { parsePublicHTML } from '../apps/server/src/research/html.js';
+import { parsePublicHTML, parserVersion } from '../apps/server/src/research/html.js';
 import { performance } from 'node:perf_hooks';
 
 const activity =
@@ -99,6 +99,55 @@ test('HTML: Sales heading above biuro remains bound to that mailbox', async () =
 
 const mailbox = 'biuro@fixture.example.test';
 const cases = [
+  [
+    'billing table heading row',
+    '<table><tr><th>Faktury i rozliczenia</th></tr><tr><td>Pomoc: pomoc@fixture.example.test</td></tr><tr><td>Kontakt: ' +
+      mailbox +
+      '</td></tr></table>',
+    false,
+  ],
+  [
+    'shared billing heading with neutral labels',
+    '<section><h2>Faktury i rozliczenia</h2><p>Kontakt: ' +
+      mailbox +
+      '</p><p>Pomoc: pomoc@fixture.example.test</p></section>',
+    false,
+  ],
+  [
+    'shared billing heading second address',
+    '<section><h2>Faktury i rozliczenia</h2><p>Pomoc: pomoc@fixture.example.test</p><p>Kontakt: ' +
+      mailbox +
+      '</p></section>',
+    false,
+  ],
+  [
+    'nested shared billing',
+    '<section><h2>Faktury i rozliczenia</h2><div><p>Pomoc: pomoc@fixture.example.test</p><p>Kontakt: ' +
+      mailbox +
+      '</p></div></section>',
+    false,
+  ],
+  [
+    'shared billing list',
+    '<section><h2>Faktury i rozliczenia</h2><ul><li>Pomoc: pomoc@fixture.example.test</li><li>Kontakt: ' +
+      mailbox +
+      '</li></ul></section>',
+    false,
+  ],
+  [
+    'shared billing table',
+    '<section><h2>Faktury i rozliczenia</h2><table><tr><td>Pomoc: pomoc@fixture.example.test</td><td>Kontakt: ' +
+      mailbox +
+      '</td></tr></table></section>',
+    false,
+  ],
+  [
+    'shared following heading',
+    '<section><p>Pomoc: pomoc@fixture.example.test</p><p>Kontakt: ' +
+      mailbox +
+      '</p><h2>Faktury i rozliczenia</h2></section>',
+    false,
+  ],
   [
     'div',
     '<div><h2>Kontakt ogólny</h2><p>' +
@@ -264,7 +313,7 @@ for (const previousVersion of [0, 1])
     assert.equal(contactEligibility(validateAnalysis(a, [old]), [old]).allowed, false);
     const refreshed = await f.service.readSource(old.original_url);
     assert.notEqual(refreshed.id, old.id);
-    assert.equal(refreshed.parser_version, 3);
+    assert.equal(refreshed.parser_version, parserVersion);
     assert.equal(
       f.store.one('SELECT parser_version FROM research_sources WHERE id=?', old.id)?.parser_version,
       previousVersion,

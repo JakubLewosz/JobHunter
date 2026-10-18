@@ -14,6 +14,10 @@ import { FixtureRunner, FixtureReader } from '../research-fixture.js';
 import { FixtureGmail } from '../gmail-fixture.js';
 import { hash } from '../../apps/server/src/util.js';
 import type { BrowserPayload } from '../../apps/server/src/browser/contracts.js';
+import { withNightflow } from '../../apps/server/src/nightflow-entry.js';
+import { ActiveTaskNightflowBrowserHost } from '../../apps/server/src/nightflow-browser-host.js';
+import { NightflowCoordinator } from '../../apps/server/src/nightflow.js';
+import { autoPolicySchema } from '../../apps/server/src/auto-policy.js';
 
 const html = readFileSync('tests/fixtures/gmail-compose.html', 'utf8');
 function tab(page: Page): BrowserTab {
@@ -37,6 +41,49 @@ async function fixturePage(page: Page, query = '') {
   );
   await page.goto('https://mail.google.com/mail/u/0/' + query);
 }
+test('nightflow active-task adapter → same services → scoped IPC → fictional browser, one action and closed report', async ({
+  page,
+}) => {
+  await fixturePage(page, '?no-id');
+  const dir = mkdtempSync(join(tmpdir(), 'jh-nightflow-browser-'));
+  try {
+    await withNightflow({ dir, fixture: true }, async (_coordinator, service, original) => {
+      const policy = service.policyConfig()!;
+      await service.setSendTransport({
+        transport: 'GMAIL_BROWSER',
+        confirmed: true,
+        outgoingViewConsent: true,
+      });
+      await service.browserDelivery.listen();
+      const host = new ActiveTaskNightflowBrowserHost(dir, 'synthetic-active-task', tab(page));
+      await host.initialize();
+      service.configurePolicy(
+        Object.fromEntries(Object.keys(autoPolicySchema.shape).map((key) => [key, policy[key]])),
+      );
+      const coordinator = new NightflowCoordinator(service.store, service, {
+        installation: original.installation,
+        host,
+        clock: () => new Date('2026-10-18T10:00:00Z'),
+      });
+      const plan = { ...original, discovery: false, binding: service.nightflowBinding() };
+      coordinator.savePlan(plan, true);
+      // Time advances only in the fixture sender clock, not by waiting a minute.
+      service.store.set('autoNextSendAt', '2020-01-01T00:00:00Z');
+      const start = service.activateNightflowBatch.bind(service);
+      service.activateNightflowBatch = async (...args) => {
+        await start(...args);
+        service.store.set('autoNextSendAt', '2020-01-01T00:00:00Z');
+      };
+      const result = await coordinator.start(plan.id);
+      expect(result.state).toBe('COMPLETED');
+      expect(result.counts?.sent).toBe(1);
+      expect(service.store.one('SELECT count(*) n FROM send_attempts')!.n).toBe(1);
+      await expect(page.locator('#click-count')).toHaveText('1');
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 test('Browser executor → private IPC → real controller/SQLite → fictional UI, one click and no API post', async ({
   page,
 }) => {
@@ -161,4 +208,49 @@ test('Browser receipt follows only the fresh own-message link and does not retry
   expect(receipt.candidateId).toBe('abcdef0123456789');
   await expect(page.locator('#click-count')).toHaveText('1');
   await expect(driver.prepare(payload)).rejects.toThrow('GMAIL_PREVIOUS_ACK_VISIBLE');
+});
+test('Browser cancellation at upload and after final check starts no send action', async ({
+  page,
+}) => {
+  const dir = mkdtempSync(join(tmpdir(), 'jh-abort-upload-')),
+    path = join(dir, 'Fixture.pdf'),
+    bytes = Buffer.from('%PDF-fictional');
+  writeFileSync(path, bytes);
+  const payload: BrowserPayload = {
+    id: 'fixture',
+    outboxId: 'fixture',
+    sender: 'owner@example.test',
+    recipient: 'qa@example.test',
+    subject: 'Synthetic',
+    body: 'Synthetic only',
+    attachment: { path, name: 'Fixture.pdf', sha256: hash(bytes), bytes: bytes.length },
+    payloadHash: 'synthetic',
+  };
+  try {
+    await fixturePage(page);
+    const abort = new AbortController(),
+      browser = tab(page);
+    const chooser = browser.playwright.waitForEvent;
+    browser.playwright.waitForEvent = async (event) => {
+      const result = await chooser(event);
+      abort.abort();
+      return result;
+    };
+    await expect(
+      new GmailBrowserExecutor(browser, abort.signal).prepare(payload),
+    ).rejects.toThrow();
+    await expect(page.locator('#click-count')).toHaveText('0');
+    await fixturePage(page);
+    const beforeClick = new AbortController(),
+      driver = new GmailBrowserExecutor(tab(page), beforeClick.signal);
+    const observation = await driver.prepare(payload);
+    await expect(
+      driver.clickSend(observation, async () => {
+        beforeClick.abort();
+      }),
+    ).rejects.toThrow();
+    await expect(page.locator('#click-count')).toHaveText('0');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

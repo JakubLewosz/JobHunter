@@ -25,6 +25,8 @@ import { FixtureGmail } from './gmail-fixture.js';
 import { FixtureReader, FixtureRunner } from './research-fixture.js';
 import { assertOutsideRepository, pathContains } from '../apps/server/src/safe-paths.js';
 import { hash } from '../apps/server/src/util.js';
+import { fork } from 'node:child_process';
+import { once } from 'node:events';
 function fixture(t: any) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-auditor-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -133,6 +135,48 @@ test('diagnostic preflight rejects unmarked database without migration, backup o
   assert.equal(hash(readFileSync(dbpath)), before);
   assert.deepEqual(readdirSync(dir), files);
 });
+for (const marker of ['true', 'false'])
+  test(
+    'diagnostic preflight reads committed marker ' +
+      marker +
+      ' from WAL after its own writer crashes',
+    async (t) => {
+      const dir = fixture(t),
+        store = new Store(dir);
+      new ResearchJobHunter(store, { reader: new FixtureReader(), runner: new FixtureRunner() });
+      store.set('diagnosticOnly', marker !== 'true');
+      store.close();
+      const child = fork(join(process.cwd(), 'tests/fixtures/wal-marker-child.ts'), [dir, marker], {
+        execArgv: ['--import', 'tsx'],
+        env: { ...process.env, JOBHUNTER_FIXTURE_CHILD: '1' },
+        windowsHide: true,
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      });
+      t.after(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+      });
+      assert.equal((await once(child, 'message'))[0], 'WAL_COMMITTED');
+      const exited = once(child, 'exit');
+      child.kill('SIGKILL');
+      await exited;
+      assert.ok(readFileSync(join(dir, 'jobhunter.sqlite-wal')).length > 0);
+      if (marker === 'true') {
+        const diagnostic = reopenPublicDiagnostic(dir, new FixtureRunner(), new FixtureReader());
+        assert.equal(diagnostic.store.get('diagnosticOnly', false), true);
+        await diagnostic.service.stopWorker();
+        diagnostic.store.close();
+      } else {
+        const main = hash(readFileSync(join(dir, 'jobhunter.sqlite'))),
+          wal = hash(readFileSync(join(dir, 'jobhunter.sqlite-wal')));
+        assert.throws(
+          () => reopenPublicDiagnostic(dir, new FixtureRunner(), new FixtureReader()),
+          /DIAGNOSTIC_ONLY_REQUIRED/,
+        );
+        assert.equal(hash(readFileSync(join(dir, 'jobhunter.sqlite'))), main);
+        assert.equal(hash(readFileSync(join(dir, 'jobhunter.sqlite-wal'))), wal);
+      }
+    },
+  );
 test('safe paths: repository, descendants, Windows/POSIX boundaries and junction parent', (t) => {
   assert.equal(pathContains('C:\\Repo', 'c:\\repo\\new'), true);
   assert.equal(pathContains('C:\\Repo', 'C:\\Repository'), false);
@@ -181,12 +225,12 @@ test('snapshot auditor shares the actual material binding and literal/publicatio
   report = auditLibrary({ snapshot: changed, provenance: changed + '.provenance.json' });
   assert.equal(report.counts.materialMismatches, 1);
   assert.equal(report.counts.missingLiteral, 1);
-  store.exec("INSERT INTO migrations VALUES ('026_unknown.sql',?)", service.now());
+  store.exec("INSERT INTO migrations VALUES ('999_unknown.sql',?)", service.now());
   const future = store.backup();
   store.close();
   report = auditLibrary({ snapshot: future, provenance: future + '.provenance.json' });
   assert.equal(report.supported, false);
-  assert.equal(report.schemaVersion, 26);
+  assert.equal(report.schemaVersion, 999);
 });
 test('snapshot audit detects a packet without its atomic reservation and uses the shared protected comparison', async (t) => {
   const root = fixture(t),

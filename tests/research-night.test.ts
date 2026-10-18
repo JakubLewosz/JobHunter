@@ -389,6 +389,36 @@ test('authorized search carries deferred work even when search no longer returns
   assert.equal(f.service.draftRows().length, 1);
   assert.equal(f.store.all('SELECT * FROM outbox').length, 0);
 });
+test('deferred pre-identity item keeps one stable key and age until completed in a later empty-search cycle', async (t) => {
+  const f = setup(t);
+  const first = await f.service.importURL('https://one.example.test/');
+  const original = f.store.one('SELECT * FROM research_items WHERE run_id=?', first.runId)!;
+  const key = 'researchDeferred:' + original.id;
+  const queuedAt = new Date(Date.now() - 3600000).toISOString();
+  f.store.set(key, {
+    itemId: original.id,
+    companyId: null,
+    queuedAt,
+    attempts: 1,
+    reason: 'TIME_BUDGET',
+  });
+  f.store.exec("UPDATE runs SET status='PARTIAL' WHERE id=?", first.runId);
+  f.store.exec("UPDATE jobs SET status='DONE' WHERE run_id=?", first.runId);
+  f.service.search = { search: async () => ({ urls: [], queries: ['fictional empty search'] }) };
+  await f.service.probe('search');
+  await f.service.start('Carry prior timed out pre-identity work');
+  const resumed = f.store.one('SELECT * FROM research_items WHERE run_id<>?', first.runId)!;
+  assert.equal(f.store.get(`researchDeferredKey:${resumed.id}`, null), key);
+  assert.equal(f.store.get<any>(key, {}).queuedAt, queuedAt);
+  await f.service.tick();
+  assert.equal(f.service.draftRows().length, 1);
+  assert.equal(f.store.get(key, null), null);
+  const outstanding = f.store
+    .all("SELECT value FROM app_state WHERE key LIKE 'researchDeferred:%'")
+    .map((r) => JSON.parse(r.value))
+    .filter(Boolean);
+  assert.equal(outstanding.length, 0);
+});
 test('eight-hour session survives the eighth cycle and finishes at its immutable deadline', async (t) => {
   let time = Date.now();
   const f = setup(t, () => new Date(time));

@@ -125,23 +125,55 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   private preparationController?: AbortController;
   private activeBatchId: string | null = null;
   private libraryResearch = false;
+  private plannedActivation?: { jobId: string; generation: string; batchId: string };
+  private nightflowSendGuard?: () => void;
+  setNightflowSendGuard(guard?: () => void) {
+    this.nightflowSendGuard = guard;
+  }
+  operationEpoch() {
+    return this.controlEpoch;
+  }
+  async activateNightflowBatch(jobId: string, generation: string) {
+    const job = this.store.one(
+      "SELECT * FROM nightflow_jobs WHERE id=? AND generation=? AND state='SENDING'",
+      jobId,
+      generation,
+    );
+    if (!job?.batch_id) throw new DomainError('SESSION_STOPPED', 'Brak aktywnego wykonania planu.');
+    this.plannedActivation = { jobId, generation, batchId: job.batch_id };
+    try {
+      await this.startBatch(job.batch_id);
+    } finally {
+      this.plannedActivation = undefined;
+    }
+  }
   protected override researchOnlySession() {
     return this.libraryResearch;
   }
-  async startLibraryResearch(query: string | undefined, hours: number, resume = false) {
+  async startLibraryResearch(
+    query: string | undefined,
+    hours: number,
+    resume = false,
+    deadline?: string,
+  ) {
     if (this.sessionId || this.preparing || this.sending || this.researching || this.starting)
       throw new DomainError('BUSY', 'Zatrzymaj nadawanie przed researchem biblioteki.');
     if (!this.policyConfig())
       throw new DomainError('POLICY_REQUIRED', 'Zapisz zakres i materiały biblioteki w polityce.');
     this.libraryResearch = true;
     try {
-      await this.researchController().start(
-        () =>
-          resume
-            ? ResearchJobHunter.prototype.resumeSession.call(this)
-            : ResearchJobHunter.prototype.startDay.call(this, query, hours),
-        resume,
-      );
+      await this.researchController().start(async () => {
+        if (resume) await ResearchJobHunter.prototype.resumeSession.call(this);
+        else {
+          await ResearchJobHunter.prototype.startDay.call(this, query, hours);
+          if (deadline) {
+            const work = this.store.get<Row>('researchDay', {});
+            if (deadline > work.expiresAt)
+              throw new DomainError('DEADLINE_CHANGED', 'Nie wolno wydłużyć researchu.');
+            this.store.set('researchDay', { ...work, expiresAt: deadline });
+          }
+        }
+      }, resume);
     } catch (e) {
       this.libraryResearch = false;
       throw e;
@@ -169,6 +201,98 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       .all('SELECT * FROM auto_batches ORDER BY prepared_at DESC LIMIT 50')
       .map((b) => this.batchSummary(b.id));
   }
+  nightflowBinding() {
+    const policy = this.assertPolicy(false);
+    this.assertHistory();
+    return hash(
+      JSON.stringify({
+        policy,
+        profile: this.profile(),
+        transport: this.sendTransport(),
+        campaign: this.campaignId,
+      }),
+    );
+  }
+  completeLibraryResearch(sessionId: string, deadline: string) {
+    const outcome = this.researchController().state();
+    if (
+      this.researching ||
+      this.probing ||
+      outcome.sessionId !== sessionId ||
+      outcome.deadline !== deadline ||
+      outcome.phase !== 'FINISHED' ||
+      outcome.finalGuardOk !== true ||
+      !['DEADLINE', 'NO_NEW_QUERIES'].includes(outcome.primaryReason)
+    )
+      throw new DomainError('RESEARCH_OUTCOME_REJECTED', 'Nie zakończono kontroli researchu.');
+    this.store.atomic(() => {
+      this.deferPendingRuns(
+        this.store.get<Row>('researchDay', {}).runIds ?? [],
+        'RESEARCH_DEADLINE',
+      );
+      this.store.set('stopped', true);
+    });
+    this.libraryResearch = false;
+  }
+  nightflowCandidates() {
+    const policy = this.assertPolicy(false),
+      account = this.deliveryState().account!;
+    return this.draftRows().map((d) => ({
+      d,
+      channelRank:
+        this.store.one('SELECT kind FROM contacts WHERE id=?', d.contact_id)?.kind === 'RECRUITMENT'
+          ? 1
+          : 0,
+      issues: [
+        ...this.issues(d, 'FIRST_CONTACT', account, false, policy),
+        ...(!this.inScope(d) ? ['SCOPE_CHANGED'] : []),
+        ...(this.companyHistoryBlocked(d.company_id) ? ['CONTACT_HISTORY'] : []),
+        ...(!this.store.one(
+          'SELECT draft_id FROM research_draft_materials WHERE draft_id=? AND version=?',
+          d.id,
+          d.version,
+        )
+          ? ['DRAFT_MATERIAL_UNVERIFIED']
+          : []),
+      ],
+    }));
+  }
+  deriveNightflowBatch(jobId: string, drafts: { id: string; version: number }[]) {
+    const job = this.store.one('SELECT * FROM nightflow_jobs WHERE id=?', jobId);
+    const plan = job && this.store.one('SELECT * FROM nightflow_plans WHERE id=?', job.plan_id);
+    if (
+      !job ||
+      job.state !== 'CLOSING' ||
+      !plan?.approved_at ||
+      plan.approved_hash !== plan.content_hash
+    )
+      throw new DomainError('PLAN_APPROVAL_REQUIRED', 'Brak zgody na reguły wyboru partii.');
+    const content = JSON.parse(plan.content);
+    if (content.binding !== this.nightflowBinding())
+      throw new DomainError('PLAN_CHANGED', 'Materiały planu się zmieniły.');
+    return this.store.atomic(() => {
+      const batch = this.prepareBatch({ drafts });
+      this.store.exec(
+        'INSERT INTO auto_batch_plan_grants VALUES (?,?,?,?,?,?)',
+        batch.id,
+        jobId,
+        plan.id,
+        plan.content_hash,
+        batch.approvalHash,
+        this.now(),
+      );
+      if (
+        this.store.exec(
+          "UPDATE nightflow_jobs SET batch_id=? WHERE id=? AND state='CLOSING' AND generation=?",
+          batch.id,
+          jobId,
+          job.generation,
+        ).changes !== 1
+      )
+        throw new DomainError('SESSION_STOPPED', 'Zamknięcie partii zostało odwołane.');
+      return batch;
+    });
+  }
   batchSummary(batchId: string): BatchSummary {
     const batch = this.store.one('SELECT * FROM auto_batches WHERE id=?', batchId);
     if (!batch) throw new DomainError('NOT_FOUND', 'Brak partii.', 404);
@@ -181,7 +305,37 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         );
         const uncertain = packets.some((p) => ['SENDING', 'SEND_UNKNOWN'].includes(p.status));
         const sent = packets.some((p) => ['SENT_PROVIDER', 'SENT_CONFIRMED'].includes(p.status));
-        return { ...item, state: uncertain ? 'UNRESOLVED' : sent ? 'SENT' : item.state, packets };
+        let state = uncertain ? 'UNRESOLVED' : sent ? 'SENT' : item.state;
+        if (
+          !packets.some((p) =>
+            ['QUEUED', 'SENDING', 'SEND_UNKNOWN', 'SENT_PROVIDER', 'SENT_CONFIRMED'].includes(
+              p.status,
+            ),
+          ) &&
+          state === 'READY'
+        ) {
+          const external =
+            this.store.one(
+              "SELECT a.state FROM send_attempts a JOIN outbox o ON o.id=a.outbox_id WHERE o.kind='FIRST_CONTACT' AND (o.company_id=? OR lower(a.recipient)=lower(?)) AND a.state<>'FAILED_NOT_SENT' ORDER BY CASE WHEN a.state IN ('SENDING','SEND_UNKNOWN') THEN 0 ELSE 1 END LIMIT 1",
+              item.company_id,
+              item.recipient,
+            ) ??
+            this.store.one(
+              "SELECT state FROM shared_attempts WHERE (company_id=? OR lower(recipient)=lower(?)) AND state<>'FAILED_NOT_SENT' ORDER BY CASE WHEN state IN ('SENDING','SEND_UNKNOWN') THEN 0 ELSE 1 END LIMIT 1",
+              item.company_id,
+              item.recipient,
+            );
+          if (external && ['SENDING', 'SEND_UNKNOWN'].includes(external.state))
+            state = 'UNRESOLVED';
+          else if (external || this.companyHistoryBlocked(item.company_id)) {
+            state = 'SKIPPED';
+            this.store.exec(
+              "UPDATE auto_batch_items SET state='SKIPPED',code='CONTACT_HISTORY' WHERE id=?",
+              item.id,
+            );
+          }
+        }
+        return { ...item, state, packets };
       });
     const uncertain = items.some((i) => i.state === 'UNRESOLVED');
     return {
@@ -207,7 +361,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     );
     return hash(JSON.stringify({ revision: b.revision, policy: b.policy_hash, items }));
   }
-  prepareBatch(raw: unknown) {
+  prepareBatch(raw: unknown): BatchSummary {
     const input = z
       .object({
         drafts: z
@@ -349,6 +503,8 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   }
   async startBatch(batchId: string) {
     if (
+      this.refreshingLibrary ||
+      this.probing ||
       this.startingBatch ||
       this.starting ||
       this.preparing ||
@@ -368,9 +524,25 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       throw new DomainError('ACTIVE_RUN', 'Zakończ research przed Start partii.');
     const batch = this.batchSummary(batchId),
       policy = this.assertPolicy(false);
+    const grant = this.store.one(
+      'SELECT g.*,p.content_hash,p.approved_hash,p.approved_at FROM auto_batch_plan_grants g JOIN nightflow_plans p ON p.id=g.plan_id WHERE g.batch_id=?',
+      batchId,
+    );
+    const planned =
+      grant &&
+      this.plannedActivation?.batchId === batchId &&
+      this.plannedActivation.jobId === grant.job_id &&
+      this.store.one(
+        "SELECT id FROM nightflow_jobs WHERE id=? AND generation=? AND state='SENDING'",
+        grant.job_id,
+        this.plannedActivation.generation,
+      ) &&
+      grant.approved_at &&
+      grant.plan_hash === grant.content_hash &&
+      grant.approved_hash === grant.plan_hash &&
+      grant.batch_hash === this.batchHash(batchId);
     if (
-      !batch.approved_at ||
-      batch.approved_hash !== this.batchHash(batchId) ||
+      (!planned && (!batch.approved_at || batch.approved_hash !== this.batchHash(batchId))) ||
       batch.policy_hash !== policy.policyHash
     )
       throw new DomainError(
@@ -379,6 +551,14 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       );
     if (batch.counts.uncertain)
       throw new DomainError('SEND_UNKNOWN', 'Rozstrzygnij istniejącą próbę.');
+    if (!batch.counts.remaining && batch.counts.skipped && !batch.counts.needsPreparation) {
+      this.store.exec(
+        "UPDATE auto_batches SET state='COMPLETED_WITH_SKIPS',reason='CONTACT_HISTORY',updated_at=? WHERE id=?",
+        this.now(),
+        batchId,
+      );
+      return;
+    }
     if (!batch.counts.remaining)
       throw new DomainError('BATCH_EMPTY', 'Brak pozycji dopuszczonych do wykonania.');
     if (this.sessionId) this.control('stop');
@@ -400,6 +580,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         this.store.set('browserExecutionContext', {
           batchId,
           sessionId,
+          generation: id(),
           state: 'RUNNING',
         });
       });
@@ -633,6 +814,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     return this.policyConfig();
   }
   private assertPolicy(requireSession = true) {
+    if (requireSession) this.nightflowSendGuard?.();
     const p = this.policyConfig(),
       account = this.deliveryState().account;
     if (!p) throw new DomainError('POLICY_REQUIRED', 'Najpierw zatwierdź politykę w Ustawieniach.');
@@ -720,6 +902,10 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     await this.startAuto();
   }
   async startAuto(closedBatch = false) {
+    if (this.refreshingLibrary || this.probing)
+      throw new DomainError('BUSY', 'Trwa odnowienie lub kontrola materiałów.');
+    if (!closedBatch && (this.libraryResearch || this.store.get<Row>('researchDay', {}).active))
+      throw new DomainError('ACTIVE_RUN', 'Zakończ research biblioteki przed Start sendera.');
     if (this.startingBatch && !closedBatch)
       throw new DomainError('BUSY', 'Trwa Start zamkniętej partii.');
     if (!closedBatch && this.activeBatchId)
@@ -955,6 +1141,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         problems.push('UNVERIFIED_COMPANY');
       const review = JSON.parse(d.semantic_review);
       problems.push(...this.draftMaterialIssues(d));
+      if (this.refreshingLibrary) problems.push('DRAFT_MATERIAL_UNVERIFIED');
       if (review.supported !== true || review.issues.length)
         problems.push('SEMANTIC_REVIEW_REQUIRED');
       const contactSource = sources.find((s) => s.id === verified.contact.proof.sourceId);

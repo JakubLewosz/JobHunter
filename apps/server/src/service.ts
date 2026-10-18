@@ -1640,7 +1640,10 @@ export class JobHunter {
         offset = Math.max(0, query.offset ?? 0);
       const selection = companySelection(query);
       return this.store.all(
-        `SELECT c.*,o.id opportunity_id,o.title,o.type,o.remote,o.part_time,o.paid,o.junior,o.hours,o.decision,o.reasons,e.canonical_url,e.fetched_at,e.fragment,t.email FROM companies c LEFT JOIN opportunities o ON o.id=(SELECT id FROM opportunities WHERE company_id=c.id ORDER BY updated_at DESC,id LIMIT 1) LEFT JOIN evidence e ON e.id=o.evidence_id LEFT JOIN contacts t ON t.id=o.contact_id WHERE c.id IN (SELECT c.id FROM companies c WHERE ${selection.where} ORDER BY c.created_at DESC,c.id LIMIT ? OFFSET ?) ORDER BY c.created_at DESC,c.id`,
+        `SELECT c.*,o.id opportunity_id,o.title,o.type,o.remote,o.part_time,o.paid,o.junior,o.hours,o.decision,o.reasons,e.canonical_url,e.fetched_at,e.fragment,t.email FROM companies c LEFT JOIN opportunities o ON o.id=(SELECT id FROM opportunities WHERE company_id=c.id AND (?='' OR ? IN ('history','results') OR decision=?) ORDER BY updated_at DESC,id LIMIT 1) LEFT JOIN evidence e ON e.id=o.evidence_id LEFT JOIN contacts t ON t.id=o.contact_id WHERE c.id IN (SELECT c.id FROM companies c WHERE ${selection.where} ORDER BY c.created_at DESC,c.id LIMIT ? OFFSET ?) ORDER BY c.created_at DESC,c.id`,
+        query.filter ?? '',
+        query.filter ?? '',
+        query.filter ?? '',
         ...selection.args,
         limit,
         offset,

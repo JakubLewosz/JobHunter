@@ -20,11 +20,14 @@ import {
   browserDescriptorName,
   browserReceiptSchema,
   composeObservationSchema,
+  executionScopeSchema,
+  type BrowserExecutionScope,
   type BrowserPayload,
   type BrowserSendResult,
 } from './contracts.js';
 
 type Pending = {
+  scope: BrowserExecutionScope;
   payload: BrowserPayload;
   guard: () => void;
   resolve: (v: BrowserSendResult) => void;
@@ -37,6 +40,30 @@ export class BrowserDeliveryBroker {
   private server?: Server;
   private secret = randomBytes(32).toString('hex');
   private backendId = id();
+  private manualGeneration = id();
+  private scope(): BrowserExecutionScope {
+    const context = this.store.get<any>('browserExecutionContext', null);
+    return context?.state === 'RUNNING'
+      ? {
+          kind: 'BATCH',
+          backendId: this.backendId,
+          generation: context.generation ?? context.sessionId,
+          sessionId: context.sessionId,
+          batchId: context.batchId,
+        }
+      : { kind: 'MANUAL', backendId: this.backendId, generation: this.manualGeneration };
+  }
+  private assertScope(raw?: unknown, pending?: Pending) {
+    const current = this.scope();
+    // Compatibility for direct manual callers only. IPC always supplies scope.
+    const expected =
+      raw === undefined && current.kind === 'MANUAL' ? current : executionScopeSchema.parse(raw);
+    if (
+      JSON.stringify(expected) !== JSON.stringify(current) ||
+      (pending && JSON.stringify(pending.scope) !== JSON.stringify(expected))
+    )
+      throw new DomainError('BROWSER_SESSION_CHANGED', 'Zakres wykonawcy zmienił się.');
+  }
   private descriptor?: string;
   constructor(
     private store: Store,
@@ -60,6 +87,7 @@ export class BrowserDeliveryBroker {
       listening: !!this.server,
       pending: this.pending.size,
       backendId: this.backendId,
+      scope: this.scope(),
       execution: this.store.get('browserExecutionContext', null),
     };
   }
@@ -77,6 +105,18 @@ export class BrowserDeliveryBroker {
     if (!this.status().connected || this.worker?.id !== workerId)
       throw new DomainError('BROWSER_WORKER', 'Połączenie wykonawcy wygasło.');
     this.worker.seen = this.time();
+  }
+  release(workerId: string) {
+    if (this.worker?.id !== workerId)
+      throw new DomainError('BROWSER_WORKER', 'To nie jest własny lease.');
+    for (const jobId of this.pending.keys())
+      if (
+        this.store.one('SELECT worker_id FROM browser_deliveries WHERE id=?', jobId)?.worker_id ===
+        workerId
+      )
+        this.fail(jobId);
+    this.worker = null;
+    return { released: true };
   }
   private assertURL(value: string) {
     const u = new URL(value);
@@ -152,11 +192,12 @@ export class BrowserDeliveryBroker {
     );
     return new Promise<BrowserSendResult>((resolve, reject) => {
       const timer = setTimeout(() => this.fail(jobId), this.options.timeoutMs ?? 10 * 60000);
-      this.pending.set(jobId, { payload, guard, resolve, reject, timer });
+      this.pending.set(jobId, { payload, guard, resolve, reject, timer, scope: this.scope() });
     });
   }
-  claim(workerId: string) {
+  claim(workerId: string, scope?: unknown) {
     this.assertWorker(workerId);
+    this.assertScope(scope);
     const row = this.store.one(
       "SELECT * FROM browser_deliveries WHERE state='WAITING' ORDER BY created_at LIMIT 1",
     );
@@ -164,6 +205,7 @@ export class BrowserDeliveryBroker {
     const pending = this.pending.get(row.id);
     if (!pending)
       throw new DomainError('BROWSER_STALE', 'Zadanie nie należy do bieżącego procesu.');
+    this.assertScope(scope, pending);
     try {
       pending.guard();
     } catch {
@@ -178,12 +220,13 @@ export class BrowserDeliveryBroker {
     );
     return pending.payload;
   }
-  authorize(workerId: string, jobId: string, raw: unknown) {
+  authorize(workerId: string, jobId: string, raw: unknown, scope?: unknown) {
     this.assertWorker(workerId);
     const row = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId);
     const p = this.pending.get(jobId);
     if (!p || row?.state !== 'CLAIMED' || row.worker_id !== workerId)
       throw new DomainError('BROWSER_STALE', 'Brak aktualnej zgody na tę akcję.');
+    this.assertScope(scope, p);
     const o = composeObservationSchema.parse(raw),
       expected = p.payload;
     this.assertURL(o.url);
@@ -217,7 +260,7 @@ export class BrowserDeliveryBroker {
     );
     return { authorized: true as const, jobId, payloadHash: expected.payloadHash };
   }
-  check(workerId: string, jobId: string) {
+  check(workerId: string, jobId: string, scope?: unknown) {
     this.assertWorker(workerId);
     const row = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId),
       p = this.pending.get(jobId);
@@ -229,6 +272,7 @@ export class BrowserDeliveryBroker {
       this.time() - Date.parse(row.committed_at) > 30000
     )
       throw new DomainError('BROWSER_STALE', 'Uprawnienie do akcji wygasło.');
+    this.assertScope(scope, p);
     p.guard();
     this.store.exec(
       'UPDATE browser_deliveries SET click_granted_at=?,updated_at=? WHERE id=?',
@@ -323,13 +367,21 @@ export class BrowserDeliveryBroker {
               result = this.attach(req.workerId);
               break;
             case 'next':
-              result = this.claim(req.workerId);
+              result = this.claim(req.workerId, executionScopeSchema.parse(req.scope));
+              break;
+            case 'release':
+              result = this.release(req.workerId);
               break;
             case 'authorize':
-              result = this.authorize(req.workerId, req.jobId, req.observation);
+              result = this.authorize(
+                req.workerId,
+                req.jobId,
+                req.observation,
+                executionScopeSchema.parse(req.scope),
+              );
               break;
             case 'check':
-              result = this.check(req.workerId, req.jobId);
+              result = this.check(req.workerId, req.jobId, executionScopeSchema.parse(req.scope));
               break;
             case 'complete':
               result = this.complete(req.workerId, req.jobId, req.receipt);

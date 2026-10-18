@@ -7,6 +7,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "nightflow": "tsx scripts/nightflow.ts",
     "dev": "node scripts/development.mjs",
     "build": "node scripts/build-manifest.mjs && tsc -p tsconfig.server.json && vite build",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.web.json --noEmit",

@@ -6,6 +6,8 @@ playwright-report/
 *.log
 .DS_Store
 coverage/
+__pycache__/
+*.pyc
 releases/
 
 # Private runtime and credentials; ignore rules do not remove already tracked files.
@@ -39,6 +41,7 @@ workstation.json
 development.json
 launch.json
 browser-executor.json
+nightflow-control.json
 oauth-*.json
 profile.lock/
 profile-acquire.lock/

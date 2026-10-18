@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { Store } from '../apps/server/src/db.js';
 import { JobHunter } from '../apps/server/src/service.js';
 import { libraryAuditSchema } from '../apps/server/src/research/library-audit.js';
+import { resolveNpmCli } from '../apps/server/src/npm-cli.js';
 const cli = (file: string, args: string[]) =>
   spawnSync(process.execPath, ['--import', 'tsx', file, ...args], {
     windowsHide: true,
@@ -34,7 +35,7 @@ test('audit CLI runs the snapshot-only analyzer and never prints invalid provena
   assert.equal(report.scope, 'SNAPSHOT_ONLY');
   assert.equal(result.stderr, '');
   assert.equal(JSON.parse(readFileSync(output, 'utf8')).schema, 1);
-  const npm = join(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
+  const npm = resolveNpmCli();
   const quiet = spawnSync(
     process.execPath,
     [
@@ -118,4 +119,24 @@ test('native session CLI uses complete fakes, default hours, controller guard an
   assert.equal(rejected.status, 1);
   assert.equal(JSON.parse(rejected.stderr).code, 'EXPLICIT_START_REQUIRED');
   assert.equal(existsSync(join(root, 'other')), false);
+});
+test('npm resolver honors actual launcher paths with spaces and Polish characters', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-npm-Łódź path-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const path = join(root, 'npm-cli.js');
+  writeFileSync(path, '// synthetic npm executable');
+  assert.equal(resolveNpmCli({ npm_execpath: path }), path);
+});
+test('nightflow CLI awaits a real child process across fake research and sender phases, then releases its owner', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-nightflow-cli-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const result = cli('scripts/nightflow.ts', ['fixture', '--data-dir', join(root, 'data')]);
+  assert.equal(result.status, 0, result.stderr);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.fixture, true);
+  assert.equal(summary.state, 'COMPLETED');
+  assert.equal(summary.counts.sent, 1);
+  assert.equal(summary.checkpoint.researchOutcome.reason, 'DEADLINE');
+  assert.equal(existsSync(join(root, 'data', 'profile.lock')), false);
+  assert.equal(existsSync(join(root, 'data', 'nightflow-control.json')), false);
 });

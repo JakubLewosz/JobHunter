@@ -59,6 +59,8 @@ test('LOCAL_ONLY AUTO: Start, continuous send, history, Pause, Stop and panel re
   await expect(company).toContainText('biuro@fixture.example.test');
   await expect(company).toContainText('Czy w Państwa zespole');
   await expect(company.getByRole('link', { name: 'Źródło', exact: true }).first()).toBeVisible();
+  await page.getByLabel('Szukaj firmy').fill('fixture.example.test');
+  await expect(page.getByText('Fixture Company', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Praca programu', exact: true }).click();
   await page.getByRole('button', { name: 'Pauza', exact: true }).click();
   await expect(

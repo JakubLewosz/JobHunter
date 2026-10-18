@@ -70,6 +70,24 @@ test('unchanged snapshot and independent synthetic file adapter', async (t) => {
     false,
   );
 });
+
+test('historical enrichment survives same-content final URL versioning without changing old references', async (t) => {
+  const f = await fixture(t);
+  const source = f.store.one('SELECT * FROM research_sources LIMIT 1')!;
+  const versions = f.store.all('SELECT * FROM draft_versions');
+  const events = f.store.all('SELECT * FROM company_domain_enrichments');
+  const fresh = f.service.saveSource({
+    ...source,
+    id: 'fixture-new-url',
+    final_url: 'https://fixture.example.test/new-path',
+  } as any);
+  assert.notEqual(fresh.id, source.id);
+  assert.deepEqual(f.store.one('SELECT * FROM research_sources WHERE id=?', source.id), source);
+  assert.deepEqual(f.store.all('SELECT * FROM draft_versions'), versions);
+  assert.deepEqual(f.store.all('SELECT * FROM company_domain_enrichments'), events);
+  for (let n = 0; n < 3; n++)
+    assert.equal(compareProtectedSnapshots(f.before, readProtectedSnapshot(f.store.db)).ok, true);
+});
 for (const variant of [
   'missing',
   'hash',

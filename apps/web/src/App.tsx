@@ -938,15 +938,7 @@ function CompaniesView({ data, act }: { data: Data; act: Act }) {
   const [preview, setPreview] = useState<Row>();
   const [importOpen, setImportOpen] = useState(false);
   const research = data.dashboard.mode !== 'DEMO';
-  const rows = companyPage.filter(
-    (c) =>
-      (filter === 'history'
-        ? !c.opportunity_id
-        : filter === 'results'
-          ? !!c.opportunity_id
-          : c.decision === filter) &&
-      `${c.canonical_name} ${c.title ?? ''}`.toLowerCase().includes(query.toLowerCase()),
-  );
+  const rows = companyPage;
   const tri = (v: string) =>
     ({ yes: 'Tak', no: 'Nie', unknown: 'Nieznane', conflicting: 'Sprzeczne' })[v] ?? '—';
   return (

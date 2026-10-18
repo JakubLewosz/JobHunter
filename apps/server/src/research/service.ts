@@ -136,7 +136,7 @@ export class ResearchJobHunter extends JobHunter {
   readonly search: SearchProvider;
   protected researching = false;
   private controller?: AbortController;
-  private probing = false;
+  protected probing = false;
   private activeRunId: string | null = null;
   private diagnosticDir?: string;
   constructor(
@@ -441,12 +441,13 @@ export class ResearchJobHunter extends JobHunter {
     if (source.method === 'PUBLIC_HTTP' && source.status === 'READ' && completeness !== 'COMPLETE')
       source = { ...source, status: 'INCOMPLETE' };
     const existing = this.store.one(
-      'SELECT * FROM research_sources WHERE original_url=? AND content_hash=? AND parser_version=? AND status=? AND completeness=?',
+      'SELECT * FROM research_sources WHERE original_url=? AND content_hash=? AND parser_version=? AND status=? AND completeness=? AND final_url IS ?',
       source.original_url,
       source.content_hash,
       source.parser_version ?? 0,
       source.status,
       completeness,
+      source.final_url,
     );
     if (existing) {
       this.store.atomic(() => {
@@ -780,9 +781,48 @@ export class ResearchJobHunter extends JobHunter {
         t.id,
       );
   }
-  private refreshingLibrary = false;
+  protected refreshingLibrary = false;
+  private refreshEvaluating = false;
   private refreshController?: AbortController;
-  async refreshLibraryDrafts(raw: unknown) {
+  protected deferPendingRuns(runIds: string[], reason: string) {
+    for (const run of this.store.all(
+      "SELECT id FROM runs WHERE status IN ('PAUSED','QUEUED','RUNNING') AND id IN (SELECT value FROM json_each(?))",
+      JSON.stringify(runIds),
+    )) {
+      for (const item of this.store.all(
+        "SELECT * FROM research_items WHERE run_id=? AND status IN ('PENDING','ERROR')",
+        run.id,
+      )) {
+        const key = this.store.get<string>(
+          `researchDeferredKey:${item.id}`,
+          `researchDeferred:${item.company_id ?? item.id}`,
+        );
+        const previous = this.store.get<Row>(key, {}) ?? {};
+        this.store.set(key, {
+          ...previous,
+          itemId: item.id,
+          companyId: item.company_id,
+          opportunityId: item.opportunity_id,
+          queuedAt: previous.queuedAt ?? item.created_at,
+          at: this.now(),
+          reason,
+          attempts: (previous.attempts ?? 0) + 1,
+        });
+      }
+      this.store.exec(
+        "UPDATE runs SET status='PARTIAL',error=?,finished_at=?,updated_at=? WHERE id=?",
+        reason,
+        this.now(),
+        this.now(),
+        run.id,
+      );
+      this.store.exec("UPDATE jobs SET status='DONE' WHERE run_id=?", run.id);
+    }
+  }
+  async refreshLibraryDrafts(
+    raw: unknown,
+    options: { signal?: AbortSignal; deadline?: string } = {},
+  ) {
     const input = z
       .object({ draftIds: z.array(z.string().min(1)).min(1).max(10) })
       .strict()
@@ -800,20 +840,29 @@ export class ResearchJobHunter extends JobHunter {
       );
     this.refreshingLibrary = true;
     this.refreshController = new AbortController();
+    const refreshGeneration = id();
     const signal = AbortSignal.any([
         this.refreshController.signal,
         AbortSignal.timeout(10 * 60000),
+        ...(options.signal ? [options.signal] : []),
       ]),
-      results: Row[] = [];
+      results: Row[] = [],
+      runIds: string[] = [],
+      reads = new Map<string, Source>();
+    const check = () => {
+      signal.throwIfAborted();
+      if (options.deadline && this.now() >= options.deadline)
+        throw new DomainError('RESEARCH_DEADLINE', 'Koniec budżetu odnowienia.');
+    };
     try {
       for (const draftId of [...new Set(input.draftIds)]) {
-        signal.throwIfAborted();
+        check();
         const d = this.draftRows().find((d) => d.id === draftId);
         if (!d) throw new DomainError('NOT_FOUND', 'Brak szkicu.', 404);
         if (
           this.companyHistoryBlocked(d.company_id) ||
           this.store.one(
-            "SELECT id FROM outbox WHERE draft_id=? AND status IN ('QUEUED','SENDING','SEND_UNKNOWN','SENT_PROVIDER','SENT_CONFIRMED')",
+            "SELECT id FROM outbox WHERE draft_id=? AND status IN ('QUEUED','SENDING','SEND_UNKNOWN','SENT_PROVIDER','SENT_CONFIRMED') AND NOT (kind='SELF_TEST' AND status='SENT_CONFIRMED')",
             d.id,
           )
         ) {
@@ -825,33 +874,61 @@ export class ResearchJobHunter extends JobHunter {
           results.push({ draftId, code: 'SOURCE_BUDGET' });
           continue;
         }
+        this.store.set(`libraryRefreshPending:${draftId}`, {
+          generation: refreshGeneration,
+          version: d.version,
+          startedAt: this.now(),
+        });
         const sources: Source[] = [];
         this.probing = true;
         this.controller = this.refreshController;
         try {
           for (const s of previous) {
-            signal.throwIfAborted();
-            sources.push(this.saveSource(await this.reader.read(s.original_url, signal)));
+            check();
+            const key = JSON.stringify([
+              s.original_url,
+              s.final_url,
+              s.parser_version,
+              s.content_hash,
+              s.fetched_at,
+            ]);
+            let fresh = reads.get(key);
+            if (!fresh) {
+              const read = await this.reader.read(s.original_url, signal);
+              check();
+              fresh = this.saveSource(read);
+              reads.set(key, fresh);
+            }
+            sources.push(fresh);
           }
         } finally {
           this.probing = false;
           this.controller = undefined;
         }
-        signal.throwIfAborted();
+        check();
         if (sources.some((s) => !sourceComplete(s))) {
           results.push({ draftId, code: 'STALE_EVIDENCE' });
           continue;
         }
         const runId = this.enqueue('refresh-' + id(), null, 1);
+        runIds.push(runId);
         this.addItem(
           runId,
           previous[0].original_url,
           sources.map((s) => s.id),
         );
+        this.refreshEvaluating = true;
         await this.tickResearchNative(signal);
-        signal.throwIfAborted();
+        check();
         const current = this.draftRows().find((row) => row.id === draftId)!;
         const issues = this.draftMaterialIssues(current);
+        if (
+          !issues.length &&
+          this.store.get<Row>(`libraryRefreshPending:${draftId}`, {}).generation ===
+            refreshGeneration
+        )
+          this.store.set(`libraryRefreshPending:${draftId}`, null);
+        this.refreshEvaluating = false;
         results.push({
           draftId,
           previousVersion: d.version,
@@ -863,9 +940,22 @@ export class ResearchJobHunter extends JobHunter {
         this.store.set('stopped', true);
       }
       return { results, sendAuthority: false };
+    } catch (error) {
+      if (
+        !this.refreshController.signal.aborted &&
+        options.deadline &&
+        this.now() >= options.deadline &&
+        ((error instanceof DomainError && error.code === 'RESEARCH_DEADLINE') ||
+          options.signal?.aborted)
+      ) {
+        this.store.atomic(() => this.deferPendingRuns(runIds, 'RESEARCH_DEADLINE'));
+        return { results, sendAuthority: false, interrupted: 'DEADLINE' };
+      }
+      throw error;
     } finally {
       this.store.set('stopped', true);
       this.refreshingLibrary = false;
+      this.refreshEvaluating = false;
       this.refreshController = undefined;
     }
   }
@@ -963,8 +1053,11 @@ export class ResearchJobHunter extends JobHunter {
       );
       if (query && this.researchOnlySession()) {
         const deferred = this.store
-          .all("SELECT value FROM app_state WHERE key LIKE 'researchDeferred:%'")
-          .map((row) => JSON.parse(row.value))
+          .all("SELECT key,value FROM app_state WHERE key LIKE 'researchDeferred:%'")
+          .map((row) => {
+            const value = JSON.parse(row.value);
+            return value ? { ...value, deferredKey: row.key } : null;
+          })
           .filter(
             (entry) =>
               entry &&
@@ -977,11 +1070,12 @@ export class ResearchJobHunter extends JobHunter {
           const previous = this.store.one('SELECT * FROM research_items WHERE id=?', entry.itemId);
           if (!previous) continue;
           const sources = this.sourcesFor(previous);
-          this.addItem(
+          const resumed = this.addItem(
             runId,
             previous.url,
             this.usableResearchSources(sources) ? JSON.parse(previous.source_ids) : [],
           );
+          if (resumed) this.store.set(`researchDeferredKey:${resumed}`, entry.deferredKey);
         }
       }
     });
@@ -1032,6 +1126,7 @@ export class ResearchJobHunter extends JobHunter {
         this.now(),
       );
     }
+    return item?.id as string | undefined;
   }
   override async start(query = defaultQuery) {
     const p = this.minimalProfile();
@@ -2125,7 +2220,10 @@ export class ResearchJobHunter extends JobHunter {
     return true;
   }
   private draftDisposition(item: Row, reason: string) {
-    const key = `researchDeferred:${item.company_id}`;
+    const key = this.store.get<string>(
+      `researchDeferredKey:${item.id}`,
+      `researchDeferred:${item.company_id ?? item.id}`,
+    );
     const previous = this.store.get<Row | null>(key, null);
     const value = {
       reason,
@@ -2532,6 +2630,8 @@ export class ResearchJobHunter extends JobHunter {
     );
   }
   draftMaterialIssues(d: Row) {
+    if (this.store.get(`libraryRefreshPending:${d.id}`, null) && !this.refreshEvaluating)
+      return ['DRAFT_MATERIAL_UNVERIFIED'];
     if (this.store.get(`researchPending:${d.company_id}`, null))
       return ['DRAFT_MATERIAL_UNVERIFIED'];
     if (!this.usableResearchSources(this.sourcesForDraft(d))) return ['DRAFT_MATERIAL_STALE'];
@@ -3397,7 +3497,10 @@ export class ResearchJobHunter extends JobHunter {
           "SELECT * FROM research_items WHERE run_id=? AND status IN ('PENDING','ERROR')",
           run.id,
         )) {
-          const key = 'researchDeferred:' + (item.company_id ?? item.id);
+          const key = this.store.get<string>(
+            `researchDeferredKey:${item.id}`,
+            'researchDeferred:' + (item.company_id ?? item.id),
+          );
           const previous = this.store.get<Row | null>(key, null);
           this.store.set(key, {
             ...previous,

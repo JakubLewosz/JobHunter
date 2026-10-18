@@ -1,6 +1,6 @@
 import { parseDocument } from 'htmlparser2';
 
-export const parserVersion = 3;
+export const parserVersion = 4;
 const emailPattern =
   /(?<![\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-])[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]{1,64}@[a-z0-9.-]+\.[a-z]{2,}/giu;
 const emails = (text: string) =>
@@ -36,6 +36,11 @@ const blocks = new Set([
   'blockquote',
 ]);
 const groups = new Set(['section', 'article', 'address', 'tr', 'li']);
+// Neutral labels (Kontakt/Pomoc/Email) do not establish a separate department.
+const hasPurpose = (text: string) =>
+  /faktur|rozlicze|billing|invoice|sprzeda|sales|privacy|rodo|dpo|security|bezpieczeń|rekrut|career|recruit|\bhr\b|kontakt ogólny|general contact/iu.test(
+    text.replace(emailPattern, ''),
+  );
 const normalize = (text: string) =>
   text
     .replace(/[^\S\n]+/g, ' ')
@@ -155,6 +160,7 @@ export function parsePublicHTML(html: string) {
   for (const occurrence of occurrences.slice(0, 2000)) {
     let parent = occurrence.node.parent,
       chosen = texts.get(occurrence.node) ?? '',
+      sharedLabel = '',
       depth = 0;
     while (parent && depth++ < 128) {
       let summary = summaries.get(parent);
@@ -167,7 +173,16 @@ export function parsePublicHTML(html: string) {
       if ('name' in parent) {
         // A labelled cell/card inside a multi-address structure has its own
         // purpose. Do not leak an unrelated sibling's label into it.
-        if (distinct > 1 && chosen.replace(emailPattern, '').trim()) break;
+        if (distinct > 1 && hasPurpose(chosen)) break;
+        if (distinct > 1 && 'children' in parent) {
+          const headings = parent.children.filter(
+            (child) => 'name' in child && /^(?:h[1-6]|dt|th)$/.test(child.name),
+          );
+          if (headings.length === 1) {
+            chosen = (texts.get(headings[0]) ?? '') + '\n' + chosen;
+            break;
+          }
+        }
         if (groups.has(parent.name)) {
           chosen = value;
           break;
@@ -183,7 +198,7 @@ export function parsePublicHTML(html: string) {
     }
     let needsLabel = unlabeled.get(chosen);
     if (needsLabel === undefined) {
-      needsLabel = !chosen.replace(emailPattern, '').trim();
+      needsLabel = !hasPurpose(chosen);
       unlabeled.set(chosen, needsLabel);
     }
     if (needsLabel) {
@@ -196,10 +211,25 @@ export function parsePublicHTML(html: string) {
           (previous.type === 'comment' || (previous.type === 'text' && !previous.data.trim()))
         )
           previous = previous.prev;
-        if (previous && 'name' in previous && /^(?:h[1-6]|dt)$/.test(previous.name)) {
-          chosen = (texts.get(previous) ?? '') + '\n' + chosen;
-          break;
+        let siblings = 0;
+        while (previous && siblings++ < 16) {
+          const previousText = normalize(texts.get(previous) ?? '');
+          const heading =
+            'name' in previous &&
+            (/^(?:h[1-6]|dt)$/.test(previous.name) ||
+              (previous.name === 'tr' &&
+                'children' in previous &&
+                previous.children.some((child) => 'name' in child && child.name === 'th') &&
+                !emails(previousText).length));
+          if (heading) {
+            sharedLabel = previousText;
+            chosen = sharedLabel + '\n' + chosen;
+            break;
+          }
+          if (hasPurpose(previousText)) break;
+          previous = previous.prev;
         }
+        if (sharedLabel) break;
         container = container.parent;
       }
     }
@@ -214,7 +244,17 @@ export function parsePublicHTML(html: string) {
       groupedContexts.set(chosen, indexed);
     }
     const matches = indexed.get(occurrence.email) ?? [];
-    for (const context of matches) {
+    for (const originalContext of matches) {
+      const context =
+        sharedLabel && !originalContext.text.includes(sharedLabel)
+          ? {
+              ...originalContext,
+              text: (sharedLabel + '\n' + originalContext.text).slice(0, 2000),
+              complete:
+                originalContext.complete !== false &&
+                sharedLabel.length + originalContext.text.length + 1 <= 2000,
+            }
+          : originalContext;
       const known = seenContexts.get(context.email) ?? new Set<string>();
       if (!known.has(context.text)) {
         known.add(context.text);
@@ -235,10 +275,24 @@ export function parsePublicHTML(html: string) {
             ? 'CONTEXT_LIMIT'
             : 'COMPLETE';
   const outboundLinks: { url: string; context: string }[] = [];
+  const anchorCount = (node: Node, depth = 0): number =>
+    depth > 128
+      ? 2
+      : 'name' in node && node.name === 'a'
+        ? 1
+        : 'children' in node
+          ? node.children.reduce((n, child) => Math.min(2, n + anchorCount(child, depth + 1)), 0)
+          : 0;
   const visitLinks = (node: Node, depth = 0) => {
     if (depth > 128 || ('name' in node && ignored.has(node.name))) return;
     if ('name' in node && node.name === 'a' && 'attribs' in node && node.attribs?.href) {
-      const context = normalize(texts.get(node.parent ?? node) ?? texts.get(node) ?? '');
+      const parent = node.parent;
+      const local =
+        parent &&
+        'name' in parent &&
+        ['p', 'li', 'td', 'dd', 'span', 'label'].includes(parent.name);
+      const owner = local && anchorCount(parent) === 1 ? parent : node;
+      const context = normalize(texts.get(owner) ?? '');
       if (outboundLinks.length < 2000)
         outboundLinks.push({
           url: node.attribs.href.slice(0, 2000),

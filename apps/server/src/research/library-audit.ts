@@ -16,6 +16,7 @@ import { contactSourceAuthority } from './source-policy.js';
 import { validateAnalysis, verifyQuote } from './contracts.js';
 import { materialBinding, materialRecordIssues } from './material-binding.js';
 import { readProtectedSnapshot, compareProtectedSnapshots } from './protection.js';
+import { parserVersion } from './html.js';
 
 const count = z.number().int().nonnegative();
 const counters = z
@@ -64,6 +65,13 @@ export const libraryAuditSchema = z
     integrity: z.boolean(),
     foreignKeys: z.boolean(),
     schemaVersion: count,
+    recordedMetadata: z
+      .object({
+        completeness: z.enum(['RECORDED', 'NOT_RECORDED']),
+        outboundLinks: z.enum(['RECORDED', 'NOT_RECORDED']),
+        historicalFactVersions: z.literal('NOT_RECORDED'),
+      })
+      .strict(),
     comparedBefore: z.boolean(),
     historicalDeletionCheck: z.boolean(),
     counts: counters,
@@ -201,9 +209,18 @@ function openSnapshot(path: string, proofPath: string) {
 function supported(db: Database.Database) {
   const shape = Object.entries(requirements).every(([table, cols]) => {
     const present = db.prepare('PRAGMA table_info("' + table + '")').all() as any[];
-    return cols.every((c) => present.some((p) => p.name === c));
+    return cols
+      .filter(
+        (c) =>
+          !(
+            table === 'research_sources' &&
+            ['completeness', 'outbound_links'].includes(c) &&
+            schemaVersion(db) === 20
+          ),
+      )
+      .every((c) => present.some((p) => p.name === c));
   });
-  return shape && schemaVersion(db) >= 21 && schemaVersion(db) <= 25;
+  return shape && schemaVersion(db) >= 20 && schemaVersion(db) <= 27;
 }
 function schemaVersion(db: Database.Database) {
   try {
@@ -214,6 +231,34 @@ function schemaVersion(db: Database.Database) {
   } catch {
     return 0;
   }
+}
+// Compare original values using only columns recorded by the older schema.
+// Additive tables/columns are not fabricated historical evidence.
+function commonRecordDifferences(before: Database.Database, after: Database.Database) {
+  let changed = 0;
+  const names = before
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name<>'migrations'",
+    )
+    .all() as any[];
+  for (const { name } of names) {
+    const quote = (s: string) => '"' + s.replaceAll('"', '""') + '"';
+    const columns = (before.prepare('PRAGMA table_info(' + quote(name) + ')').all() as any[]).map(
+      (r) => r.name,
+    );
+    const currentColumns = (
+      after.prepare('PRAGMA table_info(' + quote(name) + ')').all() as any[]
+    ).map((r) => r.name);
+    if (!columns.every((c) => currentColumns.includes(c))) {
+      changed++;
+      continue;
+    }
+    const sql = 'SELECT ' + columns.map(quote).join(',') + ' FROM ' + quote(name);
+    const current = new Set((after.prepare(sql).all() as any[]).map((r) => JSON.stringify(r)));
+    if ((before.prepare(sql).all() as any[]).some((r) => !current.has(JSON.stringify(r))))
+      changed++;
+  }
+  return changed;
 }
 export function analyzeLibrarySnapshot(
   db: Database.Database,
@@ -229,6 +274,19 @@ export function analyzeLibrarySnapshot(
     integrity: db.pragma('integrity_check', { simple: true }) === 'ok',
     foreignKeys: (db.pragma('foreign_key_check') as unknown[]).length === 0,
     schemaVersion: schemaVersion(db),
+    recordedMetadata: {
+      completeness: (db.prepare('PRAGMA table_info(research_sources)').all() as any[]).some(
+        (c) => c.name === 'completeness',
+      )
+        ? 'RECORDED'
+        : 'NOT_RECORDED',
+      outboundLinks: (db.prepare('PRAGMA table_info(research_sources)').all() as any[]).some(
+        (c) => c.name === 'outbound_links',
+      )
+        ? 'RECORDED'
+        : 'NOT_RECORDED',
+      historicalFactVersions: 'NOT_RECORDED',
+    },
     comparedBefore: !!before,
     historicalDeletionCheck: !!before,
     counts: Object.fromEntries(Object.keys(counters.shape).map((k) => [k, 0])) as z.infer<
@@ -273,7 +331,11 @@ export function analyzeLibrarySnapshot(
   result.counts.missingProvenance = n(
     "SELECT count(*) n FROM contacts t WHERE NOT EXISTS(SELECT 1 FROM research_evidence r JOIN research_sources s ON s.id=r.source_id JOIN source_verifications v ON v.source_id=s.id WHERE r.evidence_id=t.evidence_id AND v.status='READ')",
   );
-  const sources = db.prepare('SELECT * FROM research_sources').all() as any[];
+  const sources = (db.prepare('SELECT * FROM research_sources').all() as any[]).map((s) => ({
+    ...s,
+    completeness: s.completeness ?? 'LEGACY_UNKNOWN',
+    outbound_links: s.outbound_links ?? '[]',
+  }));
   const one = (sql: string, ...args: any[]) => db.prepare(sql).get(...args) as any;
   result.counts.missingLiteral = 0;
   result.counts.missingProvenance = 0;
@@ -314,7 +376,7 @@ export function analyzeLibrarySnapshot(
     (s) => !Number.isFinite(Date.parse(s.fetched_at)) || now - Date.parse(s.fetched_at) > 86400000,
   ).length;
   result.counts.oldParserSources = sources.filter(
-    (s) => s.method === 'PUBLIC_HTTP' && s.parser_version !== 3,
+    (s) => s.method === 'PUBLIC_HTTP' && s.parser_version !== parserVersion,
   ).length;
   result.counts.incompleteSources = sources.filter((s) => !sourceComplete(s)).length;
   const profile = {
@@ -385,10 +447,11 @@ export function analyzeLibrarySnapshot(
   )`);
   if (before) {
     if (!supported(before)) throw new LibraryAuditError('BEFORE_SCHEMA_UNSUPPORTED');
-    result.counts.protectedDifferences = compareProtectedSnapshots(
-      readProtectedSnapshot(before),
-      readProtectedSnapshot(db),
-    ).codes.length;
+    result.counts.protectedDifferences =
+      schemaVersion(before) === schemaVersion(db)
+        ? compareProtectedSnapshots(readProtectedSnapshot(before), readProtectedSnapshot(db)).codes
+            .length
+        : commonRecordDifferences(before, db);
     for (const table of [
       'companies',
       'company_aliases',

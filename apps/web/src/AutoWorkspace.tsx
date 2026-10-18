@@ -364,139 +364,119 @@ export function AutoWorkspace({
               Potwierdzenie w Wysłanych oznacza zapis u nadawcy; nie potwierdza folderu odbiorcy.
               Testy do siebie są poza licznikiem firm.
             </p>
-            {historyPage
-              .filter(
-                (c) =>
-                  c.canonical_name
-                    .toLocaleLowerCase('pl')
-                    .includes(search.toLocaleLowerCase('pl')) &&
-                  (!status ||
-                    (status === 'SKIPPED'
-                      ? c.skips?.length
-                      : status === 'SEND_UNKNOWN'
-                        ? c.sharedAttempt?.state === 'SEND_UNKNOWN' ||
-                          data.outbox.some(
-                            (o) => o.company_id === c.id && o.status === 'SEND_UNKNOWN',
-                          )
-                        : c.history_status === status)),
-              )
-              .map((c) => {
-                const sent = data.outbox.find(
-                    (o) => o.company_id === c.id && o.kind === 'FIRST_CONTACT',
-                  ),
-                  draft = data.drafts.find((d) => d.company_id === c.id),
-                  shared = c.sharedAttempt;
-                return (
-                  <details className="auto-company" key={c.id}>
-                    <summary>
-                      <strong>{c.canonical_name}</strong> ·{' '}
-                      {sent?.status ?? shared?.state ?? c.history_status}
-                      {c.lastContactAt &&
-                        ` · ${new Date(c.lastContactAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`}
-                    </summary>
-                    {c.primary_domain && (
-                      <p>
-                        <a href={`https://${c.primary_domain}`} target="_blank" rel="noreferrer">
-                          {c.primary_domain}
-                        </a>
-                      </p>
-                    )}
-                    <p>{c.researchDetails?.title ?? c.description ?? c.title ?? ''}</p>
+            {historyPage.map((c) => {
+              const sent = data.outbox.find(
+                  (o) => o.company_id === c.id && o.kind === 'FIRST_CONTACT',
+                ),
+                draft = data.drafts.find((d) => d.company_id === c.id),
+                shared = c.sharedAttempt;
+              return (
+                <details className="auto-company" key={c.id}>
+                  <summary>
+                    <strong>{c.canonical_name}</strong> ·{' '}
+                    {sent?.status ?? shared?.state ?? c.history_status}
+                    {c.lastContactAt &&
+                      ` · ${new Date(c.lastContactAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`}
+                  </summary>
+                  {c.primary_domain && (
                     <p>
-                      {draft?.email ?? shared?.recipient ?? c.email ?? 'Kontakt niepotwierdzony'}
+                      <a href={`https://${c.primary_domain}`} target="_blank" rel="noreferrer">
+                        {c.primary_domain}
+                      </a>
                     </p>
-                    <h3>
-                      {sent?.subject ?? shared?.subject ?? draft?.subject ?? 'Bez wiadomości'}
-                    </h3>
-                    <pre className="message-preview">
-                      {sent?.body ?? shared?.body ?? draft?.body ?? ''}
-                    </pre>
-                    {sent && ['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(sent.status) && (
-                      <button
-                        className="secondary"
-                        onClick={() =>
-                          void act(
-                            () => api(`gmail/outbox/${sent.id}/reconcile`, { consent: true }),
-                            'Sprawdzono istniejącą próbę w Wysłanych, bez ponownego send.',
-                          )
+                  )}
+                  <p>{c.researchDetails?.title ?? c.description ?? c.title ?? ''}</p>
+                  <p>{draft?.email ?? shared?.recipient ?? c.email ?? 'Kontakt niepotwierdzony'}</p>
+                  <h3>{sent?.subject ?? shared?.subject ?? draft?.subject ?? 'Bez wiadomości'}</h3>
+                  <pre className="message-preview">
+                    {sent?.body ?? shared?.body ?? draft?.body ?? ''}
+                  </pre>
+                  {sent && ['SEND_UNKNOWN', 'SENT_PROVIDER'].includes(sent.status) && (
+                    <button
+                      className="secondary"
+                      onClick={() =>
+                        void act(
+                          () => api(`gmail/outbox/${sent.id}/reconcile`, { consent: true }),
+                          'Sprawdzono istniejącą próbę w Wysłanych, bez ponownego send.',
+                        )
+                      }
+                    >
+                      Sprawdź tę próbę w Wysłanych
+                    </button>
+                  )}
+                  <p>{c.suppression_reason ?? sent?.reason ?? c.skipReason ?? c.reasons ?? ''}</p>
+                  {c.skips?.map((s: Row) => (
+                    <p key={s.draft_id + ':' + s.draft_version}>
+                      Szkic {s.draft_id}, wersja {s.draft_version}: {s.reason_code} — {s.message}
+                    </p>
+                  ))}
+                  {c.sources?.map((s: Row) => (
+                    <p key={s.canonical_url + s.fetched_at}>
+                      <a href={s.canonical_url} target="_blank" rel="noreferrer">
+                        Źródło
+                      </a>{' '}
+                      · {new Date(s.fetched_at).toLocaleString('pl-PL')}
+                      <br />
+                      {s.fragment}
+                    </p>
+                  ))}
+                  {c.researchDetails && (
+                    <div>
+                      <h3>Warunki i podstawa kontaktu</h3>
+                      <p>
+                        Rodzaj:{' '}
+                        {
+                          (
+                            {
+                              ACTIVE: 'Aktywna oferta',
+                              OPEN: 'Otwarte kandydatury',
+                              PROSPECT: 'Zapytanie bez potwierdzonego naboru',
+                              ARCHIVED: 'Archiwum',
+                              UNKNOWN: 'Niepotwierdzony',
+                            } as Record<string, string>
+                          )[c.researchDetails.type]
                         }
-                      >
-                        Sprawdź tę próbę w Wysłanych
-                      </button>
-                    )}
-                    <p>{c.suppression_reason ?? sent?.reason ?? c.skipReason ?? c.reasons ?? ''}</p>
-                    {c.skips?.map((s: Row) => (
-                      <p key={s.draft_id + ':' + s.draft_version}>
-                        Szkic {s.draft_id}, wersja {s.draft_version}: {s.reason_code} — {s.message}
                       </p>
-                    ))}
-                    {c.sources?.map((s: Row) => (
-                      <p key={s.canonical_url + s.fetched_at}>
-                        <a href={s.canonical_url} target="_blank" rel="noreferrer">
-                          Źródło
-                        </a>{' '}
-                        · {new Date(s.fetched_at).toLocaleString('pl-PL')}
-                        <br />
-                        {s.fragment}
-                      </p>
-                    ))}
-                    {c.researchDetails && (
-                      <div>
-                        <h3>Warunki i podstawa kontaktu</h3>
-                        <p>
-                          Rodzaj:{' '}
-                          {
-                            (
-                              {
-                                ACTIVE: 'Aktywna oferta',
-                                OPEN: 'Otwarte kandydatury',
-                                PROSPECT: 'Zapytanie bez potwierdzonego naboru',
-                                ARCHIVED: 'Archiwum',
-                                UNKNOWN: 'Niepotwierdzony',
-                              } as Record<string, string>
-                            )[c.researchDetails.type]
-                          }
-                        </p>
-                        {Object.entries(c.researchDetails.conditions).map(([key, value]) => {
-                          const condition = value as Row;
-                          return (
-                            <p key={key}>
-                              <strong>
-                                {
-                                  (
-                                    {
-                                      remote: 'Zdalność',
-                                      partTime: 'Część etatu',
-                                      paid: 'Odpłatność',
-                                      junior: 'Początkujący',
-                                      hours: 'Godziny',
-                                      contract: 'Umowa',
-                                      active: 'Aktualny nabór',
-                                      openInquiry: 'Otwarte zgłoszenia',
-                                    } as Record<string, string>
-                                  )[key]
-                                }
-                                :
-                              </strong>{' '}
+                      {Object.entries(c.researchDetails.conditions).map(([key, value]) => {
+                        const condition = value as Row;
+                        return (
+                          <p key={key}>
+                            <strong>
                               {
                                 (
                                   {
-                                    yes: 'potwierdzone',
-                                    no: 'wykluczone',
-                                    unknown: 'nieznane',
-                                    conflicting: 'sprzeczne',
+                                    remote: 'Zdalność',
+                                    partTime: 'Część etatu',
+                                    paid: 'Odpłatność',
+                                    junior: 'Początkujący',
+                                    hours: 'Godziny',
+                                    contract: 'Umowa',
+                                    active: 'Aktualny nabór',
+                                    openInquiry: 'Otwarte zgłoszenia',
                                   } as Record<string, string>
-                                )[condition.value]
-                              }{' '}
-                              — {condition.explanation}
-                            </p>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </details>
-                );
-              })}
+                                )[key]
+                              }
+                              :
+                            </strong>{' '}
+                            {
+                              (
+                                {
+                                  yes: 'potwierdzone',
+                                  no: 'wykluczone',
+                                  unknown: 'nieznane',
+                                  conflicting: 'sprzeczne',
+                                } as Record<string, string>
+                              )[condition.value]
+                            }{' '}
+                            — {condition.explanation}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  )}
+                </details>
+              );
+            })}
           </section>
         )}
         {view === 'settings' && (

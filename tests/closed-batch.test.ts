@@ -20,6 +20,23 @@ async function prepared(t: any, many = false) {
   f.service.approveClosedBatch(batch.id, { approvalHash: batch.approvalHash, confirmed: true });
   return { ...f, batch };
 }
+test('overlapping batches reconcile shared history and finish with skips without claiming another batch send', async (t) => {
+  const f = await prepared(t);
+  const second = f.service.prepareBatch({
+    drafts: f.service.draftRows().map((d) => ({ id: d.id, version: d.version })),
+  });
+  f.service.approveClosedBatch(second.id, { approvalHash: second.approvalHash, confirmed: true });
+  await f.service.startBatch(f.batch.id);
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 1);
+  await f.service.startBatch(second.id);
+  const result = f.service.batchSummary(second.id);
+  assert.equal(result.state, 'COMPLETED_WITH_SKIPS');
+  assert.equal(result.counts.sent, 0);
+  assert.equal(result.counts.skipped, 1);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 1);
+});
 test('closed AUTO batch: research without mail, frozen membership, one reservation and completion without discovery', async (t) => {
   const f = await prepared(t, true),
     count = f.batch.counts.total;
@@ -153,6 +170,38 @@ test('cancelled packet is bound atomically to its batch; fresh resume keeps it a
   assert.equal(f.gateway.posts.length, 1);
   assert.equal(f.service.batchSummary(f.batch.id).items[0].packets.length, 2);
   assert.equal(f.store.one('SELECT count(*) n FROM usage_ledger')!.n, 1);
+});
+test('overlap after an own cancelled packet reconciles another batch send and terminates instead of retaining READY', async (t) => {
+  const f = await prepared(t),
+    approve = GmailJobHunter.prototype.approveDelivery;
+  const other = f.service.prepareBatch({
+    drafts: f.service.draftRows().map((d) => ({ id: d.id, version: d.version })),
+  });
+  f.service.approveClosedBatch(other.id, { approvalHash: other.approvalHash, confirmed: true });
+  GmailJobHunter.prototype.approveDelivery = async function (input) {
+    const result = await approve.call(this, input);
+    if (this === f.service) this.control('stop');
+    return result;
+  };
+  try {
+    await f.service.startBatch(f.batch.id);
+    f.advance();
+    await f.service.dispatchOne();
+  } finally {
+    GmailJobHunter.prototype.approveDelivery = approve;
+  }
+  assert.equal(f.service.batchSummary(f.batch.id).items[0].packets[0].status, 'CANCELLED');
+  await f.service.startBatch(other.id);
+  f.advance();
+  await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 1);
+  await f.service.startBatch(f.batch.id);
+  const result = f.service.batchSummary(f.batch.id);
+  assert.equal(result.state, 'COMPLETED_WITH_SKIPS');
+  assert.equal(result.counts.remaining, 0);
+  assert.equal(result.counts.sent, 0);
+  assert.equal(result.counts.skipped, 1);
+  assert.equal(f.gateway.posts.length, 1);
 });
 test('failed batch Start revokes all authority and cannot become continuous AUTO', async (t) => {
   const f = await prepared(t),

@@ -4,13 +4,19 @@ import { join, resolve, dirname, basename } from 'node:path';
 import { tmpdir, platform } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { browserDescriptorName } from './contracts.js';
-import type { BrowserPayload, BrowserReceipt, ComposeObservation } from './contracts.js';
+import type {
+  BrowserPayload,
+  BrowserReceipt,
+  ComposeObservation,
+  BrowserExecutionScope,
+} from './contracts.js';
 
 // Private JobHunter IPC, NOT the Codex/panel launch token, cookies or OAuth store.
 // Credentials stay inside this client; neither the descriptor nor payload is logged.
 export class BrowserExecutorClient {
   private workerId = randomUUID();
   private backendSecret?: string;
+  private scope?: BrowserExecutionScope;
   constructor(private profileDir: string) {}
   private async request(op: string, data: Record<string, unknown> = {}): Promise<any> {
     const profile = resolve(this.profileDir);
@@ -78,17 +84,27 @@ export class BrowserExecutorClient {
       });
     });
   }
-  attach() {
+  async attach() {
+    const state = await this.request('attach');
+    this.scope ??= state.scope;
+    return state;
+  }
+  probe() {
     return this.request('attach');
   }
-  next(): Promise<BrowserPayload | null> {
-    return this.request('next');
+  release() {
+    return this.request('release');
   }
-  authorize(jobId: string, observation: ComposeObservation) {
-    return this.request('authorize', { jobId, observation });
+  next(scope = this.scope): Promise<BrowserPayload | null> {
+    if (JSON.stringify(scope) !== JSON.stringify(this.scope))
+      return Promise.reject(Error('BROWSER_SESSION_CHANGED'));
+    return this.request('next', { scope });
   }
-  check(jobId: string) {
-    return this.request('check', { jobId });
+  authorize(jobId: string, observation: ComposeObservation, scope = this.scope) {
+    return this.request('authorize', { jobId, observation, scope });
+  }
+  check(jobId: string, scope = this.scope) {
+    return this.request('check', { jobId, scope });
   }
   complete(jobId: string, receipt: BrowserReceipt) {
     return this.request('complete', { jobId, receipt });

@@ -30,6 +30,7 @@ export async function stopScenario(
     revoked = 0,
     finished = 0;
   let historyBuildMs = 0,
+    seedMs = 0,
     historyRows = 0,
     historyBytes = 0,
     postsAtRevoke = 0;
@@ -152,6 +153,7 @@ export async function stopScenario(
     await service.tick();
     time += 61000;
     if (scenario === 'large-history') {
+      const seedStarted = performance.now();
       result.store.atomic(() => {
         for (let i = 0; i < 10000; i++) {
           const c = service.findOrCreateCompany(
@@ -184,6 +186,7 @@ export async function stopScenario(
           );
         }
       });
+      seedMs = performance.now() - seedStarted;
       operation = Promise.resolve();
     } else {
       const send = gateway.send.bind(gateway);
@@ -198,6 +201,9 @@ export async function stopScenario(
       await started;
     }
   }
+  result.resetPerformanceWindow();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  result.resetPerformanceWindow();
   const at = performance.now();
   const refreshes = Array.from({ length: 3 }, (_, i) =>
     fetch(url + (scenario === 'large-history' && i === 1 ? '/api/companies' : '/api/dashboard'), {
@@ -226,6 +232,10 @@ export async function stopScenario(
     requestReceivedMs: +(received - at).toFixed(2),
     rightsRevokedMs: +(revoked - at).toFixed(2),
     responseMs: +(answered - at).toFixed(2),
+    receivedToRevokeMs: +(revoked - received).toFixed(2),
+    responseStatus: response.status,
+    newPostsAfterRevoke: gateway.posts.length - postsAtRevoke,
+    synchronousSeedMs: +seedMs.toFixed(2),
     inflightFinishedMs: finished ? +(finished - at).toFixed(2) : null,
     companies: result.store.one('SELECT count(*) n FROM companies')!.n,
     historyBuildMs: +historyBuildMs.toFixed(2),

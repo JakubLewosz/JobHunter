@@ -19,7 +19,11 @@ import { GmailJobHunter } from '../apps/server/src/gmail/service.js';
 import { pathToFileURL } from 'node:url';
 import { FixtureGmail } from './gmail-fixture.js';
 import { FixtureReader, FixtureRunner } from './research-fixture.js';
+import { analyzeLibrarySnapshot } from '../apps/server/src/research/library-audit.js';
 const newTables = [
+  'auto_batch_plan_grants',
+  'nightflow_jobs',
+  'nightflow_plans',
   'auto_batch_outbox',
   'auto_batch_sessions',
   'auto_batch_items',
@@ -92,8 +96,24 @@ test('core migrations 021–025 preserve populated schema20 IDs, history, source
   const before = Object.fromEntries(
     names.map((name) => [name, store.all('SELECT * FROM "' + name + '" ORDER BY rowid')]),
   );
+  const legacyAudit = analyzeLibrarySnapshot(store.db);
+  assert.equal(legacyAudit.supported, true);
+  assert.equal(legacyAudit.schemaVersion, 20);
+  assert.equal(legacyAudit.recordedMetadata.completeness, 'NOT_RECORDED');
+  assert.equal(legacyAudit.recordedMetadata.outboundLinks, 'NOT_RECORDED');
+  assert.equal(legacyAudit.recordedMetadata.historicalFactVersions, 'NOT_RECORDED');
+  assert.ok(legacyAudit.counts.companies > 0);
+  assert.equal(legacyAudit.counts.drafts, 1);
+  assert.equal(legacyAudit.counts.attempts, 1);
+  const oldSnapshot = store.backup();
   store.close();
   store = new Store(dir);
+  const oldDb = new Database(oldSnapshot, { readonly: true });
+  try {
+    assert.equal(analyzeLibrarySnapshot(store.db, oldDb).counts.protectedDifferences, 0);
+  } finally {
+    oldDb.close();
+  }
   for (const name of names) {
     const oldCols = Object.keys(before[name][0] ?? {});
     if (oldCols.length)
@@ -183,4 +203,75 @@ test('failed additive migration rolls back DDL/data and leaves existing rows plu
     db.close();
   }
   assert.ok(readdirSync(join(dir, 'backups')).some((name) => name.endsWith('.sqlite')));
+});
+test('026–027 preserve every schema25 source field and existing protected rows; restore revokes a persisted job', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-nightflow-migration-')),
+    dir = join(root, 'data');
+  let store = new Store(dir);
+  t.after(() => {
+    if (store.db.open) store.close();
+    rmSync(root, { recursive: true, force: true });
+  });
+  const service = new GmailJobHunter(store, {
+    gateway: new FixtureGmail(),
+    accountInfo: () => new FixtureGmail().info,
+    reader: new FixtureReader(),
+    runner: new FixtureRunner(),
+  });
+  service.approveProfile();
+  await service.importURL('https://fixture.example.test/careers');
+  await service.tick();
+  await service.stopWorker();
+  await service.browserDelivery.close();
+  store.db.pragma('foreign_keys=OFF');
+  store.atomic(() => {
+    for (const name of ['auto_batch_plan_grants', 'nightflow_jobs', 'nightflow_plans'])
+      store.db.exec('DROP TABLE ' + name);
+    store.db.exec(readFileSync('migrations/025_source_versions.sql', 'utf8'));
+    store.exec("DELETE FROM migrations WHERE name>='026'");
+  });
+  store.db.pragma('foreign_keys=ON');
+  const before = Object.fromEntries(
+    [
+      'companies',
+      'company_aliases',
+      'research_sources',
+      'draft_versions',
+      'research_draft_materials',
+      'source_verifications',
+    ].map((table) => [table, store.all('SELECT * FROM ' + table + ' ORDER BY rowid')]),
+  );
+  store.close();
+  store = new Store(dir);
+  for (const [table, rows] of Object.entries(before))
+    assert.deepEqual(store.all('SELECT * FROM ' + table + ' ORDER BY rowid'), rows);
+  store.exec(
+    'INSERT INTO nightflow_plans VALUES (?,?,?,?,?,?)',
+    'synthetic-plan',
+    1,
+    '{}',
+    'synthetic-hash',
+    'synthetic-hash',
+    new Date().toISOString(),
+  );
+  store.exec(
+    "INSERT INTO nightflow_jobs(id,plan_id,plan_version,state,generation,deadline,end_at,code_identity,started_at,updated_at) VALUES ('synthetic-job','synthetic-plan',1,'SENDING','must-be-revoked',?,?,?,?,?)",
+    '2099-01-01',
+    '2099-01-02',
+    '{}',
+    new Date().toISOString(),
+    new Date().toISOString(),
+  );
+  const backup = store.backup(),
+    target = join(root, 'restore');
+  restoreBackupCopy(backup, target);
+  const restored = new Store(target);
+  try {
+    const job = restored.one('SELECT * FROM nightflow_jobs')!;
+    assert.equal(job.state, 'STOPPED');
+    assert.equal(job.generation, '');
+    assert.equal(job.reason, 'BACKUP_RESTORED');
+  } finally {
+    restored.close();
+  }
 });
