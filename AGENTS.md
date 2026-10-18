@@ -2,6 +2,11 @@
 
 Aktualne wymagania z 12 października 2026: JobHunter_SPEC.md i docs/WIZJA_PROJEKTU.md. Stan: docs/TASKS.md i docs/TEST_REPORT.md. Starsze próby są historią, nie aktualną polityką produktu.
 
+Doprecyzowanie z 18.10.2026: docelową obsługę przez rozmowę Codex i jedną
+sekwencję research → kontrola → partia → wysyłka opisuje docs/CODEX_OPERATION.md.
+Najpierw aktualizacja istniejącej biblioteki. To wymaganie do wdrożenia,
+nie zgoda na rzeczywiste uruchomienie ani deklaracja gotowego koordynatora.
+
 - Kontynuuj istniejący projekt etapami. Zachowuj historię, migracje, zabezpieczenia i niezacommitowane zmiany użytkownika.
 - AUTO_POLICY jest jawnym trybem: użytkownik zatwierdza materiały/CV/nadawcę/zakres/typy kontaktu/tempo, potem używa **Start — szukaj i wysyłaj**. Kolejne zgodne pierwsze wiadomości nie wymagają indywidualnego przeglądu ani zgody. Nie przywracaj starego wymogu akceptacji każdego maila.
 - DEMO pozostaje osobną symulacją, RESEARCH_ONLY bez Gmaila/send, APPROVAL_REQUIRED opcjonalnym trybem ręcznym. Nie przekształcaj tych trybów po cichu w automat.

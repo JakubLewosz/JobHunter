@@ -1,0 +1,519 @@
+{
+  "schema": 1,
+  "scope": "REVIEW_SNAPSHOT_ONLY",
+  "productionReadiness": "NOT_ESTABLISHED",
+  "snapshotAt": "2026-10-17T06:17:00.0480000Z",
+  "exportedAt": "2026-10-18T19:09:11.029Z",
+  "schemaVersion": 20,
+  "inputSha256": "d94a60f9847899b820a137792f187bbd18b8d059ee1388354fc5f2042e2f6681",
+  "creationMethod": "UNKNOWN",
+  "recordedProvenance": {
+    "schema": 1,
+    "kind": "USER_DESIGNATED_RECORDED_BACKUP",
+    "sha256": "d94a60f9847899b820a137792f187bbd18b8d059ee1388354fc5f2042e2f6681",
+    "snapshotAt": "2026-10-17T06:17:00.0480000Z",
+    "auditAt": "2026-10-17T06:30:51.7040000Z",
+    "recordedIntegrity": "ok",
+    "recordedForeignKeyErrors": 0,
+    "recordedTableCount": 52,
+    "creationMethod": "UNKNOWN"
+  },
+  "propertiesObserved": {
+    "expectedHashMatched": true,
+    "emptyOrAbsentWal": true,
+    "integrity": "ok",
+    "foreignKeyErrors": 0,
+    "originalUnchanged": true
+  },
+  "toolFingerprint": "1054f4f51c3a62ffb9e3d7b2f7a468dc6b15219119f39d72057a951bbea3dbdf",
+  "toolFiles": [
+    {
+      "file": "export.ts",
+      "sha256": "93f1ff7c433f400edfefbd8726ef5910d5e1decb55e0b7e09622696f7e9c8268"
+    },
+    {
+      "file": "schema.ts",
+      "sha256": "3b3f46f44bb60ed793f7d6310328e00a99874ef5225a23db20d7f71152891cc0"
+    },
+    {
+      "file": "redaction.ts",
+      "sha256": "e8512e4e4f3b70ff61467562e3e6c5a4107902aa152375555c278e29f7ddc56b"
+    }
+  ],
+  "counts": {
+    "companies": {
+      "input": 515,
+      "output": 515,
+      "availability": "PRESENT"
+    },
+    "company_aliases": {
+      "input": 1043,
+      "output": 1043,
+      "availability": "PRESENT"
+    },
+    "contacts": {
+      "input": 413,
+      "output": 413,
+      "availability": "PRESENT"
+    },
+    "evidence": {
+      "input": 2164,
+      "output": 2164,
+      "availability": "PRESENT"
+    },
+    "research_evidence": {
+      "input": 2164,
+      "output": 2164,
+      "availability": "PRESENT"
+    },
+    "research_sources": {
+      "input": 2370,
+      "output": 2370,
+      "availability": "PRESENT"
+    },
+    "opportunities": {
+      "input": 618,
+      "output": 618,
+      "availability": "PRESENT"
+    },
+    "drafts": {
+      "input": 240,
+      "output": 240,
+      "availability": "PRESENT"
+    },
+    "draft_versions": {
+      "input": 285,
+      "output": 285,
+      "availability": "PRESENT"
+    },
+    "candidate_profiles": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "candidate_facts": {
+      "input": 10,
+      "output": 10,
+      "availability": "PRESENT"
+    },
+    "portfolio_projects": {
+      "input": 4,
+      "output": 4,
+      "availability": "PRESENT"
+    },
+    "cv_assets": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "research_draft_materials": {
+      "input": 285,
+      "output": 285,
+      "availability": "PRESENT"
+    },
+    "research_drafts": {
+      "input": 240,
+      "output": 240,
+      "availability": "PRESENT"
+    },
+    "contact_reviews": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "source_verifications": {
+      "input": 2580,
+      "output": 2580,
+      "availability": "PRESENT"
+    },
+    "campaigns": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "history_records": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "suppressions": {
+      "input": 3,
+      "output": 3,
+      "availability": "PRESENT"
+    },
+    "outbox": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "send_attempts": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "usage_ledger": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "draft_approvals": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "auto_sessions": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "auto_outbox": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "runs": {
+      "input": 169,
+      "output": 169,
+      "availability": "PRESENT"
+    },
+    "shared_attempts": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "shared_usage": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "gmail_messages": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "gmail_history_checks": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "browser_deliveries": {
+      "input": 2,
+      "output": 2,
+      "availability": "PRESENT"
+    },
+    "auto_run_scope": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "auto_draft_scope": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "auto_batches": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "auto_batch_items": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "auto_batch_sessions": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "auto_batch_outbox": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "company_domain_enrichments": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    }
+  },
+  "files": [
+    {
+      "file": "companies.jsonl",
+      "records": 515,
+      "bytes": 274230,
+      "sha256": "0056a3c3c782b4862e8a8cfacc8966a9bebc7a2754f5daa1b226593ea1969ceb"
+    },
+    {
+      "file": "aliases.jsonl",
+      "records": 1043,
+      "bytes": 568755,
+      "sha256": "0d840a7d499ac4b8ec7a3c47d9c77b5da11013cf53fb89d908695709b42cc263"
+    },
+    {
+      "file": "contacts.jsonl",
+      "records": 413,
+      "bytes": 284607,
+      "sha256": "a48f298533d96771044bdd1b8430d508d7653f30bf97c79fce440c08a5f2701c"
+    },
+    {
+      "file": "evidence.jsonl",
+      "records": 2164,
+      "bytes": 1916576,
+      "sha256": "e86bbc62d1f8d5e9dd5271768d58a7c2f7336b44f65c551661a5c390c86b004c"
+    },
+    {
+      "file": "evidence-links.jsonl",
+      "records": 2164,
+      "bytes": 1008424,
+      "sha256": "b2314626e03185fb1edab7256a6c68755782902bbf376e52fff2015c91c400fa"
+    },
+    {
+      "file": "sources-001.jsonl",
+      "records": 131,
+      "bytes": 1035345,
+      "sha256": "5c6433e54626bef4de266e2f4ba3058e26a42cacc56baff1ae2d41bcca6a1c5d"
+    },
+    {
+      "file": "sources-002.jsonl",
+      "records": 110,
+      "bytes": 1044642,
+      "sha256": "9c9eacc4653b5e1454fe818fbfd8131f0eaabc9aa0a034183635bb416010572a"
+    },
+    {
+      "file": "sources-003.jsonl",
+      "records": 109,
+      "bytes": 1045156,
+      "sha256": "a57407a1b2ef0983a21d23bed630c44999f5fe9b29dbe8d699746e170c717eb8"
+    },
+    {
+      "file": "sources-004.jsonl",
+      "records": 113,
+      "bytes": 1029075,
+      "sha256": "0c80e8c4c08a45398ebaadc951cc2bed9a77f754c91486d255664b722f7f9450"
+    },
+    {
+      "file": "sources-005.jsonl",
+      "records": 107,
+      "bytes": 1036561,
+      "sha256": "0e3774706ce220ececd77bccaa734ff2a5e3d1f7edb8609e1caf54ab23adadf0"
+    },
+    {
+      "file": "sources-006.jsonl",
+      "records": 114,
+      "bytes": 1042528,
+      "sha256": "731d2ba57956aaf5fdfaac0b421e36d4aff5d1efb7f41635f372d23a32cc827c"
+    },
+    {
+      "file": "sources-007.jsonl",
+      "records": 114,
+      "bytes": 1048316,
+      "sha256": "31ae867babb04999dddc19c78155e25ea9ac54908166f9b977ef547ba9f4e1b0"
+    },
+    {
+      "file": "sources-008.jsonl",
+      "records": 109,
+      "bytes": 1039117,
+      "sha256": "cec61fbc587022ac36cbb835ef09344dc3fd384a5b16a6357a8649c6f11c8d7f"
+    },
+    {
+      "file": "sources-009.jsonl",
+      "records": 137,
+      "bytes": 1045194,
+      "sha256": "3fc301e7e202bb66a51b6068cc38f8c4b71f67373068c43059032cee2d7e46da"
+    },
+    {
+      "file": "sources-010.jsonl",
+      "records": 112,
+      "bytes": 1047748,
+      "sha256": "cfcfd606a6776b59d659b94b898884c3746025b8b2ec259211915e327c3c04fc"
+    },
+    {
+      "file": "sources-011.jsonl",
+      "records": 110,
+      "bytes": 1038474,
+      "sha256": "77f93ead2902a1837a87c5b990ed9e3bb9fe90d62967933e5fb8586c0cbd8098"
+    },
+    {
+      "file": "sources-012.jsonl",
+      "records": 116,
+      "bytes": 1042303,
+      "sha256": "6469a3c958cb126d10aad3160b15dea1c8aa7fb371f77c6f62c13e91b0074a63"
+    },
+    {
+      "file": "sources-013.jsonl",
+      "records": 123,
+      "bytes": 1035545,
+      "sha256": "cc62da707ccc7e4b1cd7a27390dc860b3593a87b8e5dfa551d3bc16a2b5c4a65"
+    },
+    {
+      "file": "sources-014.jsonl",
+      "records": 110,
+      "bytes": 1046403,
+      "sha256": "dd08f6ade63d8c645d36b3ac1247d2818031d39defb5e1a0537191b5b155b5ff"
+    },
+    {
+      "file": "sources-015.jsonl",
+      "records": 128,
+      "bytes": 1044103,
+      "sha256": "279cd6c3722ab384165876584d9566be1af149168ab94fbfd908074ed0945778"
+    },
+    {
+      "file": "sources-016.jsonl",
+      "records": 112,
+      "bytes": 1029281,
+      "sha256": "38e41113a0727467f8009f481356de6055ac742e232b747fe78e2ea5cc149c1a"
+    },
+    {
+      "file": "sources-017.jsonl",
+      "records": 104,
+      "bytes": 1043007,
+      "sha256": "093b44e17b0db37ef1c40f2165f57ed4712609b98a47e1d403f8ce906a7452b2"
+    },
+    {
+      "file": "sources-018.jsonl",
+      "records": 134,
+      "bytes": 1045462,
+      "sha256": "8c945cc99bd176999bbe99c4d412617f14620a07f3270b23eb77b649d3bc7e8a"
+    },
+    {
+      "file": "sources-019.jsonl",
+      "records": 151,
+      "bytes": 1044851,
+      "sha256": "e74f2e94ecd15bf2b6fccea17701493bbcec5c0ed2ec1b01ada37aa1a118de91"
+    },
+    {
+      "file": "sources-020.jsonl",
+      "records": 111,
+      "bytes": 1047089,
+      "sha256": "391b0ed6f002083ef35810a7446c2e0527dda13d295098ebda18b5239684a79c"
+    },
+    {
+      "file": "sources-021.jsonl",
+      "records": 15,
+      "bytes": 228115,
+      "sha256": "7fa2a21d10d4dce978485008478e32256e28fa2fb759678cdc8bb830d083eae0"
+    },
+    {
+      "file": "opportunities.jsonl",
+      "records": 618,
+      "bytes": 1080843,
+      "sha256": "2ef90ebc6e424dc1b805004a7b1d9bbdecfbeba836c3220f125c5cc463516ff4"
+    },
+    {
+      "file": "drafts.jsonl",
+      "records": 240,
+      "bytes": 535101,
+      "sha256": "4ba3aed66e10ae76e1d0b31be00776242055879162d81d893635f037859e077a"
+    },
+    {
+      "file": "draft-versions.jsonl",
+      "records": 285,
+      "bytes": 466864,
+      "sha256": "5018e957dbfcc1bbcc1a2a886b632b9deee429ba2089ed75d6f835b502789ad3"
+    },
+    {
+      "file": "candidate-materials.jsonl",
+      "records": 16,
+      "bytes": 12309,
+      "sha256": "d22efa778654a4a097f5a63899e8c4367d2ee5ea5d265379d07e14c041ee636c"
+    },
+    {
+      "file": "material-bindings.jsonl",
+      "records": 525,
+      "bytes": 1026338,
+      "sha256": "ff3d3efbf153b087327441230d2fb5a7d1c84192e4da167b323a1d226f11cc65"
+    },
+    {
+      "file": "contact-verifications.jsonl",
+      "records": 2580,
+      "bytes": 1627030,
+      "sha256": "f6fdaadecdd6783d7958c0e23026d0b4277bd7d5283d67d85603a2a74f3e6a13"
+    },
+    {
+      "file": "policy-records.jsonl",
+      "records": 1,
+      "bytes": 778,
+      "sha256": "93431049d65796133e01a3c39c2cd8e6a47154681957d319de01ffec51bf2c8b"
+    },
+    {
+      "file": "history-safety.jsonl",
+      "records": 207,
+      "bytes": 118535,
+      "sha256": "d8f7ca15906101b3bf17358dadafa94687e80fdbe878274ec8194c111237943f"
+    },
+    {
+      "file": "scope-links.jsonl",
+      "records": 0,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "identity-events.jsonl",
+      "records": 0,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "policy-summary.json",
+      "records": 1,
+      "bytes": 995,
+      "sha256": "0799cfe223e7c1d1faa5e758620d4be8160bc38e97f526731d495c1a2e5ca748"
+    },
+    {
+      "file": "identity-audit.json",
+      "records": 1,
+      "bytes": 454,
+      "sha256": "4a327d610cd98b5ea31659ae7900a3a8cfc39324c0ffc28c51544d4ee966738a"
+    },
+    {
+      "file": "schema.json",
+      "records": 1,
+      "bytes": 454136,
+      "sha256": "ac23e782e49ac3384b428b6caecc4030272e6139c10e7a4f86cdc0f4e6a1b849"
+    },
+    {
+      "file": "validation.json",
+      "records": 1,
+      "bytes": 5133,
+      "sha256": "e72d90fb1bebe8149a0b772014db36065b0e5f4f05e69af58065b18d8da80e27"
+    }
+  ],
+  "omittedTables": [
+    "mail_messages",
+    "gmail_previews",
+    "gmail_preview_items",
+    "gmail_outbox",
+    "audit_events",
+    "model_calls",
+    "research_queries",
+    "research_items",
+    "research_extractions",
+    "research_qualifications",
+    "shared_company_context",
+    "auto_query_plan",
+    "auto_skips",
+    "mock_deliveries",
+    "research_run_config",
+    "jobs",
+    "research_stage_timings",
+    "research_work_items"
+  ],
+  "omittedFields": [
+    "credentials",
+    "mail subject/body/headers/IDs",
+    "MIME",
+    "CV file bytes and paths",
+    "lease/worker/compose secrets",
+    "raw model prompts/results",
+    "suppression quotes/reasons",
+    "candidate identity",
+    "unapproved app_state keys"
+  ],
+  "redactions": {
+    "PHONE": 6223,
+    "CANDIDATE_IDENTITY": 1369,
+    "URL_PARAMETERS": 34,
+    "PRIVATE_EMAIL": 3530
+  }
+}

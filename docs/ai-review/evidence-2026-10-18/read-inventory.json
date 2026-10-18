@@ -1,0 +1,2494 @@
+{
+  "schema": 1,
+  "readTables": {
+    "companies": {
+      "file": "companies",
+      "readColumns": [
+        "id",
+        "canonical_name",
+        "primary_domain",
+        "history_status",
+        "version",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "canonical_name": {
+          "kind": "text",
+          "target": null,
+          "source": "canonical_name"
+        },
+        "primary_domain": {
+          "kind": "text",
+          "target": null,
+          "source": "primary_domain"
+        },
+        "history_status": {
+          "kind": "code",
+          "target": null,
+          "source": "history_status"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "company_aliases": {
+      "file": "aliases",
+      "readColumns": [
+        "id",
+        "company_id",
+        "kind",
+        "value",
+        "verified_at",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "kind": {
+          "kind": "code",
+          "target": null,
+          "source": "kind"
+        },
+        "value": {
+          "kind": "text",
+          "target": null,
+          "source": "value"
+        },
+        "verified_at": {
+          "kind": "date",
+          "target": null,
+          "source": "verified_at"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "contacts": {
+      "file": "contacts",
+      "readColumns": [
+        "id",
+        "company_id",
+        "email",
+        "kind",
+        "evidence_id",
+        "verification_status",
+        "verified_at",
+        "literal_verified",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "email": {
+          "kind": "text",
+          "target": null,
+          "source": "email"
+        },
+        "kind": {
+          "kind": "code",
+          "target": null,
+          "source": "kind"
+        },
+        "evidence_id": {
+          "kind": "ref",
+          "target": "evidence",
+          "source": "evidence_id"
+        },
+        "verification_status": {
+          "kind": "code",
+          "target": null,
+          "source": "verification_status"
+        },
+        "verified_at": {
+          "kind": "date",
+          "target": null,
+          "source": "verified_at"
+        },
+        "literal_verified": {
+          "kind": "boolean",
+          "target": null,
+          "source": "literal_verified"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "evidence": {
+      "file": "evidence",
+      "readColumns": [
+        "id",
+        "company_id",
+        "canonical_url",
+        "fetched_at",
+        "content_hash",
+        "fragment",
+        "availability"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "canonical_url": {
+          "kind": "text",
+          "target": null,
+          "source": "canonical_url"
+        },
+        "fetched_at": {
+          "kind": "date",
+          "target": null,
+          "source": "fetched_at"
+        },
+        "content_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "content_hash"
+        },
+        "fragment": {
+          "kind": "text",
+          "target": null,
+          "source": "fragment"
+        },
+        "availability": {
+          "kind": "code",
+          "target": null,
+          "source": "availability"
+        }
+      }
+    },
+    "research_evidence": {
+      "file": "evidence-links",
+      "readColumns": [
+        "evidence_id",
+        "source_id"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "evidence_id": {
+          "kind": "ref",
+          "target": "evidence",
+          "source": "evidence_id"
+        },
+        "source_id": {
+          "kind": "ref",
+          "target": "research_sources",
+          "source": "source_id"
+        }
+      }
+    },
+    "research_sources": {
+      "file": "sources",
+      "readColumns": [
+        "id",
+        "original_url",
+        "final_url",
+        "title",
+        "fetched_at",
+        "method",
+        "status",
+        "http_status",
+        "fragment",
+        "content_hash",
+        "text",
+        "parser_version",
+        "address_contexts"
+      ],
+      "missingColumns": [
+        "completeness",
+        "outbound_links"
+      ],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "original_url": {
+          "kind": "text",
+          "target": null,
+          "source": "original_url"
+        },
+        "final_url": {
+          "kind": "text",
+          "target": null,
+          "source": "final_url"
+        },
+        "title": {
+          "kind": "text",
+          "target": null,
+          "source": "title"
+        },
+        "fetched_at": {
+          "kind": "date",
+          "target": null,
+          "source": "fetched_at"
+        },
+        "method": {
+          "kind": "code",
+          "target": null,
+          "source": "method"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "http_status": {
+          "kind": "number",
+          "target": null,
+          "source": "http_status"
+        },
+        "fragment": {
+          "kind": "text",
+          "target": null,
+          "source": "fragment"
+        },
+        "content_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "content_hash"
+        },
+        "text": {
+          "kind": "text",
+          "target": null,
+          "source": "text"
+        },
+        "parser_version": {
+          "kind": "number",
+          "target": null,
+          "source": "parser_version"
+        },
+        "completeness": {
+          "kind": "code",
+          "target": null,
+          "source": "completeness"
+        },
+        "address_contexts": {
+          "kind": "json",
+          "target": null,
+          "source": "address_contexts"
+        },
+        "outbound_links": {
+          "kind": "json",
+          "target": null,
+          "source": "outbound_links"
+        }
+      }
+    },
+    "opportunities": {
+      "file": "opportunities",
+      "readColumns": [
+        "id",
+        "company_id",
+        "evidence_id",
+        "contact_id",
+        "title",
+        "type",
+        "status",
+        "remote",
+        "part_time",
+        "paid",
+        "junior",
+        "hours",
+        "decision",
+        "reasons",
+        "required_conditions",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "evidence_id": {
+          "kind": "ref",
+          "target": "evidence",
+          "source": "evidence_id"
+        },
+        "contact_id": {
+          "kind": "ref",
+          "target": "contacts",
+          "source": "contact_id"
+        },
+        "title": {
+          "kind": "text",
+          "target": null,
+          "source": "title"
+        },
+        "type": {
+          "kind": "code",
+          "target": null,
+          "source": "type"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "remote": {
+          "kind": "code",
+          "target": null,
+          "source": "remote"
+        },
+        "part_time": {
+          "kind": "code",
+          "target": null,
+          "source": "part_time"
+        },
+        "paid": {
+          "kind": "code",
+          "target": null,
+          "source": "paid"
+        },
+        "junior": {
+          "kind": "code",
+          "target": null,
+          "source": "junior"
+        },
+        "hours": {
+          "kind": "text",
+          "target": null,
+          "source": "hours"
+        },
+        "decision": {
+          "kind": "code",
+          "target": null,
+          "source": "decision"
+        },
+        "reasons": {
+          "kind": "texts",
+          "target": null,
+          "source": "reasons"
+        },
+        "required_conditions": {
+          "kind": "texts",
+          "target": null,
+          "source": "required_conditions"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "drafts": {
+      "file": "drafts",
+      "readColumns": [
+        "id",
+        "campaign_id",
+        "company_id",
+        "opportunity_id",
+        "contact_id",
+        "subject",
+        "body",
+        "fact_ids",
+        "evidence_ids",
+        "version",
+        "payload_hash",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "campaign_id": {
+          "kind": "ref",
+          "target": "campaigns",
+          "source": "campaign_id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "opportunity_id": {
+          "kind": "ref",
+          "target": "opportunities",
+          "source": "opportunity_id"
+        },
+        "contact_id": {
+          "kind": "ref",
+          "target": "contacts",
+          "source": "contact_id"
+        },
+        "subject": {
+          "kind": "text",
+          "target": null,
+          "source": "subject"
+        },
+        "body": {
+          "kind": "text",
+          "target": null,
+          "source": "body"
+        },
+        "fact_ids": {
+          "kind": "refs",
+          "target": "candidate_facts",
+          "source": "fact_ids"
+        },
+        "evidence_ids": {
+          "kind": "refs",
+          "target": "evidence",
+          "source": "evidence_ids"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "payload_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "payload_hash"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "draft_versions": {
+      "file": "draft-versions",
+      "readColumns": [
+        "id",
+        "draft_id",
+        "version",
+        "subject",
+        "body",
+        "payload_hash",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "subject": {
+          "kind": "text",
+          "target": null,
+          "source": "subject"
+        },
+        "body": {
+          "kind": "text",
+          "target": null,
+          "source": "body"
+        },
+        "payload_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "payload_hash"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "candidate_profiles": {
+      "file": "candidate-materials",
+      "readColumns": [
+        "id",
+        "name",
+        "goal",
+        "version",
+        "profile_hash",
+        "approved_at",
+        "hours_min",
+        "hours_max",
+        "availability_mode",
+        "hours_approx",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "name": {
+          "kind": "private",
+          "target": null,
+          "source": "name"
+        },
+        "goal": {
+          "kind": "text",
+          "target": null,
+          "source": "goal"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "profile_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "profile_hash"
+        },
+        "approved_at": {
+          "kind": "date",
+          "target": null,
+          "source": "approved_at"
+        },
+        "hours_min": {
+          "kind": "number",
+          "target": null,
+          "source": "hours_min"
+        },
+        "hours_max": {
+          "kind": "number",
+          "target": null,
+          "source": "hours_max"
+        },
+        "availability_mode": {
+          "kind": "code",
+          "target": null,
+          "source": "availability_mode"
+        },
+        "hours_approx": {
+          "kind": "number",
+          "target": null,
+          "source": "hours_approx"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "candidate_facts": {
+      "file": "candidate-materials",
+      "readColumns": [
+        "id",
+        "profile_id",
+        "fact_key",
+        "content",
+        "checked_at",
+        "approval_status",
+        "version",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "profile_id": {
+          "kind": "ref",
+          "target": "candidate_profiles",
+          "source": "profile_id"
+        },
+        "fact_key": {
+          "kind": "text",
+          "target": null,
+          "source": "fact_key"
+        },
+        "content": {
+          "kind": "text",
+          "target": null,
+          "source": "content"
+        },
+        "checked_at": {
+          "kind": "date",
+          "target": null,
+          "source": "checked_at"
+        },
+        "approval_status": {
+          "kind": "code",
+          "target": null,
+          "source": "approval_status"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "portfolio_projects": {
+      "file": "candidate-materials",
+      "readColumns": [
+        "id",
+        "profile_id",
+        "name",
+        "url",
+        "description",
+        "limitations",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "profile_id": {
+          "kind": "ref",
+          "target": "candidate_profiles",
+          "source": "profile_id"
+        },
+        "name": {
+          "kind": "text",
+          "target": null,
+          "source": "name"
+        },
+        "url": {
+          "kind": "text",
+          "target": null,
+          "source": "url"
+        },
+        "description": {
+          "kind": "text",
+          "target": null,
+          "source": "description"
+        },
+        "limitations": {
+          "kind": "text",
+          "target": null,
+          "source": "limitations"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "cv_assets": {
+      "file": "candidate-materials",
+      "readColumns": [
+        "id",
+        "sha256",
+        "byte_size",
+        "version",
+        "approved_at",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "sha256": {
+          "kind": "hash",
+          "target": null,
+          "source": "sha256"
+        },
+        "byte_size": {
+          "kind": "number",
+          "target": null,
+          "source": "byte_size"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "approved_at": {
+          "kind": "date",
+          "target": null,
+          "source": "approved_at"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "research_draft_materials": {
+      "file": "material-bindings",
+      "readColumns": [
+        "draft_id",
+        "version",
+        "payload_hash",
+        "context_hash",
+        "code_status",
+        "review_status",
+        "review_result",
+        "code_error",
+        "created_at",
+        "updated_at",
+        "CASE WHEN json_valid(context_json) THEN json_object('name',json_extract(context_json,'$.profile.name'),'hash',json_extract(context_json,'$.profile.hash'),'goal',json_extract(context_json,'$.profile.goal'),'facts',json((SELECT json_group_array(json_object('id',json_extract(j.value,'$.id'),'key',json_extract(j.value,'$.key'),'content',json_extract(j.value,'$.content'))) FROM json_each(context_json,'$.profile.facts') j WHERE j.type='object'))) END"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "version": {
+          "kind": "number",
+          "target": null,
+          "source": "version"
+        },
+        "payload_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "payload_hash"
+        },
+        "context_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "context_hash"
+        },
+        "code_status": {
+          "kind": "code",
+          "target": null,
+          "source": "code_status"
+        },
+        "review_status": {
+          "kind": "code",
+          "target": null,
+          "source": "review_status"
+        },
+        "review_result": {
+          "kind": "json",
+          "target": null,
+          "source": "review_result"
+        },
+        "code_error": {
+          "kind": "json",
+          "target": null,
+          "source": "code_error"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        },
+        "context_profile": {
+          "kind": "json",
+          "target": null,
+          "source": "CASE WHEN json_valid(context_json) THEN json_object('name',json_extract(context_json,'$.profile.name'),'hash',json_extract(context_json,'$.profile.hash'),'goal',json_extract(context_json,'$.profile.goal'),'facts',json((SELECT json_group_array(json_object('id',json_extract(j.value,'$.id'),'key',json_extract(j.value,'$.key'),'content',json_extract(j.value,'$.content'))) FROM json_each(context_json,'$.profile.facts') j WHERE j.type='object'))) END"
+        }
+      }
+    },
+    "research_drafts": {
+      "file": "material-bindings",
+      "readColumns": [
+        "draft_id",
+        "profile_hash",
+        "semantic_review",
+        "reviewed_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "profile_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "profile_hash"
+        },
+        "semantic_review": {
+          "kind": "json",
+          "target": null,
+          "source": "semantic_review"
+        },
+        "reviewed_at": {
+          "kind": "date",
+          "target": null,
+          "source": "reviewed_at"
+        }
+      }
+    },
+    "contact_reviews": {
+      "file": "contact-verifications",
+      "readColumns": [
+        "contact_id",
+        "evidence_id",
+        "kind",
+        "reviewed_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "contact_id": {
+          "kind": "ref",
+          "target": "contacts",
+          "source": "contact_id"
+        },
+        "evidence_id": {
+          "kind": "ref",
+          "target": "evidence",
+          "source": "evidence_id"
+        },
+        "kind": {
+          "kind": "code",
+          "target": null,
+          "source": "kind"
+        },
+        "reviewed_at": {
+          "kind": "date",
+          "target": null,
+          "source": "reviewed_at"
+        }
+      }
+    },
+    "source_verifications": {
+      "file": "contact-verifications",
+      "readColumns": [
+        "id",
+        "source_id",
+        "checked_at",
+        "status",
+        "final_url",
+        "content_hash"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "source_id": {
+          "kind": "ref",
+          "target": "research_sources",
+          "source": "source_id"
+        },
+        "checked_at": {
+          "kind": "date",
+          "target": null,
+          "source": "checked_at"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "final_url": {
+          "kind": "text",
+          "target": null,
+          "source": "final_url"
+        },
+        "content_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "content_hash"
+        }
+      }
+    },
+    "campaigns": {
+      "file": "policy-records",
+      "readColumns": [
+        "id",
+        "mode",
+        "cv_id",
+        "policy_version",
+        "daily_limit",
+        "cycle_limit",
+        "campaign_limit",
+        "interval_minutes",
+        "duration_minutes",
+        "max_candidates",
+        "window_start",
+        "window_end",
+        "timezone",
+        "schedule_enabled",
+        "expires_at",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "mode": {
+          "kind": "code",
+          "target": null,
+          "source": "mode"
+        },
+        "cv_id": {
+          "kind": "ref",
+          "target": "cv_assets",
+          "source": "cv_id"
+        },
+        "policy_version": {
+          "kind": "number",
+          "target": null,
+          "source": "policy_version"
+        },
+        "daily_limit": {
+          "kind": "number",
+          "target": null,
+          "source": "daily_limit"
+        },
+        "cycle_limit": {
+          "kind": "number",
+          "target": null,
+          "source": "cycle_limit"
+        },
+        "campaign_limit": {
+          "kind": "number",
+          "target": null,
+          "source": "campaign_limit"
+        },
+        "interval_minutes": {
+          "kind": "number",
+          "target": null,
+          "source": "interval_minutes"
+        },
+        "duration_minutes": {
+          "kind": "number",
+          "target": null,
+          "source": "duration_minutes"
+        },
+        "max_candidates": {
+          "kind": "number",
+          "target": null,
+          "source": "max_candidates"
+        },
+        "window_start": {
+          "kind": "text",
+          "target": null,
+          "source": "window_start"
+        },
+        "window_end": {
+          "kind": "text",
+          "target": null,
+          "source": "window_end"
+        },
+        "timezone": {
+          "kind": "text",
+          "target": null,
+          "source": "timezone"
+        },
+        "schedule_enabled": {
+          "kind": "boolean",
+          "target": null,
+          "source": "schedule_enabled"
+        },
+        "expires_at": {
+          "kind": "date",
+          "target": null,
+          "source": "expires_at"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "history_records": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "company_id",
+        "status",
+        "occurred_at",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "occurred_at": {
+          "kind": "date",
+          "target": null,
+          "source": "occurred_at"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "suppressions": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "company_id",
+        "actor",
+        "permanent",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "actor": {
+          "kind": "code",
+          "target": null,
+          "source": "actor"
+        },
+        "permanent": {
+          "kind": "boolean",
+          "target": null,
+          "source": "permanent"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "outbox": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "draft_id",
+        "draft_version",
+        "company_id",
+        "run_id",
+        "approval_id",
+        "status",
+        "kind",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "draft_version": {
+          "kind": "number",
+          "target": null,
+          "source": "draft_version"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "run_id": {
+          "kind": "ref",
+          "target": "runs",
+          "source": "run_id"
+        },
+        "approval_id": {
+          "kind": "ref",
+          "target": "draft_approvals",
+          "source": "approval_id"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "kind": {
+          "kind": "code",
+          "target": null,
+          "source": "kind"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "send_attempts": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "outbox_id",
+        "cv_hash",
+        "state",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "outbox_id": {
+          "kind": "ref",
+          "target": "outbox",
+          "source": "outbox_id"
+        },
+        "cv_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "cv_hash"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "usage_ledger": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "outbox_id",
+        "campaign_id",
+        "run_id",
+        "day",
+        "state",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "outbox_id": {
+          "kind": "ref",
+          "target": "outbox",
+          "source": "outbox_id"
+        },
+        "campaign_id": {
+          "kind": "ref",
+          "target": "campaigns",
+          "source": "campaign_id"
+        },
+        "run_id": {
+          "kind": "ref",
+          "target": "runs",
+          "source": "run_id"
+        },
+        "day": {
+          "kind": "text",
+          "target": null,
+          "source": "day"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "draft_approvals": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "draft_id",
+        "draft_version",
+        "payload_hash",
+        "binding_hash",
+        "actor",
+        "expires_at",
+        "revoked_at",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "draft_version": {
+          "kind": "number",
+          "target": null,
+          "source": "draft_version"
+        },
+        "payload_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "payload_hash"
+        },
+        "binding_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "binding_hash"
+        },
+        "actor": {
+          "kind": "code",
+          "target": null,
+          "source": "actor"
+        },
+        "expires_at": {
+          "kind": "date",
+          "target": null,
+          "source": "expires_at"
+        },
+        "revoked_at": {
+          "kind": "date",
+          "target": null,
+          "source": "revoked_at"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "auto_sessions": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "policy_hash",
+        "status",
+        "started_at",
+        "stopped_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "policy_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "policy_hash"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "started_at": {
+          "kind": "date",
+          "target": null,
+          "source": "started_at"
+        },
+        "stopped_at": {
+          "kind": "date",
+          "target": null,
+          "source": "stopped_at"
+        }
+      }
+    },
+    "auto_outbox": {
+      "file": "history-safety",
+      "readColumns": [
+        "outbox_id",
+        "session_id"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "outbox_id": {
+          "kind": "ref",
+          "target": "outbox",
+          "source": "outbox_id"
+        },
+        "session_id": {
+          "kind": "ref",
+          "target": "auto_sessions",
+          "source": "session_id"
+        }
+      }
+    },
+    "runs": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "campaign_id",
+        "status",
+        "stage",
+        "started_at",
+        "finished_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "campaign_id": {
+          "kind": "ref",
+          "target": "campaigns",
+          "source": "campaign_id"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "stage": {
+          "kind": "code",
+          "target": null,
+          "source": "stage"
+        },
+        "started_at": {
+          "kind": "date",
+          "target": null,
+          "source": "started_at"
+        },
+        "finished_at": {
+          "kind": "date",
+          "target": null,
+          "source": "finished_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "shared_attempts": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "company_id",
+        "state",
+        "day",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "day": {
+          "kind": "text",
+          "target": null,
+          "source": "day"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "shared_usage": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "day",
+        "kind",
+        "state",
+        "created_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "day": {
+          "kind": "text",
+          "target": null,
+          "source": "day"
+        },
+        "kind": {
+          "kind": "code",
+          "target": null,
+          "source": "kind"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    },
+    "gmail_messages": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "company_id",
+        "outbox_id",
+        "direction",
+        "sent_at",
+        "category",
+        "prior_contact_check"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "outbox_id": {
+          "kind": "ref",
+          "target": "outbox",
+          "source": "outbox_id"
+        },
+        "direction": {
+          "kind": "code",
+          "target": null,
+          "source": "direction"
+        },
+        "sent_at": {
+          "kind": "date",
+          "target": null,
+          "source": "sent_at"
+        },
+        "category": {
+          "kind": "code",
+          "target": null,
+          "source": "category"
+        },
+        "prior_contact_check": {
+          "kind": "code",
+          "target": null,
+          "source": "prior_contact_check"
+        }
+      }
+    },
+    "gmail_history_checks": {
+      "file": "history-safety",
+      "readColumns": [
+        "company_id",
+        "status",
+        "checked_at",
+        "consent_expires_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "status": {
+          "kind": "code",
+          "target": null,
+          "source": "status"
+        },
+        "checked_at": {
+          "kind": "date",
+          "target": null,
+          "source": "checked_at"
+        },
+        "consent_expires_at": {
+          "kind": "date",
+          "target": null,
+          "source": "consent_expires_at"
+        }
+      }
+    },
+    "browser_deliveries": {
+      "file": "history-safety",
+      "readColumns": [
+        "id",
+        "outbox_id",
+        "state",
+        "committed_at",
+        "click_granted_at",
+        "created_at",
+        "updated_at"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "outbox_id": {
+          "kind": "ref",
+          "target": "outbox",
+          "source": "outbox_id"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "committed_at": {
+          "kind": "date",
+          "target": null,
+          "source": "committed_at"
+        },
+        "click_granted_at": {
+          "kind": "date",
+          "target": null,
+          "source": "click_granted_at"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "auto_run_scope": {
+      "file": "scope-links",
+      "readColumns": [
+        "run_id",
+        "scope_hash"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "run_id": {
+          "kind": "ref",
+          "target": "runs",
+          "source": "run_id"
+        },
+        "scope_hash": {
+          "kind": "private",
+          "target": null,
+          "source": "scope_hash"
+        }
+      }
+    },
+    "auto_draft_scope": {
+      "file": "scope-links",
+      "readColumns": [
+        "draft_id",
+        "scope_hash"
+      ],
+      "missingColumns": [],
+      "availability": "PRESENT",
+      "fields": {
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "scope_hash": {
+          "kind": "private",
+          "target": null,
+          "source": "scope_hash"
+        }
+      }
+    },
+    "auto_batches": {
+      "file": "history-safety",
+      "readColumns": [],
+      "missingColumns": [
+        "id",
+        "state",
+        "prepared_at",
+        "revision",
+        "policy_hash",
+        "scope_hash",
+        "approved_at",
+        "updated_at"
+      ],
+      "availability": "MISSING",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "prepared_at": {
+          "kind": "date",
+          "target": null,
+          "source": "prepared_at"
+        },
+        "revision": {
+          "kind": "number",
+          "target": null,
+          "source": "revision"
+        },
+        "policy_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "policy_hash"
+        },
+        "scope_hash": {
+          "kind": "private",
+          "target": null,
+          "source": "scope_hash"
+        },
+        "approved_at": {
+          "kind": "date",
+          "target": null,
+          "source": "approved_at"
+        },
+        "updated_at": {
+          "kind": "date",
+          "target": null,
+          "source": "updated_at"
+        }
+      }
+    },
+    "auto_batch_items": {
+      "file": "history-safety",
+      "readColumns": [],
+      "missingColumns": [
+        "id",
+        "batch_id",
+        "ordinal",
+        "company_id",
+        "contact_id",
+        "draft_id",
+        "draft_version",
+        "state",
+        "qualified_at"
+      ],
+      "availability": "MISSING",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "batch_id": {
+          "kind": "ref",
+          "target": "auto_batches",
+          "source": "batch_id"
+        },
+        "ordinal": {
+          "kind": "number",
+          "target": null,
+          "source": "ordinal"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "contact_id": {
+          "kind": "ref",
+          "target": "contacts",
+          "source": "contact_id"
+        },
+        "draft_id": {
+          "kind": "ref",
+          "target": "drafts",
+          "source": "draft_id"
+        },
+        "draft_version": {
+          "kind": "number",
+          "target": null,
+          "source": "draft_version"
+        },
+        "state": {
+          "kind": "code",
+          "target": null,
+          "source": "state"
+        },
+        "qualified_at": {
+          "kind": "date",
+          "target": null,
+          "source": "qualified_at"
+        }
+      }
+    },
+    "auto_batch_sessions": {
+      "file": "history-safety",
+      "readColumns": [],
+      "missingColumns": [
+        "batch_id",
+        "session_id"
+      ],
+      "availability": "MISSING",
+      "fields": {
+        "batch_id": {
+          "kind": "ref",
+          "target": "auto_batches",
+          "source": "batch_id"
+        },
+        "session_id": {
+          "kind": "ref",
+          "target": "auto_sessions",
+          "source": "session_id"
+        }
+      }
+    },
+    "auto_batch_outbox": {
+      "file": "history-safety",
+      "readColumns": [],
+      "missingColumns": [
+        "item_id",
+        "outbox_id"
+      ],
+      "availability": "MISSING",
+      "fields": {
+        "item_id": {
+          "kind": "ref",
+          "target": "auto_batch_items",
+          "source": "item_id"
+        },
+        "outbox_id": {
+          "kind": "ref",
+          "target": "outbox",
+          "source": "outbox_id"
+        }
+      }
+    },
+    "company_domain_enrichments": {
+      "file": "identity-events",
+      "readColumns": [],
+      "missingColumns": [
+        "id",
+        "operation_id",
+        "company_id",
+        "previous_kind",
+        "previous_value",
+        "previous_version",
+        "resulting_version",
+        "domain",
+        "alias_id",
+        "source_id",
+        "source_hash",
+        "parser_version",
+        "verification_id",
+        "verified_at",
+        "company_name",
+        "identity_quote",
+        "proof_hash",
+        "created_at"
+      ],
+      "availability": "MISSING",
+      "fields": {
+        "id": {
+          "kind": "id",
+          "target": null,
+          "source": "id"
+        },
+        "operation_id": {
+          "kind": "private",
+          "target": null,
+          "source": "operation_id"
+        },
+        "company_id": {
+          "kind": "ref",
+          "target": "companies",
+          "source": "company_id"
+        },
+        "previous_kind": {
+          "kind": "code",
+          "target": null,
+          "source": "previous_kind"
+        },
+        "previous_value": {
+          "kind": "text",
+          "target": null,
+          "source": "previous_value"
+        },
+        "previous_version": {
+          "kind": "number",
+          "target": null,
+          "source": "previous_version"
+        },
+        "resulting_version": {
+          "kind": "number",
+          "target": null,
+          "source": "resulting_version"
+        },
+        "domain": {
+          "kind": "text",
+          "target": null,
+          "source": "domain"
+        },
+        "alias_id": {
+          "kind": "ref",
+          "target": "company_aliases",
+          "source": "alias_id"
+        },
+        "source_id": {
+          "kind": "ref",
+          "target": "research_sources",
+          "source": "source_id"
+        },
+        "source_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "source_hash"
+        },
+        "parser_version": {
+          "kind": "number",
+          "target": null,
+          "source": "parser_version"
+        },
+        "verification_id": {
+          "kind": "ref",
+          "target": "source_verifications",
+          "source": "verification_id"
+        },
+        "verified_at": {
+          "kind": "date",
+          "target": null,
+          "source": "verified_at"
+        },
+        "company_name": {
+          "kind": "text",
+          "target": null,
+          "source": "company_name"
+        },
+        "identity_quote": {
+          "kind": "text",
+          "target": null,
+          "source": "identity_quote"
+        },
+        "proof_hash": {
+          "kind": "hash",
+          "target": null,
+          "source": "proof_hash"
+        },
+        "created_at": {
+          "kind": "date",
+          "target": null,
+          "source": "created_at"
+        }
+      }
+    }
+  },
+  "introspection": [
+    "sqlite_master.name",
+    "migrations.name",
+    "PRAGMA table_info",
+    "PRAGMA integrity_check",
+    "PRAGMA foreign_key_check"
+  ],
+  "appStateScalarKeys": [
+    "historyStorageMode",
+    "localHistoryConfirmed",
+    "stopped",
+    "paused",
+    "gmailSenderPaused",
+    "gmailSendTransport"
+  ],
+  "appStateAutoPolicyJsonPaths": [
+    "senderEmail",
+    "cvId",
+    "profileHash",
+    "contactKinds",
+    "contactTypes",
+    "searchScope",
+    "sessionLimit",
+    "dailyLimit",
+    "sendIntervalSeconds",
+    "researchIntervalSeconds",
+    "confirmed",
+    "approvedAt"
+  ],
+  "appStatePriorExceptionJsonPaths": [
+    "cutoffAt"
+  ],
+  "forbiddenReads": [
+    "OAuth",
+    "cookies",
+    "passwords",
+    "CV bytes",
+    "mail subject/body",
+    "MIME",
+    "provider message IDs",
+    "model_calls",
+    "unselected app_state keys"
+  ],
+  "actualInputTableCount": 52,
+  "tablesNotRead": [
+    "audit_events",
+    "auto_query_plan",
+    "auto_skips",
+    "gmail_outbox",
+    "gmail_preview_items",
+    "gmail_previews",
+    "jobs",
+    "mail_messages",
+    "mock_deliveries",
+    "model_calls",
+    "research_extractions",
+    "research_items",
+    "research_qualifications",
+    "research_queries",
+    "research_run_config",
+    "shared_company_context"
+  ],
+  "omittedColumns": {
+    "companies": [
+      {
+        "column": "normalized_key",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "suppression_reason",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "company_aliases": [],
+    "contacts": [],
+    "evidence": [
+      {
+        "column": "created_at",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "updated_at",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "research_evidence": [
+      {
+        "column": "facts",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "research_sources": [
+      {
+        "column": "error",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "opportunities": [],
+    "drafts": [],
+    "draft_versions": [],
+    "candidate_profiles": [],
+    "candidate_facts": [
+      {
+        "column": "source",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "portfolio_projects": [],
+    "cv_assets": [
+      {
+        "column": "sha256",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "file_name",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "stored_name",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "research_draft_materials": [
+      {
+        "column": "payload_json",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "context_json",
+        "reason": "ONLY_EXPLICIT_PROFILE_FACT_JSON_PATHS_READ"
+      },
+      {
+        "column": "review_error",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "research_drafts": [
+      {
+        "column": "claims",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "warnings",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "contact_reviews": [],
+    "source_verifications": [],
+    "campaigns": [
+      {
+        "column": "account_email",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "empty_cycles",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "history_records": [
+      {
+        "column": "import_hash",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "row_number",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "original_name",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "email",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "domain",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "suppressions": [
+      {
+        "column": "reason",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "source",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "outbox": [
+      {
+        "column": "submission_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "lease_until",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "reason",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "send_attempts": [
+      {
+        "column": "message_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "mime",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "mime_hash",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "account_email",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "recipient",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "provider_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "provider_thread_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "error_class",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "usage_ledger": [],
+    "draft_approvals": [],
+    "auto_sessions": [
+      {
+        "column": "reason",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "auto_outbox": [],
+    "runs": [
+      {
+        "column": "cycle_key",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "discovered",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "duplicates",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "heartbeat",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "lease_until",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "error",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "shared_attempts": [
+      {
+        "column": "recipient",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "message_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "mime_hash",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "cv_hash",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "subject",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "body",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "shared_usage": [],
+    "gmail_messages": [
+      {
+        "column": "account_subject",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "provider_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "provider_thread_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "sender",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "recipients",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "subject",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "message_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "body",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "reviewed_at",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "created_at",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "gmail_history_checks": [
+      {
+        "column": "account_subject",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "scope_hash",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "page_cursor",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "history_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "error",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "browser_deliveries": [
+      {
+        "column": "payload_hash",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "payload_json",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "worker_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "compose_id",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      },
+      {
+        "column": "receipt_json",
+        "reason": "NOT_IN_REVIEW_ALLOWLIST"
+      }
+    ],
+    "auto_run_scope": [],
+    "auto_draft_scope": []
+  },
+  "metadataInventory": {
+    "scope": "SCHEMA_METADATA_ONLY",
+    "sourceSha256": "d94a60f9847899b820a137792f187bbd18b8d059ee1388354fc5f2042e2f6681",
+    "sourceHashBeforeAndAfterMatched": true,
+    "sourceWalBytes": 0,
+    "ownReadonlyQueryOnlyCopy": true,
+    "recordContentsRead": false
+  }
+}

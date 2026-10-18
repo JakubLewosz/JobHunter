@@ -1,0 +1,339 @@
+{
+  "schema": 1,
+  "scope": "REVIEW_SNAPSHOT_ONLY",
+  "productionReadiness": "NOT_ESTABLISHED",
+  "generatedAt": "2026-10-18T19:22:32.384Z",
+  "baseCommit": "bfbbc630f11bd02da1b00bdaf5d089af38835838",
+  "branch": "codex/core-completion",
+  "exporterFingerprint": "1054f4f51c3a62ffb9e3d7b2f7a468dc6b15219119f39d72057a951bbea3dbdf",
+  "excludesSelf": true,
+  "selfIntegrity": "BOUND_BY_GIT_COMMIT",
+  "fileCount": 65,
+  "files": [
+    {
+      "file": "AGENTS.md",
+      "bytes": 4723,
+      "sha256": "494f9c5c8f56f5129f7b5bd7d7cb6e8d8918a1f2ee96b8fec4580e75c95c1437"
+    },
+    {
+      "file": "JobHunter_SPEC.md",
+      "bytes": 11188,
+      "sha256": "b53fff1c18d35670105b59102bd0abfc26726cf0337e460f70b5b9aed19e1f85"
+    },
+    {
+      "file": "README.md",
+      "bytes": 13596,
+      "sha256": "c76a8924564e1a34aff8de3cb6b5f7d7eb4200a819f6c461aace79cc149f7e1f"
+    },
+    {
+      "file": "apps/server/src/review/export.ts",
+      "bytes": 40445,
+      "sha256": "93f1ff7c433f400edfefbd8726ef5910d5e1decb55e0b7e09622696f7e9c8268"
+    },
+    {
+      "file": "apps/server/src/review/redaction.ts",
+      "bytes": 2704,
+      "sha256": "e8512e4e4f3b70ff61467562e3e6c5a4107902aa152375555c278e29f7ddc56b"
+    },
+    {
+      "file": "apps/server/src/review/schema.ts",
+      "bytes": 18920,
+      "sha256": "3b3f46f44bb60ed793f7d6310328e00a99874ef5225a23db20d7f71152891cc0"
+    },
+    {
+      "file": "docs/AI_REVIEW.md",
+      "bytes": 7028,
+      "sha256": "f1fd74a2037d9704c9b21b65fe452f8013d420849914221d3ae5bd14abe6ab4c"
+    },
+    {
+      "file": "docs/CODEX_OPERATION.md",
+      "bytes": 15241,
+      "sha256": "d05d3bf929e7bc3e5b364a90b9f28dde4c3ef9f304436f1bf2963517578a1b13"
+    },
+    {
+      "file": "docs/KNOWN_ISSUES.md",
+      "bytes": 6854,
+      "sha256": "77469f32b1ed6281aacb6b776a9552074b2c25d84f79cf326b5183b4e212a9b8"
+    },
+    {
+      "file": "docs/REVIEW_FINDINGS.md",
+      "bytes": 10337,
+      "sha256": "0abc312b3b94213e7c32a8c6462b161530718e17662bdc1e459ce1ba5e40a440"
+    },
+    {
+      "file": "docs/TASKS.md",
+      "bytes": 8054,
+      "sha256": "0aef05af10af585c6c12b931827d15a43c00107410dc1664bf6d537018ff50d4"
+    },
+    {
+      "file": "docs/TEST_REPORT.md",
+      "bytes": 19171,
+      "sha256": "e3b2364d5ec69972e9ce523a383e328fe670125bf5bad53d20b4d8f2105b3ec0"
+    },
+    {
+      "file": "docs/WIZJA_PROJEKTU.md",
+      "bytes": 7070,
+      "sha256": "c315c97771b227841d4d2d791656d2b8e3363342969557d1d9ee6303b740674b"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/baseline-ci-jobs.json",
+      "bytes": 3323,
+      "sha256": "f8125cb062df0d3a3231bf772669c44a039e146038d0876a3e6ae598542a5684"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/final-full-check.json",
+      "bytes": 21041,
+      "sha256": "9b9fcb36cb473d97a93ba84f23914f849f41260ca8fbf53b0c333e3055329c31"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/first-full-check.json",
+      "bytes": 21042,
+      "sha256": "769615944b90a0e8bcca2ba2db8bfe6f8d9ea739a3041ac84440c8e5cc054c29"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/package-inspection.json",
+      "bytes": 889,
+      "sha256": "cb4b013cd4101b3f613a7267c0206e1a21dcb74893de0b28c89bcc09a0eec291"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/process-check.json",
+      "bytes": 213,
+      "sha256": "3ec02b6db0d32df3c02e77c58f3a1e8668f3250a6d3eaa61d9316a169b20abdc"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/read-inventory.json",
+      "bytes": 57361,
+      "sha256": "0d6c6905e2890d7c71cab732e46988c8d4ba511adf286baa1ced041ab2e06f52"
+    },
+    {
+      "file": "docs/ai-review/evidence-2026-10-18/test-evidence.json",
+      "bytes": 5481,
+      "sha256": "23ea1dbf26d67363a6185fec43d1c23fd312df06847d30e6574531e67fa37a48"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/README.md",
+      "bytes": 12459,
+      "sha256": "f0ff120a7151460dd0e16914391bb4dc90c2f44dcf5a7fdb70a672850350b81a"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/aliases.jsonl",
+      "bytes": 568755,
+      "sha256": "0d840a7d499ac4b8ec7a3c47d9c77b5da11013cf53fb89d908695709b42cc263"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/candidate-materials.jsonl",
+      "bytes": 12309,
+      "sha256": "d22efa778654a4a097f5a63899e8c4367d2ee5ea5d265379d07e14c041ee636c"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/companies.jsonl",
+      "bytes": 274230,
+      "sha256": "0056a3c3c782b4862e8a8cfacc8966a9bebc7a2754f5daa1b226593ea1969ceb"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/contact-verifications.jsonl",
+      "bytes": 1627030,
+      "sha256": "f6fdaadecdd6783d7958c0e23026d0b4277bd7d5283d67d85603a2a74f3e6a13"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/contacts.jsonl",
+      "bytes": 284607,
+      "sha256": "a48f298533d96771044bdd1b8430d508d7653f30bf97c79fce440c08a5f2701c"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/draft-versions.jsonl",
+      "bytes": 466864,
+      "sha256": "5018e957dbfcc1bbcc1a2a886b632b9deee429ba2089ed75d6f835b502789ad3"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/drafts.jsonl",
+      "bytes": 535101,
+      "sha256": "4ba3aed66e10ae76e1d0b31be00776242055879162d81d893635f037859e077a"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/evidence-links.jsonl",
+      "bytes": 1008424,
+      "sha256": "b2314626e03185fb1edab7256a6c68755782902bbf376e52fff2015c91c400fa"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/evidence.jsonl",
+      "bytes": 1916576,
+      "sha256": "e86bbc62d1f8d5e9dd5271768d58a7c2f7336b44f65c551661a5c390c86b004c"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/history-safety.jsonl",
+      "bytes": 118535,
+      "sha256": "d8f7ca15906101b3bf17358dadafa94687e80fdbe878274ec8194c111237943f"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/identity-audit.json",
+      "bytes": 454,
+      "sha256": "4a327d610cd98b5ea31659ae7900a3a8cfc39324c0ffc28c51544d4ee966738a"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/identity-events.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/manifest.json",
+      "bytes": 13301,
+      "sha256": "44c29dc847072eeae72c9cce146440c916d424ea362edd1d89f86df95a641d72"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/material-bindings.jsonl",
+      "bytes": 1026338,
+      "sha256": "ff3d3efbf153b087327441230d2fb5a7d1c84192e4da167b323a1d226f11cc65"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/opportunities.jsonl",
+      "bytes": 1080843,
+      "sha256": "2ef90ebc6e424dc1b805004a7b1d9bbdecfbeba836c3220f125c5cc463516ff4"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/policy-records.jsonl",
+      "bytes": 778,
+      "sha256": "93431049d65796133e01a3c39c2cd8e6a47154681957d319de01ffec51bf2c8b"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/policy-summary.json",
+      "bytes": 995,
+      "sha256": "0799cfe223e7c1d1faa5e758620d4be8160bc38e97f526731d495c1a2e5ca748"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/schema.json",
+      "bytes": 454136,
+      "sha256": "ac23e782e49ac3384b428b6caecc4030272e6139c10e7a4f86cdc0f4e6a1b849"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/scope-links.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-001.jsonl",
+      "bytes": 1035345,
+      "sha256": "5c6433e54626bef4de266e2f4ba3058e26a42cacc56baff1ae2d41bcca6a1c5d"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-002.jsonl",
+      "bytes": 1044642,
+      "sha256": "9c9eacc4653b5e1454fe818fbfd8131f0eaabc9aa0a034183635bb416010572a"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-003.jsonl",
+      "bytes": 1045156,
+      "sha256": "a57407a1b2ef0983a21d23bed630c44999f5fe9b29dbe8d699746e170c717eb8"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-004.jsonl",
+      "bytes": 1029075,
+      "sha256": "0c80e8c4c08a45398ebaadc951cc2bed9a77f754c91486d255664b722f7f9450"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-005.jsonl",
+      "bytes": 1036561,
+      "sha256": "0e3774706ce220ececd77bccaa734ff2a5e3d1f7edb8609e1caf54ab23adadf0"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-006.jsonl",
+      "bytes": 1042528,
+      "sha256": "731d2ba57956aaf5fdfaac0b421e36d4aff5d1efb7f41635f372d23a32cc827c"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-007.jsonl",
+      "bytes": 1048316,
+      "sha256": "31ae867babb04999dddc19c78155e25ea9ac54908166f9b977ef547ba9f4e1b0"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-008.jsonl",
+      "bytes": 1039117,
+      "sha256": "cec61fbc587022ac36cbb835ef09344dc3fd384a5b16a6357a8649c6f11c8d7f"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-009.jsonl",
+      "bytes": 1045194,
+      "sha256": "3fc301e7e202bb66a51b6068cc38f8c4b71f67373068c43059032cee2d7e46da"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-010.jsonl",
+      "bytes": 1047748,
+      "sha256": "cfcfd606a6776b59d659b94b898884c3746025b8b2ec259211915e327c3c04fc"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-011.jsonl",
+      "bytes": 1038474,
+      "sha256": "77f93ead2902a1837a87c5b990ed9e3bb9fe90d62967933e5fb8586c0cbd8098"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-012.jsonl",
+      "bytes": 1042303,
+      "sha256": "6469a3c958cb126d10aad3160b15dea1c8aa7fb371f77c6f62c13e91b0074a63"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-013.jsonl",
+      "bytes": 1035545,
+      "sha256": "cc62da707ccc7e4b1cd7a27390dc860b3593a87b8e5dfa551d3bc16a2b5c4a65"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-014.jsonl",
+      "bytes": 1046403,
+      "sha256": "dd08f6ade63d8c645d36b3ac1247d2818031d39defb5e1a0537191b5b155b5ff"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-015.jsonl",
+      "bytes": 1044103,
+      "sha256": "279cd6c3722ab384165876584d9566be1af149168ab94fbfd908074ed0945778"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-016.jsonl",
+      "bytes": 1029281,
+      "sha256": "38e41113a0727467f8009f481356de6055ac742e232b747fe78e2ea5cc149c1a"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-017.jsonl",
+      "bytes": 1043007,
+      "sha256": "093b44e17b0db37ef1c40f2165f57ed4712609b98a47e1d403f8ce906a7452b2"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-018.jsonl",
+      "bytes": 1045462,
+      "sha256": "8c945cc99bd176999bbe99c4d412617f14620a07f3270b23eb77b649d3bc7e8a"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-019.jsonl",
+      "bytes": 1044851,
+      "sha256": "e74f2e94ecd15bf2b6fccea17701493bbcec5c0ed2ec1b01ada37aa1a118de91"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-020.jsonl",
+      "bytes": 1047089,
+      "sha256": "391b0ed6f002083ef35810a7446c2e0527dda13d295098ebda18b5239684a79c"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/sources-021.jsonl",
+      "bytes": 228115,
+      "sha256": "7fa2a21d10d4dce978485008478e32256e28fa2fb759678cdc8bb830d083eae0"
+    },
+    {
+      "file": "docs/ai-review/review-2026-10-18/validation.json",
+      "bytes": 5133,
+      "sha256": "e72d90fb1bebe8149a0b772014db36065b0e5f4f05e69af58065b18d8da80e27"
+    },
+    {
+      "file": "package.json",
+      "bytes": 2422,
+      "sha256": "339cfb635ae98d7fd2818450ebbb03f243ce58eeaa843308ea24f60955ea434a"
+    },
+    {
+      "file": "scripts/export-review-package.ts",
+      "bytes": 867,
+      "sha256": "fa1a9bd3bbfe5c749da33f3e6b88e952d8cd805239204f841816571480893d7d"
+    },
+    {
+      "file": "tests/review-package.test.ts",
+      "bytes": 13934,
+      "sha256": "6757cc8029c44cacc171a737eb15933b4124f21555c38e18535c72f21c1bc128"
+    }
+  ]
+}

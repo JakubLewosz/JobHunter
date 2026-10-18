@@ -1,5 +1,32 @@
 # JobHunter — aktualna specyfikacja
 
+## Doprecyzowanie operacyjne — 18 października 2026
+
+Status: wymaganie docelowe, koordynator całego przebiegu nie jest zaimplementowany.
+Użytkownik obsługuje projekt rozmową w aplikacji Codex, przy włączonym komputerze
+i Codexie, bez konieczności używania frontendu. Jedno wcześniejsze świadome
+uruchomienie ma obejmować około 8 h researchu, najpierw doprowadzenie istniejących
+firm i szkiców do aktualnej przydatności, kontrolę wyników i finalnych wersji,
+zamkniętą partię oraz wysyłkę zgodnych wiadomości w zatwierdzonym zakresie,
+tempie, limitach i oknie. Na końcu krótki raport w rozmowie. Nowe firmy mają
+niższy priorytet; zachowujemy całą bibliotekę.
+
+Nie ma osobnego porannego polecenia dla normalnego przejścia ani zgody na każdy
+mail. Wcześniejsza zgoda musi dotyczyć materiałów/CV, nadawcy, polityki, reguł
+wyboru przyszłej partii i granic całego przebiegu; nie jest obejrzeniem nieznanej
+listy. Nie zatwierdza nowych faktów, CV, nadawcy lub poszerzenia polityki.
+Nie ustalono nowych wartości tempa i limitów. Brak autoPolicy w wybranym backupie
+nie może być traktowany jako zatwierdzenie pracy bez limitu.
+
+Prawidłowy deadline z wynikiem i końcowym guardem różni się od Stop, pauzy,
+restartu, awarii, limitu, utraty locka/wykonawcy lub PROTECTED_DATA_CHANGED.
+Żadne z tych zdarzeń ani sam upływ 8 h nie nadaje prawa do wysyłki. Brak zgodnych
+materiałów kończy się raportem. RESEARCH_ONLY pozostaje bez poczty; potrzebna
+jest jawna koordynacja osobnych etapów researchu i AUTO_POLICY. Zwykły ciągły AUTO
+zachowuje odrębną semantykę. [Stan mechanizmu i brakujące dowody](docs/CODEX_OPERATION.md).
+
+## Wymagania podstawowe i istniejąca implementacja
+
 Wersja 2.1, 12 października 2026. Zastępuje obowiązkową synchronizację między urządzeniami. Zachowuje AUTO_POLICY bez akceptacji każdego maila i granice danych/prawdziwości/niezamówionych wysyłek.
 
 Rozszerzenie 18.10.2026: [rdzeń po diagnostyce](docs/CORE_IMPLEMENTATION.md).

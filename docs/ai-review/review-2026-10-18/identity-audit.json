@@ -1,0 +1,22 @@
+{
+  "scope": "SINGLE_SNAPSHOT",
+  "historicalDeletionCheck": false,
+  "beforeSnapshot": "NOT_PROVIDED",
+  "companyCount": 515,
+  "domainEventsAvailability": "MISSING",
+  "duplicateDomainOwners": [],
+  "sharedMailboxes": [
+    {
+      "address": "biuro@it44.pl",
+      "companies": [
+        "companies_00069",
+        "companies_00087"
+      ]
+    }
+  ],
+  "blockedCompanyIds": [
+    "companies_00001",
+    "companies_00051",
+    "companies_00069"
+  ]
+}

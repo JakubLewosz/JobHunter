@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "scope": "REVIEW_SNAPSHOT_ONLY",
+  "productionReadiness": "NOT_ESTABLISHED",
+  "inputIntegrity": "ok",
+  "foreignKeyErrors": 0,
+  "schemaVersion": 20,
+  "allRecordsSchemaValidated": true,
+  "recordIdsUnique": true,
+  "presentReferencesResolve": true,
+  "presentReferences": 18929,
+  "explicitMissingReferences": 0,
+  "counts": {
+    "companies": {
+      "input": 515,
+      "output": 515,
+      "availability": "PRESENT"
+    },
+    "company_aliases": {
+      "input": 1043,
+      "output": 1043,
+      "availability": "PRESENT"
+    },
+    "contacts": {
+      "input": 413,
+      "output": 413,
+      "availability": "PRESENT"
+    },
+    "evidence": {
+      "input": 2164,
+      "output": 2164,
+      "availability": "PRESENT"
+    },
+    "research_evidence": {
+      "input": 2164,
+      "output": 2164,
+      "availability": "PRESENT"
+    },
+    "research_sources": {
+      "input": 2370,
+      "output": 2370,
+      "availability": "PRESENT"
+    },
+    "opportunities": {
+      "input": 618,
+      "output": 618,
+      "availability": "PRESENT"
+    },
+    "drafts": {
+      "input": 240,
+      "output": 240,
+      "availability": "PRESENT"
+    },
+    "draft_versions": {
+      "input": 285,
+      "output": 285,
+      "availability": "PRESENT"
+    },
+    "candidate_profiles": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "candidate_facts": {
+      "input": 10,
+      "output": 10,
+      "availability": "PRESENT"
+    },
+    "portfolio_projects": {
+      "input": 4,
+      "output": 4,
+      "availability": "PRESENT"
+    },
+    "cv_assets": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "research_draft_materials": {
+      "input": 285,
+      "output": 285,
+      "availability": "PRESENT"
+    },
+    "research_drafts": {
+      "input": 240,
+      "output": 240,
+      "availability": "PRESENT"
+    },
+    "contact_reviews": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "source_verifications": {
+      "input": 2580,
+      "output": 2580,
+      "availability": "PRESENT"
+    },
+    "campaigns": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "history_records": {
+      "input": 1,
+      "output": 1,
+      "availability": "PRESENT"
+    },
+    "suppressions": {
+      "input": 3,
+      "output": 3,
+      "availability": "PRESENT"
+    },
+    "outbox": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "send_attempts": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "usage_ledger": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "draft_approvals": {
+      "input": 8,
+      "output": 8,
+      "availability": "PRESENT"
+    },
+    "auto_sessions": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "auto_outbox": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "runs": {
+      "input": 169,
+      "output": 169,
+      "availability": "PRESENT"
+    },
+    "shared_attempts": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "shared_usage": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "gmail_messages": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "gmail_history_checks": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "browser_deliveries": {
+      "input": 2,
+      "output": 2,
+      "availability": "PRESENT"
+    },
+    "auto_run_scope": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "auto_draft_scope": {
+      "input": 0,
+      "output": 0,
+      "availability": "PRESENT"
+    },
+    "auto_batches": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "auto_batch_items": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "auto_batch_sessions": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "auto_batch_outbox": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    },
+    "company_domain_enrichments": {
+      "input": 0,
+      "output": 0,
+      "availability": "MISSING"
+    }
+  },
+  "historicalProfileFacts": 1986,
+  "redactions": {
+    "PHONE": 6223,
+    "CANDIDATE_IDENTITY": 1369,
+    "URL_PARAMETERS": 34,
+    "PRIVATE_EMAIL": 3530
+  },
+  "limitations": [
+    "SINGLE_SNAPSHOT_NO_DELETION_PROOF",
+    "HISTORICAL_FACT_VERSION_AND_APPROVAL_NOT_RECORDED",
+    "HISTORICAL_CV_BINDING_NOT_RECORDED",
+    "POLICY_HISTORY_NOT_VERSIONED",
+    "NO_CURRENT_SEND_READINESS",
+    "UNREDACTED_PAYLOAD_HASH_NOT_RECOMPUTABLE_PUBLICLY",
+    "ORIGINAL_URL_PARAMETERS_REDACTED"
+  ],
+  "inputHashBefore": "d94a60f9847899b820a137792f187bbd18b8d059ee1388354fc5f2042e2f6681",
+  "inputHashAfter": "d94a60f9847899b820a137792f187bbd18b8d059ee1388354fc5f2042e2f6681",
+  "sourceSidecarsBefore": {
+    "walBytes": 0,
+    "shmBytes": 32768
+  },
+  "sourceSidecarsAfter": {
+    "walBytes": 0,
+    "shmBytes": 32768
+  }
+}

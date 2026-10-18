@@ -1,5 +1,18 @@
 # JobHunter — docelowy sposób pracy
 
+**Aktualizacja 18.10.2026:** głównym wejściem jest rozmowa w aplikacji Codex.
+Przy włączonym komputerze i Codexie jedno świadome polecenie ma docelowo prowadzić
+przez około 8 h researchu, kontrolę i wysyłkę zgodnej zamkniętej partii, bez
+osobnego porannego polecenia dla normalnych przejść i bez akceptacji każdego
+maila. Najpierw odnawiamy dotychczasowe firmy i szkice, nowe firmy są teraz
+niższym priorytetem. Materiały/nadawca/polityka/reguły wyboru przyszłej partii
+oraz tempo/limity/okno wymagają wcześniejszej właściwej zgody.
+
+To wymaganie do wdrożenia, nie opis gotowego całonocnego koordynatora.
+[CODEX_OPERATION](CODEX_OPERATION.md) rozdziela obserwację, kod i braki.
+Poniższy dawny model porannego panelu i preferencja z 16.10 są kontekstem
+historycznym; nowe wymaganie nie zmienia samo istniejącego kodu lub zgód.
+
 Ustalenia z 12 października 2026 zastępują obowiązkową synchronizację. Nadal obowiązuje automat bez akceptacji każdej wiadomości i ręczna obsługa odpowiedzi w Gmailu.
 
 Jakub rano uruchamia program i klika **Start — szukaj i wysyłaj**. JobHunter szuka firm przede wszystkim z Polski, poznaje ich działalność, weryfikuje publiczny kontakt, dobiera zatwierdzony projekt i pisze naturalną polską wiadomość z CV. Kod sprawdza politykę i historię, wysyła zgodny pierwszy kontakt i przechodzi dalej. Nie wymaga potwierdzania każdej firmy/paczki. Pracuje do Stop, jawnego limitu lub problemu wymagającego reakcji. Odpowiedzi Jakub obsługuje sam w Gmailu.

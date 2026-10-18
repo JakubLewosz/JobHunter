@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "checkedAt": "2026-10-18T19:22:10.694Z",
+  "scope": "REVIEW_SNAPSHOT_ONLY",
+  "filesDigestsVerified": 40,
+  "allJsonlRecords": 13141,
+  "sourceRecords": 2370,
+  "sourceAddressContexts": 3568,
+  "sourceOutboundLinks": 0,
+  "nullAddressContexts": 87,
+  "nullOutboundLinks": 2370,
+  "explicitIncompleteContexts": 0,
+  "unknownCodeFields": {
+    "contacts.kind": 33,
+    "opportunities.remote": 499,
+    "opportunities.part_time": 593,
+    "opportunities.paid": 544,
+    "opportunities.junior": 532,
+    "opportunities.type": 4,
+    "runs.stage": 8
+  },
+  "privacyScan": {
+    "categories": {},
+    "unexpectedMatches": 0,
+    "publicEmailOccurrences": 8928,
+    "publicContactAddressCount": 412
+  },
+  "selectedFileCount": 66,
+  "toolFingerprint": "1054f4f51c3a62ffb9e3d7b2f7a468dc6b15219119f39d72057a951bbea3dbdf",
+  "presentReferences": 18929,
+  "missingReferences": 0
+}

@@ -1,6 +1,111 @@
 # Wyniki i zakres weryfikacji — 18 października 2026
 
-## Lokalna implementacja po diagnostyce — bieżąca weryfikacja
+## Rozszerzony pakiet przeglądu — etap po bfbbc630
+
+Zakres: eksporter/walidator i jego testy, dokumentacja wymagań/uruchamiania,
+R1–R12 oraz zredagowany odczyt dopuszczonego snapshotu. Bez napraw rdzenia,
+nowych zależności, wdrożenia lub rzeczywistych usług. Gałąź
+`codex/core-completion`, początek czysty i zgodny z remote bfbbc630.
+
+Fingerprint trzech modułów eksportera:
+`1054f4f51c3a62ffb9e3d7b2f7a468dc6b15219119f39d72057a951bbea3dbdf`.
+[Manifest danych](ai-review/review-2026-10-18/manifest.json) podaje hashe źródeł
+narzędzia i plików projekcji, datę snapshotu oddzielnie od daty eksportu.
+Zbiorczy manifest publikacji wskazany w AI_REVIEW identyfikuje pozostałe nowe
+pliki; sam HEAD sprzed commitu nie jest tożsamością zmienionego checkoutu.
+
+Celowane regresje końcowej wersji: **10/10 PASS**, exit 0 (`test-1792350512445`). Typowane
+zagnieżdżenia/tablice, historyczne materiały i wersje, brakujące relacje,
+schemat 20, niezmienione wejście, odmowa nadpisania, sentinele prywatności,
+zabronione odczyty, błędny hash/proweniencja/SQLite i niezerowy WAL, redakcja
+z zachowaniem treści oraz publicznych HTTP/HTTPS. Osobna regresja zachowuje
+natywne tablice kontekstów adresów, complete=false, pary URL–kontekst odesłań
+i znane kody ograniczeń/dowodów. Prywatne zagnieżdżenia i parametry względnych
+URL nie przechodzą projekcji. CLI błędów zwraca wyłącznie
+ustalony kod, bez wejściowych ścieżek i surowego wyjątku.
+
+Wcześniejsze niepowodzenia zachowano: pierwszy typecheck miał 3 błędy typów,
+poprawione; pierwszy test 7/8 miał niejednoznaczny fikcyjny token nazwiska
+„Identity”, kolidujący z oczekiwaną treścią. Zastąpiono fixture jednoznacznym
+fikcyjnym nazwiskiem. Kolejne 7/8 wykryło konwersję bool JSON przez SQLite do
+liczby podczas projekcji polityki — poprawiono zachowanie prawdziwego typu.
+Pełny `check-1792348858469` przerwano po 36 s, przed benchmarkiem, wyłącznie
+własnego drzewa PID z potwierdzonym czasem utworzenia. Powód: rzeczywisty
+eksport ujawnił nadmierną redakcję s:/ w HTTPS jako ścieżki Windows. Dodano
+regresję HTTP/HTTPS, poprawiono wzorzec, a odrzucony nieopublikowany eksport
+zachowano poza repo. Nie nadpisano poprzedniego publicznego eksportu.
+
+Pierwszy pełny check tego etapu (`check-1792348963592`): **PASS, exit 0**,
+659 backend / 12 performance / 20 UI; typecheck/build PASS.
+18.10.2026 18:42:43.631–18:57:47.906 UTC (20:42–20:57 Europe/Warsaw),
+904,275 s. [Pomiar i fazy Stop](ai-review/evidence-2026-10-18/first-full-check.json).
+Dotyczy eksportera o poprzednim fingerprintcie `1d42fbe0...`, przed końcową
+poprawką zachowania natywnych kontekstów/odesłań i technicznego słownika.
+Nie jest przedstawiany jako test końcowego kodu.
+
+Końcowa kontrola odwzorowania danych wykryła tablice `{email,text,complete?}`
+oraz `{url,context}`, zamiast założonej mapy/stringów. Rozszerzono ścisłe
+projekcje i regresję; jej pierwsze 9/10 wynikało z użycia w fixture nazwy
+`sources` zamiast rzeczywistej `research_sources` — poprawiono fixture.
+Check `1792350139653` przerwano przed benchmarkiem dla poprawki odesłań,
+a `1792350340660` przed benchmarkiem dla zachowania znanych kodów
+VERIFIED_PUBLIC/READ_VERIFIED_EXCERPT/UNCONFIRMED i stanów historii.
+Zatrzymano wyłącznie potwierdzone własne drzewa PID; nie ingerowano w WORKSTATION.
+Odrzucone, nieopublikowane kandydaty eksportu zachowano poza repo.
+
+Końcowy pełny `npm run check`: **PASS, exit 0** (`check-1792350527243`):
+**660/660 backend, 12/12 performance, 20/20 UI, typecheck/build PASS**.
+18.10.2026 19:08:47.274–19:21:19.558 UTC (21:08–21:21 Europe/Warsaw),
+752,284 s. Backend 661,304 s, performance 16,533 s, UI 56,2 s.
+Kod sześciu zmienionych plików narzędzia/testów/package.json zamrożony:
+`fef7ab0488ce9e2281fc0c7011017624d68ec5c13bc492e7a33cde4fb9d62305`.
+Fingerprint przed i po check jest identyczny. Progi Stop i fixture 10k nie zmienione.
+Zachowano pierwszy udany benchmark; kolejny pełny check wynika ze zmiany
+eksportera, nie z powtarzania pomiaru aż do PASS.
+
+[Końcowy pomiar i fazy](ai-review/evidence-2026-10-18/final-full-check.json),
+[tożsamość kodu i historia prób](ai-review/evidence-2026-10-18/test-evidence.json).
+Maksimum przyjęcia Stop dla large-history: 372,47 ms, odwołanie od przyjęcia
+0,26 ms, odpowiedź 434,83 ms; próbka ma 10 035 firm. To pomiar lokalnego
+Windowsa, nie rozwiązanie niezależnego R12 na Linuxie. Po sprawdzeniu 0 własnych
+procesów i 0 listenerów na portach testowych 4328–4332;
+[kontrola procesów](ai-review/evidence-2026-10-18/process-check.json).
+
+Środowisko: Windows x64 10.0.26300, Node 24.19.0, npm 11.17.0,
+SQLite 3.53.4, Codex CLI 0.163.0-alpha.10.2. Runner przekazuje allowlistę
+środowiska i własne HOME/APPDATA/TEMP/data, DEVELOPMENT/DEMO oraz nowy katalog
+E2E dla każdego uruchomienia; providery fikcyjne, bez usług rzeczywistych.
+Polecenia: `node --import tsx --test --test-concurrency=1 tests/review-package.test.ts`
+(10/10, exit 0), `npm run typecheck` (exit 0) i `npm run check`.
+
+Walidacja nowego publicznego eksportu: **PASS**, schema=20, integrity=ok/FK=0,
+hash wejścia przed/po zgodny, WAL 0 B i SHM 32768 B bez zmian. **240 szkiców,
+285 wersji, 285 material rows, 240 research_drafts, 1986 historycznych faktów
+w kontekstach; 0 MISSING referencji, wszystkie PRESENT rozwiązywalne**.
+Puste i brakujące tabele mają oddzielne statusy. Zapisane PASS nie są bieżącą
+gotowością. autoPolicy nie występuje; nie utworzono nowej zgody lub tempa/limitu.
+Metoda historycznego backupu UNKNOWN; nie dopisano metody kopii ani before/after
+porównania dwóch baz. Szczegóły [validation.json](ai-review/review-2026-10-18/validation.json).
+Niezależnie sprawdzono hashe 40 plików manifestu i 13 141 rekordów JSONL;
+18 929 referencji PRESENT i 3568 kontekstów adresów. Kontrola prywatnych wzorców
+i adresów spoza literalnego zestawu publicznych kontaktów: 0 trafień.
+Oddzielny odczyt wyłącznie metadanych schematu własnej kopii potwierdził 52 tabele,
+34 istniejące tabele projekcji, 16 tabel bez odczytu rekordów oraz 68 pominiętych
+kolumn. app_state i migrations są opisane osobno. Wejście nadal ma ten sam hash,
+WAL 0 B; [inwentarz](ai-review/evidence-2026-10-18/read-inventory.json).
+
+GitHub API dla poprzedniego run 39151095938: **macOS failure, Windows cancelled**.
+Nie deklarować PASS Windowsa w CI na podstawie lokalnego wyniku. R11 pozostaje
+otwarte. Linux 1154,72 ms z instrukcji użytkownika jest niezależnym zgłoszeniem,
+nie własnym pomiarem; brakuje jego faz/logu. CI nowego SHA sprawdzamy po push.
+Rzeczywisty WORKSTATION, Gmail/browser 8 h i nocny koordynator: **NIEWERYFIKOWANE**.
+
+Źródła uruchamiania: [CODEX_OPERATION](CODEX_OPERATION.md). Dodatkowy odczyt
+struktury prywatnych helperów został automatycznie odrzucony („blocked by policy”);
+nie obchodzono odmowy. Kontrakt opisano z wcześniejszej dopuszczonej diagnostyki,
+bez deklaracji bieżącego fingerprintu tych plików.
+
+## Lokalna implementacja po diagnostyce — wcześniejsza weryfikacja
 
 Osobny worktree `codex/core-completion`, baza
 `f37afc077c0d7c80f231ef0e9ad2f4dcac17363c`, niezacommitowane zmiany i nowe

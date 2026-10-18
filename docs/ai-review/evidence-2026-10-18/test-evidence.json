@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "scope": "REVIEW_SNAPSHOT_ONLY",
+  "productionReadiness": "NOT_ESTABLISHED",
+  "baseCommit": "bfbbc630f11bd02da1b00bdaf5d089af38835838",
+  "testedCode": {
+    "fingerprint": "fef7ab0488ce9e2281fc0c7011017624d68ec5c13bc492e7a33cde4fb9d62305",
+    "files": [
+      {
+        "file": "package.json",
+        "sha256": "339cfb635ae98d7fd2818450ebbb03f243ce58eeaa843308ea24f60955ea434a"
+      },
+      {
+        "file": "apps/server/src/review/export.ts",
+        "sha256": "93f1ff7c433f400edfefbd8726ef5910d5e1decb55e0b7e09622696f7e9c8268"
+      },
+      {
+        "file": "apps/server/src/review/schema.ts",
+        "sha256": "3b3f46f44bb60ed793f7d6310328e00a99874ef5225a23db20d7f71152891cc0"
+      },
+      {
+        "file": "apps/server/src/review/redaction.ts",
+        "sha256": "e8512e4e4f3b70ff61467562e3e6c5a4107902aa152375555c278e29f7ddc56b"
+      },
+      {
+        "file": "scripts/export-review-package.ts",
+        "sha256": "fa1a9bd3bbfe5c749da33f3e6b88e952d8cd805239204f841816571480893d7d"
+      },
+      {
+        "file": "tests/review-package.test.ts",
+        "sha256": "6757cc8029c44cacc171a737eb15933b4124f21555c38e18535c72f21c1bc128"
+      }
+    ],
+    "checkedBeforeAt": "2026-10-18T19:08:46.587Z",
+    "checkedAfterAt": "2026-10-18T19:21:40.835Z",
+    "unchangedDuringFinalCheck": true
+  },
+  "targeted": {
+    "name": "test-1792350512445",
+    "command": "node --import tsx --test --test-concurrency=1 tests/review-package.test.ts",
+    "passed": 10,
+    "failed": 0,
+    "exitCode": 0,
+    "startedAt": "2026-10-18T19:08:32.483Z",
+    "endedAt": "2026-10-18T19:08:37.013Z"
+  },
+  "exportValidation": {
+    "exportRun": "node-1792350544318",
+    "validationRun": "node-1792350551840",
+    "command": "node --import tsx scripts/export-review-package.ts --validate docs/ai-review/review-2026-10-18",
+    "exportExitCode": 0,
+    "validationExitCode": 0,
+    "files": 40,
+    "exporterFingerprint": "1054f4f51c3a62ffb9e3d7b2f7a468dc6b15219119f39d72057a951bbea3dbdf",
+    "finishedAt": "2026-10-18T19:09:13.097Z"
+  },
+  "firstFullCheck": {
+    "file": "first-full-check.json",
+    "exporterFingerprint": "1d42fbe0ad6fb01d15da534f36fb0cce7a9f9ff9f0bdeb0a108b8c24948e7633",
+    "beforeFinalContextLinkAndVocabularyFix": true
+  },
+  "finalFullCheck": {
+    "file": "final-full-check.json",
+    "exporterFingerprint": "1054f4f51c3a62ffb9e3d7b2f7a468dc6b15219119f39d72057a951bbea3dbdf"
+  },
+  "retainedFailures": [
+    {
+      "phase": "initial typecheck",
+      "result": "3 type errors; fixed"
+    },
+    {
+      "phase": "initial targeted test",
+      "result": "7/8; ambiguous synthetic surname Identity replaced with a distinct fixture name"
+    },
+    {
+      "phase": "SQLite JSON bool regression",
+      "result": "7/8; boolean type preserved using json_type"
+    },
+    {
+      "phase": "native parser test setup",
+      "result": "9/10; fixture table name corrected to research_sources"
+    }
+  ],
+  "interruptedChecks": [
+    {
+      "name": "check-1792348858469",
+      "startedAt": "2026-10-18T18:40:58.505Z",
+      "endedAt": "2026-10-18T18:41:34.616Z",
+      "exitCode": 4294967295,
+      "intentionallyInterrupted": true,
+      "beforeIsolatedPerformance": true,
+      "reason": "EXPORT_URL_REDACTION_FIX",
+      "ownProcessIdentityVerified": true
+    },
+    {
+      "name": "check-1792350139653",
+      "startedAt": "2026-10-18T19:02:19.687Z",
+      "endedAt": "2026-10-18T19:03:28.458Z",
+      "exitCode": 4294967295,
+      "intentionallyInterrupted": true,
+      "beforeIsolatedPerformance": true,
+      "reason": "Exporter outbound-link projection must preserve native url/context objects; stopped before performance phase",
+      "ownProcessIdentityVerified": true
+    },
+    {
+      "name": "check-1792350340660",
+      "startedAt": "2026-10-18T19:05:40.701Z",
+      "endedAt": "2026-10-18T19:08:29.736Z",
+      "exitCode": 1,
+      "intentionallyInterrupted": true,
+      "beforeIsolatedPerformance": true,
+      "reason": "Static review vocabulary must preserve known VERIFIED_PUBLIC, READ_VERIFIED_EXCERPT, UNCONFIRMED and history states; before performance phase",
+      "ownProcessIdentityVerified": true
+    }
+  ],
+  "benchmarkPolicy": {
+    "firstSuccessfulIsolatedRunRetained": true,
+    "thresholdsLowered": false,
+    "synthetic10kFixtureReduced": false,
+    "subsequentFullCheckReason": "Exporter changed after final format/vocabulary inspection; final tested code must match publication"
+  },
+  "inputAndServices": {
+    "designatedBackupReadonly": true,
+    "productionDatabaseOpened": false,
+    "workstationUpdatedRestartedOrStopped": false,
+    "realResearchModelGmailOAuthSelfTestOrSend": false,
+    "scheduleOrAutomationCreated": false
+  },
+  "missingEvidence": [
+    "workstation-invocation-record.json",
+    "active dist/build-manifest.json",
+    "current fingerprint of prepare.mjs/night-common.mjs/night-run.mjs/night-report.mjs",
+    "workstation-executor-lifecycle.json",
+    "linux-stop-1154ms-phases.json"
+  ],
+  "helperReadRejection": {
+    "action": "Additional structural read of the four known private helper files",
+    "reason": "blocked by policy",
+    "furtherReasonProvided": false,
+    "bypassed": false,
+    "historicalContractSource": "Previously authorized sanitized diagnostic report"
+  },
+  "baselineCi": {
+    "runId": 39151095938,
+    "headSha": "bfbbc630f11bd02da1b00bdaf5d089af38835838",
+    "macos": "failure",
+    "windows": "cancelled",
+    "newCommitCi": "CHECK_AFTER_PUSH"
+  }
+}

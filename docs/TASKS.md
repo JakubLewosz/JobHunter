@@ -1,5 +1,22 @@
 # Bieżące zadania — 18 października 2026
 
+## Doprecyzowanie po przeglądzie — etap pakietu informacji
+
+- [x] Eksporter readonly schematu 20–25, ścisła projekcja i redakcja przed
+      publikacją; wszystkie szkice/wersje i dostępne historyczne materiały.
+- [x] Wymaganie jednej sekwencji obsługiwanej rozmową Codex, z priorytetem
+      odnowienia dotychczasowej biblioteki, zapisane z datą i statusem docelowym.
+- [x] [Macierz R1–R12](REVIEW_FINDINGS.md) zachowuje otwarte problemy i źródła dowodów.
+- [ ] Implementacja i test koordynatora research → kontrola → partia → sender;
+      trwałe przejścia, odrębne prawidłowe zakończenie i utrata uprawnienia.
+- [ ] Kontrakt wcześniejszej zgody na reguły wyboru przyszłej partii, ustalenie
+      rzeczywistego tempa/limitów/okna i wykonawcy. Brak autoPolicy w kopii.
+- [ ] Bieżący `workstation-invocation-record.json`, manifest aktywnego programu
+      oraz pełna weryfikacja podtrzymania rzeczywistego wykonawcy.
+- [ ] Naprawy R1–R12 poza tym zadaniem; nie uznawać eksportera za naprawę rdzenia.
+
+Wyniki publikacji i kontroli: [AI_REVIEW](AI_REVIEW.md), [TEST_REPORT](TEST_REPORT.md).
+
 Implementację sprawdzono na osobnym worktree `codex/core-completion`.
 Później osobno zlecono commit/push i publiczny eksport wybranej kopii:
 [AI_REVIEW](AI_REVIEW.md). Bez wdrożenia prywatnej instalacji.

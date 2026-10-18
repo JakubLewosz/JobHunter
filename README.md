@@ -1,5 +1,11 @@
 # JobHunter
 
+Aktualne wejście do kompletnego pakietu przeglądu: **[AI_REVIEW](docs/AI_REVIEW.md)**.
+Rozszerzony eksport obejmuje zredagowane szkice, wszystkie wersje, materiały
+i metadane historii ze wskazanej kopii. [CODEX_OPERATION](docs/CODEX_OPERATION.md)
+opisuje docelową obsługę rozmową „na 8h” i brakujące elementy sekwencji.
+W tym etapie nie uruchamiano ani nie wdrażano nocnego researchu lub sendera.
+
 Pakiet kodu i publicznych danych do analizy przez AI: [AI_REVIEW](docs/AI_REVIEW.md).
 Publikację na `codex/core-completion` oraz eksport firm/kontaktów/źródeł
 z osobno wskazanego backupu zlecono po zakończeniu lokalnej implementacji.

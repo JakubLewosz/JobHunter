@@ -1,0 +1,40 @@
+{
+  "present": false,
+  "recordedApproval": null,
+  "sender": null,
+  "cv": {
+    "id": null,
+    "state": "NOT_RECORDED"
+  },
+  "profileHash": null,
+  "contactKinds": null,
+  "contactTypes": null,
+  "searchScope": null,
+  "sessionLimit": null,
+  "dailyLimit": null,
+  "limitFieldsPresent": {
+    "session": false,
+    "daily": false
+  },
+  "sendIntervalSeconds": null,
+  "researchIntervalSeconds": null,
+  "approvedAt": null,
+  "policyVersionKnowledge": "CURRENT_STATE_ONLY",
+  "priorCampaignBoundary": "2026-10-13T14:48:00.372Z",
+  "historyStorage": "LOCAL_ONLY",
+  "localHistoryConfirmed": null,
+  "stopped": true,
+  "paused": true,
+  "senderPaused": true,
+  "transport": "GMAIL_BROWSER",
+  "futureNightSequenceApproval": "NOT_RECORDED",
+  "missingBeforeRealStart": [
+    "FUTURE_SEQUENCE_SELECTION_RULES",
+    "FUTURE_SEQUENCE_APPROVAL",
+    "SEND_WINDOW_CONFIRMATION",
+    "CURRENT_WORKSTATION_STATE",
+    "SENDER_CONFIGURATION",
+    "TEMPO_CONFIGURATION",
+    "LIMITS_CONFIGURATION"
+  ]
+}

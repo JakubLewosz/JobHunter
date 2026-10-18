@@ -1,8 +1,16 @@
 # Znane problemy i granice dowodów — 18 października 2026
 
-Aktualizacja implementacji: [CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md).
-Poprawki kodu są lokalne; poniższa historia nie jest deklaracją wdrożenia.
-Prywatnej kopii nie audytowano, a rzeczywista ciągłość browser nie została
+Nowy pakiet informacji nie naprawia usterek rdzenia. Aktualna
+[macierz R1–R12](REVIEW_FINDINGS.md) zachowuje ustalenia przeglądu, w tym guard,
+kontekst kontaktów/odesłań, refresh/Start, wyścig wykonawcy, deferred, nakładające
+się partie, schemat 20, WAL preflight, filtry, npm na CI i opóźnienie Stop.
+[CODEX_OPERATION](CODEX_OPERATION.md) rozdziela nowe wymaganie nocnej sekwencji
+od istniejącego kodu. Rozszerzony snapshot jest materiałem do przeglądu,
+nie dowodem gotowości biblioteki lub wdrożenia.
+
+Historyczny etap implementacji: [CORE_IMPLEMENTATION](CORE_IMPLEMENTATION.md).
+Poprawki były wtedy lokalne; poniższa historia nie jest deklaracją wdrożenia.
+W tamtym etapie prywatnej kopii nie audytowano, a rzeczywista ciągłość browser nie została
 zweryfikowana. Pozostaje osobny przegląd istniejącego checkpointu i pilota.
 
 Aktualne zadania: [TASKS](TASKS.md). Kontekst: [REVIEW_HANDOFF](REVIEW_HANDOFF.md).
