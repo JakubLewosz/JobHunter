@@ -60,3 +60,23 @@ nie zmienił się przed/po. Dowody skopiowano do docs/reviews/windows-nightflow-
 Nie zmieniać kodu po tym wyniku. Następny krok: jawny staging sprawdzonych plików,
 commit/push wyłącznie gałęzi napraw, rzeczywisty CI dla SHA, następnie
 `scripts/package-nightflow-review.py` i ponowne wypakowanie/weryfikacja ZIP.
+
+## Publikacja i rzeczywisty brak CI
+
+Kod bbef9d1d… i dokumentacja 894ab953… opublikowane wyłącznie na gałęzi napraw;
+main/core-completion bez zmiany SHA. Pierwszy CI run 39171469775 **FAILURE**,
+job 117805244708, krok npm run check exit 1. Brak dostępu do logów: REST 403,
+UI „Sign in to view logs”, połączone narzędzie niedostępne. Przyczyna pozostaje
+UNKNOWN_LOGS_UNAVAILABLE; nie zgadywać naprawy i nie rerunować do zielonego.
+Dokładny następny krok CI jest w TASKS; reszta przekazania jest wykonalna.
+
+Pierwszą próbę pakowania zatrzymał kontroler blobów: git archive przy
+core.autocrlf=true rozwija LF do CRLF. Procesowe core.autocrlf=input pozwala
+zachować dokładne bloby bez zmiany globalnego Git/kodu/manifestu. Próbny ZIP
+zweryfikował 376 źródeł, 216 plików kodu, manifest i ponowne wypakowanie.
+Patch zastosowany do nowej kopii bazy odtworzył wszystkie 376 finalnych blobów.
+Osobna kopia ZIP bez .git: instalacja, build i pełne fixture COMPLETED, jeden
+fikcyjny send, authority=false. Pierwsza instalacja w pustym środowisku miała
+UNABLE_TO_VERIFY_LEAF_SIGNATURE; zweryfikowane --use-system-ca rozwiązało problem
+bez wyłączania TLS. Zachowano pierwszą porażkę. Oryginalny checkout czysty,
+własne porty testowe zamknięte. Następnie finalny ZIP z rzeczywistym CI i SHA.

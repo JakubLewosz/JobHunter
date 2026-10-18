@@ -68,6 +68,12 @@ Dawnych manifestów/danych nie zmieniano. [Nowy raport](reviews/WINDOWS_NIGHTFLO
 
 Poniżej pozostają datowane wyniki wcześniejszych etapów.
 
+Pierwsza publikacja 894ab953…: Windows CI **FAILURE**, run 39171469775,
+job 117805244708, npm run check exit 1 (15 min 44 s), bez publicznej nazwy
+nieudanego testu. Logi REST 403 / UI wymaga logowania; narzędzie połączone
+niedostępne. [Zapis CI](reviews/windows-nightflow-evidence/ci-first.json).
+Nie ma dowodu naprawienia przyczyny; lokalnego PASS nie utożsamiamy z CI.
+
 ## Rozszerzony pakiet przeglądu — etap po bfbbc630
 
 Zakres: eksporter/walidator i jego testy, dokumentacja wymagań/uruchamiania,

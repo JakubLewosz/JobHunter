@@ -1,6 +1,7 @@
 # Windows/Codex nightflow — implementacja w nocy 18/19.10.2026
 
-Status: **WIP dla rzeczywistego hosta Codexa; NIEGOTOWE DO RZECZYWISTEJ KAMPANII**.
+Status: **WIP — CI FAILURE i nieweryfikowany rzeczywisty host Codexa;
+NIEGOTOWE DO RZECZYWISTEJ KAMPANII**.
 Kod i pełny przebieg są sprawdzane syntetycznie. Brakujący dowód utrzymania hosta
 opisano jako `NIEWERYFIKOWANE_UTRZYMANIE_HOSTA`; ustawienia i wdrożenie produkcyjne
 pozostają osobnym, świadomym działaniem użytkownika.
@@ -203,8 +204,25 @@ fikcyjny POST kończył się po revoke (325,36–343,44 ms od żądania); nie by
 nową akcją. Jest to pierwsza ukończona osobna seria tej implementacji,
 bez zmiany progów, zmniejszenia fixture lub powtarzania do zielonego.
 
-CI finalnego SHA jest raportowany osobno w `review/ci.json` paczki i odnośniku
-do GitHub Actions; lokalnego PASS nie podstawiamy jako wyniku CI.
+Pierwszy Windows CI dla `894ab95362842c4efc9f20e2b85cb8925f9a4c7d`:
+**FAILURE**, [run 39171469775](https://github.com/JakubLewosz/JobHunter/actions/runs/39171469775),
+job 117805244708. Instalacja/Chromium PASS; krok `npm run check` zakończył się
+exit 1 po 15 min 44 s (22:17:07–22:32:51 UTC). Dostępna publiczna adnotacja
+podaje wyłącznie „Process completed with exit code 1.”, bez nazwy testu.
+Brak artefaktów. [Oczyszczony zapis](windows-nightflow-evidence/ci-first.json).
+Przyczyna: **UNKNOWN_LOGS_UNAVAILABLE**, nie uznajemy jej za naprawioną:
+REST logów zwraca 403, interfejs wymaga „Sign in to view logs”, a połączone
+narzędzie GitHub nie jest dostępne w tej sesji. Nie szukano tokenów, nie
+zmieniano dostępu ani progów i nie ponawiano samego joba do zielonego.
+
+Dokładny następny krok: odczytać log istniejącego joba 117805244708, krok
+`npm run check`, przez autoryzowany dostęp; wskazać pierwszą błędną asercję,
+odtworzyć ten scenariusz syntetycznie, naprawić i wykonać wymagane kontrole.
+Nie zlecamy nowego ogólnego audytu lub eksportu biblioteki. Dopisanie tego
+raportu nie zmienia testowanego kodu. Ewentualny automatyczny CI dla commitu
+samej dokumentacji nie jest dowodem naprawy przyczyny pierwszej porażki.
+Stan CI finalnego SHA jest raportowany osobno w `review/ci.json` paczki;
+lokalnego PASS nie podstawiamy jako wyniku CI.
 Celowane odtworzenia obejmują prawdziwe klasy usług/IPC, osobny proces CLI,
 crash własnego SQLite writer, fikcyjny browser i przyspieszony zegar.
 Historyczne niepowodzenia i naprawy fixture pozostają opisane w TEST_REPORT.

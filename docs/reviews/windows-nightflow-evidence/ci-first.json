@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "headSha": "894ab95362842c4efc9f20e2b85cb8925f9a4c7d",
+  "name": "Offline Windows",
+  "runId": 39171469775,
+  "url": "https://github.com/JakubLewosz/JobHunter/actions/runs/39171469775",
+  "status": "completed",
+  "conclusion": "failure",
+  "observedAt": "2026-10-18T22:36:52.1301735Z",
+  "jobId": 117805244708,
+  "checkStep": {
+    "name": "npm run check",
+    "startedAt": "2026-10-18T22:17:07Z",
+    "endedAt": "2026-10-18T22:32:51Z",
+    "exitCode": 1
+  },
+  "rootCause": "UNKNOWN_LOGS_UNAVAILABLE",
+  "logAccess": {
+    "publicRestHttp": 403,
+    "browser": "SIGN_IN_TO_VIEW_LOGS",
+    "connectedTool": "NOT_AVAILABLE_TO_MODEL"
+  },
+  "annotation": "Process completed with exit code 1.",
+  "artifactCount": 0,
+  "localWindowsCheck": {
+    "exitCode": 0,
+    "backend": 721,
+    "serialStop": 12,
+    "ui": 22,
+    "fingerprint": "8ae15067784be0fea94c78653826e80d1b43fdfc07454e6435515e717b2d4e63"
+  },
+  "nextStep": "Read existing job 117805244708 npm run check log through authorized access, identify failing assertion, reproduce only that scenario synthetically, repair and run required checks; no blind retry or lowered thresholds."
+}

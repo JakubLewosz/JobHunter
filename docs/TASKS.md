@@ -11,8 +11,15 @@
       przez osiem godzin kontrolowanego zegara.
 - [x] Przegląd granic zapisu/wznowienia i finalny Windows check: 721/721 backend,
       12/12 serial Stop, typecheck/build, 22/22 UI; niezmienny manifest kodu.
-- [ ] Publikacja oraz weryfikacja CI i ZIP finalnego commitu; wynik przekazania
-      poza samoodnoszącym się manifestem kodu.
+- [x] Opublikowano kod i dowody (894ab953…); narzędzie ZIP sprawdziło pełne
+      drzewo Git, wszystkie 216 testowanych plików i ponowne wypakowanie.
+      Patch odtwarza 376 plików; osobna kopia ZIP: npm ci/build/fixture PASS.
+      Metadane finalnego przekazania są dopisywane po commicie w paczce.
+- [ ] **CI FAILURE / UNKNOWN_LOGS_UNAVAILABLE**: istniejący run 39171469775,
+      job 117805244708, krok npm run check, exit 1. REST logów 403, browser
+      wymaga logowania, połączone narzędzie niedostępne. Odczytać konkretny log
+      przez autoryzowany dostęp, odtworzyć pierwszą błędną asercję syntetycznie,
+      naprawić i ponowić wymagane kontrole; bez zmiany progów/ślepego retry.
 - [ ] Przed prawdziwym użyciem: zatwierdzone ustawienia planu, spójny backup,
       rozstrzygnięcie starego PAUSED, kontrolowana aktualizacja/audyt/odnowienie,
       utrzymanie rzeczywistego hosta browser i osobno dopuszczony pilot.

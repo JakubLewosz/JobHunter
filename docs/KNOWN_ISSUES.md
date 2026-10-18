@@ -2,6 +2,10 @@
 
 Bieżący etap: [R1–R13 i nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Status rzeczywistego hosta: **WIP / NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.
+Pierwszy CI gałęzi napraw: **FAILURE** (run 39171469775, job 117805244708,
+npm run check exit 1). Przyczyna nieustalona: logi wymagają niedostępnego
+autoryzowanego dostępu, publiczny odczyt zwraca 403. Lokalny Windows PASS
+nie rozstrzyga tej porażki. Dokładny następny krok zapisano w TASKS.
 Poprawki oraz testy syntetyczne nie aktualizują prywatnej instalacji.
 Otwarte pozostają: produkcyjne ustawienia/zgoda planu, rozstrzygnięcie dawnego
 PAUSED po backupie, kontrolowana aktualizacja, faktyczne odnowienie biblioteki,
