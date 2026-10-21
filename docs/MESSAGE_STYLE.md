@@ -31,9 +31,10 @@ warunek. Zdanie „szukam płatnej pracy” samo opisuje cel, nie prośbę odbio
 
 Zachowujemy edukację, cel płatnej regularnej pracy, pełną zdalność,
 dostępność, rzeczowe dopasowanie, zatwierdzony GitHub i podpis. Można łączyć
-informacje i umieszczać je w różnych miejscach. Obecna zatwierdzona
-dostępność to około 20 godzin tygodniowo, głównie po lekcjach; liczby zawsze
-pochodzą z aktualnego profilu. Nazwa szkoły, miasto i ostatnia klasa także
+informacje i umieszczać je w różnych miejscach. Dostępność i ewentualne pory
+dnia pochodzą wyłącznie z aktualnego zatwierdzonego profilu. Nowa propozycja
+z 21.10 usuwa dopisek o lekcjach; brak pór dnia nie oznacza pełnej
+dyspozycyjności i nie zmienia około 20 h w dokładnie 20 h. Nazwa szkoły, miasto i ostatnia klasa także
 wymagają zatwierdzonych faktów. Nie dopisujemy roku szkolnego.
 
 Orientacyjne 80–130 słów to wskazówka redakcyjna, nie minimum, maksimum ani
@@ -63,6 +64,7 @@ Kod dobiera projekty z literalnych dowodów i zatwierdzonych faktów:
 - API, webhooki, integracje i automatyzacja: AutoRelay.
 - Lokalne modele, LLM, narzędzia AI: CodeFabric, w zakresie prototypu.
 - PDF, dokumenty, analiza obrazu i plany elektryczne: ElektroScan.
+- Udokumentowane tworzenie stron/interfejsów: Sęk i Forma, tylko z zatwierdzonym faktem.
 
 „Stworzyłem”, „pracowałem w zespole nad” i „rozwijam” nie są zamienne.
 Samodzielność, liczba osób, udział i trwający rozwój wymagają faktów.

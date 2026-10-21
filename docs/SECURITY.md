@@ -1,5 +1,11 @@
 # Bezpieczeństwo JobHunter — 12 października 2026
 
+Aktualizacja 21.10: [lekki adapter i owner Node](HOST_ADAPTER.md) korzystają
+z dotychczasowego uwierzytelnionego IPC. Attach nie daje prawa Start. Nowa
+propozycja faktu ma DRAFT i unieważnia binding profilu; provenance nie jest
+zgodą. Publiczny kontakt nie przełącza nadawcy. CV pozostaje nowym zasobem
+z własną zgodą. Propozycję osobistych materiałów przygotowano wyłącznie lokalnie.
+
 R14, 21.10.2026: [kontrakt sterowania](NIGHTFLOW_CONTROL.md). ACK wiąże instancję,
 job, generację, request i operację. Błąd IPC nie dowodzi utraty właściciela;
 offline nie daje authority=false. ACK odwołania nie jest zgodą na aktualizację

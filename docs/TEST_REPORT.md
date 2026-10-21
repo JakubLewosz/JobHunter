@@ -1,5 +1,41 @@
 # Wyniki i zakres weryfikacji — 18 października 2026
 
+## Node owner / lekki host / materiały — 21.10.2026
+
+Końcowy check dokładnych bajtów: **PASS, exit 0**, 773/773 backend, 12/12
+serial Stop, typecheck/build, 26/26 UI; 860918,848 ms. 12:57:06.559–13:11:27.478
+UTC (14:57–15:11 Europe/Warsaw). 229 plików niezmienionych przed/po;
+fingerprint `05f32e4bc2414b554de9e6121142d1824ca5d555b1761e2660b695b8f9990265`.
+Brak FAIL/SKIP/cancel. Stan w czasie testu UNCOMMITTED_WORKTREE od 66dbc9e;
+pakiet niezależnie porównuje każdy testowany plik z blobem finalnego commitu.
+CI końcowego SHA jest osobnym wynikiem w metadanych przekazania.
+
+[Raport nowego etapu](reviews/JOBHUNTER_HOST_MATERIALS_RESULT.md).
+Rzeczywisty krótki cua_repl: COMPLETED, jedna rezerwacja, jedna lokalna akcja,
+cleanup. Oddzielnie wykonano rzeczywiste negatywne próby Stop/utraty ACK/karty
+i odmów zakresu/originu/odbiorcy/treści/PDF. JSON dowody i hashe adaptera są w
+końcowym ZIP. To nie Gmail i nie 8 h; osiem godzin czasu rzeczywistego: NOT_RUN.
+
+Pierwszy nowy pełny Windows `npm run check`: PASS, exit 0; 773/773 backend,
+12/12 serial Stop, typecheck/build, 26/26 UI, 782201,3527 ms.
+12:42:08.186–12:55:10.388 UTC (14:42–14:55 Europe/Warsaw).
+Windows x64 10.0.26300, Node24.19.0/npm11.17.0/SQLite3.53.4;
+odrębne HOME/APPDATA/LOCALAPPDATA/TEMP/CODEX_HOME/data i komplet fikcyjnych usług.
+Fingerprint 4745134662c134d283dcae3c71dd082bc26adbc23c2b1f4e53d2fc6e2eb8df93
+był identyczny przed/po. Ten checkout miał CRLF inne niż część blobów Git.
+Końcowy check wykonano ponownie na bajtach przeznaczonych do dokładnego archiwum;
+ostateczny wynik/fingerprint i powiązanie z finalnym SHA znajdują się w dostawie.
+Wczesny przebieg normalizacji przerwano; nie deklarowano go jako pełnego PASS.
+
+Celowane 25/25 na wcześniejszym stanie i 8/8 po dalszych korektach; pierwsze
+fixture/graf testu wymagały poprawy. Node/Playwright: pierwsza seria 8/9,
+następnie 9/9 po dodaniu jawnego leaseValid bez zmiany dawnego ready hosta.
+Wczesne błędy realnego multiline fill i wrappera utraty ACK zachowano osobno.
+Nie sumować nakładających się zestawów. Nie zmieniono progów ani fixture Stop.
+Propozycja materiałów: lokalna walidacja istniejącą usługą na nowej bazie,
+15 DRAFT, FixDesk DEFERRED, sender bez zmian, 0 model calls i prób wysyłki.
+Bez prywatnego CV/propozycji w repo lub CI. Brak nowej operacji na WORKSTATION.
+
 ## Aktualizacja R14 — 21.10.2026
 
 [Nowy raport, rzeczywiste wyniki i tożsamość testowanego kodu](reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md).

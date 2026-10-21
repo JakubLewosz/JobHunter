@@ -1,20 +1,18 @@
-// Import this entry point inside Codex's browser session. It does not open a browser,
-// inspect cookies, connect Gmail OAuth or send anything by itself.
+// Host-only entry: no Store, coordinator, MIME, Gmail API or auto-policy import.
 export {
   GmailBrowserExecutor,
   connectBrowserExecutor,
   runBrowserDelivery,
   serveBrowserDeliveries,
 } from '../dist/apps/server/src/browser/executor.js';
-import { BrowserBatchController } from '../dist/apps/server/src/browser/batch-controller.js';
-import { withNightflow } from '../dist/apps/server/src/nightflow-entry.js';
-import { ActiveTaskNightflowBrowserHost } from '../dist/apps/server/src/nightflow-browser-host.js';
-import { existsSync, readdirSync } from 'node:fs';
-import { localFixtureOrigin } from '../dist/apps/server/src/testing/local-fixture-origin.js';
-import { autoPolicySchema } from '../dist/apps/server/src/auto-policy.js';
-export { BrowserBatchController };
-// The active task owns this invocation. No daemon or replacement session.
+export { BrowserBatchController } from '../dist/apps/server/src/browser/batch-controller.js';
+import { BrowserExecutorClient } from '../dist/apps/server/src/browser/client.js';
+import { runBrowserDelivery } from '../dist/apps/server/src/browser/executor.js';
+import { setTimeout as delay } from 'node:timers/promises';
+
 export async function serveBrowserBatch(client, tab, options = {}) {
+  const { BrowserBatchController } =
+    await import('../dist/apps/server/src/browser/batch-controller.js');
   const controller = new BrowserBatchController(client, tab);
   let result;
   do {
@@ -24,78 +22,106 @@ export async function serveBrowserBatch(client, tab, options = {}) {
   return result;
 }
 
-// Await this inside the active task that owns tab. The process waits for research
-// and hands the approved plan's result directly to the same pinned browser host.
-// This does not wake a completed Codex turn or create a schedule.
-export async function runNightflowTask({ dir, planId, taskId, tab, signal, resumeJobId, fixture }) {
-  if (fixture) {
-    localFixtureOrigin(fixture.origin);
-    if (planId || resumeJobId || (existsSync(dir) && readdirSync(dir).length))
-      throw Error('FIXTURE_NEW_PROFILE_REQUIRED');
+export class CodexNightflowAdapter {
+  constructor(dir, taskId, tab, options = {}) {
+    if (!taskId) throw Error('BROWSER_TASK_REQUIRED');
+    this.client = new BrowserExecutorClient(dir);
+    this.tab = tab;
+    this.options = options;
+    this.ended = false;
+    this.started = false;
+    this.busy = false;
+    this.completed = 0;
   }
-  let host;
-  const adapter = {
-    ready: () => !!host?.ready(),
-    run: (signal, scope) => host.run(signal, scope),
-    close: async () => host?.close(),
-    setLossHandler: (handler) => host?.setLossHandler(handler),
-  };
-  return withNightflow(
-    {
-      dir,
-      signal,
-      host: adapter,
-      ...(fixture
-        ? {
-            fixture: true,
-            fixtureBrowserOrigin: fixture.origin,
-            fixtureWallClock: fixture.wallClock === true,
-            realWaitMs: fixture.realWaitMs ?? 100,
-            onProgress: fixture.onProgress,
+  async connect() {
+    if (this.state || this.ended) throw Error('BROWSER_HOST_BUSY');
+    await this.tab.url();
+    await this.client.probe();
+    this.state = await this.client.nightflow('attach');
+    return this.state;
+  }
+  async start() {
+    if (!this.state || this.started || this.ended) throw Error('BROWSER_HOST_BUSY');
+    this.started = true; // never retry a possibly accepted Start
+    this.state = await this.client.nightflow('start', this.state.target);
+    return this.state;
+  }
+  async segment(durationMs = 30000, signal) {
+    if (this.busy || !this.started || this.ended) throw Error('BROWSER_HOST_BUSY');
+    if (!Number.isFinite(durationMs) || durationMs < 1 || durationMs > 60000)
+      throw Error('BROWSER_DURATION');
+    this.busy = true;
+    const end = performance.now() + durationMs;
+    try {
+      while (performance.now() < end) {
+        signal?.throwIfAborted();
+        await this.tab.url();
+        signal?.throwIfAborted();
+        const state = await this.client.nightflow('poll', this.state.target);
+        signal?.throwIfAborted();
+        if (JSON.stringify(state.target) !== JSON.stringify(this.state.target))
+          throw Error('BROWSER_SESSION_CHANGED');
+        if (this.scope && JSON.stringify(state.scope) !== JSON.stringify(this.scope))
+          throw Error('BROWSER_SESSION_CHANGED');
+        this.state = state;
+        if (['COMPLETED', 'STOPPED', 'PAUSED', 'NEEDS_RESOLUTION'].includes(state.current.state)) {
+          await this.client.nightflow('ackResult', state.target);
+          this.ended = true;
+          return { status: state.current.state, completed: this.completed, current: state.current };
+        }
+        if (state.scope) {
+          this.scope ??= state.scope;
+          const result = await runBrowserDelivery(this.client, this.tab, {
+            scope: this.scope,
+            signal,
+            fixtureOrigin: this.options.fixtureOrigin,
+          });
+          if (result.status === 'STOPPED') {
+            this.ended = true;
+            return result;
           }
-        : {}),
-    },
-    async (coordinator, service, fixturePlan) => {
-      const policy = fixture ? service.policyConfig() : undefined;
-      if (fixture) {
-        if (!fixture.origin || resumeJobId || planId) throw Error('FIXTURE_OPTIONS');
-        await service.setSendTransport({
-          transport: 'GMAIL_BROWSER',
-          confirmed: true,
-          outgoingViewConsent: true,
-        });
+          if (result.status === 'RECORDED') this.completed++;
+        }
+        await delay(250, undefined, { signal });
       }
-      if (service.sendTransport() !== 'GMAIL_BROWSER') throw Error('BROWSER_TRANSPORT_REQUIRED');
-      await service.browserDelivery.listen();
-      host = new ActiveTaskNightflowBrowserHost(dir, taskId, tab, undefined, fixture?.origin);
-      await host.initialize();
-      if (fixture) {
-        service.configurePolicy(
-          Object.fromEntries(Object.keys(autoPolicySchema.shape).map((key) => [key, policy[key]])),
-        );
-        fixturePlan.binding = service.nightflowBinding();
-        coordinator.savePlan(fixturePlan, true);
-        planId = fixturePlan.id;
-      }
-      const result = await coordinator.start(planId, resumeJobId);
-      return fixture
-        ? {
-            fixture: true,
-            clock: fixture.wallClock ? 'WALL_MONOTONIC' : 'ACCELERATED',
-            ...result,
-            host: host.diagnostics(),
-            attempts: service.store.one('SELECT count(*) n FROM send_attempts').n,
-            browserActions: service.store.one(
-              'SELECT count(*) n FROM browser_deliveries WHERE click_granted_at IS NOT NULL',
-            ).n,
-            attemptStates: service.store.all(
-              'SELECT state,count(*) n FROM send_attempts GROUP BY state',
-            ),
-            deliveryStates: service.store.all(
-              'SELECT state,count(*) n FROM browser_deliveries GROUP BY state',
-            ),
-          }
-        : result;
-    },
-  );
+      return { status: 'WAITING', completed: this.completed, phase: this.state.current.state };
+    } catch (error) {
+      this.ended = true;
+      await this.client.release().catch(() => {});
+      return {
+        status: 'STOPPED',
+        code: /^[A-Z_]{1,80}$/.test(error.message) ? error.message : 'BROWSER_HOST_LOST',
+        completed: this.completed,
+      };
+    } finally {
+      this.busy = false;
+    }
+  }
+  async close() {
+    this.ended = true;
+    await this.client.release().catch(() => {});
+  }
+}
+
+export async function runNightflowTask(input) {
+  if (
+    Object.keys(input).some(
+      (key) => !['dir', 'taskId', 'tab', 'signal', 'fixtureOrigin', 'onSegment'].includes(key),
+    )
+  )
+    throw Error('BROWSER_OWNER_OPTIONS_REQUIRED');
+  const { dir, taskId, tab, signal, fixtureOrigin, onSegment } = input;
+  const adapter = new CodexNightflowAdapter(dir, taskId, tab, { fixtureOrigin });
+  try {
+    await adapter.connect();
+    await adapter.start();
+    let result;
+    do {
+      result = await adapter.segment(30000, signal);
+      await onSegment?.(result);
+    } while (result.status === 'WAITING');
+    return result;
+  } finally {
+    await adapter.close();
+  }
 }

@@ -60,7 +60,15 @@ export const profileSchema = z
     hours_max: z.number().int().min(1).max(40),
     version: z.number().int().positive(),
     facts: z
-      .array(z.object({ id: z.string(), content: z.string().min(1).max(2000) }).strict())
+      .array(
+        z
+          .object({
+            id: z.string(),
+            content: z.string().min(1).max(2000),
+            source: z.string().min(1).max(2000).optional(),
+          })
+          .strict(),
+      )
       .max(30),
   })
   .strict()
@@ -514,6 +522,57 @@ export class JobHunter {
       );
     });
   }
+  stageProfileFact(input: unknown) {
+    const v = z
+      .object({
+        key: z.enum([
+          ...projectKeys,
+          'contact',
+          'practice',
+          'qualifications',
+          'languages',
+          'technologies',
+        ]),
+        content: z.string().min(1).max(2000),
+        source: z.string().min(1).max(2000),
+      })
+      .strict()
+      .parse(input);
+    if (
+      !this.state().stopped ||
+      this.store.one("SELECT id FROM outbox WHERE status IN ('QUEUED','SENDING','SEND_UNKNOWN')")
+    )
+      throw new DomainError('BUSY', 'Zatrzymaj i rozstrzygnij wcześniejsze operacje.');
+    if (
+      this.store.one(
+        'SELECT id FROM candidate_facts WHERE profile_id=? AND fact_key=?',
+        'candidate',
+        v.key,
+      )
+    )
+      throw new DomainError('INVALID_FACT', 'Fakt istnieje; użyj wersjonowanej edycji profilu.');
+    this.control('pause');
+    return this.store.atomic(() => {
+      const factId = id();
+      this.store.exec(
+        "INSERT INTO candidate_facts VALUES (?,?,?,?,?,NULL,'DRAFT',1,?,?)",
+        factId,
+        'candidate',
+        v.key,
+        v.content,
+        v.source,
+        this.now(),
+        this.now(),
+      );
+      this.store.exec(
+        "UPDATE candidate_profiles SET version=version+1,profile_hash=?,approved_at=NULL,updated_at=? WHERE id='candidate'",
+        hash(JSON.stringify({ previous: this.profile().profile_hash, factId, ...v })),
+        this.now(),
+      );
+      this.revokeApprovals('Nowa propozycja faktu');
+      return this.store.one('SELECT * FROM candidate_facts WHERE id=?', factId)!;
+    });
+  }
   updateProfile(input: unknown) {
     const v = profileSchema.parse(input);
     const p = this.profile();
@@ -548,8 +607,9 @@ export class JobHunter {
           );
       for (const f of v.facts)
         this.store.exec(
-          "UPDATE candidate_facts SET content=?,approval_status='DRAFT',version=version+1,updated_at=? WHERE id=?",
+          "UPDATE candidate_facts SET content=?,source=COALESCE(?,source),approval_status='DRAFT',version=version+1,updated_at=? WHERE id=?",
           f.content,
+          f.source ?? null,
           this.now(),
           f.id,
         );

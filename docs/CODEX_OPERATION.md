@@ -1,5 +1,12 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+Aktualizacja integracji 21.10.2026: [Node owner i lekki adapter](HOST_ADAPTER.md).
+Backend i koordynator pozostają w zwykłym Node24; `runNightflowTask` w narzędziu
+łączy się z wcześniej uruchomionym zatrzymanym ownerem. Krótka pełna fixture
+w rzeczywistym `cua_repl`: COMPLETED, jedna fikcyjna akcja i cleanup. 8 h: NOT_RUN.
+To zastępuje niższy historyczny opis uruchamiania backendu bezpośrednio w VM.
+Nie wdrożono WORKSTATION ani nie zatwierdzono nowych materiałów/produkcji.
+
 Aktualny kontrakt z 21.10.2026: [NIGHTFLOW_CONTROL](NIGHTFLOW_CONTROL.md).
 `stop` bez ACK: exit 1 / STOP_UNCONFIRMED, brak potwierdzenia zatrzymania.
 `status` bez odpowiedzi właściciela: exit 1 / STATUS_UNAVAILABLE.

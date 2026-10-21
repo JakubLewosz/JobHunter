@@ -1,45 +1,16 @@
 // Reproducible public-entry integration. Import in a host that supports Node
 // modules and the documented tab; CLI below uses Node/Playwright, a separate level.
-import { createServer } from 'node:http';
-import { readFileSync, mkdtempSync, rmSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir, release } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { runNightflowTask } from './browser-executor.mjs';
+import { runStoppedNightflowOwner } from './nightflow-node-owner.mjs';
 import { requestNightflow } from '../dist/apps/server/src/nightflow-control.js';
 import { runningBuildIdentity } from '../dist/apps/server/src/build-identity.js';
 
-export async function createLocalFixturePage() {
-  const html = readFileSync(new URL('../tests/fixtures/gmail-compose.html', import.meta.url));
-  const server = createServer((req, res) => {
-    if (req.method !== 'GET' || !req.url?.startsWith('/fixture')) {
-      res.writeHead(404);
-      res.end();
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'Content-Security-Policy':
-        "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'",
-    });
-    res.end(html);
-  });
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
-  });
-  const origin = `http://127.0.0.1:${server.address().port}`;
-  return {
-    origin,
-    url: origin + '/fixture?no-id',
-    close: () =>
-      new Promise((resolve) => {
-        server.closeAllConnections();
-        server.close(resolve);
-      }),
-  };
-}
+export { createLocalFixturePage } from './local-fixture-page.mjs';
+import { createLocalFixturePage } from './local-fixture-page.mjs';
 
 export async function runLocalHostFixture({
   tab,
@@ -85,10 +56,13 @@ export async function runLocalHostFixture({
   const timeout = setTimeout(() => abort.abort(), wallClock ? 8 * 3600000 + 15 * 60000 : 90000);
   try {
     await tab.goto(page.url);
-    const result = await runNightflowTask({
+    let ready;
+    const initialized = new Promise((resolve) => {
+      ready = resolve;
+    });
+    const owner = runStoppedNightflowOwner({
       dir,
-      taskId,
-      tab,
+      onReady: ready,
       signal: abort.signal,
       fixture: {
         origin: page.origin,
@@ -116,6 +90,10 @@ export async function runLocalHostFixture({
         },
       },
     });
+    owner.catch(() => ready());
+    await initialized;
+    await runNightflowTask({ dir, taskId, tab, signal: abort.signal, fixtureOrigin: page.origin });
+    const result = await owner;
     await controlWork;
     report = {
       schema: 1,

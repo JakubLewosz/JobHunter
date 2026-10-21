@@ -29,9 +29,17 @@ try {
   const dir = value('--data-dir');
   if (
     !dir ||
-    !['fixture', 'plan', 'preflight', 'start', 'status', 'stop', 'resume', 'report'].includes(
-      command,
-    )
+    ![
+      'fixture',
+      'plan',
+      'preflight',
+      'start',
+      'browser-owner',
+      'status',
+      'stop',
+      'resume',
+      'report',
+    ].includes(command)
   )
     throw new DomainError('NIGHTFLOW_OPTIONS', 'Wskaż komendę i --data-dir.');
   if (['status', 'stop', 'report'].includes(command)) {
@@ -52,6 +60,21 @@ try {
       } else result = readNightflowReport(dir);
     }
     if (result) console.log(JSON.stringify(result));
+  } else if (command === 'browser-owner') {
+    if (!args.includes('--workstation') || !value('--plan'))
+      throw new DomainError('WORKSTATION_REQUIRED', 'Wskaż istniejącą instalację i zapisany plan.');
+    const { runStoppedNightflowOwner } = await import('./nightflow-node-owner.mjs');
+    console.log(
+      JSON.stringify(
+        await runStoppedNightflowOwner({
+          dir,
+          planId: value('--plan'),
+          resumeJobId: value('--job'),
+          signal: controller.signal,
+          onReady: (info: unknown) => console.log(JSON.stringify(info)),
+        }),
+      ),
+    );
   } else {
     if (command !== 'fixture' && !args.includes('--workstation'))
       throw new DomainError('WORKSTATION_REQUIRED', 'Wskaż jawnie istniejącą instalację.');

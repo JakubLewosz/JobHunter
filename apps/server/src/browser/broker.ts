@@ -36,6 +36,13 @@ type Pending = {
   timer: ReturnType<typeof setTimeout>;
 };
 export class BrowserDeliveryBroker {
+  private nightflowHandler?: (worker: string, command: unknown, target: unknown) => unknown;
+  setNightflowHandler(handler?: (worker: string, command: unknown, target: unknown) => unknown) {
+    this.nightflowHandler = handler;
+  }
+  hasWorker(worker: string) {
+    return this.status().connected && this.worker?.id === worker;
+  }
   private pending = new Map<string, Pending>();
   private worker: { id: string; seen: number } | null = null;
   private server?: Server;
@@ -375,6 +382,11 @@ export class BrowserDeliveryBroker {
             throw Error('AUTH');
           let result: unknown;
           switch (req.op) {
+            case 'nightflow':
+              this.assertWorker(req.workerId);
+              if (!this.nightflowHandler) throw Error('OPERATION');
+              result = this.nightflowHandler(req.workerId, req.command, req.target);
+              break;
             case 'attach':
               result = this.attach(req.workerId);
               break;

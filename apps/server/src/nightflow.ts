@@ -61,6 +61,7 @@ export const nightflowPlanSchema = z
 export type NightflowPlan = z.infer<typeof nightflowPlanSchema>;
 export type NightflowHost = {
   ready(): boolean;
+  leaseValid?(): boolean;
   run(signal: AbortSignal, scope: BrowserExecutionScope): Promise<void>;
   close?(): Promise<void>;
   setLossHandler?(handler?: () => void): void;
@@ -253,6 +254,11 @@ export class NightflowCoordinator {
   }
   private assert(plan: NightflowPlan, generation: string) {
     this.controller!.signal.throwIfAborted();
+    if (
+      this.service.sendTransport() === 'GMAIL_BROWSER' &&
+      this.options.host?.leaseValid?.() === false
+    )
+      throw new DomainError('BROWSER_HOST_LOST', 'Wygasł lease wykonawcy.');
     if (
       this.generation !== generation ||
       this.row().generation !== generation ||

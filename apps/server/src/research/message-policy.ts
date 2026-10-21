@@ -5,7 +5,7 @@ import {
   researchInstructions as baseResearchInstructions,
   type Analysis,
 } from './contracts.js';
-import { projectKeys, relevantProjectFacts } from './drafting.js';
+import { projectKeys, relevantProjectFacts, projectMentions } from './drafting.js';
 
 export type ContactType = 'ACTIVE_JOB' | 'OPEN_APPLICATION' | 'GENERAL_RECRUITMENT_CONTACT';
 export function messageContactType(analysis: Analysis): ContactType {
@@ -74,7 +74,7 @@ Organizuj informacje wokół decyzji odbiorcy, nie kategorii danych. Nie sklejaj
 JEDEN CEL, JEDNA PROŚBA: wyraź prośbę lub pytanie o możliwość współpracy/aplikowania tylko raz. Zdanie oznajmujące z piszę z pytaniem, czy… też jest prośbą, nawet bez znaku zapytania. Jeśli prośba jest na początku, na końcu jej nie powtarzaj; możesz skończyć informacją o dostępności i podpisem. Jeśli początek podaje rzeczowy kontekst lub zgłoszenie na ofertę, możesz zakończyć jednym konkretnym pytaniem o nierozstrzygnięty wymiar pracy. Samo szukam płatnej pracy opisuje cel kandydata i nie jest powtórzoną prośbą. Nie dodawaj osobnego pytania o każdy warunek, prezentację, rozmowę o portfolio lub sprzedaż usług. Nie doklejaj obowiązkowego pytania końcowego ani początkujący programista w zakończeniu.
 POWIĄZANIE FIRMY Z PROJEKTEM: zbuduj jeden rzeczowy wątek wokół potwierdzonego zadania, problemu lub obszaru firmy i odpowiadającego mu doświadczenia z projektu. Nie wymagaj pary zdań Na Państwa stronie… Mój projekt… ani takiego samego miejsca tego wątku w każdym liście. Możesz zacząć od zadania w ofercie, od konkretnego elementu projektu prowadzącego do zainteresowania firmą albo połączyć oba w jednym akapicie. Nie oceniaj za pracodawcę przydatności doświadczenia ani korzyści dla firmy. Pokaż konkretnie, co kandydat zrobił w projekcie i przy jakich podobnych zadaniach chciałby pracować, bez obietnicy, że jego doświadczenie się przyda. Nie wymyślaj motywacji, emocji, wieloletniego zainteresowania firmą ani historii jej obserwowania. Unikaj ogólników o ciekawej firmie i liderze branży oraz komentarzy typu to konkretny punkt wspólny, bezpośrednio związane z tematyką, wybrałem ten projekt jako punkt odniesienia. Nie relacjonuj procesu pisania maila.
 Wybierz zwykle JEDEN najlepiej dopasowany zatwierdzony projekt. Dwa tylko przy dwóch odrębnych udokumentowanych obszarach, z uzasadnieniem w warnings; brak dopasowania pomija projekt. Wystarczy istotna funkcja lub charakter pracy pokazujący związek; nie ma minimalnej liczby funkcji/technologii. Nie przepisuj stacku ani całej listy współodpowiedzialności z faktu. Usuń szczegóły, które nie rozwijają przytoczonego zadania firmy, nawet jeśli są prawdziwe i mieszczą się w długości. Nie dopisuj zdania o wykorzystaniu tego doświadczenia, jeśli zamiar pracy przy tych zadaniach już jest jasny. Nazwij technologię tylko, jeśli jest potrzebna do zrozumienia dopasowania i ma właściwe źródło. n8n w źródle firmy nie potwierdza n8n kandydata. AutoRelay może pokazać automatyzacje; ElektroScan pracę zespołową nad analizą planów; CodeFabric prototyp z lokalnymi modelami. Dobierz szczegół do aktualnej firmy, nie do szablonu. Stworzyłem, pracowałem w zespole nad i rozwijam nie są zamienne: samodzielność, liczba osób i trwający rozwój wymagają zatwierdzonych faktów. Nie powtarzaj samodzielnie dla dwóch etapów pracy w jednym zdaniu.
-FAKTY I KOMPLETNOŚĆ: zachowaj edukację, cel płatnej regularnej pracy, pracę w pełni zdalną i dostępność ${data.profile.availabilityMode === 'APPROX' ? `około ${data.profile.hoursApprox} godzin tygodniowo` : `${data.profile.hoursMin}–${data.profile.hoursMax} godzin tygodniowo`}, głównie po lekcjach. Podaj je zwięźle i tylko raz, w miejscu pasującym do toku listu; mogą być razem lub wplecione w inne informacje. Nie zastępuj orientacyjnej liczby maksimum ani innym przedziałem. Nazwa szkoły, miejscowość i ostatnia klasa wymagają zatwierdzonych faktów, nie wzoru. Kandydat jest uczniem, nie studentem. Imię i nazwisko wystarczą w podpisie; dodaj zatwierdzony link GitHub. Nie dopisuj roku szkolnego, stawki, dokładnej daty startu, komercji, produkcji ani spełnienia warunków, których nie potwierdzono.
+FAKTY I KOMPLETNOŚĆ: zachowaj edukację, cel płatnej regularnej pracy, pracę w pełni zdalną i dostępność ${data.profile.availabilityMode === 'APPROX' ? `około ${data.profile.hoursApprox} godzin tygodniowo` : `${data.profile.hoursMin}–${data.profile.hoursMax} godzin tygodniowo`}${data.profile.facts.some((f: Row) => f.key === 'availability' && /po lekcjach|after school/iu.test(f.content)) ? ', głównie po lekcjach' : ''}. Pory dnia wolno podać wyłącznie z aktualnego faktu availability; brak pór nie oznacza całodziennej dyspozycyjności. Podaj je zwięźle i tylko raz, w miejscu pasującym do toku listu; mogą być razem lub wplecione w inne informacje. Nie zastępuj orientacyjnej liczby maksimum ani innym przedziałem. Nazwa szkoły, miejscowość i ostatnia klasa wymagają zatwierdzonych faktów, nie wzoru. Kandydat jest uczniem, nie studentem. Imię i nazwisko wystarczą w podpisie; dodaj zatwierdzony link GitHub. Nie dopisuj roku szkolnego, stawki, dokładnej daty startu, komercji, produkcji ani spełnienia warunków, których nie potwierdzono.
 AI/Codex są opcjonalnym narzędziem pracy, tylko gdy pomaga to w konkretnym kontekście i tylko w zakresie zatwierdzonych faktów. Nie muszą występować w temacie ani treści. Samodzielne testy, debugowanie, planowanie i kompetencje wymagają własnego zatwierdzonego faktu; przykład stylu ich nie dodaje. Użycie narzędzi nie oznacza eksperta AI ani produkcyjnej pracy z agentami. CodeFabric opisuj zgodnie z faktami jako prototyp przygotowany podczas praktyk, bez sugerowania oficjalnego produktu UKNF. Ograniczenia prawdziwości z instrukcji i faktów służą generatorowi i kontroli; nie są obowiązkowymi zdaniami maila. Precyzyjny opis projektu nie wymaga dopisków zaprzeczających oficjalnemu statusowi, komercji lub wdrożeniu. Usuń mylącą sugestię z samego opisu zamiast doklejać obronne zastrzeżenie. Nie używaj etykiety projekt portfolio ani domyślnie słowa demo. Publiczne repozytorium, GitHub lub dawne określenie publiczne demo nie dowodzą działającej publicznie aplikacji: potrzebne jest potwierdzenie działającej wersji z adresem poza repo. Nie sugeruj wdrożenia produkcyjnego, użytkowników ani doświadczenia komercyjnego. Neutralne projekt, aplikacja lub prototyp nie zmieniają rzeczywistego statusu. Nie dodawaj też niepopartego braku wdrożenia.
 Umowę zlecenie wspomnij tylko przy ACTIVE_JOB i jej wyraźnym potwierdzeniu w tej ofercie; akceptacja tej formy przez kandydata musi osobno wynikać z zatwierdzonych faktów. Sama oferta nie określa jego preferencji. Bez negocjacji i zgadywania warunków. Temat ma odpowiadać celowi i faktycznej treści: przy ACTIVE_JOB kandydatura i rzeczywisty tytuł stanowiska, w pozostałych zapytanie lub otwarta kandydatura z istotnym obszarem. Bez clickbaitu, systemowych etykiet i sztucznego różnicowania tematów.
 JĘZYK: profesjonalny, ale swobodny i prosty. Bez niniejszym zgłaszam, pragnę wyrazić zainteresowanie, zwracam się z uprzejmą prośbą, w odpowiedzi na Państwa zaproszenie, chciałbym zgłosić zainteresowanie, z pasją, innowacyjne rozwiązania. Nie pisz jak sprzedawca ani ekspert. Nie proponuj pokazywania aplikacji, prezentacji portfolio lub opowiadania więcej o projekcie; GitHub wystarczy. Przy pierwszym kontakcie domyślnie stosuj Państwo, z poprawną trzecią osobą liczby mnogiej. Swobodniejsze Wy dopuszczaj tylko przy wyraźnej podstawie w odczytanym oficjalnym sposobie komunikacji firmy; sam młody zespół, branża IT lub pojedyncze Ty w ogłoszeniu nie wystarczają. Przy braku pewności wybierz Państwo. Nie mieszaj form Państwo i Wy w jednym mailu ani nie kopiuj tonu recent lub template bez takiej podstawy. Nazwa firmy musi pasować gramatycznie do zdania; jeśli odmiana jest niepewna, nie wstawiaj jej na siłę. Opisy zatwierdzonych faktów są skrótowymi danymi, nie gotowymi zdaniami listu: objaśniaj istotne działanie prostym czasownikiem, zachowując dokładny sens i zakres faktu. Nie przenoś do maila nagromadzenia rzeczowników i technicznych skrótów. Dbaj o naturalne przejścia, bez tautologii i zbędnego powtarzania opisu firmy w opisie projektu.
@@ -141,7 +141,62 @@ export function checkMessageRules(draft: Row, profile: Row, analysis?: Analysis)
   )
     throw new DomainError(
       'UNSUPPORTED_AVAILABILITY',
-      'Pełna dyspozycyjność nie odpowiada dostępności po lekcjach.',
+      'Pełna dyspozycyjność nie wynika z zatwierdzonego profilu.',
+    );
+  if (
+    /po lekcjach|after school/iu.test(body) &&
+    !profile.facts.some(
+      (f: Row) => f.key === 'availability' && /po lekcjach|after school/iu.test(f.content),
+    )
+  )
+    throw new DomainError(
+      'UNSUPPORTED_AVAILABILITY',
+      'Pory dostępności nie wynikają z aktualnych faktów.',
+    );
+  if (
+    hasPositiveClaim(
+      /dostępny.{0,25}(?:8\s*[–-]\s*16|bez ograniczeń)|pełen etat|dokładnie\s*20\s*godzin/iu,
+      body,
+    )
+  )
+    throw new DomainError(
+      'UNSUPPORTED_AVAILABILITY',
+      'Niepoparty dokładny grafik lub wymiar pracy.',
+    );
+  const mentioned = projectMentions(body);
+  if (
+    mentioned.includes('sekiforma') &&
+    profile.facts.some((f: Row) => f.key === 'sekiforma' && /fikcyjn/iu.test(f.content)) &&
+    hasPositiveClaim(
+      /(?:realn|rzeczywist).{0,40}(?:klient|pracown)|(?:formularz|brief)\s+(?:wysyła|przesyła|zbiera|gromadzi)|wdrożyłem.{0,40}(?:klient|pracown)/iu,
+      body,
+    )
+  )
+    throw new DomainError(
+      'UNSUPPORTED_PROJECT_CLAIM',
+      'Demo fikcyjnej marki nie potwierdza obsługi klienta.',
+    );
+  if (
+    mentioned.includes('elektroscan') &&
+    profile.facts.some(
+      (f: Row) => f.key === 'elektroscan' && /dwuosobow|zespoł/iu.test(f.content),
+    ) &&
+    hasPositiveClaim(/samodzielnie\s+(?:stworzyłem|zbudowałem|przygotowałem)\s+elektroscan/iu, body)
+  )
+    throw new DomainError(
+      'UNSUPPORTED_PROJECT_CLAIM',
+      'Projekt zespołowy nie dowodzi solowego autorstwa.',
+    );
+  if (
+    mentioned.includes('codefabric') &&
+    hasPositiveClaim(
+      /codefabric.{0,30}(?:oficjalny produkt|system produkcyjny)|codefabric.{0,60}(?:używa|wykorzystuje).{0,20}codex.{0,25}(?:silnik|model|backend)/iu,
+      body,
+    )
+  )
+    throw new DomainError(
+      'UNSUPPORTED_PROJECT_CLAIM',
+      'Niepoparty status lub dostawca modeli prototypu.',
     );
   if (
     hasPositiveClaim(

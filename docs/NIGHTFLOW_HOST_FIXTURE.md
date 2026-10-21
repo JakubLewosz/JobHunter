@@ -1,75 +1,98 @@
-# Publiczne wejście nightflow — odtwarzalna lokalna fixture
+# Odtwarzalna fixture Node owner ↔ rzeczywisty host
 
-Stan 21.10.2026: `HOST_TEST_NOT_RUN` dla całego przebiegu w aktywnym hoście
-Codexa i dla ośmiu godzin tego hosta. Faktyczna próba importu publicznego
-`scripts/browser-executor.mjs` w `cua_repl` zwróciła `process is not defined`;
-kolejna próba wskazała errored module `nodemailer` / `ERR_VM_MODULE_LINK_FAILURE`.
-Narzędzie strony działa, lecz ten kontekst VM nie dostarcza globalnego `process`
-wymaganego przez załadowaną zależność Node. Nie wstrzykiwano globali, nie zmieniano
-zależności lub uprawnień hosta i nie podstawiano `available=true`.
+Stan 21.10.2026: krótki pełny przebieg w `cua_repl` **COMPLETED**. Jedna
+rezerwacja, jedna lokalna fikcyjna akcja, wynik i cleanup. Osiem godzin
+rzeczywistego czasu: **NOT_RUN**. Nie testowano Gmaila ani prywatnej historii.
+[Granica, komendy produkcyjne po osobnym wdrożeniu i Stop](HOST_ADAPTER.md).
 
-W osobnej nowej karcie narzędzie rzeczywistego Codexa otworzyło nasz HTTP
-localhost, wypełniło fikcyjne pola i odebrało licznik jednej lokalnej akcji.
-Ta ograniczona kontrola strony nie jest wykonaniem koordynatora ani testem
-Gmaila. Kartę i własny serwer zamknięto. Dowód PNG jest w paczce przekazania.
+Historyczna porażka `process is not defined` z nodemailera była skutkiem
+importowania backendu w VM narzędzia. Zachowane dowody R14 opisują wcześniejszy
+stan. Teraz `browser-executor.mjs` jest lekki, a `nightflow-node-owner.mjs`
+ładuje Store, koordynator i providery wyłącznie w zwykłym Node24. To granica
+procesów; nie dynamiczne ukrycie tego samego ciężkiego importu.
 
-## Gotowe wejście
+## Krótki test przez rzeczywiste narzędzie
 
-`scripts/nightflow-host-fixture.mjs:runLocalHostFixture()` wywołuje istniejący
-`scripts/browser-executor.mjs:runNightflowTask()` i ten sam koordynator, lease,
-IPC, scope, kwalifikację, finalne bramki i sender. Dodano mały adapter fixture,
-bez drugiego koordynatora. Każda próba tworzy nowy katalog DEVELOPMENT, komplet
-FixtureRunner/FixtureReader/FixtureGmail i fikcyjne metadane konta/historię/CV.
-To nowa syntetyczna historia z szablonem profilu repo, bez odczytu instalacji.
-Plan testowy dotyczy wyłącznie tej nowej bazy i nie dziedziczy zgód produkcyjnych.
-
-Własny serwer wiąże `127.0.0.1` na losowym porcie; CSP blokuje sieć i formularze.
-Browser i broker wymagają tego konkretnego origin. Fixture nie akceptuje Gmaila.
-Opcje fixture są odrzucone z WORKSTATION lub częściowym providerem. Przed bazą
-sprawdzana jest obecność markera WORKSTATION w przodkach; publiczna fixture nie
-otwiera niepustego profilu. Produkcyjny broker nadal nie uznaje lokalnej obserwacji
-za obserwację Gmaila. Nie zmieniono protokołu zatwierdzania prawdziwego transportu.
-
-W izolowanym checkoutcie, Node24, po `npm ci` i `npm run build`:
+W izolowanym checkoutcie, po `npm ci` i `npm run build`, uruchomić w terminalu
+Node24 i pozostawić operację pod nadzorem aktywnego zadania:
 
 ```powershell
-# Node/Playwright, osobny poziom dowodu; realny czas researchu przyspieszony:
-node scripts/nightflow-host-fixture.mjs --steady-short --output "<NOWY_PLIK_POZA_REPO>.json"
-
-# Gotowy runner 8 h czasu monotonicznego plus zakończenie i cleanup.
-# NIE wykonano go w bieżącym zleceniu; nadal Node/Playwright, nie host Codexa:
-node scripts/nightflow-host-fixture.mjs --wall-clock --output "<NOWY_PLIK_8H_POZA_REPO>.json"
+node scripts/nightflow-node-owner.mjs --fixture --ready <NOWY_PLIK_READY_POZA_REPO> --output <NOWY_PLIK_WYNIKU_POZA_REPO>
 ```
 
-Nie wymaga prywatnych markerów, kont, CV ani zmiennych produkcyjnych. Chromium
-używa nowego kontekstu, a route blokuje zewnętrzne żądania. Runner ma końcowy
-deadline 8 h + 15 min, próbkuje postęp co 15 min i zapisuje bounded fazy,
-tożsamość kodu/instancji/zakresu, rzeczywiste UTC/monotoniczne czasy,
-heartbeat, liczbę fikcyjnych prób i stan cleanup. Osiem godzin researchu
-nie jest skracane liczbą cykli. Nie tworzy demona lub mechanizmu wznowienia.
+CLI sam tworzy nowy DEVELOPMENT, komplet FixtureReader/FixtureRunner/FixtureGmail,
+syntetyczny PDF i lokalną stronę. Nie akceptuje istniejącej historii, planu,
+markera WORKSTATION ani Gmaila. Własny HTTP wiąże wyłącznie losowy port
+127.0.0.1; CSP blokuje połączenia i wysyłanie formularza. `ready` zawiera
+syntetyczny katalog, dokładny URL i build identity, bez sekretu IPC.
+Nie drukować browser-executor.json ani nightflow-control.json.
 
-Dla aktywnego hosta mającego w jednym kontekście dokumentowane `tab` oraz
-obsługę zależności Node, dokładnym wejściem po buildzie jest:
+W aktywnym narzędziu strony odczytać własny plik ready przez sprawdzone fs,
+otworzyć NOWĄ własną kartę na jego URL i zaimportować adapter:
 
 ```js
-// fixtureTab jest NOWĄ własną pustą kartą; nigdy kartą prywatnej poczty.
-const fixture = await import('file:///C:/isolated/JobHunter/scripts/nightflow-host-fixture.mjs');
-const report = await fixture.runLocalHostFixture({
-  tab: fixtureTab,
-  taskId: 'explicit-owned-fixture-task',
-  wallClock: false, // najpierw krótka próba; następnie osobno true dla rzeczywistych 8 h
-  onProgress: (event) => nodeRepl.write(event)
-});
-nodeRepl.write(report);
+const adapterModule = await import('file:///C:/isolated/JobHunter/scripts/browser-executor.mjs');
+const adapter = new adapterModule.CodexNightflowAdapter(
+  ready.dir, 'explicit-owned-fixture-task', fixtureTab, { fixtureOrigin: ready.origin }
+);
+await adapter.connect(); // NOT_STARTED, authority=false
+await adapter.start();   // jawny Start fikcyjnego planu w tym ownerze
+let result;
+do {
+  result = await adapter.segment(30000);
+  // odebrać postęp i pozostawić to samo zadanie/obiekt aktywne
+} while (result.status === 'WAITING');
+await adapter.close();
 ```
 
-Ścieżkę należy zastąpić rzeczywistą ścieżką izolowanego checkoutu. Funkcja sama
-otwiera własny localhost w podanej nowej karcie. Caller musi utrzymywać i odebrać
-to samo oczekujące wywołanie; otwarte okno lub kolejne nowe sesje nie wystarczają.
-Najmniejszy następny krok to uruchomić krótkie wejście w obsługującym je hoście,
-bez obchodzenia ograniczeń obecnego VM; dopiero po nim rzeczywistą próbę 8 h.
+Ścieżka oznacza faktyczny osobny checkout. Użyć wyłącznie API karty opisanych
+przez bieżące narzędzie. Nie zakładać dostępności fs/net/timerów bez probe.
+W bieżącej sesji potwierdzono je przy braku globalnego process. Nie wstrzykiwać
+globali, nie instalować pluginów, nie czytać kart lub plików prywatnej poczty.
 
-Utrzymywane E2E sprawdzają normalne zakończenie, potwierdzone Stop, utratę karty
-i utracone ACK po jednej akcji (SEND_UNKNOWN, bez ponowienia). Istniejące testy
-brokera/kontrolera nadal sprawdzają odmowę przejęcia nowego backendu/sesji.
-Nie utożsamiamy Node E2E, narzędzia strony, hosta Codexa i Gmaila.
+Owner oczekuje na attach i Start; samo listen nie daje ready=true. Pierwsza
+uzgodniona instancja/job/generacja nie może się zmienić. Scope wyznaczonej
+partii jest sprawdzany aż do ostatniej bramki. Lease 45 s odnawia realny adapter,
+a owner monitoruje jego ważność. Nie ma podtrzymywania przez udawany host.
+Po końcu potwierdzić zamknięcie ownera, locka, obu kanałów, strony i katalogu.
+
+## Oddzielny poziom Node/Playwright
+
+```powershell
+node scripts/nightflow-host-fixture.mjs --steady-short --output <NOWY_PLIK_POZA_REPO>.json
+```
+
+To ten sam owner/adapter/IPC i pełny koordynator, ale uchwyt karty należy do
+zwykłego Playwrighta. Nie podpisywać wyniku jako host Codexa. Route blokuje
+zewnętrzną sieć. Utrzymane E2E sprawdzają sukces, Stop, utratę karty i utracony
+ACK. Backendowe testy IPC sprawdzają restart, zakres zmieniony podczas await,
+wygaśnięcie lease oraz R14 Stop/status/report przy błędzie lub utracie odpowiedzi.
+
+## Osiem godzin czasu rzeczywistego
+
+Po krótkim sukcesie ten sam CLI ownera przyjmuje dodatkowo `--wall-clock`.
+Zegar jest monotoniczny; właściciel ma limit 8 h + 15 min na zakończenie.
+Adapter musi przez cały czas działać w tym samym aktywnym zadaniu i odebrać
+wynik po deadline. Alternatywnie Node/Playwright ma własną flagę --wall-clock,
+która nadal nie dowodzi utrzymania hosta Codexa.
+
+Nie uruchomiono tego testu w tym zleceniu. Gotowy runner nie jest wynikiem.
+Nie instalować harmonogramu i nie obiecywać kontynuacji po końcu zadania.
+Przyspieszony research w krótkiej fixture nie jest ośmioma godzinami.
+
+## Przeprowadzone negatywne próby rzeczywistego hosta
+
+- Potwierdzony Stop istniejącym CLI: AUTHORITY_REVOKED, zero lokalnych akcji;
+  ACK zachowuje MAY_BE_IN_FLIGHT i maintenanceReady=false.
+- Utracony ACK po kliknięciu i zamknięcie karty po kliknięciu: jedna akcja,
+  SEND_UNKNOWN/NEEDS_RESOLUTION, bez ponowienia.
+- Zamknięcie własnej karty przed akcją: STOPPED, zero akcji.
+- Obcy batch, origin, odbiorca, body i hash PDF: odmowa i zero akcji.
+- Jedna wcześniejsza próba Stop po wygaśnięciu testowego ownera zwróciła
+  STOP_UNCONFIRMED/UNKNOWN, bez fałszywego potwierdzenia.
+
+Nie odtwarzano restartu ownera ani utraty odpowiedzi Stop po mutacji w samym
+cua_repl. Mają odrębne rzeczywiste testy Node IPC i nie są sumowane z macierzą
+narzędzia. Końcowe dowody obejmują fazy, UTC/monotoniczny czas, build/hash,
+liczby rezerwacji i akcji, przerwę heartbeat, lease oraz cleanup. Nie zawierają
+sekretów ani pełnych payloadów. Wczesne porażki pozostały w historii weryfikacji.

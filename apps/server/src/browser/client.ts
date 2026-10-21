@@ -92,6 +92,9 @@ export class BrowserExecutorClient {
   probe() {
     return this.request('attach');
   }
+  nightflow(command: 'attach' | 'start' | 'poll' | 'ackResult', target?: unknown) {
+    return this.request('nightflow', { command, target });
+  }
   release() {
     return this.request('release');
   }

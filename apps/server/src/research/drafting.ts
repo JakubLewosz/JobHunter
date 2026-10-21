@@ -25,12 +25,30 @@ export const defaultMessageTemplate = `Dzień dobry,
 
 Pozdrawiam
 [Imię i nazwisko z zatwierdzonego profilu]`;
-export const projectKeys = ['fixdesk', 'autorelay', 'codefabric', 'elektroscan'] as const;
-export const approximateAvailability = (hours: number) =>
-  `Płatna praca w pełni zdalna, około ${hours} godzin tygodniowo, przede wszystkim po lekcjach.`;
+export const projectKeys = [
+  'fixdesk',
+  'autorelay',
+  'codefabric',
+  'elektroscan',
+  'sekiforma',
+] as const;
+export const approximateAvailability = (hours: number, afterSchool = true) =>
+  `Płatna praca w pełni zdalna, około ${hours} godzin tygodniowo${afterSchool ? ', przede wszystkim po lekcjach' : ''}.`;
+export function projectMentions(text: string) {
+  const normalized = text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  return projectKeys.filter((key) =>
+    key === 'sekiforma' ? /sek\s*i\s*forma/.test(normalized) : normalized.includes(key),
+  );
+}
 function projectScores(context: string): Record<string, number> {
   context = context.toLowerCase();
   return {
+    sekiforma:
+      /(?:tworz|bud|projekt|develop|implement|responsyw|walidac|katalog|galeri).{0,70}(?:stron|website|frontend|interfejs|user interface)|(?:stron|website|frontend|interfejs|user interface).{0,70}(?:tworz|bud|projekt|develop|implement|responsyw|walidac|katalog|galeri)/.test(
+        context,
+      )
+        ? 9
+        : 0,
     fixdesk:
       (/laravel/.test(context) ? 10 : 0) +
       (/\bphp\b/.test(context) ? 6 : 0) +

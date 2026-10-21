@@ -10,6 +10,7 @@ import {
   relevantProjectFacts,
   projectSelection,
   projectKeys,
+  projectMentions,
 } from './drafting.js';
 import { Store } from '../db.js';
 import { DomainError, hash, id, iso, csvCell, normalizeName, companyDomain } from '../util.js';
@@ -115,7 +116,7 @@ export const dayQueries = [
   'Firmy automatyzujące pracę biznesową, wdrażające integracje, webhooki, API, dokumenty/PDF, analizę obrazu i AI. Szukaj nowych zespołów z publicznym kontaktem.',
   'Firmy spoza branży IT, które publicznie opisują własne aplikacje, narzędzia wewnętrzne, integracje lub automatyzację. Szukaj podstaw do konkretnego zapytania o współpracę.',
   'Małe software house’y i startupy: aplikacje webowe, narzędzia, SaaS, lokalne LLM, integracje i automatyzacje. Uwzględnij wszystkie zatwierdzone projekty, bez wymogu badań ML.',
-  'Płatne staże i praca dla początkujących w różnych dziedzinach programowania: web, backend, API, automatyzacje, dokumenty i AI. Uwzględnij ucznia technikum oraz około 20 godzin po lekcjach.',
+  'Płatne staże i praca dla początkujących w różnych dziedzinach programowania: web, backend, API, automatyzacje, dokumenty i AI. Dostępność wyłącznie z aktualnego zatwierdzonego profilu.',
   'Dalsze nowe firmy z Polski: software house’y, SaaS, agencje i automatyzacje. Różne technologie, publiczny kontakt firmowy lub rekrutacyjny; także propozycja współpracy bez ogłoszenia.',
 ];
 const defaultQuery = dayQueries[0];
@@ -1424,7 +1425,15 @@ export class ResearchJobHunter extends JobHunter {
         hours_approx: z.number().int().min(1).max(80),
         version: z.number().int().positive(),
         facts: z
-          .array(z.object({ id: z.string(), content: z.string().min(1).max(2000) }).strict())
+          .array(
+            z
+              .object({
+                id: z.string(),
+                content: z.string().min(1).max(2000),
+                source: z.string().min(1).max(2000).optional(),
+              })
+              .strict(),
+          )
           .max(30),
         message_template: z.string().min(100).max(6000),
       })
@@ -1437,7 +1446,10 @@ export class ResearchJobHunter extends JobHunter {
           ...f,
           content:
             p.facts.find((x) => x.id === f.id)?.fact_key === 'availability'
-              ? approximateAvailability(v.hours_approx)
+              ? approximateAvailability(
+                  v.hours_approx,
+                  /po lekcjach|after school/iu.test(f.content),
+                )
               : f.content,
         }));
         super.updateProfile({
@@ -2914,12 +2926,13 @@ export class ResearchJobHunter extends JobHunter {
     }
     checkAvailability(v, p);
     const styleWarnings = checkMessageRules(v, p, analysis);
-    const projectMentions = projectKeys.filter((key) => new RegExp(key, 'i').test(v.body));
+    const mentionedProjects = projectMentions(v.body);
     if (
-      projectMentions.length > (analysis ? relevantProjectFacts(p.facts, analysis).length || 1 : 1)
+      mentionedProjects.length >
+      (analysis ? relevantProjectFacts(p.facts, analysis).length || 1 : 1)
     )
       throw new DomainError('TOO_MANY_PROJECTS', 'Szkic wymienia więcej niż jeden projekt.');
-    if (projectMentions.some((key) => !p.facts.some((f) => f.key === key)))
+    if (mentionedProjects.some((key) => !p.facts.some((f) => f.key === key)))
       throw new DomainError(
         'UNSUPPORTED_PROJECT',
         'Szkic opisuje projekt bez potwierdzonego dopasowania.',
@@ -2927,7 +2940,7 @@ export class ResearchJobHunter extends JobHunter {
     const proseLinks = (text: string) =>
       (text.match(/https?:\/\/[^\s)]+/g) ?? []).map((url) => url.replace(/[.,;:]+$/, ''));
     const allowedLinks = p.facts.flatMap((f) => proseLinks(f.content));
-    if (proseLinks(v.body).some((url) => !allowedLinks.includes(url)))
+    if (proseLinks(v.subject + ' ' + v.body).some((url) => !allowedLinks.includes(url)))
       throw new DomainError('UNAPPROVED_LINK', 'Niepotwierdzony link w szkicu.');
     return styleWarnings;
   }

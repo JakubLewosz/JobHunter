@@ -1,5 +1,31 @@
 # Bieżące zadania — 18 października 2026
 
+## Lekki host i materiały — 21 października 2026
+
+- [x] Zweryfikowano pełny prompt i 7/7 plików manifestu poza repo; aktualne
+      README przypięto do commitów, bez zmian profilu/repozytoriów portfolio.
+- [x] Oddzielono Node24 owner od lekkiego adaptera. Zachowano koordynator,
+      R1–R14, IPC, scope, Stop i historię; attach sam nie wykonuje Start.
+- [x] Rzeczywisty cua_repl importuje adapter bez process/SQLite/nodemailera;
+      pełna krótka fixture kończy się jedną fikcyjną akcją i cleanup.
+- [x] W rzeczywistym hoście sprawdzono Stop, utratę ACK/karty oraz odmowę
+      obcego scope/originu/odbiorcy/body/PDF; Node IPC zachowuje własną macierz.
+- [x] Lokalna propozycja materiałów v1 z provenance/diff i wejściem istniejącej
+      usługi sprawdzona na nowej bazie. Nie zastosowano jej na WORKSTATION.
+- [x] Końcowy pełny Windows check dokładnych bajtów: PASS 773/12/26,
+      229 plików przed/po bez zmian. Zgodność z blobami commitu i osobny
+      wynik CI są w metadanych finalnej dostawy oraz TEST_REPORT.
+- [ ] Realne 8 h hosta: następny krok to --wall-clock na kompletnej lokalnej
+      fixture, ten sam adapter/owner/lease w aktywnym zadaniu, odebrany deadline
+      i raport. NOT_RUN; przyspieszony zegar nie zastępuje tej próby.
+- [ ] Później osobne zlecenie: Stop/koniec operacji/backup, wybrany build/doctor,
+      preview aktualnych materiałów i historii, jedna zgoda na nowe fakty/PDF,
+      zgodność konta i From/Reply-To, polityka/plan/tempo/limity/okno, pilot i Start.
+
+[Raport zakresu](reviews/JOBHUNTER_HOST_MATERIALS_RESULT.md),
+[obsługa bez frontendu](HOST_ADAPTER.md), [fixture](NIGHTFLOW_HOST_FIXTURE.md).
+Poniższe checklisty zachowują wcześniejsze wyniki i historyczne ograniczenia.
+
 ## R14 / CLI / host — 21 października 2026
 
 - [x] Przeczytano nowy raport/dowody/propozycję regresji c03161ba, zweryfikowano

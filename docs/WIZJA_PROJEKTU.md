@@ -1,5 +1,10 @@
 # JobHunter — docelowy sposób pracy
 
+21.10.2026: nowa propozycja materiałów zachowuje cel płatnej, regularnej pracy
+programistycznej i około 20 h zdalnie, bez deklaracji pór dnia lub pełnej
+dyspozycyjności. Poniższy dopisek o lekcjach opisuje wcześniejsze materiały.
+Propozycja pozostaje lokalna i niezatwierdzona. [Node owner i adapter](HOST_ADAPTER.md).
+
 **Bieżący etap Windows/Codex:** [implementacja nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Koordynator obsługuje odnowienie/research → kontrolę → zamkniętą partię → sender
 → raport przez jedno oczekujące wywołanie. Wsparcie wydania obejmuje Windows;

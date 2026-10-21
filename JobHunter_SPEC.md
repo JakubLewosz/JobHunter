@@ -1,5 +1,10 @@
 # JobHunter — aktualna specyfikacja
 
+Aktualizacja materiałów 21.10.2026: bieżące zlecenie określa około 20 godzin
+w pełni zdalnie, bez dopisku o porach dnia. Nie oznacza to pełnej dyspozycyjności
+ani zastosowania propozycji do zatwierdzonego profilu. Historyczne zapisy
+„po lekcjach” nie są źródłem nowych deklaracji. [Granica hosta](docs/HOST_ADAPTER.md).
+
 ## Etap Windows/Codex nightflow
 
 Aktualny wspierany system: **Windows**. macOS odłożono; opcjonalny PRIVATE_GIT

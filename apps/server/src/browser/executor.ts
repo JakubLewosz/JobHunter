@@ -36,6 +36,7 @@ function cancellable<T extends object>(target: T, signal?: AbortSignal): T {
 type Locator = {
   fill(v: string): Promise<void>;
   press(v: string): Promise<void>;
+  type(v: string): Promise<void>;
   click(): Promise<void>;
   getByRole(role: string, options: { name: string | RegExp; exact?: boolean }): Locator;
 };
@@ -205,9 +206,15 @@ export class GmailBrowserExecutor {
       .getByRole('combobox', { name: fields.recipient!, exact: true })
       .press('Enter');
     await this.tab.playwright.getByLabel(fields.subject!, { exact: true }).fill(payload.subject);
-    await this.tab.playwright
-      .getByRole('textbox', { name: fields.body!, exact: true })
-      .fill(payload.body);
+    const bodyField = this.tab.playwright.getByRole('textbox', { name: fields.body!, exact: true });
+    const lines = payload.body.split('\n');
+    await bodyField.fill(lines[0]);
+    // The real host's multiline fill creates block elements with extra rendered
+    // newlines. Use documented text/key input; keep the broker's exact comparison.
+    for (const line of lines.slice(1)) {
+      await bodyField.press('Shift+Enter');
+      if (line) await bodyField.type(line);
+    }
     if (payload.attachment) {
       if (
         !fields.attach ||

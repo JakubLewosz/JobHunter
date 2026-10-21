@@ -1,5 +1,11 @@
 # Gmail w przeglądarce Codexa
 
+Bieżąca granica wykonania: [HOST_ADAPTER](HOST_ADAPTER.md). Import lekkiego
+wejścia i pełny krótki przebieg w rzeczywistym hoście są potwierdzone wyłącznie
+na własnej stronie i kompletnych fake providerach. Backend działa osobno w
+Node24. Poniższe opisy wcześniejszej porażki importu/monolitycznego wejścia
+pozostają historią. Nie uruchamiano prawdziwego Gmaila; 8 h hosta: NOT_RUN.
+
 Aktualizacja 21.10.2026: [lokalna kompletna fixture publicznego wejścia](NIGHTFLOW_HOST_FIXTURE.md),
 [kontrakt Stop/status/report](NIGHTFLOW_CONTROL.md). Test Node/Playwright oraz
 narzędzie lokalnej strony są oddzielnymi dowodami. Próba importu w rzeczywistym
