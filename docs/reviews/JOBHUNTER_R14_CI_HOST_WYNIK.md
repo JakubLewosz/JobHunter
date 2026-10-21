@@ -18,7 +18,7 @@ Nie wykonywano audytorskiego adaptera Node22 jako zamiennika natywnych regresji.
 | --- | --- |
 | `apps/server/src/nightflow-control.ts`, `nightflow.ts`, `scripts/nightflow.ts` | Rozdzielenie live/offline/niepotwierdzonej komendy; związany ACK, zakres instancja/job/generacja, request/op, wykrycie zmiany deskryptora, absolutny bounded timeout, readonly bez wymyślonego OWNER_LOST. |
 | `tests/nightflow-control-failures.test.ts`, `tests/nightflow.test.ts` | Natywna macierz R14 na prawdziwym lokalnym IPC/CLI i koordynatorze z fikcyjnym transportem, również operacja już przyjęta i błąd zapisu po revoke. |
-| `tests/helpers/nightflow-child.ts`, `tests/cli-tools.test.ts`, `scripts/measure-nightflow-cli.ts`, `scripts/offline-check.ts` | Asynchroniczny własny proces, 30 s + 2 s grace cleanup, jawny timeout/crash/cancel/exit, ograniczona telemetria bez środowiska/tokenów/payloadu, zaplanowane pomiary i artefakty. |
+| `tests/helpers/nightflow-child.ts`, `tests/cli-tools.test.ts`, `tests/fixtures/nightflow-blocked-owner.ts`, `scripts/measure-nightflow-cli.ts`, `scripts/offline-check.ts` | Asynchroniczny własny proces, 30 s + 2 s grace, handshake anulowania, jawny timeout/crash/cancel/exit i wymuszone zakończenie bez obietnicy cleanup; regresje żywej/martwej blokady. |
 | `.github/workflows/offline-check.yml`, `scripts/ci-check.ts` | Zachowany kod błędu npm check; przy porażce ograniczone JSON diagnostyki backendu przed UI, bez ogólnych logów/danych użytkownika. |
 | `scripts/browser-executor.mjs`, `scripts/nightflow-host-fixture.mjs`, `nightflow-entry.ts`, `nightflow-browser-host.ts` | Minimalna kompletna fixture publicznego wejścia, nowy DEVELOPMENT i własna lokalna strona, tryb monotonicznych 8 h, fazy/heartbeat/cleanup. Istniejący koordynator pozostaje. |
 | `browser/executor.ts`, `browser/batch-controller.ts`, `browser/broker.ts`, `gmail/service.ts`, `testing/local-fixture-origin.ts` | Przekazanie konkretnego testowego origin; odmowa Gmaila w fixture, WORKSTATION/niepełnych providerów w lokalnym adapterze. Zwykłe bramki i zakres IPC pozostają. |
@@ -85,8 +85,80 @@ jest FAIL także gdy dziecko zdąży wyjść z 0 po anulowaniu. IPC telemetrii
 ma zamknięty słownik; stdout nadal jest jednym JSON wyniku programu.
 Po deadline wysyłane jest fixture-only anulowanie, po 2 s kończony jest
 wyłącznie własny bezpośredni proces Node, bez obcego drzewa procesów.
-Regresje sprawdzają anulowanie/timeout i brak pozostałych locków/IPC.
+Regresje rozróżniają łagodne anulowanie z cleanup od wymuszonego zakończenia,
+które może pozostawić nieaktywną blokadę; szczegóły nowej porażki CI poniżej.
 Nie zmieniono progów Stop, 10035 firm, lease, provider timeouts lub deadline planu.
+
+### Nowy CI 39572278361: anulowanie podczas inicjalizacji
+
+[CI dla 1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02](https://github.com/JakubLewosz/JobHunter/actions/runs/39572278361)
+zakończył się **FAILURE**: 760/761 backend, exit 1, 844174,7058 ms,
+08:51:19.690–09:05:23.862 UTC. Ten wynik jest odrębny od lokalnego PASS
+i od historycznego timeoutu 30 s. Użytkownik dostarczył brakujący artefakt;
+jego check-summary i wszystkie 32 ograniczone rekordy procesu zachowano.
+Nie pobierano sekretów ani nie zmieniano uprawnień konektora.
+
+Nieudana asercja `tests/cli-tools.test.ts:173` wymagała braku `profile.lock`
+po celowym timeout 1 ms. Dziecko: ETIMEDOUT, status null, SIGTERM,
+2032,3175 ms; ENTRY 302,0341 ms, IMPORT_END 558,1566 ms, LOCK_ACQUIRED
+592,2003 ms, STORE_READY 1233,4604 ms, SERVICE_READY 1449,5583 ms.
+Brak CLEANUP_BEGIN/LOCK_RELEASED. Nie był to ponowny timeout głównego
+testu 30 s, lecz nagłe zakończenie w trakcie startu po dwusekundowym grace.
+
+Kod miał dwie luki obsługi anulowania: nadzorca wysyłał żądanie jeszcze przed
+gotowością listenera, a inicjalizacja sprawdzała sygnał dopiero przed action,
+po ciężkim setupie. Stara telemetria nie pozwala ustalić, czy żądanie zostało
+utracone, czy odebrane i jeszcze niesprawdzone. Poprawka obejmuje oba okna:
+ENTRY jest wysyłane po instalacji listenera; nadzorca zatrzymuje żądanie do
+ENTRY, wysyła raz, a dziecko raportuje CANCEL_RECEIVED. Wejście sprawdza
+sygnał przed otwarciem profilu i między etapami inicjalizacji, oddając pętlę
+zdarzeń pomiędzy synchronicznymi etapami fixture. Diagnostyka schematu 2
+zapisuje osobno czas żądania, wysłania i wymuszonego zabicia.
+
+Limity 30000 ms oraz grace 2000 ms pozostają. Grace ogranicza oczekiwanie,
+nie gwarantuje wykonania finally po Windows TerminateProcess. Test 1 ms
+pozostaje i nadal wymaga TEST_TIMEOUT/ETIMEDOUT. Przy łagodnym zakończeniu
+wymaga odbioru anulowania i braku locka; po wymuszonym zakończeniu ewentualne
+odzyskanie przechodzi wyłącznie przez istniejące acquireProfileLock.
+Nadzorca nigdy nie kasuje blokady. Produkcyjny mechanizm własności nie został
+osłabiony ani zmieniony: żywy lub niepewny właściciel nadal blokuje przejęcie.
+
+Celowane polecenie `node --import tsx --test --test-name-pattern='nightflow CLI|hard-killed fixture' tests/cli-tools.test.ts`:
+**7/7 PASS, zero FAIL/SKIP/cancel**, 8766,5592 ms. Obejmuje normalny lifecycle,
+Stop w researchu, deadline 1 ms, anulowanie przy LOCK_ACQUIRED/STORE_READY/
+SERVICE_READY oraz osobnego własnego potomka z prawdziwą blokadą i celowo
+zablokowaną pętlą. Żywy właściciel odrzucił przejęcie z identycznym owner.json;
+po SIGKILL i potwierdzonym ESRCH blokada pozostała na dysku, a zwykłe bezpieczne
+odzyskanie nadało nową tożsamość i pozwoliło ją zwolnić. Trzy anulowania
+inicjalizacji zakończyły się LOCK_RELEASED bez wymuszonego zabicia.
+Wyniki i dokładny trace są w `r14-ci-host-evidence/cancellation-regression.json`.
+
+Nowy pełny Windows check po tej poprawce: **PASS, exit 0**, 765/765 backend,
+12/12 serial Stop, typecheck/build, 26/26 UI (1,5 min), zero FAIL/SKIP/cancel.
+Rzeczywiste `node --import tsx scripts/offline-check.ts --output <NOWY_KATALOG>`
+uruchomiło cały `npm run check` z izolowanym środowiskiem i pełnymi fixture.
+Windows 10.0.26300 x64 / Node 24.19.0 / npm 11.17.0 / SQLite 3.53.4.
+2026-10-21 09:22:11.555–09:35:54.650 UTC, 823097,7617 ms.
+To UNCOMMITTED_WORKTREE od 1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02;
+224 pliki przed/po identyczne, fingerprint
+`1c420911cc10c86e4e2bb7ced36fd452ebb676b5657648c460f208bc8faff35e`.
+Główny proces CLI: 4019,6406 ms, EXIT, bez force kill. Celowy timeout 1 ms:
+723,4762 ms, TEST_TIMEOUT/ETIMEDOUT, odebrane anulowanie i LOCK_RELEASED,
+bez wymuszonego zabicia. Odrębny test SIGKILL sprawdza pozostawioną blokadę.
+`test-summary.json`, `source-files.json`, `full-check-3.txt`,
+`full-child-diagnostics.json` i `stop-measurements.json` dotyczą tego wykonania.
+Poprzednie metadane/manifest/pomiary zachowano jako pliki z `check-2` w nazwie;
+historia weryfikacji wskazuje właściwe wykonania. Nowy CI i finalny SHA są
+oddzielnymi metadanymi przekazania, bez wnioskowania CI PASS z lokalnego PASS.
+
+Po checku ponowiono krótkie publiczne wejście na tej samej wersji kodu:
+Node/Playwright na własnym localhost, kompletna fixture, COMPLETED,
+34680,4229 ms, 09:36:16.827–09:36:51.507 UTC, jedna fikcyjna akcja i pełny
+cleanup lock/IPC/browser/strony/katalogu. `node-public-entry-repair.json`
+zachowuje rzeczywistą tożsamość builda od 1b9f0de i loadedCodeHash; nie wpisano
+przyszłego SHA. Nowy Stop: 12 pomiarów, maks. reception 233,24 ms,
+receive→revoke 0,74 ms, zero nowych POST po revoke, 10035 firm.
+Nie jest to próba utrzymania rzeczywistego hosta Codexa ani osiem godzin.
 
 ## Wykonania i granice
 
@@ -133,7 +205,7 @@ przed/po, a pierwszy wynik checka pozostaje oddzielnym wykonaniem.
 Po wyrównaniu ponownie wykonano krótki public entry: COMPLETED po
 35620,0205 ms, jedna fikcyjna próba/akcja, trzy heartbeat i pełny cleanup.
 
-Końcowy pełny Windows check: **PASS, exit 0**, 761/761 backend, 12/12 serial Stop,
+Drugi pełny Windows check, przed nowym CI 39572278361: **PASS, exit 0**, 761/761 backend, 12/12 serial Stop,
 typecheck/build i 26/26 Playwright (1,5 min); zero FAIL/SKIP/cancel. Windows
 10.0.26300 x64, Node 24.19.0, npm 11.17.0, SQLite 3.53.4. Rzeczywiste polecenie
 `node --import tsx scripts/offline-check.ts --output <NOWY_KATALOG_POZA_REPO>`

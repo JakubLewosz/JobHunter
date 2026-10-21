@@ -113,14 +113,45 @@
       "status": "HOST_TEST_NOT_RUN"
     },
     {
-      "name": "FULL_CHECK_2_FINAL",
-      "result": "test-summary.json",
+      "name": "FULL_CHECK_2_BEFORE_CI_REPAIR",
+      "result": "full-check-2.json",
       "exitCode": 0,
       "backend": 761,
       "serialStop": 12,
       "ui": 26,
       "sourceFingerprint": "8cddc799fedfe8df74d3c8b11d86cb8fe9f996c008ca8dca4e13ab8f0a84df0e",
       "testedCodeFiles": 223
+    },
+    {
+      "name": "CI_39572278361",
+      "result": "ci-39572278361-failure.json",
+      "commit": "1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02",
+      "conclusion": "failure",
+      "backendPass": 760,
+      "backendTests": 761
+    },
+    {
+      "name": "CANCELLATION_TARGETED",
+      "result": "cancellation-regression.json",
+      "pass": 7,
+      "tests": 7,
+      "exitCode": 0
+    },
+    {
+      "name": "FULL_CHECK_3_AFTER_CI_REPAIR",
+      "result": "test-summary.json",
+      "exitCode": 0,
+      "backend": 765,
+      "serialStop": 12,
+      "ui": 26,
+      "sourceFingerprint": "1c420911cc10c86e4e2bb7ced36fd452ebb676b5657648c460f208bc8faff35e",
+      "testedCodeFiles": 224
+    },
+    {
+      "name": "NODE_PUBLIC_ENTRY_AFTER_CI_REPAIR",
+      "result": "node-public-entry-repair.json",
+      "state": "COMPLETED",
+      "elapsedMs": 34680.4229
     }
   ]
 }

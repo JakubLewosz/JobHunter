@@ -1,0 +1,482 @@
+{
+  "schema": 1,
+  "scope": "SYNTHETIC_CANCELLATION_REGRESSION",
+  "command": "node --import tsx --test --test-name-pattern='nightflow CLI|hard-killed fixture' tests/cli-tools.test.ts",
+  "baseCommit": "1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02",
+  "state": "UNCOMMITTED_WORKTREE",
+  "pass": 7,
+  "fail": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "elapsedMs": 8766.5592,
+  "childRecords": [
+    {
+      "schema": 2,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T09:21:46.491Z",
+      "endedAt": "2026-10-21T09:21:47.202Z",
+      "elapsedMs": 711.1347000000005,
+      "spawnMs": 10.452000000000226,
+      "errorCode": null,
+      "status": 1,
+      "signal": null,
+      "termination": "CANCELLED",
+      "cancelRequestedMs": 657.2671000000009,
+      "cancelSentMs": 657.2720000000008,
+      "forceKillRequestedMs": null,
+      "lastPhase": null,
+      "lastEvent": "LOCK_RELEASED",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 282.6356000000005
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 282.6824000000006
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 528.1055000000006
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 533.6378000000004
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 613.4796000000006
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 657.1830000000009
+        },
+        {
+          "event": "CANCEL_RECEIVED",
+          "elapsedMs": 681.8269
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 681.8626000000004
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 681.8841000000011
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 684.6239999999998
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 684.6535999999996
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 692.4907000000003
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 693.9560000000001
+        }
+      ]
+    },
+    {
+      "schema": 2,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T09:21:45.787Z",
+      "endedAt": "2026-10-21T09:21:46.488Z",
+      "elapsedMs": 701.2725,
+      "spawnMs": 10.858500000000276,
+      "errorCode": null,
+      "status": 1,
+      "signal": null,
+      "termination": "CANCELLED",
+      "cancelRequestedMs": 622.6142,
+      "cancelSentMs": 622.6157000000003,
+      "forceKillRequestedMs": null,
+      "lastPhase": null,
+      "lastEvent": "LOCK_RELEASED",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 279.5604000000003
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 279.60130000000026
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 528.0707000000002
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 534.1421
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 622.5253000000002
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 667.2361000000001
+        },
+        {
+          "event": "CANCEL_RECEIVED",
+          "elapsedMs": 667.7767000000003
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 670.8649000000005
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 670.9085000000005
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 675.3352000000004
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 675.3810999999996
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 682.4817000000003
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 683.8906999999999
+        }
+      ]
+    },
+    {
+      "schema": 2,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T09:21:39.749Z",
+      "endedAt": "2026-10-21T09:21:43.283Z",
+      "elapsedMs": 3533.6303,
+      "spawnMs": 18.774200000000064,
+      "errorCode": null,
+      "status": 0,
+      "signal": null,
+      "termination": "EXIT",
+      "cancelRequestedMs": null,
+      "cancelSentMs": null,
+      "forceKillRequestedMs": null,
+      "lastPhase": "PHASE_SENDING",
+      "lastEvent": "RESULT",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 454.1405000000001
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 454.3971
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 744.8333000000001
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 750.2501000000001
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 834.9088
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 882.1667000000001
+        },
+        {
+          "event": "FIXTURE_READY",
+          "elapsedMs": 1192.0329000000002
+        },
+        {
+          "event": "PHASE_REFRESHING",
+          "elapsedMs": 1229.9258
+        },
+        {
+          "event": "PHASE_RESEARCHING",
+          "elapsedMs": 1283.2615999999998
+        },
+        {
+          "event": "PHASE_VALIDATING",
+          "elapsedMs": 3090.9611
+        },
+        {
+          "event": "PHASE_CLOSING",
+          "elapsedMs": 3115.9809
+        },
+        {
+          "event": "PHASE_WAITING_WINDOW",
+          "elapsedMs": 3146.3334999999997
+        },
+        {
+          "event": "PHASE_SENDING",
+          "elapsedMs": 3157.9710999999998
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 3478.1391000000003
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 3479.0253999999995
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 3482.1075
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 3482.1503999999995
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 3494.0563999999995
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 3495.5723
+        },
+        {
+          "event": "RESULT",
+          "elapsedMs": 3495.6108999999997
+        }
+      ]
+    },
+    {
+      "schema": 2,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T09:21:43.288Z",
+      "endedAt": "2026-10-21T09:21:44.650Z",
+      "elapsedMs": 1362.2817000000005,
+      "spawnMs": 12.110700000000179,
+      "errorCode": null,
+      "status": 0,
+      "signal": null,
+      "termination": "CANCELLED",
+      "cancelRequestedMs": 1148.7717000000002,
+      "cancelSentMs": 1148.7739000000001,
+      "forceKillRequestedMs": null,
+      "lastPhase": "PHASE_RESEARCHING",
+      "lastEvent": "RESULT",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 310.1989000000003
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 310.27199999999993
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 594.5294999999996
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 600.4027999999998
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 684.3512000000001
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 730.4222
+        },
+        {
+          "event": "FIXTURE_READY",
+          "elapsedMs": 1062.9748
+        },
+        {
+          "event": "PHASE_REFRESHING",
+          "elapsedMs": 1098.3224
+        },
+        {
+          "event": "PHASE_RESEARCHING",
+          "elapsedMs": 1148.5402999999997
+        },
+        {
+          "event": "CANCEL_RECEIVED",
+          "elapsedMs": 1316.3918000000003
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 1319.4231
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 1320.0457999999999
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 1322.7658000000001
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 1322.7956999999997
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 1334.6252000000004
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 1335.9588999999996
+        },
+        {
+          "event": "RESULT",
+          "elapsedMs": 1335.9902000000002
+        }
+      ]
+    },
+    {
+      "schema": 2,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T09:21:44.653Z",
+      "endedAt": "2026-10-21T09:21:45.225Z",
+      "elapsedMs": 571.5790999999999,
+      "spawnMs": 10.874700000000303,
+      "errorCode": "ETIMEDOUT",
+      "status": 1,
+      "signal": null,
+      "termination": "TEST_TIMEOUT",
+      "cancelRequestedMs": 20.091300000000047,
+      "cancelSentMs": 287.0577999999996,
+      "forceKillRequestedMs": null,
+      "lastPhase": null,
+      "lastEvent": "LOCK_RELEASED",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 287.0522000000001
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 287.14699999999993
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 541.5160999999998
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 547.1656000000003
+        },
+        {
+          "event": "CANCEL_RECEIVED",
+          "elapsedMs": 551.4042
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 551.4434000000001
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 551.4652999999998
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 551.4849000000004
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 551.5056000000004
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 551.5266000000001
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 553.0844999999999
+        }
+      ]
+    },
+    {
+      "schema": 2,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T09:21:45.227Z",
+      "endedAt": "2026-10-21T09:21:45.785Z",
+      "elapsedMs": 557.8683000000001,
+      "spawnMs": 9.98660000000018,
+      "errorCode": null,
+      "status": 1,
+      "signal": null,
+      "termination": "CANCELLED",
+      "cancelRequestedMs": 537.2741999999998,
+      "cancelSentMs": 537.2759000000005,
+      "forceKillRequestedMs": null,
+      "lastPhase": null,
+      "lastEvent": "LOCK_RELEASED",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 288.02670000000035
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 288.10210000000006
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 531.1756999999998
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 537.2031000000006
+        },
+        {
+          "event": "CANCEL_RECEIVED",
+          "elapsedMs": 539.6388000000006
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 539.6854000000003
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 539.7075000000004
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 539.7277000000004
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 539.7476999999999
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 539.7752
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 541.4558000000006
+        }
+      ]
+    }
+  ],
+  "hardKillAssertions": [
+    "live child PID owns lock",
+    "PROFILE_LOCKED while alive and owner bytes unchanged",
+    "SIGKILL only directly spawned fixture",
+    "close awaited then PID ESRCH",
+    "old lock still present",
+    "normal acquireProfileLock recovers only dead owner",
+    "new instance verified and released"
+  ],
+  "limits": {
+    "lifecycleMs": 30000,
+    "cancelGraceMs": 2000,
+    "intentionalTimeoutMs": 1
+  }
+}

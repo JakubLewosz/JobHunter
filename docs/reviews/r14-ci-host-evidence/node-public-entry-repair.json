@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "level": "NODE_PUBLIC_ENTRY_LOCAL_PAGE",
+  "scenario": "complete",
+  "environment": {
+    "platform": "win32",
+    "node": "v24.19.0",
+    "release": "10.0.26300"
+  },
+  "code": {
+    "kind": "BUILD",
+    "sourceSha": "1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02",
+    "sourceTreeHash": "f2b735381451c36d23ad4218ce3fc56cc773cc5dcc4d3c32cce8e37aab93dc17",
+    "buildId": "8ac9cde1-6c7a-4054-a0f3-b5dc0cfb9f94",
+    "loadedCodeHash": "38a016e5e4b3366d661f169cff5b58ec92cef3ec06001eeccc30efa7940f796f",
+    "loadedAt": "2026-10-21T09:36:14.342Z"
+  },
+  "startedAt": "2026-10-21T09:36:16.827Z",
+  "endedAt": "2026-10-21T09:36:51.507Z",
+  "elapsedMs": 34680.4229,
+  "wallClock": false,
+  "intendedResearchHours": 8,
+  "result": {
+    "fixture": true,
+    "clock": "ACCELERATED",
+    "jobId": "fce1a760-96c5-4f9e-8380-652364baae78",
+    "planId": "fixture-nightflow-v1",
+    "planVersion": 1,
+    "state": "COMPLETED",
+    "reason": "COMPLETED",
+    "deadline": "2026-10-18T18:00:00.000Z",
+    "researchSessionId": "e7995e61-8d10-4a84-9dd4-80883dd196ab",
+    "batchId": "9bdc6fe2-8447-4219-b46c-05ff7c525ad3",
+    "counts": {
+      "total": 1,
+      "sent": 1,
+      "remaining": 0,
+      "skipped": 0,
+      "needsPreparation": 0,
+      "uncertain": 0
+    },
+    "checkpoint": {
+      "refreshed": [
+        "b5a8b532-5297-4913-8402-2b8585e04779"
+      ],
+      "checked": [
+        "b5a8b532-5297-4913-8402-2b8585e04779"
+      ],
+      "researchOutcome": {
+        "sessionId": "e7995e61-8d10-4a84-9dd4-80883dd196ab",
+        "deadline": "2026-10-18T18:00:00.000Z",
+        "reason": "DEADLINE",
+        "finalGuard": "2026-10-18T18:00:00.000Z"
+      },
+      "researchComplete": true,
+      "phaseGuardFinishedAt": "2026-10-18T18:00:00.000Z"
+    },
+    "authority": false,
+    "host": {
+      "heartbeats": 3,
+      "maxHeartbeatGapMs": 10070.042,
+      "connected": false,
+      "closed": true
+    },
+    "attempts": 1,
+    "browserActions": 1,
+    "attemptStates": [
+      {
+        "state": "SENT_PROVIDER",
+        "n": 1
+      }
+    ],
+    "deliveryStates": [
+      {
+        "state": "ACKNOWLEDGED",
+        "n": 1
+      }
+    ]
+  },
+  "events": [
+    {
+      "event": "LOCK_ACQUIRED",
+      "elapsedMs": 35.99929999999995
+    },
+    {
+      "event": "STORE_READY",
+      "elapsedMs": 119.07250000000022
+    },
+    {
+      "event": "SERVICE_READY",
+      "elapsedMs": 159.12260000000015
+    },
+    {
+      "event": "FIXTURE_READY",
+      "elapsedMs": 428.99170000000004
+    },
+    {
+      "event": "PHASE_REFRESHING",
+      "elapsedMs": 540.2609000000002
+    },
+    {
+      "event": "PHASE_RESEARCHING",
+      "elapsedMs": 593.4144000000001
+    },
+    {
+      "event": "PHASE_VALIDATING",
+      "elapsedMs": 32235.5057
+    },
+    {
+      "event": "PHASE_CLOSING",
+      "elapsedMs": 32256.210699999996
+    },
+    {
+      "event": "PHASE_WAITING_WINDOW",
+      "elapsedMs": 32281.996
+    },
+    {
+      "event": "PHASE_SENDING",
+      "elapsedMs": 32290.762000000002
+    },
+    {
+      "event": "CLEANUP_BEGIN",
+      "elapsedMs": 34597.4327
+    },
+    {
+      "event": "CONTROL_CLOSED",
+      "elapsedMs": 34598.1769
+    },
+    {
+      "event": "WORKER_CLOSED",
+      "elapsedMs": 34601.0565
+    },
+    {
+      "event": "HOST_CLOSED",
+      "elapsedMs": 34661.674399999996
+    },
+    {
+      "event": "STORE_CLOSED",
+      "elapsedMs": 34676.2204
+    },
+    {
+      "event": "LOCK_RELEASED",
+      "elapsedMs": 34677.3418
+    }
+  ],
+  "samples": [
+    {
+      "elapsedMs": 761.1574999999998,
+      "source": "LIVE_OWNER",
+      "target": {
+        "instanceId": "1bbaead2-d6d0-4eca-8593-1ca41ad44de6",
+        "jobId": "fce1a760-96c5-4f9e-8380-652364baae78",
+        "generation": "35f5f2b9-1552-4d1a-90f5-f7344a97cf0b"
+      },
+      "state": "RESEARCHING"
+    }
+  ],
+  "cleanup": {
+    "profileLockReleased": true,
+    "controlClosed": true,
+    "browserClosed": true,
+    "localPageClosed": true,
+    "fixtureDirectoryRemoved": true
+  }
+}

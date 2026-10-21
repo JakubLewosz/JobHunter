@@ -12,9 +12,16 @@
       fazy/cleanup/exit w bezpiecznym kanale i artefakty backendu CI przy awarii.
 - [x] Publiczne wejście z kompletną nową fixture i własnym localhost; Node E2E
       zakończenia/Stop/utraty wykonawcy/niepewnej jednej akcji.
-- [x] Finalny Windows check: 761/761 backend, 12/12 Stop, typecheck/build,
+- [x] Windows check przed CI 39572278361: 761/761 backend, 12/12 Stop, typecheck/build,
       26/26 UI, exit 0, 223 identyczne testowane pliki przed/po. Pierwszy
       pełny FAIL 760/761 zachowany; poprawiono wyłącznie zegar fixture okna.
+- [x] Po nowym CI FAILURE 39572278361 odczytano dostarczony artefakt:
+      test deadline 1 ms błędnie wymagał cleanup po SIGTERM przy SERVICE_READY.
+      Poprawiono handshake i anulowanie inicjalizacji; 7/7 celowanych regresji.
+      Żywy właściciel nadal blokuje przejęcie, martwa blokada wymaga ESRCH.
+- [x] Pełny Windows check po naprawie CI: 765/765 backend, 12/12 Stop,
+      typecheck/build, 26/26 UI, exit 0; 823097,7617 ms, 224 identyczne
+      pliki przed/po; manifest i poprzednie FAIL/PASS zachowane w raporcie R14.
 - [ ] Osiem godzin rzeczywistego hosta: HOST_TEST_NOT_RUN. Import w bieżącym VM
       zatrzymuje się w zależności Node (`process is not defined`, nodemailer).
       Najpierw krótki `runLocalHostFixture` w hoście obsługującym Node + tab,

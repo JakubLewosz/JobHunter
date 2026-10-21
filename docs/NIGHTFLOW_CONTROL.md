@@ -56,3 +56,12 @@ Obejmują prawdziwe lokalne IPC i asynchroniczne CLI, odrzucenie poświadczenia,
 brak/stary/zmieniony deskryptor, stare zadanie/generację, timeout przed/po
 odwołaniu, uszkodzone ACK, aktywny/terminalny/pusty raport, błędną bazę,
 rzeczywisty koordynator z fikcyjnym transportem i błąd zapisu po odwołaniu.
+
+Nadzór testowego CLI ma osobny kontrakt: 30 s deadline i 2 s na łagodne
+anulowanie. ENTRY potwierdza gotowość listenera; CANCEL_RECEIVED potwierdza
+odbiór. Inicjalizacja fixture sprawdza sygnał także między etapami setupu.
+Po wymuszonym zakończeniu Windows nie wykonuje finally, więc pozostawiona
+blokada nie dowodzi aktywnego procesu ani poprawnego cleanup. Nadzorca jej
+nie usuwa. Istniejące acquireProfileLock odzyskuje ją dopiero po ESRCH;
+żywy lub niepewny właściciel nadal blokuje otwarcie. To mechanizm wyłącznie
+lokalnego nadzoru fixture, bez zastępowania potwierdzonego Stop prawdziwej sesji.

@@ -7,6 +7,13 @@ Aktualny kontrakt z 21.10.2026: [NIGHTFLOW_CONTROL](NIGHTFLOW_CONTROL.md).
 Żaden z tych wyników nie zezwala sam na maintenance/Start.
 [Gotowa kompletna fixture i ograniczenie rzeczywistego hosta](NIGHTFLOW_HOST_FIXTURE.md).
 
+W nadzorze testowego CLI timeout i anulowanie mają osobną diagnostykę:
+gotowość ENTRY, odbiór CANCEL_RECEIVED, chwila wymuszonego zakończenia.
+Dwusekundowy grace nie gwarantuje cleanup po nagłym zabiciu Windows.
+Nie wolno z tego powodu kasować blokady żywego lub nieustalonego właściciela;
+zwykłe otwarcie profilu odzyskuje ją wyłącznie po potwierdzonym ESRCH.
+Nie zastępuje to wymaganych Stop i zakończenia operacji przed aktualizacją.
+
 ## Aktualna ścieżka Windows/nightflow
 
 [Pełny opis komend, planu, etapów i granic hosta](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).

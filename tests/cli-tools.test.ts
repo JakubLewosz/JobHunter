@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { fork, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -9,6 +10,7 @@ import { JobHunter } from '../apps/server/src/service.js';
 import { libraryAuditSchema } from '../apps/server/src/research/library-audit.js';
 import { resolveNpmCli } from '../apps/server/src/npm-cli.js';
 import { nightflowChild } from './helpers/nightflow-child.js';
+import { acquireProfileLock } from '../apps/server/src/backend-lock.js';
 const cli = (file: string, args: string[]) =>
   spawnSync(process.execPath, ['--import', 'tsx', file, ...args], {
     windowsHide: true,
@@ -170,6 +172,91 @@ test('nightflow CLI supervision reports its bounded test timeout and reaps only 
   const result = await nightflowChild(['fixture', '--data-dir', dir], { timeoutMs: 1 });
   assert.equal(result.diagnostics.termination, 'TEST_TIMEOUT');
   assert.equal(result.diagnostics.errorCode, 'ETIMEDOUT');
-  assert.equal(existsSync(join(dir, 'profile.lock')), false);
+  // The 2s grace bounds supervision, not cleanup after Windows TerminateProcess.
+  // If startup is slow enough to force a kill, recover only via normal dead-owner checks.
+  if (result.diagnostics.forceKillRequestedMs === null) {
+    assert.equal(result.signal, null);
+    assert.ok(result.diagnostics.events.some((x) => x.event === 'CANCEL_RECEIVED'));
+    assert.equal(existsSync(join(dir, 'profile.lock')), false);
+  } else if (existsSync(join(dir, 'profile.lock'))) {
+    const lock = acquireProfileLock(dir);
+    lock.assert();
+    lock.release();
+  }
   assert.ok(result.diagnostics.elapsedMs < 15000);
 });
+
+for (const phase of ['LOCK_ACQUIRED', 'STORE_READY', 'SERVICE_READY'])
+  test(`nightflow CLI cooperatively cancels initialization at ${phase}`, async (t) => {
+    const root = mkdtempSync(join(tmpdir(), 'jh-init-cancel-')),
+      dir = join(root, 'data'),
+      abort = new AbortController();
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const result = await nightflowChild(['fixture', '--data-dir', dir], {
+      signal: abort.signal,
+      onProgress: (event) => {
+        if (event === phase) abort.abort();
+      },
+    });
+    assert.equal(result.diagnostics.termination, 'CANCELLED', JSON.stringify(result.diagnostics));
+    assert.equal(result.diagnostics.forceKillRequestedMs, null, JSON.stringify(result.diagnostics));
+    assert.equal(result.signal, null);
+    assert.ok(result.diagnostics.events.some((x) => x.event === 'CANCEL_RECEIVED'));
+    assert.ok(result.diagnostics.events.some((x) => x.event === 'LOCK_RELEASED'));
+    assert.equal(result.stdout, '');
+    assert.equal(existsSync(join(dir, 'profile.lock')), false);
+    assert.equal(existsSync(join(dir, 'nightflow-control.json')), false);
+  });
+
+test(
+  'hard-killed fixture retains its lock; live ownership blocks recovery and confirmed dead ownership permits it',
+  { timeout: 30000 },
+  async (t) => {
+    const root = mkdtempSync(join(tmpdir(), 'jh-killed-lock-')),
+      dir = join(root, 'data');
+    const child = fork('tests/fixtures/nightflow-blocked-owner.ts', [dir], {
+      execArgv: ['--import', 'tsx'],
+      windowsHide: true,
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    });
+    t.after(async () => {
+      if (child.exitCode === null && child.signalCode === null) {
+        const closed = once(child, 'close');
+        child.kill('SIGKILL');
+        await closed;
+      }
+      rmSync(root, { recursive: true, force: true });
+    });
+    const ready = await Promise.race([
+      once(child, 'message').then(([value]) => value),
+      once(child, 'exit').then(() => {
+        throw Error('FIXTURE_EXIT_BEFORE_LOCK');
+      }),
+    ]);
+    assert.equal(ready, 'LOCK_HELD');
+    const ownerPath = join(dir, 'profile.lock', 'owner.json'),
+      owner = readFileSync(ownerPath);
+    assert.equal(JSON.parse(owner.toString()).pid, child.pid);
+    assert.throws(
+      () => acquireProfileLock(dir),
+      (error: any) => error.code === 'PROFILE_LOCKED',
+    );
+    assert.deepEqual(readFileSync(ownerPath), owner);
+    const closed = once(child, 'close');
+    child.kill('SIGKILL');
+    await closed;
+    assert.deepEqual(readFileSync(ownerPath), owner);
+    assert.throws(
+      () => process.kill(child.pid!, 0),
+      (error: any) => error.code === 'ESRCH',
+    );
+    const recovered = acquireProfileLock(dir);
+    recovered.assert();
+    assert.notEqual(
+      JSON.parse(readFileSync(ownerPath, 'utf8')).instance,
+      JSON.parse(owner.toString()).instance,
+    );
+    recovered.release();
+    assert.equal(existsSync(join(dir, 'profile.lock')), false);
+  },
+);

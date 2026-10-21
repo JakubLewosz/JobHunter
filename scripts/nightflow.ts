@@ -13,14 +13,18 @@ const progress = (event: string) => {
   if (command === 'fixture' && process.connected)
     process.send?.({ kind: 'NIGHTFLOW_FIXTURE_PROGRESS', event }, () => {});
 };
-progress('ENTRY');
 if (command === 'fixture' && process.connected) {
   process.on('message', (message: any) => {
-    if (message?.op === 'CANCEL_FIXTURE') controller.abort();
+    if (message?.op === 'CANCEL_FIXTURE') {
+      controller.abort();
+      progress('CANCEL_RECEIVED');
+    }
   });
 }
 process.once('SIGINT', () => controller.abort());
 process.once('SIGTERM', () => controller.abort());
+// ENTRY means the fixture cancellation listener is installed.
+progress('ENTRY');
 try {
   const dir = value('--data-dir');
   if (

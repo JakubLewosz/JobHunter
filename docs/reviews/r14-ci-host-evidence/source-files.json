@@ -1,5 +1,5 @@
 {
-  "fingerprint": "8cddc799fedfe8df74d3c8b11d86cb8fe9f996c008ca8dca4e13ab8f0a84df0e",
+  "fingerprint": "1c420911cc10c86e4e2bb7ced36fd452ebb676b5657648c460f208bc8faff35e",
   "files": [
     {
       "path": ".github/workflows/offline-check.yml",
@@ -133,8 +133,8 @@
     },
     {
       "path": "apps/server/src/nightflow-entry.ts",
-      "bytes": 6919,
-      "sha256": "897fbcf84da4e825f2a1f5584a42005962792bb3d075278f3f8f5de7196f34e7"
+      "bytes": 7500,
+      "sha256": "184f1d7dc3005ea357483227ae44d37da2690810373bd66ec1de0cbc9b1e1a55"
     },
     {
       "path": "apps/server/src/nightflow.ts",
@@ -633,8 +633,8 @@
     },
     {
       "path": "scripts/nightflow.ts",
-      "bytes": 3548,
-      "sha256": "f7d4e7ca866280ec088a9f3446be35cb43f41ecd67eb92d083acb52561722c41"
+      "bytes": 3660,
+      "sha256": "b3f4f7c980de8e523ec7c645f245889a4ed0f67ae13d7237a770372370ccfdae"
     },
     {
       "path": "scripts/offline-check.ts",
@@ -793,8 +793,8 @@
     },
     {
       "path": "tests/cli-tools.test.ts",
-      "bytes": 7115,
-      "sha256": "4dfc80092c5eae54cad4ddfe7ef1e1feb234a440cd7e8a69fb1ddc1e05f5b8e4"
+      "bytes": 10714,
+      "sha256": "6f0a73721e0f4edf0d2374fb1e2202c6539371341899c190bf7c6b937588c1b4"
     },
     {
       "path": "tests/closed-batch.test.ts",
@@ -887,6 +887,11 @@
       "sha256": "888c983ba2e7eb2cfd6bafa0f1156eef0ad7caa21b36871ad4b021bd56f6ec20"
     },
     {
+      "path": "tests/fixtures/nightflow-blocked-owner.ts",
+      "bytes": 455,
+      "sha256": "834a52e119985b0c4a75634df3dc4b0ad5746ffd4e1f0e3d35c2e57810f8991c"
+    },
+    {
       "path": "tests/fixtures/odd-cli.mjs",
       "bytes": 1181,
       "sha256": "c4f655dfb304c0b00807bc1e420489df3bf7774a0ddb99cde750038650711f43"
@@ -923,8 +928,8 @@
     },
     {
       "path": "tests/helpers/nightflow-child.ts",
-      "bytes": 3912,
-      "sha256": "fc84da6192f64e183c1f23cf2eeb78e19673753818021037e4793d22b6903fcc"
+      "bytes": 4651,
+      "sha256": "f2562e34ab5e3338f0c7c4967f3b62fb055d777915e8142891dda372668f1e59"
     },
     {
       "path": "tests/history-stabilization.test.ts",

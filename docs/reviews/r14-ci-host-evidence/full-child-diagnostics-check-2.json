@@ -1,0 +1,693 @@
+[
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:46.168Z",
+    "endedAt": "2026-10-21T08:33:46.771Z",
+    "elapsedMs": 602.9606000000022,
+    "spawnMs": 10.311900000000605,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "EXIT",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:48.819Z",
+    "endedAt": "2026-10-21T08:33:49.385Z",
+    "elapsedMs": 566.2969000000012,
+    "spawnMs": 14.378900000003341,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:45.559Z",
+    "endedAt": "2026-10-21T08:33:46.148Z",
+    "elapsedMs": 588.4538999999968,
+    "spawnMs": 9.792499999999563,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "EXIT",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:23.664Z",
+    "endedAt": "2026-10-21T08:33:24.183Z",
+    "elapsedMs": 519.4120000000003,
+    "spawnMs": 7.815100000000257,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:43.507Z",
+    "endedAt": "2026-10-21T08:33:44.190Z",
+    "elapsedMs": 682.2165999999997,
+    "spawnMs": 10.565499999996973,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:21.786Z",
+    "endedAt": "2026-10-21T08:33:22.389Z",
+    "elapsedMs": 602.1107,
+    "spawnMs": 8.775499999999965,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:40.647Z",
+    "endedAt": "2026-10-21T08:33:41.338Z",
+    "elapsedMs": 691.7470999999969,
+    "spawnMs": 10.666199999999662,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:22.406Z",
+    "endedAt": "2026-10-21T08:33:23.080Z",
+    "elapsedMs": 674.5581,
+    "spawnMs": 7.589500000000044,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:26.916Z",
+    "endedAt": "2026-10-21T08:33:27.529Z",
+    "elapsedMs": 612.3832000000002,
+    "spawnMs": 24.019400000000132,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:24.986Z",
+    "endedAt": "2026-10-21T08:33:25.620Z",
+    "elapsedMs": 633.8730999999998,
+    "spawnMs": 8.687800000000607,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:23.098Z",
+    "endedAt": "2026-10-21T08:33:23.646Z",
+    "elapsedMs": 547.3417000000004,
+    "spawnMs": 8.70430000000033,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:31:38.217Z",
+    "endedAt": "2026-10-21T08:31:41.720Z",
+    "elapsedMs": 3502.9805000000006,
+    "spawnMs": 10.39140000000043,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "EXIT",
+    "lastPhase": "PHASE_SENDING",
+    "lastEvent": "RESULT",
+    "events": [
+      {
+        "event": "ENTRY",
+        "elapsedMs": 423.3148000000001
+      },
+      {
+        "event": "IMPORT_BEGIN",
+        "elapsedMs": 423.4452000000001
+      },
+      {
+        "event": "IMPORT_END",
+        "elapsedMs": 708.5261
+      },
+      {
+        "event": "LOCK_ACQUIRED",
+        "elapsedMs": 713.7208
+      },
+      {
+        "event": "STORE_READY",
+        "elapsedMs": 801.5218999999997
+      },
+      {
+        "event": "SERVICE_READY",
+        "elapsedMs": 841.3811000000005
+      },
+      {
+        "event": "FIXTURE_READY",
+        "elapsedMs": 1148.7826999999997
+      },
+      {
+        "event": "PHASE_REFRESHING",
+        "elapsedMs": 1187.0708000000004
+      },
+      {
+        "event": "PHASE_RESEARCHING",
+        "elapsedMs": 1249.6428000000005
+      },
+      {
+        "event": "PHASE_VALIDATING",
+        "elapsedMs": 3050.6842000000006
+      },
+      {
+        "event": "PHASE_CLOSING",
+        "elapsedMs": 3079.4700000000003
+      },
+      {
+        "event": "PHASE_WAITING_WINDOW",
+        "elapsedMs": 3110.1115999999993
+      },
+      {
+        "event": "PHASE_SENDING",
+        "elapsedMs": 3120.2853999999998
+      },
+      {
+        "event": "CLEANUP_BEGIN",
+        "elapsedMs": 3440.9103000000005
+      },
+      {
+        "event": "CONTROL_CLOSED",
+        "elapsedMs": 3441.8648999999996
+      },
+      {
+        "event": "WORKER_CLOSED",
+        "elapsedMs": 3446.4968
+      },
+      {
+        "event": "HOST_CLOSED",
+        "elapsedMs": 3446.5438999999997
+      },
+      {
+        "event": "STORE_CLOSED",
+        "elapsedMs": 3463.1246999999994
+      },
+      {
+        "event": "LOCK_RELEASED",
+        "elapsedMs": 3464.8098
+      },
+      {
+        "event": "RESULT",
+        "elapsedMs": 3464.8442000000005
+      }
+    ]
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:44.894Z",
+    "endedAt": "2026-10-21T08:33:45.541Z",
+    "elapsedMs": 646.4696000000004,
+    "spawnMs": 10.454400000002352,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:27.545Z",
+    "endedAt": "2026-10-21T08:33:28.145Z",
+    "elapsedMs": 600.0625999999993,
+    "spawnMs": 8.395499999999629,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:41.356Z",
+    "endedAt": "2026-10-21T08:33:42.044Z",
+    "elapsedMs": 688.0304999999971,
+    "spawnMs": 8.02589999999691,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:26.260Z",
+    "endedAt": "2026-10-21T08:33:26.893Z",
+    "elapsedMs": 633.0910999999996,
+    "spawnMs": 13.038800000000265,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:28.165Z",
+    "endedAt": "2026-10-21T08:33:28.802Z",
+    "elapsedMs": 637.0449000000008,
+    "spawnMs": 10.3087000000005,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:42.061Z",
+    "endedAt": "2026-10-21T08:33:42.742Z",
+    "elapsedMs": 681.4740999999995,
+    "spawnMs": 7.086300000002666,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:31:41.724Z",
+    "endedAt": "2026-10-21T08:31:43.080Z",
+    "elapsedMs": 1356.3117999999995,
+    "spawnMs": 11.200600000000122,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "CANCELLED",
+    "lastPhase": "PHASE_RESEARCHING",
+    "lastEvent": "RESULT",
+    "events": [
+      {
+        "event": "ENTRY",
+        "elapsedMs": 308.0599000000002
+      },
+      {
+        "event": "IMPORT_BEGIN",
+        "elapsedMs": 308.1399000000001
+      },
+      {
+        "event": "IMPORT_END",
+        "elapsedMs": 592.4056
+      },
+      {
+        "event": "LOCK_ACQUIRED",
+        "elapsedMs": 598.2309000000005
+      },
+      {
+        "event": "STORE_READY",
+        "elapsedMs": 688.3543000000009
+      },
+      {
+        "event": "SERVICE_READY",
+        "elapsedMs": 732.027900000001
+      },
+      {
+        "event": "FIXTURE_READY",
+        "elapsedMs": 1032.2348999999995
+      },
+      {
+        "event": "PHASE_REFRESHING",
+        "elapsedMs": 1068.3248999999996
+      },
+      {
+        "event": "PHASE_RESEARCHING",
+        "elapsedMs": 1140.4316
+      },
+      {
+        "event": "CLEANUP_BEGIN",
+        "elapsedMs": 1312.7698
+      },
+      {
+        "event": "CONTROL_CLOSED",
+        "elapsedMs": 1313.7826000000005
+      },
+      {
+        "event": "WORKER_CLOSED",
+        "elapsedMs": 1317.3086999999996
+      },
+      {
+        "event": "HOST_CLOSED",
+        "elapsedMs": 1317.3513999999996
+      },
+      {
+        "event": "STORE_CLOSED",
+        "elapsedMs": 1329.7284999999993
+      },
+      {
+        "event": "LOCK_RELEASED",
+        "elapsedMs": 1331.2227999999996
+      },
+      {
+        "event": "RESULT",
+        "elapsedMs": 1331.2556000000004
+      }
+    ]
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:28.821Z",
+    "endedAt": "2026-10-21T08:33:29.429Z",
+    "elapsedMs": 607.3472999999994,
+    "spawnMs": 7.554199999998673,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:47.524Z",
+    "endedAt": "2026-10-21T08:33:48.106Z",
+    "elapsedMs": 581.7589000000007,
+    "spawnMs": 11.440099999999802,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "EXIT",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:24.201Z",
+    "endedAt": "2026-10-21T08:33:24.805Z",
+    "elapsedMs": 603.9822999999997,
+    "spawnMs": 10.886799999999766,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:25.640Z",
+    "endedAt": "2026-10-21T08:33:26.240Z",
+    "elapsedMs": 600.1741000000002,
+    "spawnMs": 11.986300000000483,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:46.792Z",
+    "endedAt": "2026-10-21T08:33:47.498Z",
+    "elapsedMs": 705.4092999999993,
+    "spawnMs": 10.96099999999933,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "EXIT",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:35.052Z",
+    "endedAt": "2026-10-21T08:33:40.628Z",
+    "elapsedMs": 5576.057299999999,
+    "spawnMs": 10.641299999999319,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:31:43.085Z",
+    "endedAt": "2026-10-21T08:31:44.434Z",
+    "elapsedMs": 1349.196899999999,
+    "spawnMs": 9.161199999998644,
+    "errorCode": "ETIMEDOUT",
+    "status": 0,
+    "signal": null,
+    "termination": "TEST_TIMEOUT",
+    "lastPhase": "PHASE_RESEARCHING",
+    "lastEvent": "RESULT",
+    "events": [
+      {
+        "event": "ENTRY",
+        "elapsedMs": 309.2418999999991
+      },
+      {
+        "event": "IMPORT_BEGIN",
+        "elapsedMs": 309.35139999999956
+      },
+      {
+        "event": "IMPORT_END",
+        "elapsedMs": 604.0419999999995
+      },
+      {
+        "event": "LOCK_ACQUIRED",
+        "elapsedMs": 610.189699999999
+      },
+      {
+        "event": "STORE_READY",
+        "elapsedMs": 698.7942000000003
+      },
+      {
+        "event": "SERVICE_READY",
+        "elapsedMs": 743.3261000000002
+      },
+      {
+        "event": "FIXTURE_READY",
+        "elapsedMs": 1036.8931999999986
+      },
+      {
+        "event": "PHASE_REFRESHING",
+        "elapsedMs": 1074.8647
+      },
+      {
+        "event": "PHASE_RESEARCHING",
+        "elapsedMs": 1138.6714999999986
+      },
+      {
+        "event": "CLEANUP_BEGIN",
+        "elapsedMs": 1307.1850999999988
+      },
+      {
+        "event": "CONTROL_CLOSED",
+        "elapsedMs": 1307.9465
+      },
+      {
+        "event": "WORKER_CLOSED",
+        "elapsedMs": 1311.5828999999994
+      },
+      {
+        "event": "HOST_CLOSED",
+        "elapsedMs": 1311.6215999999986
+      },
+      {
+        "event": "STORE_CLOSED",
+        "elapsedMs": 1323.3985999999986
+      },
+      {
+        "event": "LOCK_RELEASED",
+        "elapsedMs": 1325.4779999999992
+      },
+      {
+        "event": "RESULT",
+        "elapsedMs": 1325.5511999999999
+      }
+    ]
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:29.450Z",
+    "endedAt": "2026-10-21T08:33:35.035Z",
+    "elapsedMs": 5585.2989,
+    "spawnMs": 12.508200000000215,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:49.406Z",
+    "endedAt": "2026-10-21T08:33:50.095Z",
+    "elapsedMs": 689.4390999999996,
+    "spawnMs": 23.65179999999964,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:48.143Z",
+    "endedAt": "2026-10-21T08:33:48.740Z",
+    "elapsedMs": 597.3996999999981,
+    "spawnMs": 9.580799999999726,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:42.761Z",
+    "endedAt": "2026-10-21T08:33:43.492Z",
+    "elapsedMs": 731.1468999999997,
+    "spawnMs": 14.039100000001781,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:21.020Z",
+    "endedAt": "2026-10-21T08:33:21.764Z",
+    "elapsedMs": 743.6977000000002,
+    "spawnMs": 21.740499999999997,
+    "errorCode": null,
+    "status": 0,
+    "signal": null,
+    "termination": "EXIT",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  },
+  {
+    "schema": 1,
+    "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+    "startedAt": "2026-10-21T08:33:44.208Z",
+    "endedAt": "2026-10-21T08:33:44.877Z",
+    "elapsedMs": 669.3282999999974,
+    "spawnMs": 14.497699999999895,
+    "errorCode": null,
+    "status": 1,
+    "signal": null,
+    "termination": "CRASH",
+    "lastPhase": null,
+    "lastEvent": null,
+    "events": []
+  }
+]

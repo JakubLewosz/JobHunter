@@ -10,6 +10,7 @@ import { FixtureReader, FixtureRunner } from './testing/research-fixture.js';
 import { FixtureGmail } from './testing/gmail-fixture.js';
 import { DomainError, id } from './util.js';
 import { listenNightflow } from './nightflow-control.js';
+import { setImmediate as yieldImmediate } from 'node:timers/promises';
 
 export async function withNightflow<T>(
   options: {
@@ -29,6 +30,7 @@ export async function withNightflow<T>(
     fixturePlan: any,
   ) => Promise<T>,
 ) {
+  options.signal?.throwIfAborted();
   const dir = assertOutsideRepository(options.dir);
   if (!options.fixture && (options.fixtureBrowserOrigin || options.fixtureWallClock))
     throw new DomainError('DEVELOPMENT_REQUIRED', 'Opcje fixture wymagają pełnej symulacji.');
@@ -36,6 +38,12 @@ export async function withNightflow<T>(
     try {
       if (options.fixture) options.onProgress?.(event);
     } catch {}
+  };
+  const checkpoint = async () => {
+    options.signal?.throwIfAborted();
+    // Allow IPC cancellation between synchronous fixture initialization stages.
+    if (options.fixture) await yieldImmediate();
+    options.signal?.throwIfAborted();
   };
   if (options.fixture) {
     for (let ancestor = dir; ; ancestor = dirname(ancestor)) {
@@ -61,10 +69,12 @@ export async function withNightflow<T>(
   const clock = () =>
     new Date(options.fixtureWallClock ? time + performance.now() - monotonicStart : time);
   try {
+    await checkpoint();
     lock.assert();
     store = new Store(dir);
     progress('STORE_READY');
     store.assertExclusive = lock.assert;
+    await checkpoint();
     const gateway = options.fixture ? new FixtureGmail() : undefined;
     const reader = options.fixture ? new FixtureReader() : undefined;
     if (reader) {
@@ -88,6 +98,7 @@ export async function withNightflow<T>(
         : { runtime },
     );
     progress('SERVICE_READY');
+    await checkpoint();
     let fixturePlan: any;
     if (options.fixture && !service.policyConfig()) {
       service.approveProfile();
@@ -109,16 +120,22 @@ export async function withNightflow<T>(
         confirmed: true,
         targetedHistoryConsent: true,
       });
+      await checkpoint();
       await service.configureLocalHistory({
         confirmedHistory: true,
         confirmedSingleWorkstation: true,
       });
+      await checkpoint();
       await service.probe('codex');
+      await checkpoint();
       await service.probe('search');
+      await checkpoint();
       await service.startLibraryResearch(undefined, 8);
+      await checkpoint();
       await service.tick();
       service.control('stop');
       service.finishPartial();
+      await checkpoint();
     }
     const installation = store.get<string>('nightflowInstallationId', '');
     if (!installation) store.set('nightflowInstallationId', id());

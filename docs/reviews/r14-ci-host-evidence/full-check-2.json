@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "scope": "SYNTHETIC_WINDOWS_CHECK",
+  "platform": "win32",
+  "release": "10.0.26300",
+  "arch": "x64",
+  "node": "v24.19.0",
+  "npm": "11.17.0",
+  "sqlite": "3.53.4",
+  "baseSha": "c03161ba5b086fd625648f54eb9527a7b3032883",
+  "state": "UNCOMMITTED_WORKTREE",
+  "command": "npm run check",
+  "startedAt": "2026-10-21T08:30:59.177Z",
+  "endedAt": "2026-10-21T08:44:32.484Z",
+  "elapsedMs": 813305.5536999999,
+  "exitCode": 0,
+  "signal": null,
+  "sourceFingerprint": "8cddc799fedfe8df74d3c8b11d86cb8fe9f996c008ca8dca4e13ab8f0a84df0e",
+  "unchanged": true,
+  "counts": [
+    {
+      "metric": "tests",
+      "value": 761
+    },
+    {
+      "metric": "pass",
+      "value": 761
+    },
+    {
+      "metric": "fail",
+      "value": 0
+    },
+    {
+      "metric": "cancelled",
+      "value": 0
+    },
+    {
+      "metric": "skipped",
+      "value": 0
+    },
+    {
+      "metric": "tests",
+      "value": 12
+    },
+    {
+      "metric": "pass",
+      "value": 12
+    },
+    {
+      "metric": "fail",
+      "value": 0
+    },
+    {
+      "metric": "cancelled",
+      "value": 0
+    },
+    {
+      "metric": "skipped",
+      "value": 0
+    }
+  ],
+  "ui": [
+    "26 passed (1.5m)"
+  ],
+  "isolatedHome": true,
+  "nativeProviders": false
+}

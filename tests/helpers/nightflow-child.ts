@@ -25,7 +25,17 @@ export async function nightflowChild(
     errorCode: string | null = null,
     spawnMs: number | null = null,
     termination = 'EXIT',
-    timedOut = false;
+    timedOut = false,
+    entryReady = false;
+  let cancelRequestedMs: number | null = null,
+    cancelSentMs: number | null = null,
+    forceKillRequestedMs: number | null = null;
+  function sendCancellation() {
+    if (entryReady && termination !== 'EXIT' && cancelSentMs === null && child.connected) {
+      cancelSentMs = performance.now() - start;
+      child.send({ op: 'CANCEL_FIXTURE' }, () => {});
+    }
+  }
   const events: { event: string; elapsedMs: number }[] = [];
   child.once('spawn', () => {
     spawnMs = performance.now() - start;
@@ -33,12 +43,16 @@ export async function nightflowChild(
   child.on('message', (message: any) => {
     if (
       message?.kind === 'NIGHTFLOW_FIXTURE_PROGRESS' &&
-      /^(ENTRY|IMPORT_BEGIN|IMPORT_END|LOCK_ACQUIRED|STORE_READY|SERVICE_READY|FIXTURE_READY|PHASE_(REFRESHING|RESEARCHING|VALIDATING|CLOSING|WAITING_WINDOW|SENDING)|RESULT|CLEANUP_BEGIN|CONTROL_CLOSED|WORKER_CLOSED|HOST_CLOSED|STORE_CLOSED|LOCK_RELEASED)$/.test(
+      /^(ENTRY|CANCEL_RECEIVED|IMPORT_BEGIN|IMPORT_END|LOCK_ACQUIRED|STORE_READY|SERVICE_READY|FIXTURE_READY|PHASE_(REFRESHING|RESEARCHING|VALIDATING|CLOSING|WAITING_WINDOW|SENDING)|RESULT|CLEANUP_BEGIN|CONTROL_CLOSED|WORKER_CLOSED|HOST_CLOSED|STORE_CLOSED|LOCK_RELEASED)$/.test(
         message.event,
       ) &&
       events.length < 128
     ) {
       events.push({ event: message.event, elapsedMs: performance.now() - start });
+      if (message.event === 'ENTRY') {
+        entryReady = true;
+        sendCancellation();
+      }
       options.onProgress?.(message.event);
     }
   });
@@ -53,9 +67,14 @@ export async function nightflowChild(
   function cancel(reason: string) {
     if (termination !== 'EXIT') return;
     termination = reason;
-    if (child.connected) child.send({ op: 'CANCEL_FIXTURE' }, () => {});
+    cancelRequestedMs = performance.now() - start;
+    sendCancellation();
     // Only our directly spawned Node child; no npm shell or unknown process tree.
-    force = setTimeout(() => child.kill(), 2000);
+    // A forced exit cannot promise finally/lock cleanup. Never remove its lock here.
+    force = setTimeout(() => {
+      forceKillRequestedMs = performance.now() - start;
+      child.kill();
+    }, 2000);
   }
   const abort = () => cancel('CANCELLED');
   options.signal?.addEventListener('abort', abort, { once: true });
@@ -78,7 +97,7 @@ export async function nightflowChild(
   if (timedOut) errorCode = 'ETIMEDOUT';
   if (termination === 'EXIT' && exit.status !== 0) termination = 'CRASH';
   const diagnostics = {
-    schema: 1,
+    schema: 2,
     scope: 'SYNTHETIC_NIGHTFLOW_CHILD',
     startedAt,
     endedAt: new Date().toISOString(),
@@ -87,6 +106,9 @@ export async function nightflowChild(
     errorCode,
     ...exit,
     termination,
+    cancelRequestedMs,
+    cancelSentMs,
+    forceKillRequestedMs,
     lastPhase: events.filter((x) => x.event.startsWith('PHASE_')).at(-1)?.event ?? null,
     lastEvent: events.at(-1)?.event ?? null,
     events,

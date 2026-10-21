@@ -3,7 +3,7 @@
 ## Aktualizacja R14 — 21.10.2026
 
 [Nowy raport, rzeczywiste wyniki i tożsamość testowanego kodu](reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md).
-Finalny `npm run check` 21.10.2026: **PASS, exit 0**, 761/761 backend,
+Poprzedni `npm run check` 21.10.2026, przed CI 39572278361: **PASS, exit 0**, 761/761 backend,
 12/12 serial Stop, typecheck/build, 26/26 UI, 813305,5537 ms. Node 24.19.0,
 npm 11.17.0, SQLite 3.53.4, Windows 10.0.26300 x64; izolowane środowisko.
 08:30:59.177–08:44:32.484 UTC. Manifest 223 plików przed/po:
@@ -17,6 +17,25 @@ localhost oraz ograniczona próba narzędzia strony w aktywnym Codexie. Import
 całego publicznego wejścia w tym hoście: HOST_TEST_NOT_RUN z błędem zależności
 wymagającej globalnego process. Ośmiu godzin rzeczywistego hosta nie wykonano.
 Poniższe datowane FAIL/PASS oraz stare manifesty pozostają historyczne.
+
+Po publikacji 1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02 nowy CI
+[39572278361](https://github.com/JakubLewosz/JobHunter/actions/runs/39572278361)
+zakończył się FAILURE, 760/761 backend. Artefakt dostarczony przez użytkownika
+potwierdza deadline 1 ms i SIGTERM po 2032,3175 ms przy SERVICE_READY, bez
+cleanup. To odrębna porażka nowego testu nadzoru. Poprawiono gotowość kanału
+anulowania i punkty przerwania setupu; test zachowano z poprawnym kontraktem
+hard kill. Celowana seria: 7/7 PASS, zero FAIL/SKIP/cancel, 8766,5592 ms.
+Obejmuje trzy etapy inicjalizacji, zachowanie blokady żywego właściciela oraz
+pozostawienie i bezpieczne odzyskanie blokady po własnym zabitym procesie.
+Pełny nowy check po naprawie: **PASS, exit 0**, 765/765 backend, 12/12 serial
+Stop, typecheck/build, 26/26 UI; zero FAIL/SKIP/cancel, 823097,7617 ms.
+09:22:11.555–09:35:54.650 UTC, ten sam Windows/Node/npm/SQLite i izolacja.
+224 pliki przed/po identyczne, fingerprint
+`1c420911cc10c86e4e2bb7ced36fd452ebb676b5657648c460f208bc8faff35e`.
+To UNCOMMITTED_WORKTREE od 1b9f0de; zgodność z finalnym commitem weryfikuje
+pakiet. Główny proces CLI 4019,6406 ms, celowy deadline 1 ms zakończył
+się po 723,4762 ms z LOCK_RELEASED i bez force kill. CI finalnego SHA jest
+osobnym wynikiem przekazania; starszy FAILURE pozostaje w dowodach.
 
 ## Windows nightflow — nowy kod, osobne dowody
 

@@ -13,10 +13,22 @@ ustalono; nie jest to błąd benchmarku Stop. Dawne UNKNOWN_LOGS_UNAVAILABLE
 jest nieaktualne. Bazowy c03161ba ma osobny CI PASS (39173019427), potwierdzony
 także publicznym API 21.10; sama zmiana dokumentacji nie naprawiała timeoutu.
 Nowe pomiary i bounded diagnostyka asynchronicznego nadzoru są w raporcie R14.
-Finalny lokalny check R14 ma PASS: 761 backend / 12 Stop / 26 UI. Nie
+Lokalny check R14 przed CI 39572278361 miał PASS: 761 backend / 12 Stop / 26 UI. Nie
 odtworzono timeoutu CLI; szczegółowej dawnej przyczyny nie uznano za naprawioną
 na podstawie samego PASS. Host public entry i jego 8 h nadal HOST_TEST_NOT_RUN.
 Poprawki oraz testy syntetyczne nie aktualizują prywatnej instalacji.
+
+Późniejszy CI dla `1b9f0deda6e6cb032c22f6d49764d8aa3bc6fe02`, run
+39572278361: **FAILURE 760/761**. Artefakt dostarczony przez użytkownika
+potwierdził błąd nowego testu deadline 1 ms: SIGTERM po 2032,3175 ms przy
+SERVICE_READY, bez cleanup. Nie był to ponowny timeout głównego lifecycle 30 s.
+Poprawiono handshake anulowania i sprawdzanie sygnału podczas inicjalizacji;
+test rozróżnia łagodne zakończenie od pozostawionej blokady po hard kill.
+Siedem celowanych regresji PASS obejmuje też ochronę żywego właściciela i
+odzyskanie po potwierdzonym ESRCH. Produkcyjny lock i jego ochrona bez zmian.
+Nowy pełny Windows check po naprawie ma PASS: 765/765 backend, 12/12 Stop,
+typecheck/build i 26/26 UI; 224 identyczne pliki, 823097,7617 ms. Nowy CI
+jest osobno rejestrowany dla finalnego SHA; wcześniejszy FAIL pozostaje.
 Otwarte pozostają: produkcyjne ustawienia/zgoda planu, rozstrzygnięcie dawnego
 PAUSED po backupie, kontrolowana aktualizacja, faktyczne odnowienie biblioteki,
 utrzymanie prawdziwego hosta Codexa przez osiem godzin i osobno autoryzowany pilot.
