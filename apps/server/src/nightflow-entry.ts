@@ -19,6 +19,9 @@ export async function withNightflow<T>(
     host?: NightflowHost;
     fixtureAdvanceMs?: number;
     realWaitMs?: number;
+    onProgress?: (event: string) => void;
+    fixtureBrowserOrigin?: string;
+    fixtureWallClock?: boolean;
   },
   action: (
     coordinator: NightflowCoordinator,
@@ -27,6 +30,13 @@ export async function withNightflow<T>(
   ) => Promise<T>,
 ) {
   const dir = assertOutsideRepository(options.dir);
+  if (!options.fixture && (options.fixtureBrowserOrigin || options.fixtureWallClock))
+    throw new DomainError('DEVELOPMENT_REQUIRED', 'Opcje fixture wymagają pełnej symulacji.');
+  const progress = (event: string) => {
+    try {
+      if (options.fixture) options.onProgress?.(event);
+    } catch {}
+  };
   if (options.fixture) {
     for (let ancestor = dir; ; ancestor = dirname(ancestor)) {
       if (existsSync(join(ancestor, 'workstation.json')))
@@ -42,14 +52,18 @@ export async function withNightflow<T>(
   }
   const runtime = options.fixture ? undefined : workstationRuntime(dir);
   const lock = acquireProfileLock(dir);
+  progress('LOCK_ACQUIRED');
   let store: Store | undefined,
     service: AutoPolicyJobHunter | undefined,
     closeControl: (() => Promise<void>) | undefined;
   let time = Date.parse('2026-10-18T10:00:00Z');
-  const clock = () => new Date(time);
+  const monotonicStart = performance.now();
+  const clock = () =>
+    new Date(options.fixtureWallClock ? time + performance.now() - monotonicStart : time);
   try {
     lock.assert();
     store = new Store(dir);
+    progress('STORE_READY');
     store.assertExclusive = lock.assert;
     const gateway = options.fixture ? new FixtureGmail() : undefined;
     const reader = options.fixture ? new FixtureReader() : undefined;
@@ -63,9 +77,17 @@ export async function withNightflow<T>(
     service = new AutoPolicyJobHunter(
       store,
       options.fixture
-        ? { gateway, accountInfo: () => gateway!.info, reader, runner: new FixtureRunner(), clock }
+        ? {
+            gateway,
+            accountInfo: () => gateway!.info,
+            reader,
+            runner: new FixtureRunner(),
+            clock,
+            fixtureBrowserOrigin: options.fixtureBrowserOrigin,
+          }
         : { runtime },
     );
+    progress('SERVICE_READY');
     let fixturePlan: any;
     if (options.fixture && !service.policyConfig()) {
       service.approveProfile();
@@ -100,16 +122,20 @@ export async function withNightflow<T>(
     }
     const installation = store.get<string>('nightflowInstallationId', '');
     if (!installation) store.set('nightflowInstallationId', id());
+    progress('FIXTURE_READY');
     const coordinator = new NightflowCoordinator(store, service, {
       installation: store.get('nightflowInstallationId', ''),
       host: options.host,
+      boundary: async (phase) => progress('PHASE_' + phase),
       ...(options.fixture
         ? {
             clock,
             wait: async (_ms: number, signal: AbortSignal) => {
-              await new Promise<void>((resolve) => setTimeout(resolve, options.realWaitMs ?? 1));
+              await new Promise<void>((resolve) =>
+                setTimeout(resolve, options.fixtureWallClock ? _ms : (options.realWaitMs ?? 1)),
+              );
               signal.throwIfAborted();
-              time += options.fixtureAdvanceMs ?? 16 * 60000;
+              if (!options.fixtureWallClock) time += options.fixtureAdvanceMs ?? 16 * 60000;
             },
           }
         : {}),
@@ -143,11 +169,17 @@ export async function withNightflow<T>(
       options.signal?.removeEventListener('abort', stop);
     }
   } finally {
+    progress('CLEANUP_BEGIN');
     await closeControl?.();
+    progress('CONTROL_CLOSED');
     await service?.stopWorker();
+    progress('WORKER_CLOSED');
     await options.host?.close?.();
+    progress('HOST_CLOSED');
     await service?.browserDelivery.close();
     store?.close();
+    progress('STORE_CLOSED');
     lock.release();
+    progress('LOCK_RELEASED');
   }
 }

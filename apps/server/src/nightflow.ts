@@ -215,7 +215,7 @@ export class NightflowCoordinator {
     const job = jobId
       ? this.store.one('SELECT * FROM nightflow_jobs WHERE id=?', jobId)
       : this.store.one('SELECT * FROM nightflow_jobs ORDER BY started_at DESC,rowid DESC LIMIT 1');
-    if (!job) return { state: 'NOT_STARTED', reason: null };
+    if (!job) return { state: 'NOT_STARTED', reason: null, authority: false };
     const batch = job.batch_id ? this.service.batchSummary(job.batch_id) : null;
     return {
       jobId: job.id,
@@ -229,6 +229,13 @@ export class NightflowCoordinator {
       counts: batch?.counts ?? null,
       checkpoint: JSON.parse(job.checkpoint),
       authority: !!this.generation && this.generation === job.generation,
+    };
+  }
+  controlScope() {
+    return {
+      instanceId: this.service.browserDelivery.status().backendId,
+      jobId: this.jobId ?? null,
+      generation: this.generation ?? null,
     };
   }
   stop(reason = 'USER_STOP') {

@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "scope": "ALL_RELEVANT_EXECUTIONS_RETAINED",
+  "runs": [
+    {
+      "name": "BASELINE_TARGET",
+      "plannedRuns": 3,
+      "results": "cli-baseline.json",
+      "exitCode": 0
+    },
+    {
+      "name": "R14_AND_COORDINATOR_FIRST",
+      "tests": 50,
+      "pass": 49,
+      "fail": 1,
+      "exitCode": 1,
+      "failure": "Window fixture jumped most of a day; HISTORY_REQUIRED before intended window gate"
+    },
+    {
+      "name": "TARGETED_WINDOW_AND_IPC",
+      "tests": 2,
+      "pass": 2,
+      "exitCode": 0
+    },
+    {
+      "name": "MEASUREMENT_LAUNCH_SETUP",
+      "exitCode": 1,
+      "failure": "ENOENT output parent directory; before any measurement run; parent created, fixed 3-run plan unchanged"
+    },
+    {
+      "name": "INSTRUMENTED_TARGET",
+      "plannedRuns": 3,
+      "results": "cli-measurements.json",
+      "exitCode": 0
+    },
+    {
+      "name": "PUBLIC_ENTRY_E2E_FIRST",
+      "tests": 4,
+      "pass": 0,
+      "fail": 4,
+      "exitCode": 1,
+      "failure": "Stored policy metadata rejected by strict policy input schema; projected approved input fields without loosening schema"
+    },
+    {
+      "name": "CLI_R14_FIXTURE_COORDINATOR",
+      "tests": 61,
+      "pass": 61,
+      "fail": 0,
+      "exitCode": 0,
+      "durationMs": 56002.6768
+    },
+    {
+      "name": "PUBLIC_ENTRY_E2E_AFTER_FIX",
+      "tests": 4,
+      "pass": 4,
+      "exitCode": 0,
+      "durationSeconds": 42.7
+    },
+    {
+      "name": "PUBLIC_ENTRY_E2E_WITH_UNKNOWN_ASSERTIONS",
+      "tests": 4,
+      "pass": 4,
+      "exitCode": 0,
+      "durationSeconds": 39.0
+    },
+    {
+      "name": "NODE_PUBLIC_ENTRY_FIRST_SHORT",
+      "state": "COMPLETED",
+      "elapsedMs": 35563.4848,
+      "wallClock": false,
+      "heartbeats": 3
+    },
+    {
+      "name": "FULL_CHECK_1",
+      "result": "full-check-1.json",
+      "exitCode": 1,
+      "pass": 760,
+      "tests": 761,
+      "failure": "Window fixture: SESSION_STOPPED instead of SEND_WINDOW_CLOSED; no performance/build/UI stages"
+    },
+    {
+      "name": "WINDOW_EXACT_SECONDS_PROBE",
+      "pass": 0,
+      "tests": 1,
+      "exitCode": 1,
+      "failure": "16-minute fixture wait crossed midnight before scan; scan at reopened window allowed legitimate COMPLETED; added diagnostic then same result"
+    },
+    {
+      "name": "WINDOW_REALISTIC_WAIT_TARGET",
+      "pass": 1,
+      "tests": 1,
+      "exitCode": 0,
+      "change": "Only fixture clock wait uses requested ms; starts 23:57:00, crosses window once by 61 s; production coordinator/gates unchanged"
+    },
+    {
+      "name": "CHECKOUT_BYTES",
+      "result": "line-endings.json",
+      "semanticChanges": 0,
+      "normalizedFiles": 199
+    },
+    {
+      "name": "NODE_PUBLIC_ENTRY_FINAL",
+      "result": "node-public-entry-final.json",
+      "state": "COMPLETED"
+    },
+    {
+      "name": "REAL_HOST_IMPORT",
+      "result": "host-import.json",
+      "status": "HOST_TEST_NOT_RUN"
+    },
+    {
+      "name": "REAL_HOST_EIGHT_HOURS",
+      "status": "HOST_TEST_NOT_RUN"
+    },
+    {
+      "name": "FULL_CHECK_2_FINAL",
+      "result": "test-summary.json",
+      "exitCode": 0,
+      "backend": 761,
+      "serialStop": 12,
+      "ui": 26,
+      "sourceFingerprint": "8cddc799fedfe8df74d3c8b11d86cb8fe9f996c008ca8dca4e13ab8f0a84df0e",
+      "testedCodeFiles": 223
+    }
+  ]
+}

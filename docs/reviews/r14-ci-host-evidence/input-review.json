@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "base": "c03161ba5b086fd625648f54eb9527a7b3032883",
+  "archiveSha256": "b73b4b03a92e5056bad1016d6e155b0d5f6ab06714d795f08abd474f01ee37df",
+  "manifestFilesVerified": 20,
+  "readBeforeEdits": [
+    "RAPORT_PRZEGLADU_c03161ba.md",
+    "README_DOWODY.md",
+    "ci-review.json",
+    "control-reproduction.json",
+    "control-reproduction.log",
+    "nightflow-control-failures.test.ts",
+    "reproduce_control.cjs"
+  ],
+  "nativeProposalAdaptedNotClaimedPreviouslyExecuted": true
+}

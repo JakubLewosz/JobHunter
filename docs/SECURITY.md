@@ -1,5 +1,12 @@
 # Bezpieczeństwo JobHunter — 12 października 2026
 
+R14, 21.10.2026: [kontrakt sterowania](NIGHTFLOW_CONTROL.md). ACK wiąże instancję,
+job, generację, request i operację. Błąd IPC nie dowodzi utraty właściciela;
+offline nie daje authority=false. ACK odwołania nie jest zgodą na aktualizację
+przy trwających operacjach. [Fixture hosta](NIGHTFLOW_HOST_FIXTURE.md) wymaga
+pełnych fikcyjnych providerów/DEVELOPMENT i konkretnego lokalnego origin;
+WORKSTATION i Gmail nie mogą użyć tego wariantu walidacji.
+
 Etap Windows nightflow: zgoda na reguły planu i jej pochodna dla zamkniętej
 partii są oddzielne od ręcznej akceptacji listy. Zapis APPROVED/RUNNING nie
 stanowi aktywnego prawa po restarcie. Każdy etap i końcowa bramka sprawdzają

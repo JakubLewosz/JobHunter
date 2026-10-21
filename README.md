@@ -1,5 +1,11 @@
 # JobHunter
 
+Aktualizacja R14 (21.10.2026): [Stop/status/report](docs/NIGHTFLOW_CONTROL.md),
+[publiczne wejście i lokalna fixture hosta](docs/NIGHTFLOW_HOST_FIXTURE.md),
+[wynik prac](docs/reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md).
+Brak ACK Stop jest błędem; offline raport nie potwierdza zatrzymania właściciela.
+Próba rzeczywistego hosta pozostaje nieweryfikowana. Bez aktualizacji WORKSTATION.
+
 Aktualny etap Windows/Codex: [raport implementacji nightflow](docs/reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Gałąź `codex/windows-nightflow-fixes`, baza `40850745…`. Wspieranym środowiskiem
 jest obecnie Windows; macOS odłożono, wspólna infrastruktura pozostaje.

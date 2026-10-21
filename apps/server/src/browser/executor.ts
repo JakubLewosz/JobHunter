@@ -8,6 +8,7 @@ import type {
   BrowserExecutionScope,
 } from './contracts.js';
 import { setTimeout as delay } from 'node:timers/promises';
+import { localFixtureOrigin } from '../testing/local-fixture-origin.js';
 
 // Fence every browser action, including actions after file chooser/evaluate awaits.
 function cancellable<T extends object>(target: T, signal?: AbortSignal): T {
@@ -53,12 +54,15 @@ export class GmailBrowserExecutor {
   constructor(
     tab: BrowserTab,
     private signal?: AbortSignal,
+    private fixtureOrigin?: string,
   ) {
+    if (fixtureOrigin) localFixtureOrigin(fixtureOrigin);
     this.tab = cancellable(tab, signal);
   }
   private async assertPage() {
     const u = new URL((await this.tab.url()) ?? '');
-    if (u.origin !== 'https://mail.google.com') throw Error('GMAIL_LOGIN_REQUIRED');
+    if (u.origin !== (this.fixtureOrigin ?? 'https://mail.google.com'))
+      throw Error('GMAIL_LOGIN_REQUIRED');
   }
   async observe(): Promise<ComposeObservation> {
     await this.assertPage();
@@ -324,7 +328,7 @@ export async function connectBrowserExecutor(profileDir: string) {
 export async function runBrowserDelivery(
   client: BrowserExecutorClient,
   tab: BrowserTab,
-  options: { scope?: BrowserExecutionScope; signal?: AbortSignal } = {},
+  options: { scope?: BrowserExecutionScope; signal?: AbortSignal; fixtureOrigin?: string } = {},
 ) {
   let payload: BrowserPayload | null = null,
     heartbeat: ReturnType<typeof setInterval> | undefined,
@@ -340,7 +344,7 @@ export async function runBrowserDelivery(
     options.signal?.throwIfAborted();
     if (!payload) return { status: 'IDLE' };
     heartbeat = setInterval(() => void client.attach().catch(() => {}), 10000);
-    const driver = new GmailBrowserExecutor(tab, options.signal);
+    const driver = new GmailBrowserExecutor(tab, options.signal, options.fixtureOrigin);
     const observation = await driver.prepare(payload);
     options.signal?.throwIfAborted();
     await client.authorize(payload.id, observation, scope);

@@ -1,0 +1,315 @@
+{
+  "schema": 1,
+  "platform": "win32",
+  "release": "10.0.26300",
+  "node": "v24.19.0",
+  "plan": "THREE_TARGET_RUNS_THEN_FULL_CHECK",
+  "command": "node --import tsx --test --test-name-pattern=nightflow CLI awaits a real child tests/cli-tools.test.ts",
+  "results": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "elapsedMs": 4419.5661
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "elapsedMs": 3947.1912
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "elapsedMs": 3911.5156000000006
+    }
+  ],
+  "diagnostics": [
+    {
+      "schema": 1,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T07:59:11.827Z",
+      "endedAt": "2026-10-21T07:59:15.414Z",
+      "elapsedMs": 3586.5744999999997,
+      "spawnMs": 36.75040000000001,
+      "errorCode": null,
+      "status": 0,
+      "signal": null,
+      "termination": "EXIT",
+      "lastPhase": "PHASE_SENDING",
+      "lastEvent": "RESULT",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 478.0997
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 478.2545
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 890.6383000000001
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 896.6992
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 988.3632
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 1038.2857000000001
+        },
+        {
+          "event": "FIXTURE_READY",
+          "elapsedMs": 1349.5741
+        },
+        {
+          "event": "PHASE_REFRESHING",
+          "elapsedMs": 1386.9807
+        },
+        {
+          "event": "PHASE_RESEARCHING",
+          "elapsedMs": 1438.6409999999998
+        },
+        {
+          "event": "PHASE_VALIDATING",
+          "elapsedMs": 3134.9109
+        },
+        {
+          "event": "PHASE_CLOSING",
+          "elapsedMs": 3184.4772000000003
+        },
+        {
+          "event": "PHASE_WAITING_WINDOW",
+          "elapsedMs": 3215.5402000000004
+        },
+        {
+          "event": "PHASE_SENDING",
+          "elapsedMs": 3226.3405000000002
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 3540.6472999999996
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 3541.3763
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 3544.6696
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 3544.706
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 3556.3723
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 3558.8394
+        },
+        {
+          "event": "RESULT",
+          "elapsedMs": 3558.8902
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T07:59:20.003Z",
+      "endedAt": "2026-10-21T07:59:23.282Z",
+      "elapsedMs": 3279.3018,
+      "spawnMs": 37.33479999999997,
+      "errorCode": null,
+      "status": 0,
+      "signal": null,
+      "termination": "EXIT",
+      "lastPhase": "PHASE_SENDING",
+      "lastEvent": "RESULT",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 293.63359999999994
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 293.78860000000003
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 545.0165999999999
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 550.8679
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 633.1210999999998
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 676.7247
+        },
+        {
+          "event": "FIXTURE_READY",
+          "elapsedMs": 963.1711
+        },
+        {
+          "event": "PHASE_REFRESHING",
+          "elapsedMs": 999.8099
+        },
+        {
+          "event": "PHASE_RESEARCHING",
+          "elapsedMs": 1054.4523
+        },
+        {
+          "event": "PHASE_VALIDATING",
+          "elapsedMs": 2867.0736
+        },
+        {
+          "event": "PHASE_CLOSING",
+          "elapsedMs": 2893.3861
+        },
+        {
+          "event": "PHASE_WAITING_WINDOW",
+          "elapsedMs": 2921.9352000000003
+        },
+        {
+          "event": "PHASE_SENDING",
+          "elapsedMs": 2934.0489000000002
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 3231.0195000000003
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 3231.7594000000004
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 3235.1595
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 3235.2024
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 3248.5368000000003
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 3249.9212
+        },
+        {
+          "event": "RESULT",
+          "elapsedMs": 3249.9576
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "scope": "SYNTHETIC_NIGHTFLOW_CHILD",
+      "startedAt": "2026-10-21T07:59:16.065Z",
+      "endedAt": "2026-10-21T07:59:19.372Z",
+      "elapsedMs": 3306.8325999999997,
+      "spawnMs": 44.13319999999999,
+      "errorCode": null,
+      "status": 0,
+      "signal": null,
+      "termination": "EXIT",
+      "lastPhase": "PHASE_SENDING",
+      "lastEvent": "RESULT",
+      "events": [
+        {
+          "event": "ENTRY",
+          "elapsedMs": 316.24280000000005
+        },
+        {
+          "event": "IMPORT_BEGIN",
+          "elapsedMs": 316.4305
+        },
+        {
+          "event": "IMPORT_END",
+          "elapsedMs": 575.5896
+        },
+        {
+          "event": "LOCK_ACQUIRED",
+          "elapsedMs": 581.5763999999999
+        },
+        {
+          "event": "STORE_READY",
+          "elapsedMs": 658.8534999999999
+        },
+        {
+          "event": "SERVICE_READY",
+          "elapsedMs": 701.2402999999999
+        },
+        {
+          "event": "FIXTURE_READY",
+          "elapsedMs": 996.6619000000001
+        },
+        {
+          "event": "PHASE_REFRESHING",
+          "elapsedMs": 1034.7572
+        },
+        {
+          "event": "PHASE_RESEARCHING",
+          "elapsedMs": 1088.6973
+        },
+        {
+          "event": "PHASE_VALIDATING",
+          "elapsedMs": 2853.9130999999998
+        },
+        {
+          "event": "PHASE_CLOSING",
+          "elapsedMs": 2879.4728
+        },
+        {
+          "event": "PHASE_WAITING_WINDOW",
+          "elapsedMs": 2910.2777
+        },
+        {
+          "event": "PHASE_SENDING",
+          "elapsedMs": 2921.2709
+        },
+        {
+          "event": "CLEANUP_BEGIN",
+          "elapsedMs": 3250.8042
+        },
+        {
+          "event": "CONTROL_CLOSED",
+          "elapsedMs": 3251.3972
+        },
+        {
+          "event": "WORKER_CLOSED",
+          "elapsedMs": 3254.8884
+        },
+        {
+          "event": "HOST_CLOSED",
+          "elapsedMs": 3254.9333
+        },
+        {
+          "event": "STORE_CLOSED",
+          "elapsedMs": 3270.8463
+        },
+        {
+          "event": "LOCK_RELEASED",
+          "elapsedMs": 3272.2956
+        },
+        {
+          "event": "RESULT",
+          "elapsedMs": 3272.3364
+        }
+      ]
+    }
+  ]
+}

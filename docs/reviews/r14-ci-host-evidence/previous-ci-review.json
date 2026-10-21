@@ -1,0 +1,36 @@
+{
+  "scope": "READ_ONLY_GITHUB_ACTIONS_REVIEW",
+  "final": {
+    "commit": "c03161ba5b086fd625648f54eb9527a7b3032883",
+    "runId": 39173019427,
+    "jobId": 117809848453,
+    "workflow": "Offline Windows",
+    "job": "check (windows-latest)",
+    "status": "completed",
+    "conclusion": "success",
+    "checkStep": "npm run check",
+    "checkStepConclusion": "success",
+    "url": "https://github.com/JakubLewosz/JobHunter/actions/runs/39173019427",
+    "evidence": "GitHub connector workflow-run metadata and job/step result, read during this review. Full final test counts not independently parsed from final CI log."
+  },
+  "previousFailure": {
+    "commit": "894ab95362842c4efc9f20e2b85cb8925f9a4c7d",
+    "runId": 39171469775,
+    "jobId": 117805244708,
+    "url": "https://github.com/JakubLewosz/JobHunter/actions/runs/39171469775/job/117805244708",
+    "logRetrieved": true,
+    "backend": {"tests":721,"pass":720,"fail":1,"skipped":0},
+    "failedTest": "nightflow CLI awaits a real child process across fake research and sender phases, then releases its owner",
+    "testFile": "tests/cli-tools.test.ts",
+    "assertionLine":134,
+    "observedStatus":null,
+    "expectedStatus":0,
+    "durationMs":30034.9529,
+    "configuredSpawnSyncTimeoutMs":30000,
+    "laterPipelineStagesReached":false,
+    "immediateDiagnosis":"Test subprocess did not return normal exit status within configured 30-second harness deadline; signature consistent with timeout. error.code and signal were not logged by assertion.",
+    "underlyingCause":"NOT_ESTABLISHED: fixture/setup load versus actual hung lifecycle cannot be separated from captured failure log.",
+    "notAStopBenchmarkFailure":true,
+    "codeChangeBeforeFinalPass":"Final commit changed documentation/evidence only; green final CI does not prove a timeout root-cause repair."
+  }
+}

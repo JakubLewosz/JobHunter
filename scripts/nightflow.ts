@@ -1,10 +1,24 @@
 import { readFileSync } from 'node:fs';
-import { withNightflow } from '../apps/server/src/nightflow-entry.js';
-import { requestNightflow, readNightflowReport } from '../apps/server/src/nightflow-control.js';
+import {
+  requestNightflow,
+  readNightflowReport,
+  controlCause,
+  unknownNightflowOwner,
+} from '../apps/server/src/nightflow-control.js';
 import { DomainError } from '../apps/server/src/util.js';
 const [command, ...args] = process.argv.slice(2);
 const value = (key: string) => (args.indexOf(key) < 0 ? undefined : args[args.indexOf(key) + 1]);
 const controller = new AbortController();
+const progress = (event: string) => {
+  if (command === 'fixture' && process.connected)
+    process.send?.({ kind: 'NIGHTFLOW_FIXTURE_PROGRESS', event }, () => {});
+};
+progress('ENTRY');
+if (command === 'fixture' && process.connected) {
+  process.on('message', (message: any) => {
+    if (message?.op === 'CANCEL_FIXTURE') controller.abort();
+  });
+}
 process.once('SIGINT', () => controller.abort());
 process.once('SIGTERM', () => controller.abort());
 try {
@@ -20,15 +34,33 @@ try {
     let result;
     try {
       result = await requestNightflow(dir, command);
-    } catch {
-      result = readNightflowReport(dir);
+    } catch (error) {
+      if (command !== 'report') {
+        console.error(
+          JSON.stringify({
+            source: 'CONTROL_FAILURE',
+            code: command === 'stop' ? 'STOP_UNCONFIRMED' : 'STATUS_UNAVAILABLE',
+            cause: controlCause(error),
+            current: unknownNightflowOwner(),
+          }),
+        );
+        process.exitCode = 1;
+      } else result = readNightflowReport(dir);
     }
-    console.log(JSON.stringify(result));
+    if (result) console.log(JSON.stringify(result));
   } else {
     if (command !== 'fixture' && !args.includes('--workstation'))
       throw new DomainError('WORKSTATION_REQUIRED', 'Wskaż jawnie istniejącą instalację.');
+    progress('IMPORT_BEGIN');
+    const { withNightflow } = await import('../apps/server/src/nightflow-entry.js');
+    progress('IMPORT_END');
     const result = await withNightflow(
-      { dir, fixture: command === 'fixture', signal: controller.signal },
+      {
+        dir,
+        fixture: command === 'fixture',
+        signal: controller.signal,
+        ...(command === 'fixture' ? { onProgress: progress } : {}),
+      },
       async (coordinator, _service, plan) => {
         if (command === 'fixture') {
           coordinator.savePlan(plan, true);
@@ -51,9 +83,12 @@ try {
         );
       },
     );
+    progress('RESULT');
     console.log(JSON.stringify(result));
   }
 } catch (e) {
   console.error(JSON.stringify({ code: e instanceof DomainError ? e.code : 'NIGHTFLOW_FAILED' }));
   process.exitCode = 1;
+} finally {
+  if (process.connected) process.disconnect();
 }

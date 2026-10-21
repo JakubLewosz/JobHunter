@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "scope": "SYNTHETIC_WINDOWS_CHECK",
+  "platform": "win32",
+  "release": "10.0.26300",
+  "arch": "x64",
+  "node": "v24.19.0",
+  "npm": "11.17.0",
+  "sqlite": "3.53.4",
+  "baseSha": "c03161ba5b086fd625648f54eb9527a7b3032883",
+  "state": "UNCOMMITTED_WORKTREE",
+  "command": "npm run check",
+  "startedAt": "2026-10-21T08:13:51.084Z",
+  "endedAt": "2026-10-21T08:25:41.606Z",
+  "elapsedMs": 710521.5029,
+  "exitCode": 1,
+  "signal": null,
+  "sourceFingerprint": "55ea85de8197345014b89750d262f7fa43e39a9c97bcadedeb8ebb536e389a39",
+  "unchanged": true,
+  "counts": [
+    {
+      "metric": "tests",
+      "value": 761
+    },
+    {
+      "metric": "pass",
+      "value": 760
+    },
+    {
+      "metric": "fail",
+      "value": 1
+    },
+    {
+      "metric": "cancelled",
+      "value": 0
+    },
+    {
+      "metric": "skipped",
+      "value": 0
+    }
+  ],
+  "ui": [],
+  "isolatedHome": true,
+  "nativeProviders": false
+}

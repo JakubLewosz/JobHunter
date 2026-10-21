@@ -8,6 +8,7 @@ import { Store } from '../apps/server/src/db.js';
 import { JobHunter } from '../apps/server/src/service.js';
 import { libraryAuditSchema } from '../apps/server/src/research/library-audit.js';
 import { resolveNpmCli } from '../apps/server/src/npm-cli.js';
+import { nightflowChild } from './helpers/nightflow-child.js';
 const cli = (file: string, args: string[]) =>
   spawnSync(process.execPath, ['--import', 'tsx', file, ...args], {
     windowsHide: true,
@@ -127,11 +128,12 @@ test('npm resolver honors actual launcher paths with spaces and Polish character
   writeFileSync(path, '// synthetic npm executable');
   assert.equal(resolveNpmCli({ npm_execpath: path }), path);
 });
-test('nightflow CLI awaits a real child process across fake research and sender phases, then releases its owner', (t) => {
+test('nightflow CLI awaits a real child process across fake research and sender phases, then releases its owner', async (t) => {
   const root = mkdtempSync(join(tmpdir(), 'jh-nightflow-cli-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const result = cli('scripts/nightflow.ts', ['fixture', '--data-dir', join(root, 'data')]);
-  assert.equal(result.status, 0, result.stderr);
+  const result = await nightflowChild(['fixture', '--data-dir', join(root, 'data')]);
+  assert.equal(result.status, 0, JSON.stringify(result.diagnostics));
+  assert.equal(result.diagnostics.termination, 'EXIT', JSON.stringify(result.diagnostics));
   const summary = JSON.parse(result.stdout);
   assert.equal(summary.fixture, true);
   assert.equal(summary.state, 'COMPLETED');
@@ -139,4 +141,35 @@ test('nightflow CLI awaits a real child process across fake research and sender 
   assert.equal(summary.checkpoint.researchOutcome.reason, 'DEADLINE');
   assert.equal(existsSync(join(root, 'data', 'profile.lock')), false);
   assert.equal(existsSync(join(root, 'data', 'nightflow-control.json')), false);
+  assert.ok(result.diagnostics.events.some((x) => x.event === 'FIXTURE_READY'));
+  assert.ok(result.diagnostics.events.some((x) => x.event === 'LOCK_RELEASED'));
+});
+
+test('nightflow CLI supervision distinguishes cancellation and releases its own resources', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-cancel-cli-')),
+    dir = join(root, 'data');
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const abort = new AbortController();
+  const result = await nightflowChild(['fixture', '--data-dir', dir], {
+    signal: abort.signal,
+    onProgress: (event) => {
+      if (event === 'PHASE_RESEARCHING') abort.abort();
+    },
+  });
+  assert.equal(result.diagnostics.termination, 'CANCELLED');
+  assert.equal(result.diagnostics.errorCode, null);
+  assert.equal(JSON.parse(result.stdout).state, 'STOPPED');
+  assert.equal(existsSync(join(dir, 'profile.lock')), false);
+  assert.equal(existsSync(join(dir, 'nightflow-control.json')), false);
+});
+
+test('nightflow CLI supervision reports its bounded test timeout and reaps only its own child', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-timeout-cli-')),
+    dir = join(root, 'data');
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const result = await nightflowChild(['fixture', '--data-dir', dir], { timeoutMs: 1 });
+  assert.equal(result.diagnostics.termination, 'TEST_TIMEOUT');
+  assert.equal(result.diagnostics.errorCode, 'ETIMEDOUT');
+  assert.equal(existsSync(join(dir, 'profile.lock')), false);
+  assert.ok(result.diagnostics.elapsedMs < 15000);
 });

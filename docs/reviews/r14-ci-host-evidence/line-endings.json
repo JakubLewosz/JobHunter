@@ -1,0 +1,1202 @@
+{
+  "schema": 1,
+  "scope": "ISOLATED_CHECKOUT_ONLY",
+  "contentChanged": false,
+  "reason": "Exact tested-byte/Git-archive manifest correspondence without cosmetic Git changes",
+  "files": [
+    {
+      "path": ".npmrc",
+      "beforeSha256": "9f8200a55db29549d542fc59ee9fc509cfbf95d56e631257b2d2d1ee22d3cc90",
+      "afterSha256": "b962362ebe7560b534e834c2ede51186c2e3fceb94e12cc434a11180f22391f2",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/app.ts",
+      "beforeSha256": "fc40e106b9185797657444db224478c116443e414d61579b3ffd4a9285c2d14a",
+      "afterSha256": "64fbcc3beb0f75efe0c3ec70ebeef0150453cb425c7b50790eea2b235571cc58",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/auto-policy.ts",
+      "beforeSha256": "3a62162698edb55feb1464b9b5b4b5cfbd2ded60039b4956d96ee19296c99bfe",
+      "afterSha256": "c5bb4f5412f54968f6febd097134f9f151e72736418e7b149457d70d760bb3dc",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/backend-lock.ts",
+      "beforeSha256": "342a722b7787fb83f91dc5efb213e5f0e49af51bf435b7344a9cfc9fe1ccc9a4",
+      "afterSha256": "1bd26203c0b44eb5191b3b83d2ea83a20d996e52264635fabce309e2567b8b5d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/backup.ts",
+      "beforeSha256": "62f5cd4a57c2e2a08645cde1717a2d70ad40b833f28cc969af3af1854e96a666",
+      "afterSha256": "c9522743a6029c626cf7996cc5e6e80182c6ec7b72c85fa98dd63773593fe2ba",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/browser/client.ts",
+      "beforeSha256": "89e50a18c7a5e715bdf24c0ff319d1a9bd318101f1e179e6c5a1babfe32e3e2a",
+      "afterSha256": "3650ca240628158d19cb910611c9b23c1ace3c08984005f5c3781f054e9be2d5",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/browser/contracts.ts",
+      "beforeSha256": "49351dd9da54eed02cbbeb9adc4d159c95df99e41ab9dc072f174a3278d002b4",
+      "afterSha256": "fae8ba9c8593b3c6c3fd6b0e382e507c56c9bed8efd6f492257d96eab85a5efd",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/browser/verification.ts",
+      "beforeSha256": "1485f6523010b98ab1f792a8d295b1d0d61a30f3bced61abac2dc7be598be6de",
+      "afterSha256": "f61c0ec99f16c21309d3adf3e67122d24fcf0e07b09502eb9be340ca4c7a22e4",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/build-identity.ts",
+      "beforeSha256": "5ab9c2da685b939104c275fdea02768ab395f7a8f4360ad0d0a210a8cfab0eea",
+      "afterSha256": "852ec3b2c83c2d73c005923e960f86bc249a9beb8952db230e16ba5fc98bcbdf",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/company-query.ts",
+      "beforeSha256": "15637beb35466c4e0e50545cb65c356aeaab75b5ce37d2c33ebb29581cd4e2a7",
+      "afterSha256": "a40d99ac244c1e7f332146d00a6d550029c76e71df9a3fd53de5702c29fac5a4",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/db.ts",
+      "beforeSha256": "5d5d8d2d205941200564e981ad500b6b93b195ecb71602046a41148e922ff7ce",
+      "afterSha256": "f4e0ccaaf23fbc3d058b59abdec03636ea585682a760716990fdf31adb87a04e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/gmail/client.ts",
+      "beforeSha256": "b405373ac0076a591b7c35527564eb092f186129c841e5f80a0b3c7b29535e91",
+      "afterSha256": "cd61ac3c3387c4e8ea7064ef39c43d48b66d38777e5a82413c7d59cd7e0aea58",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/gmail/inspection.ts",
+      "beforeSha256": "2cf26c68221f2f60ffec093e5c9ec10447b8c0d2211f99f670725a7ef50e3f12",
+      "afterSha256": "13605c14e6b8a739499493f0cbf0a88c23b0a1ffd83f2a433a8403d1beea1183",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/gmail/mime.ts",
+      "beforeSha256": "42e7d3e10a044b72628ebdbfcd85fed3641fe2a1d249fcc2cebf178433599436",
+      "afterSha256": "4877143c9364064d4333fe4ad88ea311637ca23824041a910b8dbe37512fcf90",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/gmail/oauth.ts",
+      "beforeSha256": "faf14e491a46aad1084d78cb7201eb3931349da4d7ee28b3dd93b56761764233",
+      "afterSha256": "84ade60ab33d8b67678d8ee11f2b466407c10936f9e785129a776ec4a6f2b869",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/gmail/reader.ts",
+      "beforeSha256": "66071bc4378f36be15e764543cb924faf41e8bd917e4eee816c30da9258c535c",
+      "afterSha256": "5997fe9ca2b737f788aca69f65c3560f08c3c5cfec31162d8c93c66392a29370",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/history-sync.ts",
+      "beforeSha256": "7d72f23d988e6922012cf6f5b5ccdc05c9595837966443517ec1f3e776a3bd5f",
+      "afterSha256": "003fcafae75877866d2134b38c95c49c064308fd1bf982f6330898ac4d56b91c",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/initialize-local.ts",
+      "beforeSha256": "12cbe9dde4a89472978294140cfba97254af4343d2f072d8f5ea82aab6e9dc88",
+      "afterSha256": "06394dc9c08d215de8ebba533feecf9b4a6cf2b209060cb298c8a786a8a16d21",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/main.ts",
+      "beforeSha256": "d37f0641cc30fb1620953a587214b67b44f9f3602561a613d055326343a16125",
+      "afterSha256": "dfc095f1a429ef52ed8d0c750f4caf36ba1020dfb434d1e18302d31338a79c61",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/npm-cli.ts",
+      "beforeSha256": "aaec1a8938662650b49dafc66526e54c49bd5dc45719635cd09647eaaea015e4",
+      "afterSha256": "b5835bd4c7fe8d092991ea4dec85f301be8fcce93b491ae861f9177fc8fd433b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/prior-applications.ts",
+      "beforeSha256": "dea32fc85c13e4aa5e28dd0db1274b3ace274027b32264d9115e4c5fb005e9e0",
+      "afterSha256": "6795156418cbc38bf57cee6ca742a636908de2637205f97bc9cd9bb8ee45fa19",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/providers.ts",
+      "beforeSha256": "c0aba6b914b392711e0000ece30df7cce227e31555a963be7cec7d3db0ca492e",
+      "afterSha256": "141ab9c46f78075afead8c678dae1bb749f8f2a48ceb61b61d31e7b8793ce47a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/autonomous-diagnostic.ts",
+      "beforeSha256": "3b0767c1cc72d71baf3615175d65f7d028190906c725d5e7ba2713a10d817895",
+      "afterSha256": "9c7cc83c991c9a85a18dec1b773032397572d43ac2a9e82923c59fce38904603",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/codex.ts",
+      "beforeSha256": "067b67ff37c6f06614d17d8feb13915639fa720bd6b660b2c53acddaf263a3eb",
+      "afterSha256": "0ae58213be1d56c50b4b4ddf90393deb2a404c938e89d2efe3d0e6fb7a2f78da",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/contracts.ts",
+      "beforeSha256": "6e28509ec310d23b8bd30063787fc04cb6c7d4c45a072e999768a2ae497ced0c",
+      "afterSha256": "fab1a7b87718805f9a2ce8b5fb0c5fbad9f19aee73ff28022f0a6c186920d53a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/diagnostic.ts",
+      "beforeSha256": "845504e78b01856f22269318a426d661e7e1b0db4774aabf82873d1a4e8e8ff1",
+      "afterSha256": "de9e39a6c9147b4c851b92c66eb6dd227b77fc32d491fe22088935c2577c9965",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/domain-enrichment.ts",
+      "beforeSha256": "5c321bf5bf2723ee38ca8e01d5dfc36c7aa946c23a5eeacc235e52db984e628d",
+      "afterSha256": "5d1dfc8a909c9a4bb30f72154f9376ee291e2ec06e8551c5efe35ee7d80411b9",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/drafting.ts",
+      "beforeSha256": "79d3f6d0aadf9ed78291e59e337ec5e0addaaf64b7507225e93a7186992dbd8e",
+      "afterSha256": "b4be438c01e218a336f5c98f63052275d42b28b1a0f7ee02f103df70e069404f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/fetcher.ts",
+      "beforeSha256": "7a689a50445f4bb690ceefbfda50d2fe5556d23feb6f44226211761e6c9ab21f",
+      "afterSha256": "35a5f1ef23cb882e5e224e9e69d5c4f9b608eaa01e693f59e8c1bb6518a05884",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/html.ts",
+      "beforeSha256": "12e132b538ea31745c501e7a9b0165fc207573922e8e26ebb0ae5f3d777f652d",
+      "afterSha256": "9a58f17ddc0ea0ffb24c89e2cdd7033552542a6dc833831d24ea1e73e5d49f3a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/library-audit.ts",
+      "beforeSha256": "1355b019e86654e37576ea106c6c3ee85b5b1acc90bce352e240871518655203",
+      "afterSha256": "763b9945bf249ddf49e73606e9bc54f8f3d9e750e63323507474d82d200c4315",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/material-binding.ts",
+      "beforeSha256": "c2cfb63e302f1a93b4b05a94bfffc27b118ea98a3451ab21995e5b2abca372b4",
+      "afterSha256": "344e294a21bc8aff76c71f653620d239ab75afa0ebb8a14ab4e4938208fd9b96",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/message-policy.ts",
+      "beforeSha256": "c7f0c1b9f02301ef6499620eab4f80a4bd1e9a4be1a01b830a9c2d6d5e98b0b6",
+      "afterSha256": "25ad4d9be0af078168a2d549c13e2236a63aaf0a7f1af990687028665230d08f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/protection.ts",
+      "beforeSha256": "098ec2ff82eb86241ff8a61295d0a90725d6ce3cc22d2342deb236c208a65945",
+      "afterSha256": "ec325db512fb5c04aa70a761ab76741da803e6caf962c980deede5bd6539ec7b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/query-planner.ts",
+      "beforeSha256": "6a563bfc36f4a004b4c4095c6a37d6319308613eab21e718ea6f9d212807b534",
+      "afterSha256": "9004390c33dafcae279de6dc253d63383864fbf1700d3f34f6d4e9aedebac453",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/report.ts",
+      "beforeSha256": "4caee5ba12de6ad40bce60b7cf6ada5fdaef630e470dd4f50d8363bc408e88b7",
+      "afterSha256": "ce35cfa32293f4d96e0393fe33ef601bc20d8d93caf38c72f7e4a5adef271ae9",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/review-session.ts",
+      "beforeSha256": "9f0048b988851e5649bcc57fb7d39ce0905ff5c989e3d32d46b93d9fd9fb812c",
+      "afterSha256": "7bd05754a6c180e2bbe8921f3dc316739317d95827e795b09b6b111b631012d3",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/service.ts",
+      "beforeSha256": "2c7c8a517fcb7dd4a47001b13a8119551d3ac899e0c9d60d22e808b9f8408f4d",
+      "afterSha256": "35856e13461435d0c4a142367512e9f1842a601b63ccacf8554699f1db2f189a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/session-controller.ts",
+      "beforeSha256": "961be3424bdce77e1fc546003730af06209bb0a8f75c865a0d72751031772155",
+      "afterSha256": "20e04854a322237a5d44c615fe4194614667b546ca892a66357196589e4a5e9e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/session-entry.ts",
+      "beforeSha256": "566e745b4390c8b5e2d6f6c7bd36426fc26d5fb8c1d23b2dd0a330890627fb71",
+      "afterSha256": "b20bfc2e53fdd332b6919ac473e669787619406aeb896a6d92f57661ad31c9c6",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/session-plan.ts",
+      "beforeSha256": "e36bc2f3e755c29b0d0c0704acef15a5a8cded1220f7307d91bd9efa7b16a384",
+      "afterSha256": "bc5e4958eb36c0a3529f33e0da0e6ac817ba391d049ad858471e3c9d40c10cec",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/source-policy.ts",
+      "beforeSha256": "f80583b1fcba19c1f8e2f706d53c0de9d86265a3a8d405121cf8345d01000145",
+      "afterSha256": "c20657d6e11b8c0bb89995e144d13e2d651008833a3b1e2bf894ac5c842440d4",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/research/work-metrics.ts",
+      "beforeSha256": "180876b6a24dc7c2aab8c1092b5c8d0137d71800c8bb18fc127e0840dbd27fe1",
+      "afterSha256": "837cc4d8a084026c5588c0b10d8be20e0a7661da3f996969bb22e4cbb9f78f69",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/review/export.ts",
+      "beforeSha256": "29ac20de6e4737b9231736ac03731bac742b2ad3e70c9da9cbf2b56961d71d89",
+      "afterSha256": "69580dc7c222239b098437af00c437546ab7d24b302d197bbd546ec1a98553ea",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/review/redaction.ts",
+      "beforeSha256": "8d7e3ab498302b4b0245eecdfc641bea2e57564dd931caa328dac533cd61f1f0",
+      "afterSha256": "e8512e4e4f3b70ff61467562e3e6c5a4107902aa152375555c278e29f7ddc56b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/review/schema.ts",
+      "beforeSha256": "65fc78fbf8b778659dceb87d3d9c536971a32b483ed9b9d45a376780251ee9a3",
+      "afterSha256": "3b3f46f44bb60ed793f7d6310328e00a99874ef5225a23db20d7f71152891cc0",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/runtime.ts",
+      "beforeSha256": "390d741312e6acc7ceeb6fd9aaf34815bb1c607ab1fc6b20dc1a22c2f867c1ea",
+      "afterSha256": "bdef0228793a840efedeb0ad26026c6a5596ad7e1b1cc52fafd64087ecc0eaf7",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/safe-paths.ts",
+      "beforeSha256": "aa2fbeb54df9a317ad722aa05e5b0c863852572e942c6d1cb9e0db9896f88800",
+      "afterSha256": "86028fa1660030a56d38eb651fabd91b286a5af2c1fbda18d29a1b19458bd6a0",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/service.ts",
+      "beforeSha256": "2eea6ef9787e611503b6220a9663ffeed24ce31a57f7bdfd11514fc9fbee395f",
+      "afterSha256": "6127fc2bb49a3f555ae22217afde891204ed94be73b34fcc286a6f3db9633aff",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/testing/gmail-fixture.ts",
+      "beforeSha256": "4b98e68ec11edf02ec01ef36a5e6f023102c7c904b605cf7728235b5683b8def",
+      "afterSha256": "fd4ae87c3a676670d6638a09558581de6340c7b4d0960a0578140d534c358994",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/testing/research-fixture.ts",
+      "beforeSha256": "7b32a9c5267cf334ddfd27ec55efa0add039f85823662d1d430d9a9697b5192c",
+      "afterSha256": "2f5069342906d6e5c0c3fcd87600457c3c3f0c75db35e19c09a2b17927021add",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/server/src/util.ts",
+      "beforeSha256": "dd6ccd2c1d6805724ae465ec156701e13df2e7bb9815f7278fdd1a5de6b86769",
+      "afterSha256": "fed65f2085b07c0da803d506a9897830f560e79daff8fdf83858834fa01d11e8",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/index.html",
+      "beforeSha256": "1db16a43db82a11820fea1a6d03a84d96fa77b694dafb6fff3c0b70480355b05",
+      "afterSha256": "86b3d9fed7d409a15e9038ff7d63d9600caf4d96769afd48d25f373592d403ff",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "beforeSha256": "9632be49e60fa1424315e9cad90f4ddb3c828f816807f6fdc42b1e7678ec3ebc",
+      "afterSha256": "911eaa004a4f73205a558aa33276d226d599b180943eb729c87cd43356a69691",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/AutoWorkspace.tsx",
+      "beforeSha256": "5c7288c1491a9a0c3a9964176d7d9653b6a77f668846a224b52e38fd0825b2ba",
+      "afterSha256": "27fbcf34426adf1a0f5dffcfaeb72f7c6d70b53bf1885ee3cdc1d889cfa8a7c0",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/BrowserDeliverySettings.tsx",
+      "beforeSha256": "5d248818f15ec51673ed5cb1e451a7dd17e03312e22b39db0d7beea6762de701",
+      "afterSha256": "6adcec1996b2cbe39cf34035a535a3df55957286156fb1be622492a02c9f4beb",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/ClosedBatchPanel.tsx",
+      "beforeSha256": "eb29e5ad06e59255ba04a34c23c51523b570664dd9556c7ff69ca81eeb5ab872",
+      "afterSha256": "600a2e00e6981002015aecd8656ae3dad31757370322a8a9076b5ffee6b3b6d2",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/GmailDelivery.tsx",
+      "beforeSha256": "1983be5f7ac9fe48064d89ee629e4c1aa9dec4d5e667f0fdd67633cab585a58f",
+      "afterSha256": "eb349fe63c19335088226c3b38252aacc62d79623f7801ebe57d928fa1450f8d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/GmailPreparation.tsx",
+      "beforeSha256": "058665bb3409f3abfd5a5aef6dd8d36d72cac1b8412d50bfa20c3b7a4b42fa7a",
+      "afterSha256": "1a3f579e39cbc657181bd94237150ea297523d3baf88bf70ad744ce9d45f8793",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/PersonalMaterials.tsx",
+      "beforeSha256": "983bf59cb8805873c77da994281e5e204db6caccfa919627e825bfa373da1767",
+      "afterSha256": "3c12fa741b9ed2338bc018af55c4d42f3924868e9f26049df482e7af35b04e93",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/ResearchPanel.tsx",
+      "beforeSha256": "68cb1f51a29da8c9885e03745a1c90e3f0a7302704fb67915d7bb077b51353b8",
+      "afterSha256": "c0da3b85e8236027678033b13c09c6675f2a8a4459b09b330eeea7cccb864016",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/api.ts",
+      "beforeSha256": "fcddad3037575d6a789417acf9e703fa0f0a473b786dbafd6dab9ae188ef3448",
+      "afterSha256": "35af582c7b7f0028a38deb93ed285e84701a095950a378096c645c223b6ec9cf",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/main.tsx",
+      "beforeSha256": "15152804c029ba26b48ace364c4ff2c2fad2765dfd59f204542be2ad157d87da",
+      "afterSha256": "94c6efdba1a12ca52147b69ddf9d92472a573a5be32fc3564c556b96447375ec",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "apps/web/src/style.css",
+      "beforeSha256": "2761159e28b8762505a1fe4b22fe9c051be5b02f4a83459c3b7f013f7b2b4dbe",
+      "afterSha256": "835644a99810b8af280c3535097722371bdabf01f4f8159566fe943e181126f8",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/001_initial.sql",
+      "beforeSha256": "a95ba2730a19eedb83748889566dbbb0529aef3a2ad339a22ba6dadcf8a1b4d9",
+      "afterSha256": "8c6c39a3d69edd9359875ad06bfef75bb82bed0d4dd36c6bf3ef56c2520cff70",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/002_history_records.sql",
+      "beforeSha256": "0ee136b856a9b3fa93d10431d0e75f7b22cb0dffa74eede863634b10002483f8",
+      "afterSha256": "595424ccb435fa69b6eee8bf07bd3b1454d399f6d36bd160c7cd5feb4475919c",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/003_research.sql",
+      "beforeSha256": "9130e29471c3f5460491dfd854bb83cee471287868f6234d354d64efe7d8a84c",
+      "afterSha256": "288a930dd07bc42b37547f1420af9fb63b1bd956759d39dd2684c4abdd3cd544",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/004_extraction_binding.sql",
+      "beforeSha256": "0cb536e9e41f9a2f0799410921aaa19ce812e501e5faaa7a85ce3e31c42ac89c",
+      "afterSha256": "7d8511b5488be993e04f948a92f12a132cafbba04eed9211d5c510f59c0ce180",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/005_approximate_availability.sql",
+      "beforeSha256": "9cf08fc840d8b487482e97852696b34c85e6ac4cca3e45e25a75f8e843cf729f",
+      "afterSha256": "b501ced73c3829980e2a05fc6f47409006fba352c60852d4db028310b92ffd86",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/006_manual_claims.sql",
+      "beforeSha256": "7321c2a30e9a21afd6e100127be7ee5016fb576cf22dc542edfb3d0f549644ce",
+      "afterSha256": "e2679ff3b258e6ddb0169eb1dbb8bc4ce54092e5dc4db7de0f6471b105aa891a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/007_gmail_delivery.sql",
+      "beforeSha256": "a827bb57ccab60b68c8b8b3ff4c82ccbb9ac589f974999c7ee3453453dc08f1c",
+      "afterSha256": "504f03da597b18fcdd43d129f146c3c2da71e22ca6df5b700253aa6c586320af",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/008_diagnostic_test.sql",
+      "beforeSha256": "2b73228092da637d47925ab5389fbd44f6f81581905cf3ae846a614aac876486",
+      "afterSha256": "010382f7602f4517ebd73d03584a66340abe209ee3968cf2fd73eb8fc2ad24ff",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/009_evidence_verification.sql",
+      "beforeSha256": "b18b38aa5458ebd8e8a4914e8758a1b5682fa89d85504b92125fa196c357a220",
+      "afterSha256": "9524770fa91085724eb0362107a47f1a71841ab05bd94d0d2efc9d9eb134e2fb",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/010_auto_policy.sql",
+      "beforeSha256": "12f56961446cd4bd427b83cf6f8a6900ffb30f428b446cd2e1c8861bc62a5416",
+      "afterSha256": "904ec5c667db7f6994bedec26022bb96aa0794b10c053999f23df634931a8145",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/011_shared_usage.sql",
+      "beforeSha256": "6aec3401b16eccf8ff8cc0e49dd060e30d0f6cc26f7d2e2a071d5d0cf490ca79",
+      "afterSha256": "28baf3694503f369824fd45eca8226bbda78ce9e5ce42ddd7c9904b8687c199b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/012_shared_company_context.sql",
+      "beforeSha256": "97af6b01275e530c57dac855d3bd14398f7db760fc2e92a5aece0b4013bfc811",
+      "afterSha256": "a4589b59863d1b8b9d378071e1b0160db4e125608e8446a21a9a72dc07ea5e24",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/013_auto_skips.sql",
+      "beforeSha256": "926ffae609c3dae1f73aedf2c5b5deaeb121d3d48fa97b198769e21241b5a534",
+      "afterSha256": "e049103b3259f987880ab78616ab3af418d87216b5737cbc32c96aedb65edabc",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/014_query_planner.sql",
+      "beforeSha256": "1d1bc4e2805b40b98bcddca02aabf8b4ea97d2e00b1f3909df442f5fa5256160",
+      "afterSha256": "52146723053b5f2eeee9726f5e869d082cd6d02e6057aacc77047a2b3a20caaa",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/015_research_scope.sql",
+      "beforeSha256": "f2917670d43500b65d2c7b91259b921dbeb6d2fb3697512a50c17e152493850b",
+      "afterSha256": "fb02f1d229988e3c9f1b2b5059f0a281bd4f08b65abfbfba82e87b6820e38c71",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/016_address_context.sql",
+      "beforeSha256": "bed1abd4c7bb773deb0531fe32aaf4422444de046b7505744ad7a2008a32af5d",
+      "afterSha256": "a252a3bb8228abad5b8cc328304457892fac3da7b67592ef97dc2469b0064fa0",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/017_research_materials.sql",
+      "beforeSha256": "8e4b6ab6b081dbf370d63503481099c7c3c3f139f13398e89a518c0648d87390",
+      "afterSha256": "667940ac3d862499298f00b046c8a26322bfcf36260322d076717eaa41cfb279",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/018_prior_contact_check.sql",
+      "beforeSha256": "3901ebec7b8966b287cfeed725994cb600bb3d07488c8d967b5302ce41080394",
+      "afterSha256": "c072d966d3e58f674f8d87394f1172f08fe5be3896430f78ca058052ba9daa7d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/019_review_result.sql",
+      "beforeSha256": "d4d27ec426f628adb6f5403461ec15f2042d0ec814dd1c5917e1171498dc1ee1",
+      "afterSha256": "40815ad1e26f045c3e9904f0e6339363675626c80cd64e0224009ab2d5f28416",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/020_browser_delivery.sql",
+      "beforeSha256": "13a05cba70d4015ab1b725699ffc7e1a040efdab5b863f309ea9bf4b14599e7e",
+      "afterSha256": "e82cb6ebb1e2356bd84479862af11d134bff228308df8cd33a8823f79e1e7554",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/021_source_completeness.sql",
+      "beforeSha256": "12a6164b6a5785b9aac20d0573205716f1baeba36bbdd8d4490a395e6587e944",
+      "afterSha256": "89ebacfa7a4288a8bb40fea5a9f4c4919a40a6b8f39cb82ecad81f32ec079092",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/022_domain_enrichment.sql",
+      "beforeSha256": "98819e70565be439290355ea01b0ba8219e36d65e37a831b27bedd04b7702ae0",
+      "afterSha256": "f54620d828fc6284a8443c295aebd604529cd63b8bf14a1a43dacc8ca474990e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/023_auto_batches.sql",
+      "beforeSha256": "db409cfc948309989a55e804270a7e68404d18fb556f77f6b70e830b0776b10a",
+      "afterSha256": "fb80b1151b080ca0dce2edf7b253f470cb39f456c300aee0cc424a8b3aef0a00",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/024_research_metrics.sql",
+      "beforeSha256": "da40d610b018515eaa72818ee4f2499a1f0111d314605effc595560b35484d07",
+      "afterSha256": "bc1ea9412ab58340edb0b8249400dcf830c62582966cf3388eac7603c5f40bf2",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/025_source_versions.sql",
+      "beforeSha256": "9bf622f89812112afb150f8fd2c3e9dc86e4ffacf775c3e7b5a1cd66d59898bc",
+      "afterSha256": "5abaccd74e0b63b76f4dc3b102f002326b21295ef72db88010c49108bf91a38b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/026_source_redirect_versions.sql",
+      "beforeSha256": "d886a58543a4a8911a9f22076fad6ea99092bbf71a0efc1195f623a0018562e9",
+      "afterSha256": "1182ec1cc30b72a8ccabe935182a08a2d67549483db58b3d8d545abce9a7063d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "migrations/027_nightflow.sql",
+      "beforeSha256": "9cb9f745f53349260648a101050684cd0b26e8e1645f89f3b5ee7b182d310ae1",
+      "afterSha256": "942f809c587e33fd38ac64b56e4d8d1aed897d8c0a03e8e0f52babb7c088398c",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "package-lock.json",
+      "beforeSha256": "c46a34df15c71167330ec1c4c38154693079938c1133bee99ce57155ef43d473",
+      "afterSha256": "e79b6d91f9a4f6c2e91ed5438599debe1a43383706e3dc0737c39fd823333e9e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "package.json",
+      "beforeSha256": "f45de76192ff325a460d465ffe7d701deea536ff6d50436ffb73ff8d0adb1c60",
+      "afterSha256": "87abf740f7b2412feba10bfdf062bf32b417cb3451e1fa9929d1ed0b4cd85342",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "packages/shared/types.ts",
+      "beforeSha256": "b490168843436162935d78d17f924c35cbcfb7a7df02711ca8a00241a752aa4e",
+      "afterSha256": "8fe4a5dc12eafd1fcd33cc350bebec70a6c5d17daa8a0f6b35a1da6c29d1bd9c",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "playwright.config.ts",
+      "beforeSha256": "3e7bd5f6d3210ac3c1b431f136d66f3a0d002c2258ef4ca5d76cf11b562e0920",
+      "afterSha256": "72ddf4028c486d245d91f5160735028ebb62b104138feca008090b310e2fb8b4",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/audit-eml.ts",
+      "beforeSha256": "e67a61a0e034c62eb8d6bbf957a512af9cd93408da7a5d3e28fa8a2a55d9c477",
+      "afterSha256": "04b16625879a2d877670b3901eb28eb72bfd5d334a0f9328f3b60c9023f39122",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/audit-library.ts",
+      "beforeSha256": "a65c06097f584e8dfd4f00f0d561f0dad67008d72f80f5ecbe2adc79031e06eb",
+      "afterSha256": "6bf1ad67f043c2ebb831aae66639f14d5e6a6be89ca9da674b38ccd0bb36ea19",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/build-manifest.mjs",
+      "beforeSha256": "9a56ab3cbebda6f237d921d28ee6d891c0a661bffb5ca9cc4d95405223213931",
+      "afterSha256": "c6e8aaae4966c88a4db3e70b8e5a48046eb41de0fd56319af12e33b749b759a9",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/cache-consistency-after-block.ts",
+      "beforeSha256": "2256cd4d3bf966d230c3ca6432b3856038c0c5972636bf720ffe60235b466b6c",
+      "afterSha256": "a2eaedf323e925ab72ecaf6da84bc25fb2f5a00bd7ea9e022e8efab357907d25",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/development.mjs",
+      "beforeSha256": "42a1a6a86d37ba23bb61b756f2ce1c497d8041f75c7f562a6ad77ea5b2705857",
+      "afterSha256": "dbbb397041bbd8337cfc2aea50c9a596d891257e72ab24618701143a13e1dd8a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/diagnose-research-consistency.ts",
+      "beforeSha256": "8f18ba04e11126a685051540f10883b09ecdf2a68a97e07f39f8d228ad15a88e",
+      "afterSha256": "949539ef1303c9dcd38ef9e808d04b7b705f75b5790d1b3270b07188cdeceb6b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/doctor.mjs",
+      "beforeSha256": "9e623434efe72c8b2fc1c577a3279c9497bc14c33af61b3e72d3ccc350526eac",
+      "afterSha256": "756a8a5d8eeef7af021bb79616de521c82d20f82b123b5da0a9b01f0964bc40b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/doctor.ps1",
+      "beforeSha256": "931598c017b858ac18f661b8f4788c02c5c50ccb9d41647be9716146cc9b0fd6",
+      "afterSha256": "d02fbb4b9d8d94a6e7a648afe6ab6b9d817004ce82896fad86d9ea5e368d77e5",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/export-research-review.ts",
+      "beforeSha256": "7e32a88c898a35158c5dc74469c5c63d5976c6a2675ec70f5b610493d662482d",
+      "afterSha256": "fda18fb9b6bda2e0347e58b89fd285499d3ba8ea62d8fe9a6cefc60b9d9f835f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/export-review-package.ts",
+      "beforeSha256": "69b30a54390c84667532eb05030b95b9af2fa3960a96ec0d548f1585d29717ad",
+      "afterSha256": "fa1a9bd3bbfe5c749da33f3e6b88e952d8cd805239204f841816571480893d7d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/finish-research-review.ts",
+      "beforeSha256": "9c99564ba95d9dd7a6e4f56847507dd16bacbb0b9c29532e3e946cdf18a5f4e8",
+      "afterSha256": "e2b8a80650bbf50414a46d3d2c1a0b1efeee874211fcf589558ad8150e0a045a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/finish-research-round.ts",
+      "beforeSha256": "9b3592168091513254f1c1d893cbcf791a4dd26a6bf79b3eeba20e4c772e6885",
+      "afterSha256": "ad869a902f65af348574c3cc2f0d364e57851cf0675947271150981c235c0511",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/gmail.mjs",
+      "beforeSha256": "b9b95bee68ddb1c5e15a0574a5ea058e68b25c8e05e0af2fee07437edbb6227f",
+      "afterSha256": "e444ce1e6f094d92e85854cac66580d988604ce1f4fec75b80edefce0bc0573d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/initialize-local.ts",
+      "beforeSha256": "4e1a341b503d19433387e71b5c243d6f44e7d225e5e26f21afd52a1be6ff4bf7",
+      "afterSha256": "8c2186bd18c8c4d722833fa017952c1e724b6a9ae42c81f434541ceac115eabd",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/local-history.ts",
+      "beforeSha256": "3755be6bbcc318b1b5207f48470b449cc8d166dfa3263c70ac44faa09ab61473",
+      "afterSha256": "38d76f83be75de397a3e1852abfd5b0a93c2b5460879e4604df4174721912fd5",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/message-style-preview.ts",
+      "beforeSha256": "63b651715e64ddc038685dd1aca696beaf86fdd4fe51e36369d8192b856c6b9f",
+      "afterSha256": "ddc0b7d993cab77be043dd374005023df06f3440f708799178b0564281e4f2d5",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/open.mjs",
+      "beforeSha256": "917471fed7f09aaa2e9c83ac85091ccaf6a840214f4b49c3682a68388aa45ca8",
+      "afterSha256": "1db04bda0323f1112017ece5388ddb9759fd68e3f0a264b4b3b88497c222b805",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/paths.mjs",
+      "beforeSha256": "0133d9a903c6db6d09d28a1f7a8ff671c5b77b78dec4e5017e031a8628de0287",
+      "afterSha256": "6b58ae6a84f691efd095da03f485594f58ffe5085f033a8a03db7c0b684a693f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/public-autonomous-review.ts",
+      "beforeSha256": "936da683db10915d0407d740e7b8071ca56e496626b979ce39780451798a87c5",
+      "afterSha256": "8e935f162de3d5b7d51afd368b4fa56ee2b5765679ab1e38991cb112de427260",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/public-consistency-review.ts",
+      "beforeSha256": "2cd614622d2d863ac4dd3f4efc56f950126bf29478ea6d84ff0e0346e9aac0e1",
+      "afterSha256": "4cd1879796388659302a10b4e96f870408d24d78aeb50572dc62a43c6a4b3b41",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/public-research-review.ts",
+      "beforeSha256": "529edb6e6605144250ae08fc7b423e4e8de54dd96c70663cf238d61a3f5e4211",
+      "afterSha256": "1b8d6d05cc9e04d67fa6eefedd6f62f614235e6328799ed417b4407d6476215a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/public-research-smoke.ts",
+      "beforeSha256": "71f9f6487a582a0fd880b729f81c3d16e9b58c4a24f6141cf5c7a180197e76f6",
+      "afterSha256": "6f170cb89a9628b65e4d29c33dc639db91ef8bdcf82e12a8d4d4e51bbaa88cf9",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/reader-preflight.ts",
+      "beforeSha256": "a7f9476fc6594a167cc83cb5eaade685602475ced4b21e9ca1f7eb457f8c4425",
+      "afterSha256": "ffdf66903b6610bcbe4ee6bf1d11378c9a0583abcf077b164f4073e9424ab5f7",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/replay-planner-metrics.ts",
+      "beforeSha256": "9aa5090b6b28a4eeb95d52d0a4ad7a5ea9e870310993faf960e5ace121b28959",
+      "afterSha256": "348507f0b352ae06fc24c3aee8b36e0c35911adfe877b604c088a9589ea31456",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/research-report.ts",
+      "beforeSha256": "df22d385a56b6867a7dcf05f752cb10c3ac956b1a24a755dbd9830cd2179e28d",
+      "afterSha256": "c97dbc16d1fd07a132664040832ee4ac6299354642cbbff83b53775cdf110239",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/research-session.ts",
+      "beforeSha256": "c7f2bc93ca6d6373a015fdcc2a977fe09f10bbdbc96a40fa856b497b4dd67743",
+      "afterSha256": "c16ea6beb49282dd6909d63d84f47efaae06fd5c47013359fffe0402b28d6161",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/research-smoke.mjs",
+      "beforeSha256": "89d3d2815a7bef379192f2eb52f9abc1f20b0e4933ad33c4c79678cee0d02a95",
+      "afterSha256": "73a1e3c6c4689b6ebb3df9d79be7b25ed8d245010f1aa4181973b5c652ea48d6",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/setup.ps1",
+      "beforeSha256": "364c5a99c74bb39a3bd971a0dc131e98f2990a47853e5c2a254a64cbf7d0b993",
+      "afterSha256": "9699b383117a6ac9decf1ef895d271edaedf474daf6cdf55035c32d0fb2b7e7c",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/start-approval.mjs",
+      "beforeSha256": "a00f33fef579fbe7bc13b71ea8ce010917529c7ec107d8f809667c6b27af9cfc",
+      "afterSha256": "39fba54606d5b611597b834dd13bb82e96a567ed353a227230607e063b77493c",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/start.ps1",
+      "beforeSha256": "b569c4843e1d8d7dd7d8e9d8db5764b6643efc56f62de050c7658977041c137f",
+      "afterSha256": "b19f0568b0e200200ebbe086217ad1fcd4dc0dbd026e489988791e79f3ed0191",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/stop.mjs",
+      "beforeSha256": "2b46b49e824760a0e1cb44eed298f3a1b32c4a45e99cbc7bc19a3f610a4a4be8",
+      "afterSha256": "afffdc82813592b92b3eeaedb11621427fd7336d97e07d4a20223f6811d0ea3f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/stop.ps1",
+      "beforeSha256": "b084f3e587f4f241fcaf71009a40f3f22ed705cd4278965079f9757f63969346",
+      "afterSha256": "dc468062e8dad0f2a6f974c4a8f967659e8b3c2c18694766c92cc189a604c07b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/verify-historical-manifest.mjs",
+      "beforeSha256": "c33e20e6e83fba4d76b488d82495fc894c0bfbfc88e4557e4556352c35f48d1c",
+      "afterSha256": "5bb51c901a7993e9d436e2fb9f6d18e2a798890ac6d340ae2b9aff57209c614d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "scripts/verify-saved-inquiry-basis.ts",
+      "beforeSha256": "53ab6f95d7070ed73e2257031c72e84669f22b699b5604f78bca5c604ee33e8c",
+      "afterSha256": "9b7f6b02bb34f6d457a92d336482f94f7008f6081970e7d556c6a64f2740f2e9",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/api.test.ts",
+      "beforeSha256": "67509c1133838d87836f16b53d8367381287e74f597e6294181d98ee99bcbf9c",
+      "afterSha256": "b1bba34bbe6b33e7168b1880b37fc980ceb8eac5eab48e657da5cbfe42f69b8e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/audit-regressions.test.ts",
+      "beforeSha256": "53428a2560c0c7a968e495db5c5cd677d9cd8c3bf365a3bae531698f17ccd6ec",
+      "afterSha256": "508376223de6671f1244379b859955a27e55bd18f4a553cae01a81b2a73374e0",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/auto-fixture.ts",
+      "beforeSha256": "90e93ceb45ba2ccaf90b7e547718bb723751df261b367d925fe70608caa25a26",
+      "afterSha256": "8770cf96e626f96fa92a32dd61a12dcca820c75f904c5abd687b65c05c01d950",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/auto-policy.test.ts",
+      "beforeSha256": "c8289eb68f115cfed5e1560459796ef44f3c1d70799ef6fe48d0f539ca36924e",
+      "afterSha256": "97c73fe063f1b40cae9819a28531d12e01c02557799d2d39ee519acf50901191",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/auto-review-concurrency.test.ts",
+      "beforeSha256": "9df581311c90ebdfdea8a06ebd61e3eb6cf0f2357961060c23be3a1b1c8572da",
+      "afterSha256": "9ca8775d15d373d36b11e07523d754c9d982ab3696f6df06689ff9ea5c96e348",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/auto-server.ts",
+      "beforeSha256": "e6b07fd7dcb6328e1ede09f89d77df5d60b8dfd21a4794aee22011a5c10d762e",
+      "afterSha256": "c566fdac7c23176e52c030f05051138f8381fb20911d292b1212d8ec0dfc67ff",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/auto-soak.test.ts",
+      "beforeSha256": "1e7cbabcb53d5c7c1369092a2ab8eaf125904f64ffd049f6021809b8d8559801",
+      "afterSha256": "248f922002cf6591ff97e9b81cac22bfe0feb8966ef18333add843f4aed663af",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/autonomous-diagnostic.test.ts",
+      "beforeSha256": "c4e2610a39e203f7bbe118799e16d6211aa3b18fe8e820f848c80b253c0220b6",
+      "afterSha256": "fe03a605587ec91d73c6f17f405f5395773d30053e819029a4b1fe13f7a717fd",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/browser-batch-controller.test.ts",
+      "beforeSha256": "cdf4337c9d1c63755b577566743703b9e292850586fec1b40f64e873ae796f61",
+      "afterSha256": "a4d7c5728c5855fd45000fd409ff52bfff88eb380db0e804410d2d8dd94329ad",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/browser-crash.test.ts",
+      "beforeSha256": "f1c17a7db00e35b01a70fe275ba83c20ee4015e50edbc5ccae2d37ba4d62b812",
+      "afterSha256": "6c150ea5ad8142c141c5937822cc817d3d588bed0b31c0707b99917b4cba7193",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/browser-delivery.test.ts",
+      "beforeSha256": "c8208fc36ad0f9a2ca7880562e06231c78a301fbc4bfa5420459cc373c67a58f",
+      "afterSha256": "679c15a5b7573145883aed2ac59dc33f941295eefbbee1f7e8837add2ee9e92d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/closed-batch.test.ts",
+      "beforeSha256": "6f321487810a1933b3a92bc406f4125e4844dc9b59ac08955e45066fa3d2c54a",
+      "afterSha256": "94436e33d8ac568afb27d3f65f4685e4f47044b16a7071905be3c8c0274f5e50",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/contact-html.test.ts",
+      "beforeSha256": "3de20a93a853c0dc8e8fa87fe954802202e471206835f5c44e8e8356af82fe5c",
+      "afterSha256": "1e46d9e57f46d8190660c16a5669b034b8d46a07d8b4a7dc0ef8b075b7fa9f0d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/contact-intent.test.ts",
+      "beforeSha256": "8d5a1c8689dc07a4f8cef52eeb76d69251c5ef9c0a59b21f00810fb452e78f5b",
+      "afterSha256": "d51de0dd1d9ae267726edeea669aac17608d5affdcc438efa297699fcd704a7e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/contact-invitations.test.ts",
+      "beforeSha256": "c1dab9dfab2198d447787981b8439baf30376c26df34626eb7d8ccfc2921958f",
+      "afterSha256": "99f8b905bedaa48f3e8512e20175cb80f6ec15d0ed280f85b08f227d7c9203e9",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/core-migrations.test.ts",
+      "beforeSha256": "4433fcf29164b432c54126029643e0964154ba344097bdb57dd7c38a5d660a5e",
+      "afterSha256": "89b0eaa5a085d01002d91cd0cdbdf36f33de21653d382a69d5bf180522cca25f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/domain-protection.test.ts",
+      "beforeSha256": "e3ae81a452c5cb2dd7aa3cd87e90e119a2c62615ed98401c6a9cc06197942928",
+      "afterSha256": "1c561184c2d7e0a2d2e99403ba6aed689df9a7456c3cb5281139b01f6e4ffd75",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/domain.test.ts",
+      "beforeSha256": "b01cbde04cba11b6f21ae295b7d8b4f71667c9c278d4c2a415d2eb0d21735f9f",
+      "afterSha256": "9c7b0a564524aa8ff9352c982f6f983abb88bda2aa0ddf9d75403618d36a59e4",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/auto.spec.ts",
+      "beforeSha256": "5b0e066b18d1db75673157c9dfd1d276defaf8eb3756effb50fcb6db580e8435",
+      "afterSha256": "4811a282e6d5393ae83741e897e8593577c1ebf29d9935025a5df7a1e488fc8d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/browser-settings.spec.ts",
+      "beforeSha256": "6027f0ccabcb375cd0135846591bf271534af93c86be8af6ce0f403f97d16aee",
+      "afterSha256": "f1e9518eb4a0f0190e8a3c25d0e5d73dc49a7284fc411e5b8574f53538c0c353",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/closed-batch.spec.ts",
+      "beforeSha256": "7292f2a39c01a47a0cd2a7af32ebe1c94b544f98528fc7b2a4f0c95626d9f622",
+      "afterSha256": "ab8595d42a06f93c0302baf64bddc41a014b196031e8705edd4267ad7cc2f553",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/cv-refresh.spec.ts",
+      "beforeSha256": "cd80d922639cd587ecfb96769b317f563baabeb180465442e48dba6e36615ea8",
+      "afterSha256": "22d248bbfc847c5d72e9bca5567cf0910c87b7425a4212a89112362e438de5d1",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/gmail.spec.ts",
+      "beforeSha256": "45790d073b6997a97997b50170095c71eb09bcf867b573a67015a717e9ba8e4c",
+      "afterSha256": "9dbbf2abce3bdce2df244dd14fbce070667787737caa7c2122cc62d22eb3855d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/process.spec.ts",
+      "beforeSha256": "a5a2ded57779f1491d7198ad8f7f835643e69bb3eb0d267003ba5e03bd8ee79c",
+      "afterSha256": "cafbf65c7946a1e5bbfd6a1a7c4819772b2bc05fdf61ad60f22b3a322015233f",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/e2e/research.spec.ts",
+      "beforeSha256": "413bebed78d92f9e8538610495509317ca6df0dad82ca4635a4db50888c7ce23",
+      "afterSha256": "c790c4900836240fb467609f08ba67b293fda3049162135e85e0b915731a13cf",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/evidence-refresh.test.ts",
+      "beforeSha256": "a48797e3c82adf936da2c08e1dc93b0a9fac3975995c7b4d5d2b889cf757685b",
+      "afterSha256": "c9a1c2a266af40e38fde7fc0fc5949a4e45d93b6521ac392ebcae2c92249b875",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/fixtures/browser-crash-child.ts",
+      "beforeSha256": "f0c0fd5d2b16a1d83c2df9d8c84baf5bc105fd600a87cd4336621a44ab028dc8",
+      "afterSha256": "403429feee383567d60700b57f445d01253afc0e453cba97294b1c64a292a3a1",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/fixtures/gmail-compose.html",
+      "beforeSha256": "43b8247985f47bcb446eb793c17660130525c880d2450c9e9a9d19014b5e2e2a",
+      "afterSha256": "888c983ba2e7eb2cfd6bafa0f1156eef0ad7caa21b36871ad4b021bd56f6ec20",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/fixtures/odd-cli.mjs",
+      "beforeSha256": "45b4e649ed5efd7aebc72b22e1861bcb285fafdb7bcd97181d8d1f1931db17e2",
+      "afterSha256": "c4f655dfb304c0b00807bc1e420489df3bf7774a0ddb99cde750038650711f43",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/fixtures/wal-marker-child.ts",
+      "beforeSha256": "68494d3ecbc3af7034fd25a1dff3ebf571d30874700107e763683e6027b184c4",
+      "afterSha256": "6dc2d5845abe8b29e671c1b9fa65512fa1e95876bdf46341723e7735bbf1c1a6",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/gmail-delivery.test.ts",
+      "beforeSha256": "4f1950fd4ed381a64df973e58c2348d8308b888983f7967f68fe152288e43a82",
+      "afterSha256": "d2d3d5e14a27a5efc6dd6d4498a235d3ef4c816568f2d14c20ae2e2c95bbf49d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/gmail-fixture.ts",
+      "beforeSha256": "dfae260fa7c2c1b9b73cd3f86073032447accc21ecae735275a3001da2f34ebd",
+      "afterSha256": "03718f4d00d41e88ab23c3b2c3aee9608d2f985508fe0ffe16c7e3f474859929",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/gmail-reconcile-reader.test.ts",
+      "beforeSha256": "056e14da36b86c97429f6a75aa5cb5f7f2a75eee818d41ee7988d6fd65f0611c",
+      "afterSha256": "f4767880e48d7fb8f44832edc28bce1785720fb69499fc207a2d14265c92aad2",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/gmail-server.ts",
+      "beforeSha256": "2c461a6486e5e50d0b76917a716d03e3d16169497416e044c7c85af1323ecfc2",
+      "afterSha256": "715053505e0d1b9f5c38e3a7c04ad0b464fb4cbea575545ff88b5eb81f0ad579",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/gmail.test.ts",
+      "beforeSha256": "9184a4742d757825fe36f8c2906e10b4665516599326194b5bde8f4fb9833e30",
+      "afterSha256": "9f2d6c54962f1aa8e055c6039f748646762c4cc3329292c933e688d80d9bfbbf",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/history-stabilization.test.ts",
+      "beforeSha256": "90236ba36f685a106f1a4ef1072bf37922ba0ba93aaf3f796eaac1c47c72b8ee",
+      "afterSha256": "e8311af0324d8f377dacfd9a3cdca740f1f569514a4e0e9d543da17727d4e70e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/inquiry-basis-language.test.ts",
+      "beforeSha256": "d9e03245055a8efd8f000e2d6ca699a84941fac6fb6de80efa4f7d338f40d008",
+      "afterSha256": "b3eccdd6de6c44fd8e2711109a47c22ee370778adddbc2eb62556e41b1fede4e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/library-audit.test.ts",
+      "beforeSha256": "5666d81ac0e300fabe9a4701199cfafae5ad816819a2405a81d899d0851e3a44",
+      "afterSha256": "c65c16b1e59d8c734448a02f2f5b25d1831daa8a0ea8a98f9e48173a26280950",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/library-pagination.test.ts",
+      "beforeSha256": "c1a4e43f8fa66c25c6144811da7b2bcbf7e0ea1a717e2e83d9b3ab6a98810710",
+      "afterSha256": "ac2264c5863a2cf5bcf1f722182296770081c830e74385b9e9101ee185b80c66",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/library-refresh.test.ts",
+      "beforeSha256": "4c6c7be035c13ef4184c72b033e8f2e711796909aaae6fc262af69838ad9d5d0",
+      "afterSha256": "afd2c8889a5846ae1c1bec4b91148162e3b4d8ead63ce154e1f321ef85156542",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/local-only.test.ts",
+      "beforeSha256": "e92ec96545e86d2ca69bf0e8cfe98c3ef3d670fde588d03751794ae3dc42a9b7",
+      "afterSha256": "f1d688fd4b86603689faeae72faa2fddcb713af857fd70e11c08dc11b6c248a8",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/material-scope.test.ts",
+      "beforeSha256": "626c60aa9ce8e0126b3a15037b8dd4744f9c3bde238d59ecb3b1dbb807d5490b",
+      "afterSha256": "839f82dfaa28945eda8cd5c4248d85ba69c19e5407947a86d9292dedd8034bfa",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/message-style.test.ts",
+      "beforeSha256": "c47a5f870457c3f8726c9a402f3286cf538c26ada4d141151d9c028d4af4d234",
+      "afterSha256": "0bc3694113f9055c86ec553f687b470908b563171d197d4acd30e6c365ea375e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/mime-inspection.test.ts",
+      "beforeSha256": "65f2281d4c0d8a6079964eea132f36e642e61b9c7bb651473d610fd630698f03",
+      "afterSha256": "55bd0dfb02948207e95c4af06dbef9a688026d9b0ea684fc0bc49bd4121aa22b",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/performance/stop.test.ts",
+      "beforeSha256": "23ae3dd65862835f457827ff2a8dd6b209f7e62848fab8b3875205183d6c95ee",
+      "afterSha256": "54400065ef81b8124e41d6315add6c966c3f03f3171cf8880770bb7327f9108d",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/prior-applications.test.ts",
+      "beforeSha256": "aae8133f8679ade810ace6b726f69e870141bb6c3e309e5f628cd2cc8ecf084a",
+      "afterSha256": "b57a6addbad767bbb5c67e068185464f78017a088dcf039bfc0e65eb9bc9be35",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/prior-contact-reader.test.ts",
+      "beforeSha256": "4e51ac1f2eed543419c88ab3eca1fb31ae8f4ba0c95d1e780d834a372b4be3b2",
+      "afterSha256": "d3c9ae47429fb4f3beb52c4ec7afa97916aa5d1cf69d201586b5b549da8d8554",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/public-diagnostic.test.ts",
+      "beforeSha256": "cb452a2cc149543b05856327374a654a2441bd8f05cc35c05c9c20fc13d091d5",
+      "afterSha256": "1f54653eb3e7377f7de100cc3ea9fdc2bef5e4df7ffd4069bc61272b76f25271",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/query-planner.test.ts",
+      "beforeSha256": "39791186fec9cbcc1db727c1b0f278a43f6b4d98f1189d66aaaa98c2bb79b202",
+      "afterSha256": "e0f6c9a84c9d9c6d236ab2e888df3e62303c5eb845db1edea959e9faa050ed87",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/reader-recovery.test.ts",
+      "beforeSha256": "66496584714af7cc6ce8114d2819628f469698afa77912e15e962a0b737e24b7",
+      "afterSha256": "e53f0f449400c49b8ef763991393c0b46963724099fa4e4c8a4ce4e3932a1f4a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-consistency.test.ts",
+      "beforeSha256": "b155694a3ca70c18a6270858bd7008a733358a1bc3052fdf157496b30efcb6b5",
+      "afterSha256": "dd31de3eb824a10e74e315ca1c86af698cb154ae6cc5dc48936ce62a59e456ba",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-fixture.ts",
+      "beforeSha256": "a6550cf8f655a68257600dedfc88e19c48ae5f7cc0c2c172ee2e5523cf5bb26d",
+      "afterSha256": "d4d044707e02fe3a5c5c9f07b2ab8efb5df7e35361e1d4e6149005aa8f859b50",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-materials.test.ts",
+      "beforeSha256": "915da6ec836bf2e60a9c1357d11816d781301c25890624cb1b6f178f88eac65a",
+      "afterSha256": "990b0612d5c007867b68023a0c9acd23bbaf83d14b510f28dc06ea7605b7e136",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-night.test.ts",
+      "beforeSha256": "39c6411f4e5f0aea54b32e6fc47d7b0280029f005c56114a6d09058f38dd265f",
+      "afterSha256": "f5617d3e51706d09233e4ba959ac822a5b85ce851e2adebdaaec7e0fab7a3c33",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-report-provenance.test.ts",
+      "beforeSha256": "6f123061f4b68064b155c4786a943575bf21837ee278f716f880ad6c4e001883",
+      "afterSha256": "6f7a5520298dea36a74465eefd62cfa85fe59539e342faca5dcec6108db658d6",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-round.test.ts",
+      "beforeSha256": "25d39e6c6a0edda61223336a79ed8354d4580f2ecf3d6c96286db45b5366c50f",
+      "afterSha256": "19af42336f1a675a9f0213158ccc2d795240d2b80d9863c2c83eb92f984d902a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-server.ts",
+      "beforeSha256": "87549f2d4b244602fc5ed1ca0242a439d00583d052db605b596bd6a287e60b45",
+      "afterSha256": "45e07a6225b760a64e0ceb876fc199a735afa89fa51a04f3795f4a3ae7fc42e2",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research-work.test.ts",
+      "beforeSha256": "e0a4851ad317a13fe505b49c087d344cf5a4287a1d49adc1ea0bdd3932298977",
+      "afterSha256": "9811b51f610f0c9d70cdb6e6b6fe6bc07fa6a099131b57172f20c87acb941f3e",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/research.test.ts",
+      "beforeSha256": "2727c1f163c80406cbf818eb835c2ee3188b911471271e166b2209c706e7302d",
+      "afterSha256": "a4c900e235d6799a3a9e22c25557673dab820058c48cc3891cf84f116e660b68",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/review-package.test.ts",
+      "beforeSha256": "7954b6fbbb637b55b302197a9a5eb1cb2929ed415e6ad04f686f2c28a4d1aa72",
+      "afterSha256": "6757cc8029c44cacc171a737eb15933b4124f21555c38e18535c72f21c1bc128",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/review-session.test.ts",
+      "beforeSha256": "437bb62e84c4512bb6388d41099e1dd2f7e4ca122d254fcba86aba07980360f6",
+      "afterSha256": "a0574372074c3ff16b393b4625b7b457185a6556d4f6b18229db32e6bc28cdde",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/schema-fixture.ts",
+      "beforeSha256": "a1df9e8a9b405ed98b0b8754cef7649d28d5a83e09eac1050220b27a5316e212",
+      "afterSha256": "ff1bf69ad133763d4e684b8804b2713700c1f5f4de4d4bd8aecdf6165e063edb",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/send-authority.test.ts",
+      "beforeSha256": "05159805a440bc3eba3917118e4da76939fd09facaa218f6bdea74d8f21b2251",
+      "afterSha256": "472c6ee4968f6b36569fd78bdaafcf19139c144e854055a9b44f5bea77725b53",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/session-entry.test.ts",
+      "beforeSha256": "b2d0064a9fecfb840fe624a2e7e531ee6d6c8566a29e404f09e780624130a245",
+      "afterSha256": "0d46fe01bbaf8e80c603eb454dc9caf818b8c172d4fe637456e6c1797c371905",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/source-safety.test.ts",
+      "beforeSha256": "1661ad42c6000313524b1f264b955ff595b9b26a6deab5694bd2cf069e47eb40",
+      "afterSha256": "d09b50da5422fc08dcf4743e52e897f7a79a90992c7e0b4b8896f5a107c2c50a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/stop-responsive.test.ts",
+      "beforeSha256": "270fce670c59638f1227da7df4776533760d0a0c70519c8c107af3b7362f19ea",
+      "afterSha256": "57030eb7d2adf7a66a801b980c899f70d8d23d61807aefd2e0cebbe8a63dde29",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tests/stop-scenario.ts",
+      "beforeSha256": "b5a68eb3835e92b368e04215fdb2159598924c1f6080bed5a287af8cd63f980f",
+      "afterSha256": "e36c49fd1e1c17d5d93220473ba87876e4a791f6a3d62f3c40c4a029f015b214",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tsconfig.server.json",
+      "beforeSha256": "b90e4a7172f2f7cf0b55b95ac4e4a209e2a48e517c736858ddf4d374ac13f7e5",
+      "afterSha256": "6654da0a5a99c3ff484c46c5217802cc8f62c544032ff9e951bb4eccca36ff23",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "tsconfig.web.json",
+      "beforeSha256": "30b8df6a3d0cf1ca61e3bdc7a7c72c6f0524c6f716fe1201b21527853d9adf44",
+      "afterSha256": "04b64de42c7ca24902e19f143294a1ff517335299f2c59473bf72e90d7b486df",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    },
+    {
+      "path": "vite.config.ts",
+      "beforeSha256": "dcedcb2fb31f8762299fe88188643d43cd8acf5401c2523d052c74c426ca20a7",
+      "afterSha256": "88883397f757eef9b1cfb65adc5dad26c685e988b8ad9346e9e543e1d327862a",
+      "transform": "VERIFIED_CHECKOUT_CRLF_TO_GIT_LF"
+    }
+  ]
+}

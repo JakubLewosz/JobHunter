@@ -1,5 +1,23 @@
 # Wyniki i zakres weryfikacji — 18 października 2026
 
+## Aktualizacja R14 — 21.10.2026
+
+[Nowy raport, rzeczywiste wyniki i tożsamość testowanego kodu](reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md).
+Finalny `npm run check` 21.10.2026: **PASS, exit 0**, 761/761 backend,
+12/12 serial Stop, typecheck/build, 26/26 UI, 813305,5537 ms. Node 24.19.0,
+npm 11.17.0, SQLite 3.53.4, Windows 10.0.26300 x64; izolowane środowisko.
+08:30:59.177–08:44:32.484 UTC. Manifest 223 plików przed/po:
+`8cddc799fedfe8df74d3c8b11d86cb8fe9f996c008ca8dca4e13ab8f0a84df0e`.
+Pierwszy nowy pełny check: FAIL 760/761, 710521,5029 ms; wcześniejsza wersja
+fixture okna, bez performance/build/UI. CLI już wtedy PASS 3680,6881 ms.
+Oba wyniki i pomiary są w `reviews/r14-ci-host-evidence/`; nie ponawiano
+do pierwszego PASS bez zmiany. Finalny SHA/CI jest osobnym zapisem przekazania.
+Odrębne dowody: natywne IPC/CLI na Node24/Windows, Node public entry na własnym
+localhost oraz ograniczona próba narzędzia strony w aktywnym Codexie. Import
+całego publicznego wejścia w tym hoście: HOST_TEST_NOT_RUN z błędem zależności
+wymagającej globalnego process. Ośmiu godzin rzeczywistego hosta nie wykonano.
+Poniższe datowane FAIL/PASS oraz stare manifesty pozostają historyczne.
+
 ## Windows nightflow — nowy kod, osobne dowody
 
 Baza `40850745d5677cf411072d2798a56034e3ec9873`, osobny worktree
@@ -69,10 +87,13 @@ Dawnych manifestów/danych nie zmieniano. [Nowy raport](reviews/WINDOWS_NIGHTFLO
 Poniżej pozostają datowane wyniki wcześniejszych etapów.
 
 Pierwsza publikacja 894ab953…: Windows CI **FAILURE**, run 39171469775,
-job 117805244708, npm run check exit 1 (15 min 44 s), bez publicznej nazwy
-nieudanego testu. Logi REST 403 / UI wymaga logowania; narzędzie połączone
-niedostępne. [Zapis CI](reviews/windows-nightflow-evidence/ci-first.json).
-Nie ma dowodu naprawienia przyczyny; lokalnego PASS nie utożsamiamy z CI.
+job 117805244708, npm run check exit 1 (15 min 44 s). W chwili pierwotnego
+raportu logi były niedostępne. Nowy przegląd c03161ba odczytał je: backend
+720 PASS / 1 FAIL / 721, test nightflow CLI, status null zamiast 0,
+30034,9529 ms przy limicie spawnSync 30000. Error.code/signal i faza nie były
+zapisane. [Dawny zapis CI](reviews/windows-nightflow-evidence/ci-first.json)
+nie jest aktualną diagnozą. Końcowy bazowy c03161ba ma osobny CI PASS
+39173019427; nie dowodzi naprawy przyczyny pierwszego przekroczenia.
 
 ## Rozszerzony pakiet przeglądu — etap po bfbbc630
 

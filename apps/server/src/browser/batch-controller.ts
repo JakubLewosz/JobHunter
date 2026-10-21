@@ -17,6 +17,7 @@ export class BrowserBatchController {
     private clock = () => Date.now(),
     private wait = (ms: number, signal?: AbortSignal) => delay(ms, undefined, { signal }),
     expectedScope?: BrowserExecutionScope,
+    private fixtureOrigin?: string,
   ) {
     this.scope = expectedScope;
   }
@@ -49,6 +50,7 @@ export class BrowserBatchController {
         const result = await runBrowserDelivery(this.client, this.tab, {
           scope: this.scope,
           signal,
+          fixtureOrigin: this.fixtureOrigin,
         });
         if (result.status === 'STOPPED') {
           this.ended = true;

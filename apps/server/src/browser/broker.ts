@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { basename, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { localFixtureOrigin } from '../testing/local-fixture-origin.js';
 import { Store } from '../db.js';
 import { DomainError, hash, id } from '../util.js';
 import { inspectMime, decodeSubject } from '../gmail/inspection.js';
@@ -67,8 +68,14 @@ export class BrowserDeliveryBroker {
   private descriptor?: string;
   constructor(
     private store: Store,
-    private options: { clock?: () => number; timeoutMs?: number; allowFixture?: boolean } = {},
+    private options: {
+      clock?: () => number;
+      timeoutMs?: number;
+      allowFixture?: boolean;
+      fixtureOrigin?: string;
+    } = {},
   ) {
+    if (options.fixtureOrigin) localFixtureOrigin(options.fixtureOrigin);
     // Never resume a UI action after process loss. COMMITTING means it may have clicked.
     store.exec(
       "UPDATE browser_deliveries SET state=CASE WHEN state='COMMITTING' THEN 'SEND_UNKNOWN' ELSE 'FAILED_NOT_SENT' END,updated_at=? WHERE state IN ('WAITING','CLAIMED','COMMITTING')",
@@ -120,6 +127,11 @@ export class BrowserDeliveryBroker {
   }
   private assertURL(value: string) {
     const u = new URL(value);
+    if (this.options.fixtureOrigin) {
+      if (u.origin !== this.options.fixtureOrigin)
+        throw new DomainError('BROWSER_ORIGIN', 'Inna strona testowa.');
+      return;
+    }
     if (
       u.origin !== 'https://mail.google.com' &&
       !(this.options.allowFixture && u.hostname === '127.0.0.1')

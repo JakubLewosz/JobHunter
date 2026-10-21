@@ -8,7 +8,11 @@ import {
   compareNightflowCandidates,
 } from '../apps/server/src/nightflow.js';
 import { withNightflow } from '../apps/server/src/nightflow-entry.js';
-import { requestNightflow, readNightflowReport } from '../apps/server/src/nightflow-control.js';
+import {
+  requestNightflow,
+  readNightflowReport,
+  listenNightflow,
+} from '../apps/server/src/nightflow-control.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,6 +22,7 @@ async function fixture(
   discovery = false,
   boundary?: (phase: string) => Promise<void>,
   many = false,
+  realisticWait = false,
 ) {
   const f = await setup(t, false, many, false, true);
   await f.service.startLibraryResearch(undefined, 8);
@@ -30,7 +35,7 @@ async function fixture(
     clock: f.options.clock,
     wait: async (_ms, signal) => {
       signal.throwIfAborted();
-      f.advance(16 * 60000);
+      f.advance(realisticWait ? _ms : 16 * 60000);
     },
     boundary,
   });
@@ -127,13 +132,13 @@ test('nightflow: live authenticated control Stop is received by the same waiting
       coordinator.savePlan(plan, true);
       const running = coordinator.start(plan.id);
       const state = await requestNightflow(dir, 'status');
-      assert.equal(state.authority, true);
+      assert.equal(state.current.authority, true);
       await requestNightflow(dir, 'stop');
       const report = await running;
       assert.equal(report.state, 'STOPPED');
     },
   );
-  assert.equal(readNightflowReport(dir).state, 'STOPPED');
+  assert.equal(readNightflowReport(dir).snapshot?.state, 'STOPPED');
 });
 test('nightflow: protected history changed during refresh cannot reach a batch', async (t) => {
   const f = await fixture(t);
@@ -146,6 +151,99 @@ test('nightflow: protected history changed during refresh cannot reach a batch',
   assert.equal(result.reason, 'PROTECTED_DATA_CHANGED');
   assert.equal(f.store.one('SELECT count(*) n FROM auto_batches')!.n, 0);
   assert.equal(f.gateway.posts.length, 0);
+});
+
+test('R14: actual coordinator IPC revokes before held SENDING continuation, zero reservations/actions', async (t) => {
+  let reached!: () => void, release!: () => void;
+  const entered = new Promise<void>((r) => (reached = r)),
+    hold = new Promise<void>((r) => (release = r));
+  const f = await fixture(t, false, async (phase) => {
+    if (phase === 'SENDING') {
+      reached();
+      await hold;
+    }
+  });
+  const close = await listenNightflow(f.store.dir, f.coordinator);
+  try {
+    const running = f.coordinator.start(f.plan.id);
+    await entered;
+    const ack = await requestNightflow(f.store.dir, 'stop');
+    assert.equal(ack.current.authority, false);
+    assert.equal(ack.stop?.maintenanceReady, false);
+    release();
+    const result = await running;
+    assert.equal(result.state, 'STOPPED');
+    assert.equal(f.gateway.posts.length, 0);
+    assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+    assert.equal(f.store.one('SELECT count(*) n FROM usage_ledger')!.n, 0);
+  } finally {
+    release();
+    await close();
+  }
+});
+
+test('R14: IPC ACK revokes authority while a previously accepted fake transport is still settling', async (t) => {
+  const f = await fixture(t);
+  let reached!: () => void, release!: () => void;
+  const entered = new Promise<void>((r) => (reached = r)),
+    hold = new Promise<void>((r) => (release = r));
+  const send = f.gateway.send.bind(f.gateway);
+  f.gateway.send = async (...args) => {
+    const result = await send(...args);
+    reached();
+    await hold;
+    return result;
+  };
+  const close = await listenNightflow(f.dir, f.coordinator);
+  try {
+    const running = f.coordinator.start(f.plan.id);
+    await entered;
+    const ack = await requestNightflow(f.dir, 'stop');
+    assert.equal(ack.current.authority, false);
+    assert.equal(ack.stop?.operations, 'MAY_BE_IN_FLIGHT');
+    assert.equal(f.gateway.posts.length, 1);
+    release();
+    await running;
+    assert.equal(f.gateway.posts.length, 1);
+    assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 1);
+  } finally {
+    release();
+    await close();
+  }
+});
+
+test('R14: failed Stop persistence remains unconfirmed but cannot undo in-memory revocation', async (t) => {
+  let reached!: () => void, release!: () => void;
+  const entered = new Promise<void>((r) => (reached = r)),
+    hold = new Promise<void>((r) => (release = r));
+  const f = await fixture(t, false, async (phase) => {
+    if (phase === 'SENDING') {
+      reached();
+      await hold;
+    }
+  });
+  const close = await listenNightflow(f.dir, f.coordinator),
+    exec = f.store.exec.bind(f.store);
+  try {
+    const running = f.coordinator.start(f.plan.id);
+    await entered;
+    f.store.exec = ((sql: string, ...args: any[]) => {
+      if (sql.startsWith("UPDATE nightflow_jobs SET state='STOPPED'"))
+        throw Error('SYNTHETIC_DISK');
+      return exec(sql, ...args);
+    }) as typeof exec;
+    await assert.rejects(requestNightflow(f.dir, 'stop'), { code: 'CONTROL_PROTOCOL' });
+    assert.equal(f.coordinator.controlScope().generation, null);
+    f.store.exec = exec;
+    release();
+    await running;
+    assert.equal(f.gateway.posts.length, 0);
+    assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+  } finally {
+    f.store.exec = exec;
+    release();
+    await close();
+  }
 });
 test('nightflow: changed plan approval during validation is rejected', async (t) => {
   let tamper!: () => void;
@@ -189,24 +287,52 @@ test('nightflow: unknown accepted fake attempt stops with resolution, restart/Re
   assert.equal(f.gateway.posts.length, 1);
 });
 test('nightflow: final send gate enforces a window that closes during a private history await', async (t) => {
-  const f = await fixture(t);
+  const f = await fixture(t, false, undefined, false, true);
+  // Start next to the boundary: advancing most of a day also expires history,
+  // which legitimately fails before the window gate and masks this assertion.
+  const initialLocal = new Intl.DateTimeFormat('en-GB', {
+    timeZone: f.plan.window.timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  })
+    .format(f.options.clock())
+    .split(':')
+    .map(Number);
+  const initialClock = f.options.clock();
+  const offset =
+    (23 * 60 + 57 - initialLocal[0] * 60 - initialLocal[1]) * 60000 -
+    initialClock.getUTCSeconds() * 1000 -
+    initialClock.getUTCMilliseconds();
+  f.advance((offset + 86400000) % 86400000);
   const scan = f.gateway.scan.bind(f.gateway);
+  let crossed = false;
   f.gateway.scan = async (...args) => {
     await scan(...args);
-    const local = new Intl.DateTimeFormat('en-GB', {
-      timeZone: f.plan.window.timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    })
-      .format(f.options.clock())
-      .split(':')
-      .map(Number);
-    f.advance(Math.max(0, 23 * 60 + 59 - local[0] * 60 - local[1]) * 60000 + 1000);
+    if (!crossed) {
+      crossed = true;
+      f.advance(61000);
+    }
   };
   const result = await f.coordinator.start(f.plan.id);
-  assert.notEqual(result.state, 'COMPLETED');
-  assert.equal(result.reason, 'SEND_WINDOW_CLOSED');
+  assert.notEqual(
+    result.state,
+    'COMPLETED',
+    JSON.stringify({
+      result,
+      crossed,
+      batches: f.store.all('SELECT state,reason FROM auto_batches'),
+    }),
+  );
+  assert.equal(
+    result.reason,
+    'SEND_WINDOW_CLOSED',
+    JSON.stringify({
+      result,
+      batches: f.store.all('SELECT state,reason FROM auto_batches'),
+      sessions: f.store.all('SELECT status,reason FROM auto_sessions'),
+    }),
+  );
   assert.equal(f.gateway.posts.length, 0);
 });
 test('nightflow: zero eligible results produce report without reservations', async (t) => {

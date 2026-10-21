@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "level": "ACTIVE_CODEX_TOOL_LOCAL_PAGE_ONLY",
+  "publicEntryLifecycle": "HOST_TEST_NOT_RUN",
+  "tool": "cua_repl",
+  "page": "OWN_EPHEMERAL_LOOPBACK_FIXTURE",
+  "newOwnedTab": true,
+  "fields": "SYNTHETIC_EXAMPLE_TEST_ONLY",
+  "observedClickCount": 1,
+  "observedLocalAcknowledgement": true,
+  "externalRequests": "BLOCKED_BY_PAGE_CSP",
+  "ownedTabClosed": true,
+  "ownedServerClosed": true,
+  "listeningPortAfterCleanup": false,
+  "screenshot": "host-local-page.png",
+  "limitation": "This page action is not the public coordinator, Gmail, or eight-hour host retention. See host-import.json."
+}

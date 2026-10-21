@@ -1,5 +1,13 @@
 # Windows/Codex nightflow — implementacja w nocy 18/19.10.2026
 
+Aktualizacja 21.10.2026: poniżej raport historyczny. Bazowy c03161ba ma
+potwierdzony CI PASS 39173019427. Log pierwszego FAIL jest już odczytany:
+timeout procesu testu nightflow CLI 30000 ms, status null wobec 0, 720/721.
+Szczegółowa przyczyna nadal nieustalona, dawne UNKNOWN_LOGS_UNAVAILABLE
+jest nieaktualne. Bieżące R14, pomiary i wynik w
+[JOBHUNTER_R14_CI_HOST_WYNIK](JOBHUNTER_R14_CI_HOST_WYNIK.md).
+Kontrakt fallbacku opisany niżej zastępuje [NIGHTFLOW_CONTROL](../NIGHTFLOW_CONTROL.md).
+
 Status: **WIP — CI FAILURE i nieweryfikowany rzeczywisty host Codexa;
 NIEGOTOWE DO RZECZYWISTEJ KAMPANII**.
 Kod i pełny przebieg są sprawdzane syntetycznie. Brakujący dowód utrzymania hosta
@@ -210,12 +218,12 @@ job 117805244708. Instalacja/Chromium PASS; krok `npm run check` zakończył si�
 exit 1 po 15 min 44 s (22:17:07–22:32:51 UTC). Dostępna publiczna adnotacja
 podaje wyłącznie „Process completed with exit code 1.”, bez nazwy testu.
 Brak artefaktów. [Oczyszczony zapis](windows-nightflow-evidence/ci-first.json).
-Przyczyna: **UNKNOWN_LOGS_UNAVAILABLE**, nie uznajemy jej za naprawioną:
+Historyczny stan wiedzy: **UNKNOWN_LOGS_UNAVAILABLE**, zastąpiony aktualizacją wyżej:
 REST logów zwraca 403, interfejs wymaga „Sign in to view logs”, a połączone
 narzędzie GitHub nie jest dostępne w tej sesji. Nie szukano tokenów, nie
 zmieniano dostępu ani progów i nie ponawiano samego joba do zielonego.
 
-Dokładny następny krok: odczytać log istniejącego joba 117805244708, krok
+Ówczesny następny krok (wykonany w niezależnym przeglądzie): odczytać log istniejącego joba 117805244708, krok
 `npm run check`, przez autoryzowany dostęp; wskazać pierwszą błędną asercję,
 odtworzyć ten scenariusz syntetycznie, naprawić i wykonać wymagane kontrole.
 Nie zlecamy nowego ogólnego audytu lub eksportu biblioteki. Dopisanie tego

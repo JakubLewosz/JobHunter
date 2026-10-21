@@ -98,8 +98,21 @@ export class GmailJobHunter extends ResearchJobHunter {
       gateway?: GmailGateway;
       accountInfo?: () => AccountInfo | null;
       runtime?: Runtime;
+      fixtureBrowserOrigin?: string;
     } = {},
   ) {
+    if (
+      options.fixtureBrowserOrigin &&
+      (options.runtime?.kind === 'WORKSTATION' ||
+        !options.gateway ||
+        !options.accountInfo ||
+        !options.runner ||
+        !options.reader)
+    )
+      throw new DomainError(
+        'DEVELOPMENT_REQUIRED',
+        'Lokalna fixture wymaga kompletu fikcyjnych providerów.',
+      );
     if (store.get('diagnosticOnly', false))
       throw new DomainError(
         'DIAGNOSTIC_MAIL_DISABLED',
@@ -129,7 +142,9 @@ export class GmailJobHunter extends ResearchJobHunter {
             return setupInfo(join(store.dir, '..', 'gmail-preparation'));
           }
         : () => null);
-    this.browserDelivery = new BrowserDeliveryBroker(store);
+    this.browserDelivery = new BrowserDeliveryBroker(store, {
+      fixtureOrigin: options.fixtureBrowserOrigin,
+    });
     store.set('gmailSenderPaused', true);
     this.revokeApprovals('Po restarcie wysyłka wymaga ponownego przeglądu');
     store.exec(

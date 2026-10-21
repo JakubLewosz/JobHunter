@@ -18,6 +18,7 @@ import { withNightflow } from '../../apps/server/src/nightflow-entry.js';
 import { ActiveTaskNightflowBrowserHost } from '../../apps/server/src/nightflow-browser-host.js';
 import { NightflowCoordinator } from '../../apps/server/src/nightflow.js';
 import { autoPolicySchema } from '../../apps/server/src/auto-policy.js';
+import { runLocalHostFixture } from '../../scripts/nightflow-host-fixture.mjs';
 
 const html = readFileSync('tests/fixtures/gmail-compose.html', 'utf8');
 function tab(page: Page): BrowserTab {
@@ -35,6 +36,59 @@ function tab(page: Page): BrowserTab {
     },
   };
 }
+for (const scenario of ['complete', 'stop', 'executor-loss', 'lost-ack'])
+  test('public nightflow entry on own localhost page: ' + scenario, async ({ page }) => {
+    test.setTimeout(90000);
+    await page.route('**/*', (route) =>
+      new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort(),
+    );
+    const handle = {
+      ...tab(page),
+      goto: (url: string) => page.goto(url),
+      close: () => page.close(),
+    };
+    if (scenario === 'lost-ack') {
+      const get = handle.playwright.getByRole;
+      handle.playwright.getByRole = (role, options) => {
+        const locator = get(role, options);
+        if (role === 'button' && String(options.name).startsWith('Wyślij')) {
+          const click = locator.click.bind(locator);
+          locator.click = async () => {
+            await click();
+            throw Error('SYNTHETIC_ACK_LOST');
+          };
+        }
+        return locator;
+      };
+    }
+    const report = await runLocalHostFixture({
+      tab: handle,
+      taskId: 'node-e2e-owned-task',
+      scenario,
+    });
+    expect(report.level).toBe('NODE_PUBLIC_ENTRY_LOCAL_PAGE');
+    expect(report.result.attempts).toBeLessThanOrEqual(1);
+    expect(Object.values(report.cleanup).every(Boolean)).toBe(true);
+    if (scenario === 'complete') {
+      expect(report.result.state).toBe('COMPLETED');
+      expect(report.result.browserActions).toBe(1);
+      await expect(page.locator('#click-count')).toHaveText('1');
+    } else if (scenario === 'stop') {
+      expect(report.result.state).toBe('STOPPED');
+      expect(report.result.browserActions).toBe(0);
+      expect(report.samples.some((s: any) => s.stop?.acknowledgement === 'AUTHORITY_REVOKED')).toBe(
+        true,
+      );
+    } else {
+      expect(report.result.state).not.toBe('COMPLETED');
+      if (scenario === 'lost-ack') {
+        expect(report.result.browserActions).toBe(1);
+        expect(report.result.attemptStates).toEqual([{ state: 'SEND_UNKNOWN', n: 1 }]);
+        expect(report.result.deliveryStates).toEqual([{ state: 'SEND_UNKNOWN', n: 1 }]);
+        await expect(page.locator('#click-count')).toHaveText('1');
+      }
+    }
+  });
 async function fixturePage(page: Page, query = '') {
   await page.route('**/*', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: html }),

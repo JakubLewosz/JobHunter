@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "level": "NODE_PUBLIC_ENTRY_LOCAL_PAGE",
+  "scenario": "complete",
+  "environment": {
+    "platform": "win32",
+    "node": "v24.19.0",
+    "release": "10.0.26300"
+  },
+  "code": {
+    "kind": "BUILD",
+    "sourceSha": "c03161ba5b086fd625648f54eb9527a7b3032883",
+    "sourceTreeHash": "2215829e4b7ca0efa3612338c2f75ea7bece09fc83a3b191aaa2925bc9982b3a",
+    "buildId": "8c6b7ae2-5eaa-4ab1-a6c8-31e2125b5e1c",
+    "loadedCodeHash": "91c424458ced6876c9a882fe7942af81c1a9a2318bc9dff2f6be369313c6cb59",
+    "loadedAt": "2026-10-21T08:31:51.345Z"
+  },
+  "startedAt": "2026-10-21T08:31:54.258Z",
+  "endedAt": "2026-10-21T08:32:29.878Z",
+  "elapsedMs": 35620.020500000006,
+  "wallClock": false,
+  "intendedResearchHours": 8,
+  "result": {
+    "fixture": true,
+    "clock": "ACCELERATED",
+    "jobId": "cc01c352-f6d7-457e-bfcd-a16028db1e99",
+    "planId": "fixture-nightflow-v1",
+    "planVersion": 1,
+    "state": "COMPLETED",
+    "reason": "COMPLETED",
+    "deadline": "2026-10-18T18:00:00.000Z",
+    "researchSessionId": "93b50d18-26ac-4d9c-a58f-568de10fda43",
+    "batchId": "c8fc6e32-8798-4aa5-ba13-b2564eb83f5c",
+    "counts": {
+      "total": 1,
+      "sent": 1,
+      "remaining": 0,
+      "skipped": 0,
+      "needsPreparation": 0,
+      "uncertain": 0
+    },
+    "checkpoint": {
+      "refreshed": [
+        "36e7622c-de6b-41e7-be51-b86e1cecfeef"
+      ],
+      "checked": [
+        "36e7622c-de6b-41e7-be51-b86e1cecfeef"
+      ],
+      "researchOutcome": {
+        "sessionId": "93b50d18-26ac-4d9c-a58f-568de10fda43",
+        "deadline": "2026-10-18T18:00:00.000Z",
+        "reason": "DEADLINE",
+        "finalGuard": "2026-10-18T18:00:00.000Z"
+      },
+      "researchComplete": true,
+      "phaseGuardFinishedAt": "2026-10-18T18:00:00.000Z"
+    },
+    "authority": false,
+    "host": {
+      "heartbeats": 3,
+      "maxHeartbeatGapMs": 10088.549299999999,
+      "connected": false,
+      "closed": true
+    },
+    "attempts": 1,
+    "browserActions": 1,
+    "attemptStates": [
+      {
+        "state": "SENT_PROVIDER",
+        "n": 1
+      }
+    ],
+    "deliveryStates": [
+      {
+        "state": "ACKNOWLEDGED",
+        "n": 1
+      }
+    ]
+  },
+  "events": [
+    {
+      "event": "LOCK_ACQUIRED",
+      "elapsedMs": 51.922799999999825
+    },
+    {
+      "event": "STORE_READY",
+      "elapsedMs": 152.9693000000002
+    },
+    {
+      "event": "SERVICE_READY",
+      "elapsedMs": 203.5709999999999
+    },
+    {
+      "event": "FIXTURE_READY",
+      "elapsedMs": 535.0675000000001
+    },
+    {
+      "event": "PHASE_REFRESHING",
+      "elapsedMs": 678.9097999999999
+    },
+    {
+      "event": "PHASE_RESEARCHING",
+      "elapsedMs": 739.4589000000001
+    },
+    {
+      "event": "PHASE_VALIDATING",
+      "elapsedMs": 32924.656
+    },
+    {
+      "event": "PHASE_CLOSING",
+      "elapsedMs": 33014.31540000001
+    },
+    {
+      "event": "PHASE_WAITING_WINDOW",
+      "elapsedMs": 33071.104600000006
+    },
+    {
+      "event": "PHASE_SENDING",
+      "elapsedMs": 33086.464900000006
+    },
+    {
+      "event": "CLEANUP_BEGIN",
+      "elapsedMs": 35541.5206
+    },
+    {
+      "event": "CONTROL_CLOSED",
+      "elapsedMs": 35542.2134
+    },
+    {
+      "event": "WORKER_CLOSED",
+      "elapsedMs": 35545.175
+    },
+    {
+      "event": "HOST_CLOSED",
+      "elapsedMs": 35602.595
+    },
+    {
+      "event": "STORE_CLOSED",
+      "elapsedMs": 35614.260200000004
+    },
+    {
+      "event": "LOCK_RELEASED",
+      "elapsedMs": 35616.4268
+    }
+  ],
+  "samples": [
+    {
+      "elapsedMs": 943.3853000000004,
+      "source": "LIVE_OWNER",
+      "target": {
+        "instanceId": "a023147b-c097-47c8-bf2d-bfc745af4975",
+        "jobId": "cc01c352-f6d7-457e-bfcd-a16028db1e99",
+        "generation": "cb6b96cd-8d29-436c-b2d5-194d54c3e17e"
+      },
+      "state": "RESEARCHING"
+    }
+  ],
+  "cleanup": {
+    "profileLockReleased": true,
+    "controlClosed": true,
+    "browserClosed": true,
+    "localPageClosed": true,
+    "fixtureDirectoryRemoved": true
+  }
+}

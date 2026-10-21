@@ -14,6 +14,9 @@ export class ActiveTaskNightflowBrowserHost implements NightflowHost {
   private heartbeat?: Promise<void>;
   private closing = false;
   private onLost?: () => void;
+  private heartbeats = 0;
+  private lastHeartbeat?: number;
+  private maxHeartbeatGapMs = 0;
   constructor(
     profileDir: string,
     readonly taskId: string,
@@ -23,6 +26,7 @@ export class ActiveTaskNightflowBrowserHost implements NightflowHost {
       timer.unref();
       return () => clearInterval(timer);
     },
+    private fixtureOrigin?: string,
   ) {
     if (!taskId) throw Error('BROWSER_TASK_REQUIRED');
     this.client = new BrowserExecutorClient(profileDir);
@@ -31,6 +35,7 @@ export class ActiveTaskNightflowBrowserHost implements NightflowHost {
     if (this.used || this.connected) throw Error('BROWSER_HOST_BUSY');
     await this.client.probe();
     this.connected = true;
+    this.lastHeartbeat = performance.now();
     this.cancelHeartbeat = this.schedule(() => this.keepAlive());
   }
   setLossHandler(handler?: () => void) {
@@ -41,7 +46,12 @@ export class ActiveTaskNightflowBrowserHost implements NightflowHost {
     if (!this.connected || this.closing) return Promise.reject(Error('BROWSER_HOST_LOST'));
     this.heartbeat = this.client
       .probe()
-      .then(() => {})
+      .then(() => {
+        const now = performance.now();
+        this.maxHeartbeatGapMs = Math.max(this.maxHeartbeatGapMs, now - this.lastHeartbeat!);
+        this.lastHeartbeat = now;
+        this.heartbeats++;
+      })
       .catch(() => {
         this.connected = false;
         this.cancelHeartbeat?.();
@@ -66,6 +76,14 @@ export class ActiveTaskNightflowBrowserHost implements NightflowHost {
   ready() {
     return this.connected && !this.used;
   }
+  diagnostics() {
+    return {
+      heartbeats: this.heartbeats,
+      maxHeartbeatGapMs: this.maxHeartbeatGapMs,
+      connected: this.connected,
+      closed: this.closing,
+    };
+  }
   async run(signal: AbortSignal, scope: BrowserExecutionScope) {
     if (!this.ready() || scope.kind !== 'BATCH') throw Error('BROWSER_HOST_REQUIRED');
     this.used = true;
@@ -75,6 +93,7 @@ export class ActiveTaskNightflowBrowserHost implements NightflowHost {
       undefined,
       undefined,
       scope,
+      this.fixtureOrigin,
     );
     try {
       while (!signal.aborted) {

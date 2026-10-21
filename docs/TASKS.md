@@ -1,5 +1,30 @@
 # Bieżące zadania — 18 października 2026
 
+## R14 / CLI / host — 21 października 2026
+
+- [x] Przeczytano nowy raport/dowody/propozycję regresji c03161ba, zweryfikowano
+      20 plików manifestu ZIP-a. Rzeczywista baza pracy c03161ba, osobny worktree.
+- [x] R14: Stop wymaga związanego ACK; brak odpowiedzi nie staje się sukcesem
+      odczytu. Status UNKNOWN jest oddzielony od zapisu PERSISTED_SNAPSHOT.
+- [x] Natywne regresje rzeczywistego IPC/CLI, scope, utraconych/uszkodzonych ACK,
+      readonly i koordynatora z kompletnym fikcyjnym transportem.
+- [x] Zaplanowane trzy pomiary przed/po, nadzór procesu z zachowaniem 30 s,
+      fazy/cleanup/exit w bezpiecznym kanale i artefakty backendu CI przy awarii.
+- [x] Publiczne wejście z kompletną nową fixture i własnym localhost; Node E2E
+      zakończenia/Stop/utraty wykonawcy/niepewnej jednej akcji.
+- [x] Finalny Windows check: 761/761 backend, 12/12 Stop, typecheck/build,
+      26/26 UI, exit 0, 223 identyczne testowane pliki przed/po. Pierwszy
+      pełny FAIL 760/761 zachowany; poprawiono wyłącznie zegar fixture okna.
+- [ ] Osiem godzin rzeczywistego hosta: HOST_TEST_NOT_RUN. Import w bieżącym VM
+      zatrzymuje się w zależności Node (`process is not defined`, nodemailer).
+      Najpierw krótki `runLocalHostFixture` w hoście obsługującym Node + tab,
+      następnie wallClock:true; dokładne wejście w NIGHTFLOW_HOST_FIXTURE.
+- [ ] Kontrolowana aktualizacja i osobno dopuszczony pilot pozostają poza zleceniem.
+
+Końcowy Windows check, commit/CI i ZIP są rejestrowane w
+[raporcie R14](reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md); poniżej historyczny stan
+18/19.10, z zachowaniem pierwszych FAIL.
+
 ## Windows nightflow — gałąź napraw
 
 - [x] Osobny worktree i syntetyczne dane; brak odczytu/migracji prywatnej bazy,
@@ -15,11 +40,10 @@
       drzewo Git, wszystkie 216 testowanych plików i ponowne wypakowanie.
       Patch odtwarza 376 plików; osobna kopia ZIP: npm ci/build/fixture PASS.
       Metadane finalnego przekazania są dopisywane po commicie w paczce.
-- [ ] **CI FAILURE / UNKNOWN_LOGS_UNAVAILABLE**: istniejący run 39171469775,
-      job 117805244708, krok npm run check, exit 1. REST logów 403, browser
-      wymaga logowania, połączone narzędzie niedostępne. Odczytać konkretny log
-      przez autoryzowany dostęp, odtworzyć pierwszą błędną asercję syntetycznie,
-      naprawić i ponowić wymagane kontrole; bez zmiany progów/ślepego retry.
+- [x] Ustalono pierwszą błędną asercję CI 39171469775 / 117805244708 z nowego
+      przeglądu: timeout procesu CLI 30000 ms, status null wobec 0. Historyczny
+      FAIL pozostaje; brak dawnego error.code/signal nie rozstrzyga fazy.
+      Dodano nowe pomiary i diagnostykę; nie zmieniono progów Stop/fixture/lease.
 - [ ] Przed prawdziwym użyciem: zatwierdzone ustawienia planu, spójny backup,
       rozstrzygnięcie starego PAUSED, kontrolowana aktualizacja/audyt/odnowienie,
       utrzymanie rzeczywistego hosta browser i osobno dopuszczony pilot.

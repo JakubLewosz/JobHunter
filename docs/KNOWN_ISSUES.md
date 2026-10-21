@@ -2,10 +2,20 @@
 
 Bieżący etap: [R1–R13 i nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Status rzeczywistego hosta: **WIP / NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.
-Pierwszy CI gałęzi napraw: **FAILURE** (run 39171469775, job 117805244708,
-npm run check exit 1). Przyczyna nieustalona: logi wymagają niedostępnego
-autoryzowanego dostępu, publiczny odczyt zwraca 403. Lokalny Windows PASS
-nie rozstrzyga tej porażki. Dokładny następny krok zapisano w TASKS.
+Aktualizacja 21.10.2026: R14 i kontrakt niepotwierdzonego Stop opisano w
+[NIGHTFLOW_CONTROL](NIGHTFLOW_CONTROL.md), fixture i ograniczenie hosta w
+[NIGHTFLOW_HOST_FIXTURE](NIGHTFLOW_HOST_FIXTURE.md). Nowy wynik kodu:
+[raport R14](reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md).
+Pierwszy CI zachowuje **FAILURE** (39171469775 / 117805244708), 720/721 backend.
+Przegląd c03161ba odczytał log: test procesu nightflow CLI, status null wobec 0,
+30034,9529 ms przy spawnSync timeout 30000. Szczegółowej przyczyny fazy nie
+ustalono; nie jest to błąd benchmarku Stop. Dawne UNKNOWN_LOGS_UNAVAILABLE
+jest nieaktualne. Bazowy c03161ba ma osobny CI PASS (39173019427), potwierdzony
+także publicznym API 21.10; sama zmiana dokumentacji nie naprawiała timeoutu.
+Nowe pomiary i bounded diagnostyka asynchronicznego nadzoru są w raporcie R14.
+Finalny lokalny check R14 ma PASS: 761 backend / 12 Stop / 26 UI. Nie
+odtworzono timeoutu CLI; szczegółowej dawnej przyczyny nie uznano za naprawioną
+na podstawie samego PASS. Host public entry i jego 8 h nadal HOST_TEST_NOT_RUN.
 Poprawki oraz testy syntetyczne nie aktualizują prywatnej instalacji.
 Otwarte pozostają: produkcyjne ustawienia/zgoda planu, rozstrzygnięcie dawnego
 PAUSED po backupie, kontrolowana aktualizacja, faktyczne odnowienie biblioteki,

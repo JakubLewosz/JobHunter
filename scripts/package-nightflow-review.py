@@ -20,18 +20,20 @@ def git(*args):
 
 def safe_name(name):
     path = pathlib.PurePosixPath(name)
-    if not name or "\\" in name or path.is_absolute() or ".." in path.parts or re.match(r"^[A-Za-z]:", name):
+    if not name or "\\" in name or ":" in name or path.is_absolute() or ".." in path.parts:
         raise ValueError("UNSAFE_ARCHIVE_PATH")
     return path
 
 
 def inspect(archive):
     names = set()
+    folded = set()
     for entry in archive.infolist():
         safe_name(entry.filename)
-        if entry.filename in names or stat.S_ISLNK(entry.external_attr >> 16):
+        if entry.filename.casefold() in folded or stat.S_ISLNK(entry.external_attr >> 16):
             raise ValueError("DUPLICATE_OR_SYMLINK")
         names.add(entry.filename)
+        folded.add(entry.filename.casefold())
     return names
 
 
@@ -41,7 +43,13 @@ parser.add_argument("--commit", required=True)
 parser.add_argument("--evidence", required=True)
 parser.add_argument("--output", required=True)
 parser.add_argument("--ci", required=True)
+parser.add_argument("--report", default="docs/reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md")
+parser.add_argument("--extra-evidence")
+parser.add_argument("--label", default="windows_nightflow")
 args = parser.parse_args()
+safe_name(args.report)
+if not re.fullmatch(r"[A-Za-z0-9_-]{1,50}", args.label):
+    raise ValueError("INVALID_LABEL")
 if not all(re.fullmatch(r"[0-9a-f]{40}", ref) for ref in [args.base, args.commit]):
     raise ValueError("EXACT_COMMIT_REQUIRED")
 if git("rev-parse", "HEAD").decode().strip() != args.commit:
@@ -96,12 +104,24 @@ for entry in tested["files"]:
 review = package / "review"
 review.mkdir()
 ci = json.loads(pathlib.Path(args.ci).read_text(encoding="utf-8"))
-report = (package / "source/docs/reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md").read_text(encoding="utf-8")
+report = (package / "source" / args.report).read_text(encoding="utf-8")
 (review / "REPORT.md").write_text(report + "\n\n## Metadane przekazania\n\n" + f"Baza `{args.base}`, finalny commit `{args.commit}`.\n\nCI dla finalnego SHA:\n\n```json\n" + json.dumps(ci, indent=2, ensure_ascii=False) + "\n```\n", encoding="utf-8")
 (review / "changes.patch").write_bytes(git("diff", "--binary", "--full-index", args.base, args.commit, "--"))
 for name in ["test-summary.json", "source-files.json", "stop-measurements.json"]:
     (review / name).write_bytes((evidence / name).read_bytes())
 (review / "ci.json").write_text(json.dumps(ci, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+(review / "COMMIT.json").write_text(json.dumps({"base": args.base, "commit": args.commit,
+    "url": f"https://github.com/JakubLewosz/JobHunter/commit/{args.commit}",
+    "sourceFingerprint": tested["fingerprint"]}, indent=2) + "\n", encoding="utf-8")
+if args.extra_evidence:
+    extra = pathlib.Path(args.extra_evidence).resolve()
+    target = review / "evidence"
+    target.mkdir()
+    for path in sorted(extra.iterdir()):
+        if path.is_symlink() or not path.is_file() or path.suffix.lower() not in [".json", ".txt", ".png"]:
+            raise ValueError("UNREVIEWED_EXTRA_EVIDENCE")
+        safe_name(path.name)
+        (target / path.name).write_bytes(path.read_bytes())
 history = evidence.parent / "verification-history.json"
 if history.exists():
     (review / "verification-history.json").write_bytes(history.read_bytes())
@@ -136,7 +156,7 @@ for path in sorted(package.rglob("*")):
         data = path.read_bytes()
         manifest.append({"path": path.relative_to(package).as_posix(), "bytes": len(data), "sha256": digest(data)})
 (package / "FILE_MANIFEST.json").write_text(json.dumps({"schema": 1, "base": args.base, "commit": args.commit, "selfHash": "OMITTED", "files": manifest}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-zip_path = output / f"JobHunter_windows_nightflow_{args.commit[:12]}_review.zip"
+zip_path = output / f"JobHunter_{args.label}_{args.commit[:12]}_review.zip"
 with zipfile.ZipFile(zip_path, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
     for path in sorted(package.rglob("*")):
         if path.is_file():
@@ -153,6 +173,22 @@ for entry in manifest:
     data = (verified / entry["path"]).read_bytes()
     if len(data) != entry["bytes"] or digest(data) != entry["sha256"]:
         raise ValueError("EXTRACTED_MANIFEST_MISMATCH")
-result = {"schema": 1, "zip": zip_path.name, "bytes": zip_path.stat().st_size, "sha256": digest(zip_path.read_bytes()), "commit": args.commit, "sourceFiles": len(tree), "manifestFiles": len(manifest), "testedCodeFilesVerified": len(tested["files"]), "safePaths": True, "reExtracted": True, "gitBlobsVerified": True, "manifestVerified": True}
+# Independently reconstruct the final tree from the real base and binary patch.
+patch_copy = pathlib.Path(tempfile.mkdtemp(prefix="patch-verified-", dir=output))
+base_zip = stage / "base.zip"
+subprocess.check_call(["git", "archive", "--format=zip", f"--output={base_zip}", args.base])
+with zipfile.ZipFile(base_zip) as archive:
+    inspect(archive)
+    archive.extractall(patch_copy)
+subprocess.check_call(["git", "init", "--quiet", str(patch_copy)])
+subprocess.check_call(["git", "apply", "--check", str(review / "changes.patch")], cwd=patch_copy)
+subprocess.check_call(["git", "apply", str(review / "changes.patch")], cwd=patch_copy)
+rebuilt = {p.relative_to(patch_copy).as_posix() for p in patch_copy.rglob("*") if p.is_file() and ".git" not in p.relative_to(patch_copy).parts}
+if rebuilt != set(tree):
+    raise ValueError("PATCH_FILE_SET_MISMATCH")
+for path in tree:
+    if (patch_copy / path).read_bytes() != (verified / "source" / path).read_bytes():
+        raise ValueError("PATCH_RECONSTRUCTION_MISMATCH")
+result = {"schema": 1, "zip": zip_path.name, "bytes": zip_path.stat().st_size, "sha256": digest(zip_path.read_bytes()), "commit": args.commit, "sourceFiles": len(tree), "manifestFiles": len(manifest), "testedCodeFilesVerified": len(tested["files"]), "safePaths": True, "reExtracted": True, "gitBlobsVerified": True, "manifestVerified": True, "patchReconstructed": True, "patchFilesVerified": len(rebuilt)}
 (output / f"{zip_path.stem}.verification.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(result))

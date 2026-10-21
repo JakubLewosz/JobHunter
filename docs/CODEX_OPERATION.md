@@ -1,5 +1,12 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+Aktualny kontrakt z 21.10.2026: [NIGHTFLOW_CONTROL](NIGHTFLOW_CONTROL.md).
+`stop` bez ACK: exit 1 / STOP_UNCONFIRMED, brak potwierdzenia zatrzymania.
+`status` bez odpowiedzi właściciela: exit 1 / STATUS_UNAVAILABLE.
+`report` offline: źródło PERSISTED_SNAPSHOT i bieżące uprawnienie UNKNOWN.
+Żaden z tych wyników nie zezwala sam na maintenance/Start.
+[Gotowa kompletna fixture i ograniczenie rzeczywistego hosta](NIGHTFLOW_HOST_FIXTURE.md).
+
 ## Aktualna ścieżka Windows/nightflow
 
 [Pełny opis komend, planu, etapów i granic hosta](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).

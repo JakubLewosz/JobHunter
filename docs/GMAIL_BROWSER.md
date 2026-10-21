@@ -1,5 +1,11 @@
 # Gmail w przeglądarce Codexa
 
+Aktualizacja 21.10.2026: [lokalna kompletna fixture publicznego wejścia](NIGHTFLOW_HOST_FIXTURE.md),
+[kontrakt Stop/status/report](NIGHTFLOW_CONTROL.md). Test Node/Playwright oraz
+narzędzie lokalnej strony są oddzielnymi dowodami. Próba importu w rzeczywistym
+hoście zakończyła się błędem środowiska zależności Node; pełna integracja hosta
+i jego osiem godzin nadal mają status HOST_TEST_NOT_RUN. Gmaila nie uruchamiano.
+
 Nowy punkt wejścia całej sekwencji: `scripts/browser-executor.mjs:runNightflowTask`
 z istniejącym taskId/tab oraz zatwierdzonym planem. Przekazuje wynik researchu
 bezpośrednio do adaptera `ActiveTaskNightflowBrowserHost`. Scope zawiera backend,

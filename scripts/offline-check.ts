@@ -93,6 +93,7 @@ Object.assign(env, {
   NPM_CONFIG_USERCONFIG: join(root, 'npmrc'),
   NPM_CONFIG_CACHE: join(root, 'cache'),
   PLAYWRIGHT_BROWSERS_PATH: dirname(dirname(dirname(chromium.executablePath()))),
+  JOBHUNTER_TEST_DIAGNOSTICS_DIR: join(output, 'child-diagnostics'),
 });
 writeFileSync(
   env.GIT_CONFIG_GLOBAL!,
