@@ -106,6 +106,7 @@ export class CodexNightflowAdapter {
         this.state = state;
         if (['COMPLETED', 'STOPPED', 'PAUSED', 'NEEDS_RESOLUTION'].includes(state.current.state)) {
           await this.client.nightflow('ackResult', state.target);
+          this.resultAcknowledged = true;
           this.ended = true;
           return { status: state.current.state, completed: this.completed, current: state.current };
         }
@@ -141,7 +142,7 @@ export class CodexNightflowAdapter {
     this.ended = true;
     this.closing ??= (async () => {
       await this.pending?.catch(() => {});
-      if (this.probed) {
+      if (this.probed && !this.resultAcknowledged) {
         try {
           await this.client.release();
         } catch {

@@ -41,3 +41,18 @@ test('local fixture URL cannot select Gmail, remote targets, credentials or arbi
     assert.throws(() => localFixtureOrigin(value));
   assert.equal(localFixtureOrigin('http://127.0.0.1:1234'), 'http://127.0.0.1:1234');
 });
+
+test('wall-clock fixture waits for the native deadline after exhaustion without starting a job', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'jh-wall-clock-plan-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  await withNightflow(
+    { dir, fixture: true, fixtureWallClock: true },
+    async (coordinator, service, plan) => {
+      assert.equal(plan.researchHours, 8);
+      assert.equal(plan.exhaustion, 'WAIT_DEADLINE');
+      assert.equal(coordinator.status().authority, false);
+      assert.equal(service.store.one('SELECT count(*) n FROM nightflow_jobs')!.n, 0);
+      assert.equal(service.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+    },
+  );
+});

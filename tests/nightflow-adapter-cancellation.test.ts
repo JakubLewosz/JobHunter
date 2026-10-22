@@ -68,12 +68,15 @@ async function fixture(t: TestContext, action: (fixture: any) => Promise<void>, 
         releases++;
         return release(worker);
       };
+      let closing: Promise<void> | undefined;
       host.bind(
         coordinator,
         () => {
           work = coordinator.start(plan.id);
         },
-        () => {},
+        () => {
+          closing = broker.close();
+        },
       );
       await broker.listen();
       const counters = () => ({
@@ -106,6 +109,7 @@ async function fixture(t: TestContext, action: (fixture: any) => Promise<void>, 
         coordinator.stop();
         gate.release();
         await work;
+        await closing;
         host.dispose();
       }
     });
@@ -267,7 +271,7 @@ test('R15 IPC: normal public entry starts exactly once, completes one fake actio
       actions: 1,
       authority: false,
     });
-    assert.equal(current.releases(), 1);
+    assert.equal(current.releases(), 0);
     assert.equal(current.broker.status().connected, false);
   });
 });

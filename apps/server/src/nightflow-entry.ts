@@ -168,7 +168,7 @@ export async function withNightflow<T>(
         researchHours: 8,
         afterResearchHours: 24,
         discovery: true,
-        exhaustion: 'FINISH',
+        exhaustion: options.fixtureWallClock ? 'WAIT_DEADLINE' : 'FINISH',
         selection: 'VERIFIED_FIT_THEN_CHANNEL_THEN_AGE',
         maxItems: 10,
         limits: { daily: null, session: null, unlimitedExplicit: true },
