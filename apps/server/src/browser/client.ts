@@ -18,7 +18,13 @@ export class BrowserExecutorClient {
   private backendSecret?: string;
   private scope?: BrowserExecutionScope;
   constructor(private profileDir: string) {}
-  private async request(op: string, data: Record<string, unknown> = {}): Promise<any> {
+  private async request(
+    op: string,
+    data: Record<string, unknown> = {},
+    signal?: AbortSignal,
+    onDispatch?: () => void,
+  ): Promise<any> {
+    signal?.throwIfAborted();
     const profile = resolve(this.profileDir);
     let d: any;
     try {
@@ -43,6 +49,9 @@ export class BrowserExecutorClient {
       const socket = connect(d.address);
       let response = '',
         finished = false;
+      const aborted = () => socket.destroy(Error('BROWSER_CANCELLED'));
+      signal?.addEventListener('abort', aborted, { once: true });
+      if (signal?.aborted) aborted();
       socket.setEncoding('utf8');
       socket.setTimeout(10000, () => {
         socket.destroy();
@@ -57,11 +66,17 @@ export class BrowserExecutorClient {
           ),
         ),
       );
-      socket.on('connect', () =>
-        socket.write(
-          JSON.stringify({ secret: d.secret, workerId: this.workerId, op, ...data }) + '\n',
-        ),
-      );
+      socket.on('connect', () => {
+        if (signal?.aborted) return aborted();
+        try {
+          onDispatch?.();
+          socket.write(
+            JSON.stringify({ secret: d.secret, workerId: this.workerId, op, ...data }) + '\n',
+          );
+        } catch {
+          aborted();
+        }
+      });
       socket.on('data', (chunk) => {
         response += chunk;
         if (Buffer.byteLength(response) > 200000) {
@@ -80,6 +95,7 @@ export class BrowserExecutorClient {
         }
       });
       socket.on('close', () => {
+        signal?.removeEventListener('abort', aborted);
         if (!finished) reject(Error('BROWSER_BACKEND_CLOSED'));
       });
     });
@@ -89,11 +105,16 @@ export class BrowserExecutorClient {
     this.scope ??= state.scope;
     return state;
   }
-  probe() {
-    return this.request('attach');
+  probe(signal?: AbortSignal) {
+    return this.request('attach', {}, signal);
   }
-  nightflow(command: 'attach' | 'start' | 'poll' | 'ackResult', target?: unknown) {
-    return this.request('nightflow', { command, target });
+  nightflow(
+    command: 'attach' | 'start' | 'poll' | 'ackResult',
+    target?: unknown,
+    signal?: AbortSignal,
+    onDispatch?: () => void,
+  ) {
+    return this.request('nightflow', { command, target }, signal, onDispatch);
   }
   release() {
     return this.request('release');

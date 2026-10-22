@@ -33,18 +33,58 @@ export class CodexNightflowAdapter {
     this.busy = false;
     this.completed = 0;
   }
-  async connect() {
-    if (this.state || this.ended) throw Error('BROWSER_HOST_BUSY');
-    await this.tab.url();
-    await this.client.probe();
-    this.state = await this.client.nightflow('attach');
-    return this.state;
+  assertActive(signal) {
+    this.options.signal?.throwIfAborted();
+    this.signal?.throwIfAborted();
+    signal?.throwIfAborted();
+    if (this.ended) throw Error('BROWSER_HOST_BUSY');
   }
-  async start() {
-    if (!this.state || this.started || this.ended) throw Error('BROWSER_HOST_BUSY');
-    this.started = true; // never retry a possibly accepted Start
-    this.state = await this.client.nightflow('start', this.state.target);
-    return this.state;
+  async connect(signal = this.options.signal) {
+    this.assertActive(signal);
+    if (this.state || this.pending) throw Error('BROWSER_HOST_BUSY');
+    this.signal = signal;
+    const work = (async () => {
+      await this.tab.url();
+      this.assertActive(signal);
+      this.probed = true;
+      await this.client.probe(signal);
+      this.assertActive(signal);
+      this.state = await this.client.nightflow('attach', undefined, signal);
+      this.assertActive(signal);
+      return this.state;
+    })();
+    this.pending = work;
+    try {
+      return await work;
+    } catch (error) {
+      await this.close();
+      throw error;
+    } finally {
+      this.pending = undefined;
+    }
+  }
+  async start(signal = this.signal ?? this.options.signal) {
+    this.signal ??= signal;
+    this.assertActive(signal);
+    if (!this.state || this.started || this.pending) throw Error('BROWSER_HOST_BUSY');
+    const work = (async () => {
+      this.assertActive(signal);
+      this.state = await this.client.nightflow('start', this.state.target, signal, () => {
+        this.assertActive(signal);
+        this.started = true;
+      });
+      this.assertActive(signal);
+      return this.state;
+    })();
+    this.pending = work;
+    try {
+      return await work;
+    } catch (error) {
+      await this.close();
+      throw error;
+    } finally {
+      this.pending = undefined;
+    }
   }
   async segment(durationMs = 30000, signal) {
     if (this.busy || !this.started || this.ended) throw Error('BROWSER_HOST_BUSY');
@@ -54,11 +94,11 @@ export class CodexNightflowAdapter {
     const end = performance.now() + durationMs;
     try {
       while (performance.now() < end) {
-        signal?.throwIfAborted();
+        this.assertActive(signal);
         await this.tab.url();
-        signal?.throwIfAborted();
+        this.assertActive(signal);
         const state = await this.client.nightflow('poll', this.state.target);
-        signal?.throwIfAborted();
+        this.assertActive(signal);
         if (JSON.stringify(state.target) !== JSON.stringify(this.state.target))
           throw Error('BROWSER_SESSION_CHANGED');
         if (this.scope && JSON.stringify(state.scope) !== JSON.stringify(this.scope))
@@ -86,12 +126,12 @@ export class CodexNightflowAdapter {
       }
       return { status: 'WAITING', completed: this.completed, phase: this.state.current.state };
     } catch (error) {
-      this.ended = true;
-      await this.client.release().catch(() => {});
+      await this.close();
       return {
         status: 'STOPPED',
         code: /^[A-Z_]{1,80}$/.test(error.message) ? error.message : 'BROWSER_HOST_LOST',
         completed: this.completed,
+        authority: 'UNKNOWN',
       };
     } finally {
       this.busy = false;
@@ -99,7 +139,17 @@ export class CodexNightflowAdapter {
   }
   async close() {
     this.ended = true;
-    await this.client.release().catch(() => {});
+    this.closing ??= (async () => {
+      await this.pending?.catch(() => {});
+      if (this.probed) {
+        try {
+          await this.client.release();
+        } catch {
+          throw Error('BROWSER_RELEASE_UNCONFIRMED');
+        }
+      }
+    })();
+    return this.closing;
   }
 }
 
@@ -111,10 +161,11 @@ export async function runNightflowTask(input) {
   )
     throw Error('BROWSER_OWNER_OPTIONS_REQUIRED');
   const { dir, taskId, tab, signal, fixtureOrigin, onSegment } = input;
-  const adapter = new CodexNightflowAdapter(dir, taskId, tab, { fixtureOrigin });
+  signal?.throwIfAborted();
+  const adapter = new CodexNightflowAdapter(dir, taskId, tab, { fixtureOrigin, signal });
   try {
-    await adapter.connect();
-    await adapter.start();
+    await adapter.connect(signal);
+    await adapter.start(signal);
     let result;
     do {
       result = await adapter.segment(30000, signal);
