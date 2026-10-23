@@ -10,6 +10,8 @@ import { runLibraryRefresh } from '../apps/server/src/research/library-refresh-e
 import { ManyReader, ManyRunner } from './auto-fixture.js';
 import { DomainError } from '../apps/server/src/util.js';
 import { createHash } from 'node:crypto';
+import { conditionKeys } from '../apps/server/src/research/contracts.js';
+import { hash } from '../apps/server/src/util.js';
 
 async function fixture(t: any, auto = true) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-independent-refresh-'));
@@ -370,4 +372,122 @@ test('owner lost during semantic review cannot write even error/cleanup rows und
   assert.ok(atLoss);
   assert.equal(digest(), atLoss);
   assert.equal(result.lockReleased, false);
+});
+
+test('independent AUTO-library renewal preserves a rejected role and can prepare a separate proved GENERAL company inquiry', async (t) => {
+  const f = await fixture(t),
+    selected = f.selected[0],
+    original = f.runner.run.bind(f.runner);
+  f.reader.read = async (url, signal) => {
+    signal?.throwIfAborted();
+    const n = new URL(url).hostname.match(/fixture(\d+)/)![1];
+    const text = `Fixture Company ${n}. Tworzymy aplikacje webowe, automatyzacje i integracje API. Aktualnie poszukujemy Mid PHP. Praca wyłącznie stacjonarna. Pełen etat. Wymagane trzy lata doświadczenia. Kontakt ogólny: biuro@fixture${n}.example.test.`;
+    return {
+      id: 'new-source-' + n,
+      original_url: url,
+      final_url: url,
+      title: 'Fixture Company ' + n,
+      fetched_at: new Date().toISOString(),
+      method: 'TEST_FIXTURE',
+      status: 'READ',
+      http_status: 200,
+      text,
+      fragment: text,
+      content_hash: hash(text + url),
+      error: null,
+    };
+  };
+  f.runner.run = async (prompt, schema, options) => {
+    const result = await original(prompt, schema, options);
+    if (prompt.includes('Wydobądź firmę')) {
+      const sources = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)),
+        sid = sources[0].id;
+      const n = new URL(sources[0].url).hostname.match(/fixture(\d+)/)![1];
+      const proof = (quote: string) => ({
+        sourceId: sid,
+        quote,
+        explanation: 'Literal synthetic proof.',
+      });
+      const value: any = result.value;
+      value.title = 'Mid PHP';
+      value.titleProof = proof('Mid PHP');
+      value.type = 'ACTIVE';
+      value.typeProof = proof('Aktualnie poszukujemy Mid PHP.');
+      value.companyActivities = [
+        proof('Tworzymy aplikacje webowe, automatyzacje i integracje API.'),
+      ];
+      value.inquiryBasis = value.companyActivities[0];
+      value.requirements = [
+        {
+          text: 'Trzy lata doświadczenia',
+          sourceId: sid,
+          quote: 'Wymagane trzy lata doświadczenia.',
+        },
+      ];
+      value.conditions = Object.fromEntries(
+        conditionKeys.map((k) => [
+          k,
+          { value: 'unknown', sourceId: null, quote: null, explanation: 'Nieustalone.' },
+        ]),
+      );
+      value.conditions.active = {
+        value: 'yes',
+        scope: 'OFFER',
+        ...proof('Aktualnie poszukujemy Mid PHP.'),
+      };
+      value.conditions.remote = {
+        value: 'no',
+        scope: 'OFFER',
+        ...proof('Praca wyłącznie stacjonarna.'),
+      };
+      value.conditions.partTime = { value: 'no', scope: 'OFFER', ...proof('Pełen etat.') };
+      value.conditions.junior = {
+        value: 'no',
+        scope: 'OFFER',
+        ...proof('Wymagane trzy lata doświadczenia.'),
+      };
+      value.contact = {
+        email: `biuro@fixture${n}.example.test`,
+        kind: 'GENERAL',
+        proof: proof(`Kontakt ogólny: biuro@fixture${n}.example.test.`),
+      };
+      result.value = schema.parse(value);
+    }
+    return result;
+  };
+  const result = await runLibraryRefresh({ ...f.options, draftIds: [selected.id] });
+  assert.equal(result.reason, 'COMPLETED');
+  const details = f.read((db) => {
+    const item = db
+      .prepare('SELECT * FROM research_items WHERE run_id=?')
+      .get(result.results[0].runId) as any;
+    return {
+      stage: item?.stage,
+      error: item?.error,
+      analysis: item?.analysis,
+      state: db
+        .prepare('SELECT key,value FROM app_state WHERE key IN (?,?)')
+        .all('researchContactIntent:' + item?.id, 'draftDisposition:' + item?.id),
+    };
+  });
+  assert.equal(result.results[0].code, 'CHECKED', JSON.stringify(details));
+  const current = f.read((db) =>
+    db
+      .prepare('SELECT d.*,t.kind FROM drafts d JOIN contacts t ON t.id=d.contact_id WHERE d.id=?')
+      .get(selected.id),
+  ) as any;
+  assert.ok(current.version > selected.version);
+  assert.equal(current.kind, 'GENERAL');
+  assert.ok(current.body.includes('automatyzacje i integracje API'));
+  assert.ok(!current.body.includes('ofertę Junior'));
+  assert.equal(
+    f.read(
+      (db) =>
+        (db.prepare("SELECT count(*) n FROM opportunities WHERE decision='REJECTED'").get() as any)
+          .n,
+    ),
+    1,
+  );
+  assert.deepEqual(f.protectedSnapshot(), f.before);
+  assert.equal(result.preserved, true);
 });

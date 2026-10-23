@@ -54,3 +54,11 @@ Trzy nowe regresje obejmują brak pór dnia, jawnie zatwierdzone pory oraz
 zachowanie godzin wymaganych w źródle. Przed poprawką 0/3, po poprawce
 celowane 67/67 PASS. Pełny check dokładnego nowego kodu jest osobnym wynikiem;
 badawcze zapisy czekają na jego zakończenie. Nie zwiększono limitów parsera.
+
+Regresja osobnego zapytania badawczego z GENERAL odtwarza też niedopasowaną
+ofertę ACTIVE przy trwałym AUTO_POLICY: oferta pozostaje REJECTED, ale
+udokumentowane niezależne zapytanie korzysta z możliwości researchu, a nie
+literalnej nazwy trybu. Nie przyjmuje zakresu pilota ani prawa nadawania.
+Przed tą korektą test zwracał DRAFT_MATERIAL_STALE; pierwszy fixture miał
+oddzielny błąd schematu (INVALID_MODEL_RESULT), zachowany w logu. Nieukończony
+check poprawki godzin przerwano przed tą uzupełniającą zmianą; nie jest PASS.

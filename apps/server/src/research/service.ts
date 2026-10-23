@@ -2457,7 +2457,7 @@ export class ResearchJobHunter extends JobHunter {
       analysis.contact.email?.toLowerCase() === o.email;
     const blocked = this.companyHistoryBlocked(o.company_id);
     const separateInquiry =
-      this.mode === 'RESEARCH_ONLY' &&
+      this.researchOnlySession() &&
       analysis.type === 'ACTIVE' &&
       analysis.conditions.active.value === 'yes' &&
       eligibility.allowed &&
