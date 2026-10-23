@@ -22,6 +22,10 @@
 - [x] Po potwierdzonym anulowaniu CI ca79c2e przez limit 25 minut zwiększono
       budżet całego joba do 40 minut; progi Stop i komplet testów bez zmian.
       Nowe wykonanie i SHA mają osobne metadane, bez ponawiania starego runa.
+- [x] Odtworzono nieosiągalną barierę testu IPC po wcześniejszym Stop. Oczekiwanie
+      odrzuca teraz przedwczesny koniec ownera; REFRESHING zastępuje VALIDATING
+      jako bariera testowa. Nowa regresja cleanup, 51/51 celowanych PASS.
+      To niezależny dowód słabości testu, nie ustalona przyczyna anulowania CI.
 
 [Raport bieżącego wykonania](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
 

@@ -15,6 +15,10 @@ Nie wdrożono WORKSTATION ani nie zatwierdzono pilota lub prawdziwych materiał�
 CI ca79c2e anulowano po 25 minutach (potwierdzona adnotacja GitHub), mimo lokalnego
 pełnego PASS. Budżet joba zwiększono do 40 minut; testy i progi Stop zachowano.
 Stan CI nowego finalnego SHA jest osobnym wynikiem w metadanych przekazania.
+Osobno odtworzono ryzyko nierozstrzygniętego oczekiwania nowych testów R15 na
+VALIDATING po wcześniejszym zakończeniu ownera. Bariera jest teraz w REFRESHING,
+a zakończenie ownera przerywa oczekiwanie i prowadzi do cleanup; 51/51 celowanych
+regresji PASS. Bez logów wymagających logowania nie przypisujemy temu anulowań CI.
 
 Bieżący etap: [R1–R13 i nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Status rzeczywistego hosta: **WIP / NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.

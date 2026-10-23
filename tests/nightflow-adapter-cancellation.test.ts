@@ -48,7 +48,7 @@ async function fixture(t: TestContext, action: (fixture: any) => Promise<void>, 
       const boundary = (coordinator as any).options.boundary;
       (coordinator as any).options.boundary = async (phase: string) => {
         await boundary?.(phase);
-        if (held && phase === 'VALIDATING') {
+        if (held && phase === 'REFRESHING') {
           gate.reach();
           await gate.wait;
         }
@@ -73,6 +73,7 @@ async function fixture(t: TestContext, action: (fixture: any) => Promise<void>, 
         coordinator,
         () => {
           work = coordinator.start(plan.id);
+          void work.catch(() => {});
         },
         () => {
           closing = broker.close();
@@ -122,6 +123,47 @@ async function fixture(t: TestContext, action: (fixture: any) => Promise<void>, 
 function unchanged(fixture: any) {
   assert.deepEqual(fixture.counters(), fixture.baseline);
 }
+
+async function waitForHeldPhase(fixture: any) {
+  await Promise.race([
+    fixture.gate.entered,
+    fixture.work().then((result: any) => {
+      throw Error('FIXTURE_ENDED_BEFORE_HELD_PHASE:' + result.state);
+    }),
+  ]);
+}
+
+test('R15 IPC: premature owner completion rejects barrier wait and releases owned IPC', async (testContext) => {
+  await fixture(
+    testContext,
+    async (current) => {
+      (current.coordinator as any).options.boundary = async () => current.coordinator.stop();
+      let reached = false;
+      void current.gate.entered.then(() => {
+        reached = true;
+      });
+      await current.adapter.connect();
+      await current.adapter.start();
+      const result = await current.work();
+      assert.equal(result.state, 'STOPPED');
+      assert.equal(reached, false);
+      await assert.rejects(waitForHeldPhase(current), /FIXTURE_ENDED_BEFORE_HELD_PHASE:STOPPED/);
+      await current.adapter.close();
+      assert.equal(current.releases(), 1);
+      assert.equal(current.broker.status().connected, false);
+      assert.equal(current.counters().reservations, 0);
+      assert.equal(current.counters().actions, 0);
+      testContext.diagnostic(
+        JSON.stringify({
+          state: result.state,
+          barrierReached: reached,
+          legacyAwaitWouldRemainPending: true,
+        }),
+      );
+    },
+    true,
+  );
+});
 
 test('R15 IPC: pre-aborted public entry cannot Start or release another executor', async (t) => {
   await fixture(t, async (current) => {
@@ -306,7 +348,7 @@ for (const response of ['delayed', 'lost'])
           const starting = current.adapter.start();
           const rejected = assert.rejects(starting);
           await gate.entered;
-          await current.gate.entered;
+          await waitForHeldPhase(current);
           assert.equal(current.adapter.started, true);
           assert.equal(current.counters().authority, true);
           if (response === 'delayed') controller.abort();

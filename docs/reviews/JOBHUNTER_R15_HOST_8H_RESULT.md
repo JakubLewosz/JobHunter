@@ -28,10 +28,22 @@ zachowując pierwszy wynik. Nie zmieniono progów Stop ani istniejących testów
 Po pierwszym pełnym check poprawiono wyścig: po potwierdzonym ackResult owner
 zamyka IPC, więc adapter nie wykonuje dodatkowego release przez zamykany kanał.
 Niepotwierdzony cleanup przy przerwaniu nadal zgłasza błąd. Końcowy kod aplikacji
-i testów: **83323636e6e6bd236b62e3bd28b2a449d8a000f4**. Po korekcie: 18/18
+i testów użyty w rzeczywistym hoście: **83323636e6e6bd236b62e3bd28b2a449d8a000f4**. Po korekcie: 18/18
 celowanych testów natywnych (R15, host, fixture) i 4/4 publicznych scenariuszy UI
 complete/stop/executor-loss/lost-ack. Wall-clock fixture korzysta z istniejącego
 WAIT_DEADLINE; zwykła krótka fixture pozostaje FINISH. Nie zmieniono produkcyjnych planów.
+
+Po zakończeniu 8 h odtworzono osobną słabość nowych testów IPC: zatrzymany
+koordynator może zakończyć się przed barierą VALIDATING, a samo oczekiwanie
+gate.entered wtedy pozostaje nierozstrzygnięte. Kontrolowany wcześniejszy Stop
+potwierdził STOPPED, barrierReached=false i brak rezerwacji/akcji. Fixture
+przeniesiono do pierwszej kontrolowanej fazy REFRESHING; oczekiwanie ściga teraz
+barierę z zakończeniem ownera i odrzuca przedwczesny koniec, zwalniając własne IPC.
+Nowa regresja weryfikuje ten błąd i cleanup. 51/51 testów R15/R14/host/fixture
+PASS, exit 0; zachowano dowód przed poprawką. To poprawka testowej synchronizacji,
+nie zmiana aplikacji, czasu badania, progów Stop ani założeń utraconego ACK.
+Nie ustalono, że ta słabość była przyczyną anulowania CI: logi joba wymagają
+logowania, a connector ich nie udostępnia; brak dostępu zapisano osobno.
 
 ## Windows check i CI
 
@@ -48,7 +60,8 @@ Windows x64 10.0.26300, Node 24.19.0, npm 11.17.0, SQLite 3.53.4.
   identyczny przed/po. Wszystkie źródła testowano na dokładnych bajtach Git.
 - Końcowy pełny check drzewa dostawy i jego fingerprint: review/test-summary.json
   i review/source-files.json. To odrębne wykonanie po zmianie tekstu szablonu
-  packagera i budżetu joba CI, już po zakończeniu i cleanup próby 8 h.
+  packagera, budżetu joba CI i synchronizacji regresji IPC, już po zakończeniu
+  i cleanup próby 8 h. Wyniki wcześniejszych pełnych check pozostają w historii.
 
 CI starych SHA odczytano przez publiczne GitHub API (connector był niedostępny):
 39853010027 / 56d3d80 oraz 39855099716 / 8332363: completed / cancelled.
@@ -124,7 +137,9 @@ adapter SHA-256 6257b489e2f8b4940b3b964040b79db1ccda8abc82620c64e0a9224e9f13cc54
 Nie zmieniano źródeł lub buildu podczas długiej próby. Późniejsza różnica kodu
 dostawy dotyczy tekstu szablonu scripts/package-nightflow-review.py
 który odsyła teraz do rzeczywistego raportu zamiast zawsze pisać „8 h nieweryfikowane”,
-oraz budżetu joba .github/workflows/offline-check.yml (25 → 40 minut).
+budżetu joba .github/workflows/offline-check.yml (25 → 40 minut) oraz opisanej
+synchronizacji tests/nightflow-adapter-cancellation.test.ts. Bajty aplikacji
+i lekkiego adaptera są identyczne; porównano też hash ponownie zbudowanego runtime.
 Zgodność pozostałych testowanych plików i dokładny wykaz tej różnicy są w dowodach.
 
 ## Dostawa i dalsze kroki
