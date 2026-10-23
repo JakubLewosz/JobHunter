@@ -24,7 +24,25 @@ export class FixtureGmail implements GmailGateway {
   timeout = false;
   reject = false;
   beforePost?: () => Promise<void>;
+  sendAsResource: Record<string, unknown> = {
+    sendAsEmail: 'owner@example.test',
+    isPrimary: true,
+    isDefault: true,
+  };
+  sendAsCalls = 0;
+  beforeSendAs?: () => Promise<void>;
   account = async () => this.info;
+  async sendAs(_expected: AccountInfo, signal?: AbortSignal) {
+    signal?.throwIfAborted();
+    this.sendAsCalls++;
+    await this.beforeSendAs?.();
+    signal?.throwIfAborted();
+    return {
+      account: structuredClone(this.info),
+      resource: structuredClone(this.sendAsResource),
+      checkedAt: Date.now(),
+    };
+  }
   marker = async () => String(this.changeMarker ? ++this.markerCalls : 1);
   async scan(query: string, onPage: (m: GmailMessage[], next: string | null) => void) {
     this.historyQueries.push(query);

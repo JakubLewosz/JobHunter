@@ -13,6 +13,7 @@ import { gmailReadScope, gmailSendScope, setupInfo, type AccountInfo } from './o
 import { nativeGmail, disabledGmail, type GmailGateway, type GmailMessage } from './reader.js';
 import { developmentRuntime, type Runtime } from '../runtime.js';
 import { BrowserDeliveryBroker } from '../browser/broker.js';
+import { replyToEvidence } from './send-as.js';
 import { transportSchema, type SendTransport } from '../browser/contracts.js';
 import { browserReceiptMatches } from '../browser/verification.js';
 import {
@@ -210,18 +211,56 @@ export class GmailJobHunter extends ResearchJobHunter {
     this.browserDelivery = new BrowserDeliveryBroker(store, {
       fixtureOrigin: options.fixtureBrowserOrigin,
       assertIdentity: this.accountPolicySource
-        ? (account, sender, replyTo) => {
+        ? (account, sender, replyTo, evidence) => {
             this.assertActiveAccount(sender);
             if (
               normalizeEmail(account ?? '') !== normalizeEmail(sender) ||
-              replyTo === undefined ||
-              replyTo === null ||
-              (replyTo !== '' && normalizeEmail(replyTo) !== normalizeEmail(sender))
+              ((replyTo === undefined || replyTo === null) && !evidence) ||
+              (replyTo != null &&
+                replyTo !== '' &&
+                normalizeEmail(replyTo) !== normalizeEmail(sender))
             ) {
               this.invalidateAccount();
               throw new DomainError(
                 'GMAIL_ACCOUNT_CHANGED',
                 'Konto karty, From lub Reply-To nie zostały zgodnie potwierdzone.',
+              );
+            }
+          }
+        : undefined,
+      verifyIdentity: this.accountPolicySource
+        ? async ({ operation, observation, previous, signal }) => {
+            const generation = this.sendGeneration;
+            this.assertActiveAccount(observation.sender);
+            const policy = this.accountPolicySource!();
+            const assertCurrent = () => {
+              signal.throwIfAborted();
+              this.assertDeliveryGeneration(generation);
+              this.assertActiveAccount(observation.sender);
+              if (JSON.stringify(this.accountPolicySource!()) !== JSON.stringify(policy))
+                throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Polityka konta zmieniła się.');
+            };
+            try {
+              assertCurrent();
+              const account = await this.connectedAccount();
+              assertCurrent();
+              if (!this.gateway.sendAs)
+                throw new DomainError(
+                  'GMAIL_SETTINGS_UNVERIFIED',
+                  'Brak odczytu ustawień Send-As.',
+                );
+              const read = await this.gateway.sendAs(account, signal);
+              assertCurrent();
+              // Verify the provider again after settings, independently of local metadata.
+              this.sameAccount(await this.connectedAccount(), account.subject, account.email);
+              assertCurrent();
+              return replyToEvidence(read, policy, observation, operation, previous);
+            } catch (error) {
+              this.invalidateAccount();
+              if (error instanceof DomainError) throw error;
+              throw new DomainError(
+                'GMAIL_SETTINGS_UNVERIFIED',
+                'Nie potwierdzono bieżących ustawień konta.',
               );
             }
           }

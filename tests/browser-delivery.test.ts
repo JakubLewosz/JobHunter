@@ -247,8 +247,12 @@ test('single account readonly: targeted fixture history and own UI receipt keep 
   await f.service.checkHistory({ drafts: [{ id: f.d.id, version: f.d.version }], consent: true });
   assert.equal(f.gateway.historyQueries.length, 1);
   const { dispatch, payload } = await begin(f);
-  f.service.browserDelivery.authorize('worker-fixture', payload.id, observation(payload));
-  f.service.browserDelivery.check('worker-fixture', payload.id);
+  await f.service.browserDelivery.authorizeCurrent(
+    'worker-fixture',
+    payload.id,
+    observation(payload),
+  );
+  await f.service.browserDelivery.checkCurrent('worker-fixture', payload.id);
   ownMessage(f, payload);
   f.service.browserDelivery.complete('worker-fixture', payload.id, {
     acknowledged: true,

@@ -25,7 +25,16 @@ import {
   type BrowserExecutionScope,
   type BrowserPayload,
   type BrowserSendResult,
+  type ComposeObservation,
 } from './contracts.js';
+import type { ReplyToEvidence } from '../gmail/send-as.js';
+
+export type BrowserIdentityCheck = {
+  operation: string;
+  observation: ComposeObservation;
+  previous?: ReplyToEvidence;
+  signal: AbortSignal;
+};
 
 type Pending = {
   scope: BrowserExecutionScope;
@@ -34,6 +43,9 @@ type Pending = {
   resolve: (v: BrowserSendResult) => void;
   reject: (e: Error) => void;
   timer: ReturnType<typeof setTimeout>;
+  identityAbort: AbortController;
+  identityEvidence?: ReplyToEvidence;
+  observation?: ComposeObservation;
 };
 export class BrowserDeliveryBroker {
   private nightflowHandler?: (worker: string, command: unknown, target: unknown) => unknown;
@@ -84,7 +96,9 @@ export class BrowserDeliveryBroker {
         account: string | undefined,
         sender: string,
         replyTo: string | null | undefined,
+        evidence?: ReplyToEvidence,
       ) => void;
+      verifyIdentity?: (input: BrowserIdentityCheck) => Promise<ReplyToEvidence>;
     } = {},
   ) {
     if (options.fixtureOrigin) localFixtureOrigin(options.fixtureOrigin);
@@ -216,7 +230,15 @@ export class BrowserDeliveryBroker {
     );
     return new Promise<BrowserSendResult>((resolve, reject) => {
       const timer = setTimeout(() => this.fail(jobId), this.options.timeoutMs ?? 10 * 60000);
-      this.pending.set(jobId, { payload, guard, resolve, reject, timer, scope: this.scope() });
+      this.pending.set(jobId, {
+        payload,
+        guard,
+        resolve,
+        reject,
+        timer,
+        scope: this.scope(),
+        identityAbort: new AbortController(),
+      });
     });
   }
   claim(workerId: string, scope?: unknown) {
@@ -245,6 +267,11 @@ export class BrowserDeliveryBroker {
     return pending.payload;
   }
   authorize(workerId: string, jobId: string, raw: unknown, scope?: unknown) {
+    if (this.options.verifyIdentity)
+      throw new DomainError('GMAIL_SETTINGS_REQUIRED', 'Wymagany bieżący odczyt Send-As.');
+    return this.authorizeObserved(workerId, jobId, raw, scope);
+  }
+  private authorizeObserved(workerId: string, jobId: string, raw: unknown, scope?: unknown) {
     this.assertWorker(workerId);
     const row = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId);
     const p = this.pending.get(jobId);
@@ -254,7 +281,7 @@ export class BrowserDeliveryBroker {
     const o = composeObservationSchema.parse(raw),
       expected = p.payload;
     this.assertURL(o.url);
-    this.options.assertIdentity?.(o.account, o.sender, o.replyTo);
+    this.options.assertIdentity?.(o.account, o.sender, o.replyTo, p.identityEvidence);
     if (
       o.sender.toLowerCase() !== expected.sender.toLowerCase() ||
       o.to.length !== 1 ||
@@ -285,7 +312,66 @@ export class BrowserDeliveryBroker {
     );
     return { authorized: true as const, jobId, payloadHash: expected.payloadHash };
   }
+  private async refreshIdentity(
+    workerId: string,
+    jobId: string,
+    raw: unknown,
+    scope: unknown,
+    phase: 'CLAIMED' | 'COMMITTING',
+  ) {
+    this.assertWorker(workerId);
+    const pending = this.pending.get(jobId),
+      row = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId);
+    if (!pending || row?.state !== phase || row.worker_id !== workerId || row.click_granted_at)
+      throw new DomainError('BROWSER_STALE', 'Brak bieżącej operacji dla ustawień.');
+    this.assertScope(scope, pending);
+    pending.guard();
+    const observation = composeObservationSchema.parse(raw);
+    const operation = hash(
+      JSON.stringify([
+        this.backendId,
+        pending.scope,
+        jobId,
+        pending.payload.payloadHash,
+        observation.composeId,
+      ]),
+    );
+    const evidence = await this.options.verifyIdentity!({
+      operation,
+      observation,
+      previous: pending.identityEvidence,
+      signal: pending.identityAbort.signal,
+    });
+    // Stop, lease loss, operation replacement and expiry are fenced after the API await.
+    pending.identityAbort.signal.throwIfAborted();
+    this.assertWorker(workerId);
+    this.assertScope(scope, pending);
+    pending.guard();
+    const current = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId);
+    if (
+      this.pending.get(jobId) !== pending ||
+      current?.state !== phase ||
+      current.worker_id !== workerId ||
+      current.click_granted_at
+    )
+      throw new DomainError('BROWSER_STALE', 'Operacja zmieniła się podczas odczytu ustawień.');
+    if (evidence.operation !== operation || this.time() >= evidence.validUntil)
+      throw new DomainError('GMAIL_SETTINGS_STALE', 'Dowód nie dotyczy bieżącej operacji.');
+    pending.identityEvidence = evidence;
+    pending.observation = observation;
+    return evidence;
+  }
+  async authorizeCurrent(workerId: string, jobId: string, raw: unknown, scope?: unknown) {
+    if (!this.options.verifyIdentity) return this.authorize(workerId, jobId, raw, scope);
+    await this.refreshIdentity(workerId, jobId, raw, scope, 'CLAIMED');
+    return this.authorizeObserved(workerId, jobId, raw, scope);
+  }
   check(workerId: string, jobId: string, scope?: unknown) {
+    if (this.options.verifyIdentity)
+      throw new DomainError('GMAIL_SETTINGS_REQUIRED', 'Wymagany ponowny odczyt Send-As.');
+    return this.checkObserved(workerId, jobId, scope);
+  }
+  private checkObserved(workerId: string, jobId: string, scope?: unknown) {
     this.assertWorker(workerId);
     const row = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId),
       p = this.pending.get(jobId);
@@ -307,6 +393,13 @@ export class BrowserDeliveryBroker {
     );
     return { authorized: true as const };
   }
+  async checkCurrent(workerId: string, jobId: string, scope?: unknown) {
+    if (!this.options.verifyIdentity) return this.check(workerId, jobId, scope);
+    const observation = this.pending.get(jobId)?.observation;
+    const evidence = await this.refreshIdentity(workerId, jobId, observation, scope, 'COMMITTING');
+    this.checkObserved(workerId, jobId, scope);
+    return { authorized: true as const, validUntil: evidence.validUntil };
+  }
   complete(workerId: string, jobId: string, raw: unknown) {
     this.assertWorker(workerId);
     const row = this.store.one('SELECT * FROM browser_deliveries WHERE id=?', jobId),
@@ -322,6 +415,7 @@ export class BrowserDeliveryBroker {
       jobId,
     );
     clearTimeout(p.timer);
+    p.identityAbort.abort();
     this.pending.delete(jobId);
     p.resolve({ id: receipt.candidateId, threadId: null, confirmed: false });
     return { recorded: true };
@@ -339,6 +433,7 @@ export class BrowserDeliveryBroker {
       jobId,
     );
     clearTimeout(p.timer);
+    p.identityAbort.abort();
     this.pending.delete(jobId);
     p.reject(
       new DomainError(
@@ -371,7 +466,7 @@ export class BrowserDeliveryBroker {
       socket.setEncoding('utf8');
       socket.setTimeout(10000, () => socket.destroy());
       socket.on('error', () => {});
-      socket.on('data', (chunk) => {
+      socket.on('data', async (chunk) => {
         if (processed) return;
         data += chunk;
         if (Buffer.byteLength(data) > 200000) {
@@ -403,7 +498,7 @@ export class BrowserDeliveryBroker {
               result = this.release(req.workerId);
               break;
             case 'authorize':
-              result = this.authorize(
+              result = await this.authorizeCurrent(
                 req.workerId,
                 req.jobId,
                 req.observation,
@@ -411,7 +506,11 @@ export class BrowserDeliveryBroker {
               );
               break;
             case 'check':
-              result = this.check(req.workerId, req.jobId, executionScopeSchema.parse(req.scope));
+              result = await this.checkCurrent(
+                req.workerId,
+                req.jobId,
+                executionScopeSchema.parse(req.scope),
+              );
               break;
             case 'complete':
               result = this.complete(req.workerId, req.jobId, req.receipt);

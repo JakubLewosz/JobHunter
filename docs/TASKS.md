@@ -1,5 +1,19 @@
 # Bieżące zadania — 23 października 2026
 
+## Reply-To / wąskie przygotowanie pilota — 23.10.2026
+
+- [x] Odczyt jednego głównego/domyślnego Send-As z gmail.readonly; bez nowego
+      OAuth i operacji poczty. NONE odróżnione od UNKNOWN/błędu/niepełnej odpowiedzi.
+- [x] Świeży dowód konta/subject/rewizji/operacji przy authorize i click gate;
+      zgodność widocznego UI, ponowny odczyt, termin 5 s i bariery Stop/lease.
+- [x] Celowane regresje 46/46 PASS; pierwsze 45/46 zachowane (BROWSER_BUSY
+      przez błędny identyfikator wykonawcy nowej fixture, poprawiono test).
+      Pełny Windows check oraz CI końcowego SHA mają dokładny wynik w dowodach
+      tej dostawy; nie przypisywać wcześniejszego checka do nowego diffu.
+- [ ] Pilot: osobna zgoda na celowaną historię trzech odbiorców/domen,
+      aktualne wersje/PDF, zakres, tempo/limit/okno i późniejszy świadomy Start.
+      Prywatny podgląd i rzeczywisty wynik ustawień pozostają poza Git.
+
 ## Jedno konto / Computer Use / bez wysyłki — 23.10.2026
 
 - [x] Prywatne przypięcie email/subject/revision w istniejącym workstation.json;
@@ -12,8 +26,8 @@
       z zachowaniem pierwszych błędów i poprawy cleanup. Wynik pełnego check osobno.
 - [ ] Przed pilotem: potwierdzone logowanie provider + Gmail profile oraz osobno
       karta Codexa, efektywny From/Reply-To/podpis. Nie używać Start do diagnostyki.
-- [ ] Potwierdzić wiarygodną obserwację efektywnego Reply-To w prawdziwym UI;
-      obecny brak pola pozostaje blokadą, bez odblokowania flagą raportu.
+- [x] Uzupełnić brak pola Reply-To świeżym odczytem dokładnego Send-As;
+      UNKNOWN i sprzeczność UI nadal blokują, bez odblokowania flagą raportu.
 - [ ] Osobno autoryzować celowaną historię i pilota z konkretnymi materiałami,
       odbiorcami/domenami i tempem/limitem. Dzisiejszy etap niczego nie wysyła.
 

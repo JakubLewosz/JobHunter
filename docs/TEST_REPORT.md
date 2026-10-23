@@ -1,5 +1,26 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Reply-To / ograniczony odczyt Send-As
+
+Baza 22b540007696d6a1650f5f6d441dfc3bac2fc031. Windows x64 / Node24.
+Celowane regresje: **46/46 PASS, FAIL0, SKIP0**. Pierwsza seria **45/46**
+miała BROWSER_BUSY w nowej fixture IPC: klient użył innego workerId niż
+wykonawca, który wcześniej przejął zadanie. Dopasowano fixture do własnego
+lease; produkcyjna odmowa i progi Stop pozostały bez zmian.
+
+Zakres: NONE (pominięty/pusty opcjonalny nagłówek), własny/obcy Reply-To,
+niepełna odpowiedź, niezweryfikowany alias, główny/domyslny nadawca,
+tożsamość/stabilny subject, utrata API, zmiana ustawień lub rewizji, sprzeczność
+UI, Stop/cancel podczas obu odczytów, wygaśnięcie przed kliknięciem, brak
+synchronizowanego obejścia i ponownego przyznania kliknięcia. Rzeczywiste
+wiadomości i poświadczenia nie są fixture. Wynik ograniczonego odczytu
+rzeczywistego konta jest wyłącznie lokalny poza Git.
+
+Pełny check Windows i CI dokładnego końcowego SHA mają osobne logi oraz
+check-summary/ci-final w dowodach dostawy. Wcześniejszy check nie jest
+wynikiem tego diffu. R1–R15, limity, historia, Node24/lekki adapter i lifecycle
+hosta pozostają; nie powtarzamy testu ośmiogodzinnego.
+
 ## Jedno konto / Computer Use / pomocnicze API
 
 Nowy etap od bazy 4cd344e: Windows x64, Node24.19.0/npm11.17.0.

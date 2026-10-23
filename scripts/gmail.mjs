@@ -20,12 +20,17 @@ import {
   readAccountPolicy,
   saveAccountPolicy,
   assertAccountPolicy,
+  assertPolicyUnchanged,
 } from '../dist/apps/server/src/gmail/account-policy.js';
 import {
   withAccountMaintenance,
   configureSingleAccount,
 } from '../dist/apps/server/src/gmail/maintenance.js';
-import { identityOnlyRequest } from '../dist/apps/server/src/gmail/identity-diagnostic.js';
+import {
+  identityOnlyRequest,
+  sendAsOnlyRequest,
+} from '../dist/apps/server/src/gmail/identity-diagnostic.js';
+import { readSendAs, replyToEvidence } from '../dist/apps/server/src/gmail/send-as.js';
 const dir = join(base, 'gmail-preparation');
 const [command, file] = process.argv.slice(2);
 const controller = new AbortController();
@@ -50,7 +55,15 @@ try {
       }),
     );
   } else if (
-    ['configure', 'verify', 'connect', 'reconnect', 'enable-read', 'disconnect'].includes(command)
+    [
+      'configure',
+      'verify',
+      'settings',
+      'connect',
+      'reconnect',
+      'enable-read',
+      'disconnect',
+    ].includes(command)
   ) {
     await withAccountMaintenance(base, async (store) => {
       if (command === 'configure') {
@@ -79,8 +92,78 @@ try {
         signal: controller.signal,
       };
       const trace = [],
-        request = identityOnlyRequest(fetch, trace);
+        request =
+          command === 'settings'
+            ? sendAsOnlyRequest(fetch, policy.email, trace)
+            : identityOnlyRequest(fetch, trace);
       const vault = await nativeSecretStore();
+      if (command === 'settings') {
+        try {
+          const credentials = await gmailCredentials(vault, request, guard);
+          const read = await readSendAs(
+            async () => credentials,
+            credentials.account,
+            request,
+            controller.signal,
+          );
+          assertPolicyUnchanged(() => readAccountPolicy(base), policy);
+          const again = await gmailCredentials(vault, request, guard);
+          assertPolicyUnchanged(() => readAccountPolicy(base), policy);
+          if (
+            again.account.subject !== credentials.account.subject ||
+            again.account.email !== credentials.account.email
+          )
+            throw new DomainError(
+              'GMAIL_ACCOUNT_CHANGED',
+              'Konto zmieniło się podczas odczytu ustawień.',
+            );
+          const evidence = replyToEvidence(
+            read,
+            readAccountPolicy(base),
+            {
+              account: policy.email,
+              sender: policy.email,
+              replyTo: null,
+            },
+            `SETTINGS_DIAGNOSTIC-${randomUUID()}`,
+          );
+          console.log(
+            JSON.stringify({
+              configuredEmail: policy.email,
+              providerIdentityMatch: true,
+              stableIdentityMatch: true,
+              gmailProfileMatch: true,
+              sendAsEmailMatch: true,
+              isPrimary: true,
+              isDefault: true,
+              replyTo: evidence.replyTo,
+              checkedAt: new Date(evidence.checkedAt).toISOString(),
+              settingsHash: evidence.settingsHash,
+              missingUiFieldCanPassFutureCheck: true,
+              diagnosticEvidenceIsSendAuthority: false,
+              scopes: again.account.scopes,
+              transport: 'GMAIL_BROWSER',
+              apiSendAllowed: false,
+              sendAuthority: false,
+              mailboxRead: false,
+              trace,
+            }),
+          );
+        } catch (error) {
+          console.log(
+            JSON.stringify({
+              replyTo: { kind: 'UNKNOWN' },
+              code: error instanceof DomainError ? error.code : 'GMAIL_SETTINGS_UNVERIFIED',
+              missingUiFieldCanPassFutureCheck: false,
+              sendAuthority: false,
+              mailboxRead: false,
+              trace,
+            }),
+          );
+          process.exitCode = 1;
+        }
+        return;
+      }
       if (command === 'verify') {
         try {
           const { account } = await gmailCredentials(vault, request, guard);

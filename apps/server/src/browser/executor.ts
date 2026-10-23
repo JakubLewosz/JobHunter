@@ -267,10 +267,17 @@ export class GmailBrowserExecutor {
         .filter((s): s is string => !!s && /^(Wyślij|Send)(\s|$)/u.test(s)),
     );
     if (controls.length !== 1) throw Error('GMAIL_SEND_AMBIGUOUS');
-    await beforeClick?.();
+    const gate = await beforeClick?.();
     this.signal?.throwIfAborted();
     const final = await this.observe();
     if (JSON.stringify(final) !== JSON.stringify(expected)) throw Error('GMAIL_COMPOSE_CHANGED');
+    if (
+      gate &&
+      typeof gate === 'object' &&
+      'validUntil' in gate &&
+      (typeof gate.validUntil !== 'number' || Date.now() >= gate.validUntil)
+    )
+      throw Error('GMAIL_SETTINGS_STALE');
     await this.tab.playwright.getByRole('button', { name: controls[0], exact: true }).click();
   }
   async receipt(): Promise<BrowserReceipt> {
@@ -376,8 +383,9 @@ export async function runBrowserDelivery(
     options.signal?.throwIfAborted();
     await driver.clickSend(observation, async () => {
       options.signal?.throwIfAborted();
-      await client.check(payload!.id, scope);
+      const gate = await client.check(payload!.id, scope);
       options.signal?.throwIfAborted();
+      return gate;
     }); // one action only; no catch-and-click-again.
     await client.complete(payload.id, await driver.receipt());
     return { status: 'RECORDED', jobId: payload.id };

@@ -10,6 +10,7 @@ import type { FrozenMessage } from '../providers.js';
 import { textFromHTML } from '../research/fetcher.js';
 import { inspectMime, decodeSubject, maxMimeBytes } from './inspection.js';
 import { priorResponseCheck } from '../prior-applications.js';
+import { readSendAs, type SendAsRead } from './send-as.js';
 export { decodeSubject } from './inspection.js';
 
 export interface GmailMessage {
@@ -40,6 +41,7 @@ export interface SentQuery {
 }
 export interface GmailGateway {
   account(): Promise<AccountInfo>;
+  sendAs?(expected: AccountInfo, signal?: AbortSignal): Promise<SendAsRead>;
   marker(expected?: AccountInfo): Promise<string>;
   scan(
     query: string,
@@ -176,6 +178,9 @@ export class GmailApi implements GmailGateway {
   ) {}
   async account() {
     return (await this.credentials()).account;
+  }
+  sendAs(expected: AccountInfo, signal?: AbortSignal) {
+    return readSendAs(this.credentials, expected, this.request, signal);
   }
   private async read(
     path: string,

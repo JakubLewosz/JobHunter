@@ -32,6 +32,8 @@ $env:JOBHUNTER_RUNTIME = 'WORKSTATION'
 # JOBHUNTER_DATA_DIR wskazuje istniejący katalog bazowy poza repo.
 node scripts/gmail.mjs configure owner@example.test
 node scripts/gmail.mjs verify
+# Odczyt jednego Send-As, bez wiadomości i bez nowego OAuth:
+node scripts/gmail.mjs settings
 # Gdy potrzebne logowanie: użytkownik obsługuje hasło/2FA/zgodę Google.
 node scripts/gmail.mjs reconnect
 # Pierwsze połączenie: connect <prywatny plik klienta Desktop app poza repo>
@@ -72,10 +74,25 @@ nie dowodzą konta. Wykonawca sprawdza widoczne konto przed Utwórz. Obserwacja
 redagowania niezależnie wiąże konto, From, Reply-To, odbiorcę, pełną treść
 i PDF; ponawia obserwację po ostatnim await, przed pojedynczym kliknięciem.
 
-Brak dowodu Reply-To jest UNKNOWN. Aktualny adapter przy braku widocznego
-pola Reply-To blokuje natywną bramkę. Przed pilotem potrzebny jest wiarygodny,
-obsługiwany sposób obserwacji efektywnego Reply-To. Odczyt ustawień w dawnej
-sesji nie odblokowuje kliknięcia. Podpis zmieniający treść jest odrzucany
+Brak dowodu Reply-To jest UNKNOWN. Pomocniczy `users.settings.sendAs.get`
+odczytuje tylko skonfigurowany adres, z projekcją sendAsEmail, replyToAddress,
+isPrimary, isDefault i verificationStatus, korzystając z gmail.readonly.
+Wymaga zgodnej tożsamości Google/profilu, dokładnego głównego i domyślnego
+Send-As. W poprawnym zasobie opcjonalny pusty lub pominięty replyToAddress
+potwierdza brak osobnego nagłówka (NONE); błąd lub niepełny zasób nigdy tego
+nie potwierdza. Własny adres jest dozwolony; obcy lub niezweryfikowany blokuje.
+
+Dowód jest wyłącznie w pamięci, związany z subject, rewizją polityki, backendem,
+generacją, konkretną próbą/payloadem i composeId. Native IPC ponawia odczyt przy
+autoryzacji oraz przed pojedynczą akcją; zmiana ustawień po pierwszej kontroli
+blokuje także wtedy, gdy nowa wartość sama byłaby bezpieczna. Dowód wygasa po
+5 s od odpowiedzi ustawień; wykonawca sprawdza termin po ostatniej obserwacji
+UI. Brak pola w UI może przejść z bieżącym dowodem; pole widoczne musi zgadzać
+się z API. Stop, utrata lease/konta, błąd odczytu i sprzeczność odwołują prawo.
+Stary raport diagnostyczny nie jest dowodem dla późniejszej akcji. Nie ma
+atomowej blokady zmian ustawień po stronie Google; pozostaje krótki odstęp
+między ostatnim odczytem i kliknięciem, bez obietnicy eliminacji tego wyścigu.
+Podpis zmieniający treść jest odrzucany
 przez dokładne porównanie pustej i gotowej wiadomości. Ustawienia niesprawdzone
 bez tworzenia wiadomości raportujemy jako nieweryfikowane.
 
@@ -85,5 +102,7 @@ historia wymagają osobnego upoważnienia. AUTO_POLICY nadal ma jedną politykę
 i świadomy Start, bez przeglądu każdego zgodnego pierwszego maila.
 
 Kontrakty Google: [scope Gmaila](https://developers.google.com/workspace/gmail/api/auth/scopes),
-[Desktop OAuth i PKCE](https://developers.google.com/identity/protocols/oauth2/native-app).
+[Desktop OAuth i PKCE](https://developers.google.com/identity/protocols/oauth2/native-app),
+[sendAs.get i dozwolone scope](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.sendAs/get),
+[znaczenie pól SendAs](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.sendAs).
 Zmiana transportu nie jest dowodem poprawy dostarczalności.
