@@ -23,6 +23,7 @@
     "smoke:public": "tsx scripts/public-research-smoke.ts",
     "research:report": "tsx scripts/research-report.ts",
     "research:session": "tsx scripts/research-session.ts",
+    "research:refresh": "node scripts/library-refresh.mjs",
     "audit:library": "tsx scripts/audit-library.ts",
     "review:export": "tsx scripts/export-review-package.ts",
     "history:local": "tsx scripts/local-history.ts",
