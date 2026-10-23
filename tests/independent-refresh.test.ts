@@ -9,6 +9,7 @@ import { ResearchJobHunter } from '../apps/server/src/research/service.js';
 import { runLibraryRefresh } from '../apps/server/src/research/library-refresh-entry.js';
 import { ManyReader, ManyRunner } from './auto-fixture.js';
 import { DomainError } from '../apps/server/src/util.js';
+import { createHash } from 'node:crypto';
 
 async function fixture(t: any, auto = true) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-independent-refresh-'));
@@ -330,3 +331,43 @@ for (const change of ['profile', 'version', 'provider', 'unknown'])
       f.selected[1].version,
     );
   });
+
+test('owner lost during semantic review cannot write even error/cleanup rows under the foreign owner', async (t) => {
+  const f = await fixture(t),
+    original = f.runner.run.bind(f.runner);
+  const digest = () =>
+    f.read((db) =>
+      createHash('sha256')
+        .update(
+          JSON.stringify(
+            (
+              db
+                .prepare(
+                  "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+                )
+                .all() as any[]
+            ).map(({ name }) => [
+              name,
+              db.prepare('SELECT * FROM "' + name + '" ORDER BY rowid').all(),
+            ]),
+          ),
+        )
+        .digest('hex'),
+    );
+  let atLoss: string | undefined;
+  f.runner.run = async (prompt, schema, options) => {
+    const result = await original(prompt, schema, options);
+    if (prompt.includes('Sprawdź KAŻDE')) {
+      const path = join(f.dir, 'profile.lock', 'owner.json'),
+        owner = JSON.parse(readFileSync(path, 'utf8'));
+      writeFileSync(path, JSON.stringify({ ...owner, instance: 'foreign-synthetic-owner' }));
+      atLoss = digest();
+    }
+    return result;
+  };
+  const result = await runLibraryRefresh(f.options);
+  assert.equal(result.reason, 'PROFILE_LOCK_LOST');
+  assert.ok(atLoss);
+  assert.equal(digest(), atLoss);
+  assert.equal(result.lockReleased, false);
+});

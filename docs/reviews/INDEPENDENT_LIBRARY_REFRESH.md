@@ -28,9 +28,12 @@ Regresje syntetyczne: stan AUTO z wąskim wcześniejszym zakresem, nowe
 generacje dawnych szkiców bez zakresu, A → odrzucone B → C, ochrona
 wykluczeń i przekierowania, zmiany profilu/polityki/wersji podczas await,
 obcy PAUSED, utrata właściciela, Stop, limit dostawcy, nieznany błąd,
-nieprzedłużany deadline. Celowane 63/63 PASS na Windows/Node24.
+nieprzedłużany deadline. Celowane 64/64 PASS na Windows/Node24, w tym
+identyczność wszystkich tabel po utracie właściciela podczas review.
 Pierwsze regresje przed poprawką i pierwsze celowane 47/48 FAIL pozostają
-w prywatnych logach; nie są zastępowane późniejszym wynikiem.
+w prywatnych logach; nie są zastępowane późniejszym wynikiem. Pierwszy
+nieukończony pełny check przerwano przed dodaniem ostatniej ochrony zapisu
+błędu review po utracie właściciela; nie jest wynikiem PASS ani ukończonym FAIL.
 
 Pełny check oraz ewentualne zastosowanie w zatrzymanej instalacji wymagają
 oddzielnego rzeczywistego wyniku. Ten dokument nie udziela prawa wysyłki,

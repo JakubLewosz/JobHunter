@@ -2968,6 +2968,7 @@ export class ResearchJobHunter extends JobHunter {
       );
       signal.throwIfAborted();
     } catch (e) {
+      this.store.assertExclusive();
       this.store.exec(
         "UPDATE research_draft_materials SET review_status='ERROR',review_error=?,updated_at=? WHERE draft_id=? AND version=?",
         JSON.stringify({
