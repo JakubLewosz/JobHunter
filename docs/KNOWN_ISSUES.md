@@ -12,6 +12,9 @@ jedna fikcyjna akcja, pełny cleanup. Pozostaje granica odpowiedzi MCP 300 s:
 timeout nie zatrzymuje aktywnego adaptera; pojedynczy długi RPC nie jest
 potwierdzonym kanałem wyniku. Używać istniejących krótkich segmentów/Stop.
 Nie wdrożono WORKSTATION ani nie zatwierdzono pilota lub prawdziwych materiałów.
+CI ca79c2e anulowano po 25 minutach (potwierdzona adnotacja GitHub), mimo lokalnego
+pełnego PASS. Budżet joba zwiększono do 40 minut; testy i progi Stop zachowano.
+Stan CI nowego finalnego SHA jest osobnym wynikiem w metadanych przekazania.
 
 Bieżący etap: [R1–R13 i nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Status rzeczywistego hosta: **WIP / NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.

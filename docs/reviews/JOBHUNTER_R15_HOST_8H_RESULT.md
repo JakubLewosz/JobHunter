@@ -47,13 +47,22 @@ Windows x64 10.0.26300, Node 24.19.0, npm 11.17.0, SQLite 3.53.4.
   Fingerprint 069d781ad1ec7cfbe1742dca3d5530a547c81eafd61c4ee6ef35f554231bb2e2
   identyczny przed/po. Wszystkie źródła testowano na dokładnych bajtach Git.
 - Końcowy pełny check drzewa dostawy i jego fingerprint: review/test-summary.json
-  i review/source-files.json. To odrębne wykonanie po neutralnej zmianie tekstu
-  szablonu packagera, już po zakończeniu i cleanup próby 8 h.
+  i review/source-files.json. To odrębne wykonanie po zmianie tekstu szablonu
+  packagera i budżetu joba CI, już po zakończeniu i cleanup próby 8 h.
 
 CI starych SHA odczytano przez publiczne GitHub API (connector był niedostępny):
 39853010027 / 56d3d80 oraz 39855099716 / 8332363: completed / cancelled.
 Nie są PASS. Stan CI dokładnego finalnego SHA, odczytany po jego zwykłym push,
 jest osobno zapisany w review/ci.json, z linkiem i SHA; lokalny PASS go nie zastępuje.
+Drzewo ca79c2ebfa0c1cb0c7c107d0d8f9d7e231bdcc6b przeszło także pełny lokalny
+check: 786/12/26, exit 0, 738071,4288 ms, fingerprint
+7eda689c34f8a5c8ac77181c0b3cdfccd896b060a9e1ad4b6c6f6a977d7cddc7.
+Jego CI 39906037731 / 120258116376 anulowano po limicie 25 minut;
+adnotacja GitHub potwierdza przekroczenie maximum execution time 25m0s.
+Po tym konkretnym dowodzie zwiększono tylko budżet całego joba do 40 minut.
+Testy, fixture, 30 s nadzoru CLI, lease i progi Stop pozostają niezmienione.
+To nie ponowienie niezmienionego CI do pierwszego PASS. Wynik nowego SHA
+jest rejestrowany niezależnie w końcowej paczce.
 
 ## Rzeczywisty Codex
 
@@ -113,8 +122,9 @@ sourceTreeHash dec6e55fef31e5d2a11c344e19c32c8e5b5029ed96cb407f473855031f548593,
 loadedCodeHash a0f36901fa8a44de221edd0724906422da70dd52bfb120b7d0a140ae275bebd5,
 adapter SHA-256 6257b489e2f8b4940b3b964040b79db1ccda8abc82620c64e0a9224e9f13cc54.
 Nie zmieniano źródeł lub buildu podczas długiej próby. Późniejsza różnica kodu
-dostawy dotyczy wyłącznie tekstu szablonu scripts/package-nightflow-review.py,
-który odsyła teraz do rzeczywistego raportu zamiast zawsze pisać „8 h nieweryfikowane”.
+dostawy dotyczy tekstu szablonu scripts/package-nightflow-review.py
+który odsyła teraz do rzeczywistego raportu zamiast zawsze pisać „8 h nieweryfikowane”,
+oraz budżetu joba .github/workflows/offline-check.yml (25 → 40 minut).
 Zgodność pozostałych testowanych plików i dokładny wykaz tej różnicy są w dowodach.
 
 ## Dostawa i dalsze kroki

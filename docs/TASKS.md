@@ -19,6 +19,9 @@
 - [x] Raport wyników z rozdzieleniem lokalnego check, 8 h wykonania i błędu RPC.
       Końcowy check drzewa, CI dokładnego SHA i pełna weryfikacja ZIP są zapisywane
       po commicie w metadanych przekazania. Brak wdrożenia lub zgody na produkcję.
+- [x] Po potwierdzonym anulowaniu CI ca79c2e przez limit 25 minut zwiększono
+      budżet całego joba do 40 minut; progi Stop i komplet testów bez zmian.
+      Nowe wykonanie i SHA mają osobne metadane, bez ponawiania starego runa.
 
 [Raport bieżącego wykonania](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
 
