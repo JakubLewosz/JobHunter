@@ -1,5 +1,22 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## RESEARCH_ONLY → nowa wersja w polityce AUTO → zamknięta partia
+
+Baza d514ea7; Windows x64 / Node24.19.0. Celowane **45/45 PASS, FAIL0, SKIP0**,
+w tym 16 nowych przypadków zaczynających od szkiców RESEARCH_ONLY bez scope.
+Pełny przebieg publicznych metod zachowuje ID/stare wersje, w fixture również
+dokładny temat/tekst, nie tworzy historii/uprawnień/rezerwacji przed zgodą i
+Start; wysyła tylko zamknięte trzy fikcyjne pozycje, bez discovery/czwartej firmy.
+Sprawdzono powtórzenie, wykluczenie kontaktu, stare źródła, niezatwierdzony
+profil/zmieniony PDF, blokadę, wersję/politykę/Stop i utratę właściciela podczas
+czytnika oraz review. Scope SQL-em nie służy do budowania poprawnej fixture.
+
+Zachowano pierwsze błędy i poprawę synchronizacji/cleanup nowych fixture;
+opis w [raporcie](reviews/JOBHUNTER_EXISTING_DRAFTS_TO_AUTO_RESULT.md).
+Pełny Windows check oraz CI końcowego SHA mają osobne check-summary/manifest
+i ci-final w dowodach dostawy. Brak rzeczywistego Gmaila/OAuth/pilota,
+wdrożenia i zgody na korespondencję; WORKSTATION pozostaje STOPPED.
+
 ## Reply-To / ograniczony odczyt Send-As
 
 Baza 22b540007696d6a1650f5f6d441dfc3bac2fc031. Windows x64 / Node24.

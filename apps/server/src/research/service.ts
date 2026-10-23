@@ -271,10 +271,16 @@ export class ResearchJobHunter extends JobHunter {
     const started = Date.now();
     const callId = id();
     try {
+      this.store.assertExclusive();
+      this.refreshCheckpoint?.();
       const r = await this.runner.run(prompt, schema, { signal, callId, stage });
+      this.store.assertExclusive();
+      this.refreshCheckpoint?.();
       this.recordCall(runId, stage, { ...r.meta, callId });
       return r.value;
     } catch (e) {
+      // A late model result cannot write diagnostics or material under a lost owner.
+      this.store.assertExclusive();
       if (
         e instanceof DomainError &&
         [
@@ -785,6 +791,7 @@ export class ResearchJobHunter extends JobHunter {
   protected refreshingLibrary = false;
   private refreshEvaluating = false;
   private refreshController?: AbortController;
+  private refreshCheckpoint?: () => void;
   protected deferPendingRuns(runIds: string[], reason: string) {
     for (const run of this.store.all(
       "SELECT id FROM runs WHERE status IN ('PAUSED','QUEUED','RUNNING') AND id IN (SELECT value FROM json_each(?))",
@@ -850,11 +857,20 @@ export class ResearchJobHunter extends JobHunter {
       results: Row[] = [],
       runIds: string[] = [],
       reads = new Map<string, Source>();
+    const policy = JSON.stringify(this.store.get('autoPolicy', null)),
+      campaignVersion = this.campaign().policy_version;
     const check = () => {
       signal.throwIfAborted();
+      this.store.assertExclusive();
+      if (
+        JSON.stringify(this.store.get('autoPolicy', null)) !== policy ||
+        this.campaign().policy_version !== campaignVersion
+      )
+        throw new DomainError('POLICY_CHANGED', 'Polityka zmieniła się podczas odnowienia.');
       if (options.deadline && this.now() >= options.deadline)
         throw new DomainError('RESEARCH_DEADLINE', 'Koniec budżetu odnowienia.');
     };
+    this.refreshCheckpoint = check;
     try {
       for (const draftId of [...new Set(input.draftIds)]) {
         check();
@@ -907,6 +923,8 @@ export class ResearchJobHunter extends JobHunter {
           this.controller = undefined;
         }
         check();
+        if (this.store.one('SELECT version FROM drafts WHERE id=?', draftId)?.version !== d.version)
+          throw new DomainError('VERSION_CONFLICT', 'Szkic zmienił się podczas odczytu źródeł.');
         if (sources.some((s) => !sourceComplete(s))) {
           results.push({ draftId, code: 'STALE_EVIDENCE' });
           continue;
@@ -954,10 +972,12 @@ export class ResearchJobHunter extends JobHunter {
       }
       throw error;
     } finally {
-      this.store.set('stopped', true);
       this.refreshingLibrary = false;
       this.refreshEvaluating = false;
       this.refreshController = undefined;
+      this.refreshCheckpoint = undefined;
+      this.store.assertExclusive();
+      this.store.set('stopped', true);
     }
   }
   reviewContact(contactId: string, confirmed: boolean) {
@@ -2965,6 +2985,8 @@ export class ResearchJobHunter extends JobHunter {
       .parse(raw);
   }
   override editDraft(draftId: string, input: { version: number; subject: string; body: string }) {
+    if (this.refreshingLibrary)
+      throw new DomainError('BUSY', 'Poczekaj na zakończenie odnowienia wybranego szkicu.');
     super.editDraft(draftId, input);
     this.store.exec(
       "UPDATE research_drafts SET reviewed_at=NULL,claims='[]',semantic_review=?,warnings=? WHERE draft_id=?",

@@ -11,7 +11,7 @@ import { FixtureGmail } from './gmail-fixture.js';
 import { FixtureRunner, FixtureReader } from './research-fixture.js';
 import { z } from 'zod';
 import { hash, DomainError } from '../apps/server/src/util.js';
-class ManyReader extends FixtureReader {
+export class ManyReader extends FixtureReader {
   override async read(url: string, signal?: AbortSignal) {
     const source = await super.read(url, signal),
       n = new URL(url).hostname.match(/fixture(\d+)/)?.[1];
@@ -23,7 +23,7 @@ class ManyReader extends FixtureReader {
     return source;
   }
 }
-class ManyRunner extends FixtureRunner {
+export class ManyRunner extends FixtureRunner {
   override async run<T>(
     prompt: string,
     schema: z.ZodType<T>,

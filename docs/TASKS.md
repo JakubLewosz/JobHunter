@@ -1,5 +1,20 @@
 # Bieżące zadania — 23 października 2026
 
+## Istniejące szkice RESEARCH_ONLY do AUTO — 23.10.2026
+
+- [x] Odtworzyć rzeczywiste pochodzenie bez wcześniejszych scope: istniejące
+      odnowienie AUTO tworzy nową wersję tego samego ID i może zachować tekst.
+- [x] Regresje 45/45 Windows; uszczelnić zmianę polityki/wersji i właściciela
+      podczas await, bez nowej architektury lub osłabienia guarda scope.
+- [ ] WORKSTATION: najpierw jawnie zatwierdzona polityka (obecnie brak), potem
+      backup i publiczne odnowienie tylko wybranych ID w backendzie AUTO;
+      pokazać finalne wersje/diff. Nie wpisywać samodzielnie zgody na historię.
+- [ ] Dopiero późniejszy pilot: odrębne zatwierdzenie finalnych materiałów,
+      celowanej historii, tempa/limitów/okna oraz Start. Bez obecnego prawa wysyłki.
+
+[Obsługa](EXISTING_DRAFTS_TO_AUTO.md),
+[wynik i granice testów](reviews/JOBHUNTER_EXISTING_DRAFTS_TO_AUTO_RESULT.md).
+
 ## Reply-To / wąskie przygotowanie pilota — 23.10.2026
 
 - [x] Odczyt jednego głównego/domyślnego Send-As z gmail.readonly; bez nowego

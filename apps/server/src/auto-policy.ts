@@ -746,6 +746,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   }
   configurePolicy(raw: unknown) {
     if (
+      this.refreshingLibrary ||
       this.sessionId ||
       this.sending ||
       this.researching ||
@@ -813,6 +814,14 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       );
     });
     return this.policyConfig();
+  }
+  override async refreshLibraryDrafts(
+    raw: unknown,
+    options: { signal?: AbortSignal; deadline?: string } = {},
+  ) {
+    // Existing-library qualification uses an already approved policy, never grants it.
+    this.assertPolicy(false);
+    return super.refreshLibraryDrafts(raw, options);
   }
   private assertPolicy(requireSession = true) {
     if (requireSession) this.nightflowSendGuard?.();
