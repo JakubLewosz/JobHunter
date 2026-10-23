@@ -1782,14 +1782,15 @@ export class ResearchJobHunter extends JobHunter {
       ),
     }));
     if (aliases.some((a) => !a.previous)) return false;
-    const analysis = validateAnalysis(JSON.parse(latest.analysis), old);
-    const token = this.store.get<Row>(`analysisOperation:${item.id}`, {});
-    if (token.sequence < this.store.get<number>(`analysisCommitted:${company.id}`, 0))
-      throw new DomainError('ANALYSIS_SUPERSEDED', 'Nowsza analiza firmy jest już zapisana.');
     const policy = this.store.get<number>(
       `extractionPolicy:${latest.url}:${this.profile().profile_hash}`,
       0,
     );
+    if (policy !== analysisPolicyVersion) return false;
+    const analysis = validateAnalysis(JSON.parse(latest.analysis), old);
+    const token = this.store.get<Row>(`analysisOperation:${item.id}`, {});
+    if (token.sequence < this.store.get<number>(`analysisCommitted:${company.id}`, 0))
+      throw new DomainError('ANALYSIS_SUPERSEDED', 'Nowsza analiza firmy jest już zapisana.');
     const d = this.draftRows().find((d) => d.company_id === company.id);
     const oldScope = d
       ? this.store.one('SELECT scope_hash FROM auto_draft_scope WHERE draft_id=?', d.id)?.scope_hash

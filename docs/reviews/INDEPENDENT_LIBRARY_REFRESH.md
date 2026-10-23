@@ -62,3 +62,10 @@ literalnej nazwy trybu. Nie przyjmuje zakresu pilota ani prawa nadawania.
 Przed tą korektą test zwracał DRAFT_MATERIAL_STALE; pierwszy fixture miał
 oddzielny błąd schematu (INVALID_MODEL_RESULT), zachowany w logu. Nieukończony
 check poprawki godzin przerwano przed tą uzupełniającą zmianą; nie jest PASS.
+
+Przed kopiowaniem analizy cache sprawdzamy też zgodność wersji ekstrakcji,
+przed walidacją starego formatu i kwalifikacją. Regresja odtwarza dawny marker
+przy tych samych bajtach źródła i profilu: wymagane jest jedno rzeczywiste
+wywołanie ekstrakcji, a kolejna zgodna kontrola korzysta już z cache. Stare
+analizy i próby pozostają zachowane. Poprzedni rozpoczęty pełny check
+przerwano przed dodaniem tej kontroli; wynik tego przebiegu nie jest PASS.
