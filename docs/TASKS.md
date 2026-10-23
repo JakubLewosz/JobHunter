@@ -1,5 +1,19 @@
 # Bieżące zadania — 23 października 2026
 
+## Naturalny styl — 23.10.2026
+
+- [x] Wąsko doprecyzować prosty ton, jeden powód kontaktu, krótki projekt
+      i warunkową informację o CV; bez zmiany zatwierdzonych materiałów.
+- [x] Usunąć automatyczne CLOSING za uczciwe pytanie o początkującego
+      programistę. Zachować kontrole faktów, dostępności i powtórzonych próśb.
+- [x] Zablokować spóźniony zapis verifyDraft po Stop; regresje obejmują
+      mapowanie i review, konflikt wersji oraz utratę właściciela.
+- [ ] Dokończyć pełny Windows check i wersjonowany zapis trzech jawnie
+      wskazanych szkiców przez editDraft/verifyDraft. Prywatne treści,
+      numery wersji i dowody instalacji wyłącznie poza Git.
+- [ ] Późniejszy pilot pozostaje osobnym krokiem użytkownika; ten etap
+      kończy się STOPPED, bez prawa wysyłki, historii poczty lub Start.
+
 ## Istniejące szkice RESEARCH_ONLY do AUTO — 23.10.2026
 
 - [x] Odtworzyć rzeczywiste pochodzenie bez wcześniejszych scope: istniejące

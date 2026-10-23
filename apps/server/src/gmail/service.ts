@@ -1141,6 +1141,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     throw new DomainError('PREVIEW_REQUIRED', 'Najpierw przygotuj podgląd Gmaila z CV.');
   }
   async verifyDraft(draftId: string, version: number) {
+    const generation = this.sendGeneration;
     const d = this.draft(draftId, version),
       profile = this.minimalProfile();
     if (d.profile_hash !== profile.hash)
@@ -1149,6 +1150,19 @@ export class GmailJobHunter extends ResearchJobHunter {
         'Profil szkicu zmienił się; nie nadpisano jego materiałów.',
       );
     const initialMaterialBinding = this.draftMaterialContext(d);
+    const assertCurrent = () => {
+      this.assertDeliveryGeneration(generation);
+      const current = this.draft(draftId, version);
+      if (
+        current.payload_hash !== d.payload_hash ||
+        this.profile().profile_hash !== profile.hash ||
+        initialMaterialBinding !== this.draftMaterialContext(current)
+      )
+        throw new DomainError(
+          'VERSION_CONFLICT',
+          'Wiadomość lub materiały zmieniły się podczas kontroli.',
+        );
+    };
     const analysis = JSON.parse(
       this.store.one(
         'SELECT details FROM research_qualifications WHERE opportunity_id=?',
@@ -1174,6 +1188,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       );
       mapping = result;
     }
+    assertCurrent();
     this.checkDraft(
       { subject: d.subject, body: d.body, ...mapping, warnings: JSON.parse(d.warnings) },
       d.company_id,
@@ -1210,6 +1225,7 @@ export class GmailJobHunter extends ResearchJobHunter {
         reviewSchema,
       );
     } catch (e) {
+      assertCurrent();
       this.store.exec(
         "UPDATE research_draft_materials SET review_status='ERROR',review_error=?,updated_at=? WHERE draft_id=? AND version=?",
         JSON.stringify({ code: e instanceof DomainError ? e.code : 'MODEL_FAILED' }),
@@ -1220,16 +1236,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       throw e;
     }
     this.store.atomic(() => {
-      const current = this.draft(draftId, version);
-      if (
-        current.payload_hash !== d.payload_hash ||
-        this.profile().profile_hash !== profile.hash ||
-        initialMaterialBinding !== this.draftMaterialContext(current)
-      )
-        throw new DomainError(
-          'VERSION_CONFLICT',
-          'Wiadomość lub materiały zmieniły się podczas kontroli.',
-        );
+      assertCurrent();
       this.store.exec(
         'UPDATE research_drafts SET semantic_review=? WHERE draft_id=?',
         JSON.stringify(review),

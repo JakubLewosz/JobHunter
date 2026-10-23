@@ -392,10 +392,12 @@ test('finalny styl: zlecenie tylko w potwierdzonej aktywnej ofercie, bez obowią
   assert.ok(
     messageStyleIssues(mail, analysis('OPEN')).some((w) => w.startsWith('CONTRACT_CONTEXT')),
   );
-  assert.ok(
-    messageStyleIssues(draft('Czy rozważają Państwo początkującego programistę?'), analysis()).some(
-      (w) => w.startsWith('CLOSING'),
+  assert.deepEqual(
+    messageStyleIssues(
+      draft('Czy biorą Państwo pod uwagę początkującego programistę z taką dostępnością?'),
+      analysis(),
     ),
+    [],
   );
 });
 test('dostępność: profil zakresowy 15–20 odrzuca sztywne 20h i pełną dyspozycyjność', () => {
@@ -551,3 +553,33 @@ for (const body of [
   test(`jedna prośba z kontekstem lub celem nie wymaga powtórzenia na końcu: ${body}`, () => {
     assert.ok(!messageStyleIssues(draft(body)).some((w) => w.startsWith('REPEATED_REQUEST')));
   });
+
+for (const body of [
+  'Dzień dobry,\n\nchciałbym zapytać, czy rozważają Państwo współpracę z początkującym programistą na około 20 godzin tygodniowo. Szukam stałej, płatnej współpracy w pełni zdalnej.\n\nJestem uczniem technikum. W portfolio mam AutoRelay — aplikację do automatyzacji z webhookami. Piszę ze względu na Państwa integracje API.\n\nW załączniku przesyłam CV.\n\nPozdrawiam\nFictional Candidate',
+  'Dzień dobry,\n\nszukam stałej, płatnej współpracy programistycznej — w pełni zdalnie, około 20 godzin tygodniowo. Czy taki wymiar współpracy wchodzi u Państwa w grę?\n\nJestem uczniem technikum. W AutoRelay pracowałem nad automatyzacjami uruchamianymi przez webhooki. Chętnie pracowałbym przy podobnych integracjach w Fikcyjnej Firmie.\n\nZałączam CV.\n\nPozdrawiam\nFictional Candidate',
+  'Dzień dobry,\n\nna Państwa stronie znalazłem zaproszenie do przesłania CV.\n\nJestem uczniem technikum. Szukam stałej, płatnej pracy w pełni zdalnej, na około 20 godzin tygodniowo. Chętnie pracowałbym przy Państwa integracjach.\n\nCzy biorą Państwo pod uwagę początkującego programistę z taką dostępnością?\n\nW załączniku przesyłam CV.\n\nPozdrawiam\nFictional Candidate',
+])
+  test(`krótki naturalny mail z jednym powodem kontaktu, także bez projektu: ${body.slice(0, 75)}`, () => {
+    assert.deepEqual(messageStyleIssues(draft(body), analysis('OPEN', ['integracje API'])), []);
+    checkAvailability(draft(body), profile);
+  });
+
+test('instrukcje dopuszczają naturalne pytanie i warunkowe CV bez fikcyjnego dowodu lub prawa wysyłki', () => {
+  const data = {
+    profile,
+    analysis: analysis('OPEN'),
+    qualification: 'NEEDS_REVIEW',
+    evidence: [],
+    history: 'NEW',
+    template: 'old',
+    recent: [],
+  };
+  const prompt = messagePrompt(data),
+    review = semanticReviewPrompt({ ...data, draft: draft() });
+  assert.match(prompt, /Jedno naturalne pytanie o początkującego programistę jest dopuszczalne/);
+  assert.match(prompt, /preferencje redakcyjne, nie zakazy fraz/);
+  assert.match(prompt, /nie wymaga fikcyjnego cytatu/);
+  assert.match(review, /brak opisu projektu przy konkretnym powodzie kontaktu/);
+  assert.match(review, /kontrole faktycznego załącznika i uprawnień/);
+  assert.match(review, /nie zgoda na wysyłkę/);
+});

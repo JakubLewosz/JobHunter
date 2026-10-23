@@ -5,6 +5,25 @@ wynikać z konkretnej firmy i celu kontaktu. Zastępuje wcześniejszy sztywny
 schemat „pytanie → edukacja/dostępność → firma/projekt → pytanie”. Nie
 wprowadza losowego parafrazowania ani rotacji gotowych wariantów.
 
+Doprecyzowanie 23 października 2026: preferowany jest krótki, bezpośredni
+mail kandydata z uprzejmym „Państwo”, jednym powodem kontaktu i krótkim
+opisem pasującego projektu. Cel płatnej, regularnej współpracy, pełna
+zdalność i dostępność powinny być szybko czytelne. „Stała” opisuje cel
+regularności, nie obietnicę zatrudnienia lub rodzaju umowy. Nie narzucamy
+pierwszego zdania, liczby akapitów ani różnic między podobnymi listami.
+„Piszę w związku z informacją”, „otwarte kandydatury” i „osoba o takim
+profilu i dostępności” nie są domyślnym językiem; to preferencja redakcyjna,
+bez globalnego zakazu fraz. Rzeczowe zaproszenie do przesłania CV można
+opisać wprost. Przy właściwym powodzie kontaktu projekt może być pominięty.
+Jedno naturalne pytanie o początkującego programistę jest dopuszczalne;
+heurystyka CLOSING nie odrzuca samego uczciwego określenia poziomu.
+Powtórzone prośby, sprzedażowe CTA i niepoparte deklaracje nadal podlegają
+dotychczasowej kontroli. CV i GitHub wystarczą jako zakończenie. Informacja
+o załączanym CV jest warunkiem przyszłego pakietu z zatwierdzonym PDF,
+nie osiągnięciem ani faktem firmy; nie tworzymy dla niej fikcyjnego cytatu.
+Nie stosujemy jej bez CV. Nie udziela zgody ani nie zastępuje kontroli
+załącznika, odbiorcy, faktów, dostępności, scope i wysyłki.
+
 ## Konstrukcja i kompletność
 
 Generator najpierw rozpoznaje cel, najmocniejszy udokumentowany powód

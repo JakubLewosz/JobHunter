@@ -115,6 +115,140 @@ function noSend(f: Awaited<ReturnType<typeof fixture>>) {
   assert.equal(f.service.deliveryAuthority().enabled, false);
 }
 
+async function editedNaturalDraft(f: Awaited<ReturnType<typeof fixture>>) {
+  await f.service.refreshLibraryDrafts({ draftIds: [f.old.id] });
+  const previous = f.service.draftRows()[0];
+  const education = 'Jestem uczniem technikum.',
+    availability = `Szukam stałej, płatnej współpracy w pełni zdalnej, na ${f.profile.availability_mode === 'APPROX' ? `około ${f.profile.hours_approx}` : `${f.profile.hours_min}–${f.profile.hours_max}`} godzin tygodniowo.`,
+    company = 'na stronie znalazłem ofertę Junior PHP Laravel.',
+    body = `Dzień dobry,\n\n${company}\n\n${education} ${availability}\n\nCzy biorą Państwo pod uwagę początkującego programistę z taką dostępnością?\n\nW załączniku przesyłam CV.\n\nPozdrawiam`,
+    subject = 'Współpraca programistyczna — praca zdalna';
+  const run = f.runner.run.bind(f.runner);
+  f.runner.run = async (prompt, schema, options) => {
+    const result = await run(prompt, schema, options);
+    if (prompt.includes('Przypisz mapę deklaracji')) {
+      const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)),
+        fact = (key: string) => data.profile.facts.find((f: any) => f.key === key).id,
+        eid = JSON.parse(previous.evidence_ids)[0];
+      result.value = schema.parse({
+        factIds: [fact('education'), fact('availability'), fact('contract')],
+        evidenceIds: [eid],
+        claims: [
+          { text: education, kind: 'CANDIDATE', factIds: [fact('education')], evidenceIds: [] },
+          {
+            text: availability,
+            kind: 'CANDIDATE',
+            factIds: [fact('availability'), fact('contract')],
+            evidenceIds: [],
+          },
+          { text: company, kind: 'COMPANY', factIds: [], evidenceIds: [eid] },
+        ],
+      });
+    }
+    return result;
+  };
+  f.service.editDraft(previous.id, { version: previous.version, subject, body });
+  return { previous, edited: f.service.draftRows()[0], subject, body };
+}
+
+test('qualified AUTO draft: exact natural edit clears old review, remaps without rewriting and keeps scope without mail', async (t) => {
+  const f = await fixture(t),
+    { previous, edited, subject, body } = await editedNaturalDraft(f),
+    oldVersions = f.store.all(
+      'SELECT * FROM draft_versions WHERE draft_id=? AND version<=?',
+      previous.id,
+      previous.version,
+    ),
+    scope = f.store.one('SELECT * FROM auto_draft_scope WHERE draft_id=?', previous.id);
+  assert.equal(edited.version, previous.version + 1);
+  assert.equal(JSON.parse(edited.semantic_review).supported, null);
+  assert.deepEqual(JSON.parse(edited.claims), []);
+  assert.ok(f.service.draftMaterialIssues(edited).length);
+  const review = await f.service.verifyDraft(edited.id, edited.version);
+  assert.equal(review.supported, true);
+  const final = f.service.draftRows()[0];
+  assert.equal(final.version, edited.version + 1);
+  assert.equal(final.subject, subject);
+  assert.equal(final.body, body);
+  assert.deepEqual(f.service.draftMaterialIssues(final), []);
+  assert.equal(final.reviewed_at, null);
+  assert.deepEqual(f.store.one('SELECT * FROM auto_draft_scope WHERE draft_id=?', final.id), scope);
+  assert.deepEqual(
+    f.store.all(
+      'SELECT * FROM draft_versions WHERE draft_id=? AND version<=?',
+      previous.id,
+      previous.version,
+    ),
+    oldVersions,
+  );
+  assert.ok(JSON.parse(final.claims).every((c: any) => (subject + body).includes(c.text)));
+  await f.service.verifyDraft(final.id, final.version);
+  assert.equal(f.service.draftRows()[0].version, final.version);
+  noSend(f);
+  writeFileSync(
+    join(
+      f.dir,
+      'cv',
+      f.store.one('SELECT stored_name FROM cv_assets WHERE id=?', f.policy.cvId)!.stored_name,
+    ),
+    '%PDF-1.4\nChanged\n%%EOF',
+  );
+  assert.throws(() => (f.service as any).assertPolicy(false));
+  noSend(f);
+});
+
+for (const stage of ['Przypisz mapę deklaracji', 'Sprawdź KAŻDE'])
+  for (const fault of ['stop', 'version', 'owner'] as const)
+    test(`exact edited AUTO verification rejects late ${stage} result after ${fault}`, async (t) => {
+      const f = await fixture(t),
+        { edited } = await editedNaturalDraft(f);
+      let entered!: () => void, release!: () => void;
+      const ready = new Promise<void>((r) => (entered = r)),
+        held = new Promise<void>((r) => (release = r));
+      f.runner.beforeCall = async (prompt) => {
+        if (prompt.includes(stage)) {
+          entered();
+          await held;
+        }
+      };
+      const work = f.service.verifyDraft(edited.id, edited.version);
+      await Promise.race([
+        ready,
+        work.then(() => {
+          throw Error('STAGE_NOT_ENTERED');
+        }),
+      ]);
+      const owner = f.store.assertExclusive;
+      if (fault === 'stop') f.service.control('stop');
+      if (fault === 'version')
+        f.service.editDraft(edited.id, {
+          version: edited.version,
+          subject: edited.subject,
+          body: edited.body + '\nNowa edycja.',
+        });
+      if (fault === 'owner')
+        f.store.assertExclusive = () => {
+          throw new DomainError('PROFILE_LOCK_LOST', 'Synthetic owner loss');
+        };
+      const versions = f.store.all('SELECT * FROM draft_versions');
+      release();
+      try {
+        await assert.rejects(() => work, {
+          code:
+            fault === 'stop'
+              ? 'SESSION_STOPPED'
+              : fault === 'owner'
+                ? 'PROFILE_LOCK_LOST'
+                : 'VERSION_CONFLICT',
+        });
+      } finally {
+        f.store.assertExclusive = owner;
+      }
+      assert.deepEqual(f.store.all('SELECT * FROM draft_versions'), versions);
+      assert.notEqual(JSON.parse(f.service.draftRows()[0].semantic_review).supported, true);
+      noSend(f);
+    });
+
 test('existing RESEARCH_ONLY draft enters an explicit AUTO policy through real refresh, then a closed batch without discovery', async (t) => {
   const f = await fixture(t),
     versions = f.store.all('SELECT * FROM draft_versions'),
