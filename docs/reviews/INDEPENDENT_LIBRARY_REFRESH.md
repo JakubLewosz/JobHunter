@@ -38,3 +38,19 @@ błędu review po utracie właściciela; nie jest wynikiem PASS ani ukończonym 
 Pełny check oraz ewentualne zastosowanie w zatrzymanej instalacji wymagają
 oddzielnego rzeczywistego wyniku. Ten dokument nie udziela prawa wysyłki,
 nie rozszerza polityki i nie rozpoczyna przyszłego pilota.
+
+## Kontekst dostępności w nowych analizach
+
+W rzeczywistych odczytach wykryto domyślną etykietę pory dnia w instrukcji
+ekstrakcji, mimo zatwierdzonego profilu bez pór dnia. Po zakończeniu własnego
+bloku, potwierdzeniu STOPPED i osobnym spójnym backupie zmieniono wyłącznie
+instrukcję analizy: pory kandydata pochodzą z aktualnego faktu availability;
+literalne ograniczenia firmy pozostają w dowodach. Nie zmieniono profilu,
+treści istniejących analiz, szkiców ani polityki nadawania. Wewnętrzny marker
+cache analizy ma wersję 9, aby przyszła kwalifikacja nie odziedziczyła dawnej
+instrukcji. To inna oś wersjonowania niż zatwierdzona polityka wysyłkowa.
+
+Trzy nowe regresje obejmują brak pór dnia, jawnie zatwierdzone pory oraz
+zachowanie godzin wymaganych w źródle. Przed poprawką 0/3, po poprawce
+celowane 67/67 PASS. Pełny check dokładnego nowego kodu jest osobnym wynikiem;
+badawcze zapisy czekają na jego zakończenie. Nie zwiększono limitów parsera.
