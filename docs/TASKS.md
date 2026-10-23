@@ -1,5 +1,27 @@
 # Bieżące zadania — 18 października 2026
 
+## R15 / host 8 h — wykonanie 22.10.2026
+
+- [x] Manifest wejścia 17/17, pełny prompt/raport/odtworzenia; zachowano nowsze
+      commity gałęzi, R1–R14, bibliotekę, Node owner i lekki adapter.
+- [x] Kontrole abort przed Start, po connect/attach i przy write do IPC;
+      przypięty sygnał, brak retry możliwego Start i pojedynczy własny cleanup.
+- [x] Regresje Node24/Windows/named pipe z pełnymi fixture oraz kontrolowanymi
+      barierami. Po pierwszym pełnym check poprawiono wyścig cleanup po ACK
+      raportu; nowe 18/18 native i cztery scenariusze UI PASS.
+- [x] Pełny Windows check 8332363: 786/786 backend, 12/12 Stop, 26/26 UI,
+      typecheck/build PASS, exit 0, niezmienne bajty. Pierwszy wynik zachowany: backend
+      785/785, Stop 12/12, UI 24/26, exit 1 (wyścig cleanup, bez złagodzenia testów).
+- [x] Nowy krótki host COMPLETED i pełne 28 800 212,549 ms rzeczywistej fazy
+      badawczej w tym samym adapterze/ownerze/job/generacji. Potem jedna fikcyjna
+      akcja, raport i cleanup. Pre-abort w cua_repl: zero nowych zadań/akcji.
+      Timeout odpowiedzi MCP 300 s nie zatrzymał wykonania; szczegóły w raporcie.
+- [x] Raport wyników z rozdzieleniem lokalnego check, 8 h wykonania i błędu RPC.
+      Końcowy check drzewa, CI dokładnego SHA i pełna weryfikacja ZIP są zapisywane
+      po commicie w metadanych przekazania. Brak wdrożenia lub zgody na produkcję.
+
+[Raport bieżącego wykonania](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+
 ## Lekki host i materiały — 21 października 2026
 
 - [x] Zweryfikowano pełny prompt i 7/7 plików manifestu poza repo; aktualne

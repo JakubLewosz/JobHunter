@@ -1,5 +1,11 @@
 # Odtwarzalna fixture Node owner ↔ rzeczywisty host
 
+Nowe wykonanie 22–23.10.2026: [raport R15](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+Krótki host i pełne osiem rzeczywistych godzin PASS wykonania, jedna fikcyjna
+akcja i cleanup. Odpowiedź pojedynczego długiego RPC miała timeout300 s mimo
+trwającego wykonania w VM; krótkie segmenty zachowują tożsamość adaptera.
+Poniższy stan 21.10 pozostaje historycznym wynikiem poprzedniego etapu.
+
 Stan 21.10.2026: krótki pełny przebieg w `cua_repl` **COMPLETED**. Jedna
 rezerwacja, jedna lokalna fikcyjna akcja, wynik i cleanup. Osiem godzin
 rzeczywistego czasu: **NOT_RUN**. Nie testowano Gmaila ani prywatnej historii.
@@ -71,6 +77,9 @@ wygaśnięcie lease oraz R14 Stop/status/report przy błędzie lub utracie odpow
 ## Osiem godzin czasu rzeczywistego
 
 Po krótkim sukcesie ten sam CLI ownera przyjmuje dodatkowo `--wall-clock`.
+Od wykonania R15 (22.10.2026) ten wariant ustawia w planie fixture istniejące
+`exhaustion: WAIT_DEADLINE`; wyczerpanie fikcyjnych zapytań nie skraca ośmiu godzin.
+Nie zmienia to planów produkcyjnych ani domyślnego krótkiego wariantu FINISH.
 Zegar jest monotoniczny; właściciel ma limit 8 h + 15 min na zakończenie.
 Adapter musi przez cały czas działać w tym samym aktywnym zadaniu i odebrać
 wynik po deadline. Alternatywnie Node/Playwright ma własną flagę --wall-clock,

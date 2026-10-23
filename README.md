@@ -1,5 +1,10 @@
 # JobHunter
 
+Wynik 22–23.10.2026: [R15, Windows check i rzeczywiste 8 h hosta](docs/reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+Pre-abort nie nadaje Start. Pełna fixture: 8 h wykonania, jedna fikcyjna akcja,
+raport i cleanup. Timeout RPC300 s pozostaje osobną granicą sterowania.
+Bez aktualizacji WORKSTATION i bez rozpoczęcia prawdziwej kampanii.
+
 Aktualizacja R14 (21.10.2026): [Stop/status/report](docs/NIGHTFLOW_CONTROL.md),
 [publiczne wejście i lokalna fixture hosta](docs/NIGHTFLOW_HOST_FIXTURE.md),
 [wynik prac](docs/reviews/JOBHUNTER_R14_CI_HOST_WYNIK.md).

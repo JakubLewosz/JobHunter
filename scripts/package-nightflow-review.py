@@ -142,7 +142,8 @@ Start with review/REPORT.md, review/test-summary.json, review/changes.patch and
 review/stop-measurements.json. source/ is the complete exact committed tree,
 including migrations, tests, lockfile and already published redacted snapshots.
 No deployment, production migration/research/mail/Gmail/CV or private database.
-Real eight-hour Codex/browser host retention is unverified.
+Real Codex/browser host results and their limits are recorded in review/REPORT.md
+and the selected review/evidence files; do not infer them from this template.
 
 FILE_MANIFEST.json hashes every other file. Its own recursive hash is omitted;
 the ZIP SHA-256 is recorded outside the archive.

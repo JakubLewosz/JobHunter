@@ -1,5 +1,25 @@
 # Node owner i lekki adapter Codexa — 21.10.2026
 
+Nowe wykonanie 22–23.10: krótka pełna fixture i osiem rzeczywistych godzin
+COMPLETED, jedna fikcyjna akcja i cleanup. Limit odpowiedzi RPC300 s opisano
+oddzielnie w [raporcie R15](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+Poniższe datowane wyniki 21.10 zachowują historię poprzedniego etapu.
+
+Aktualizacja R15 (22.10.2026): `connect(signal)` i `start(signal)` sprawdzają
+anulowanie przed pracą, po oczekiwaniach oraz przy samym przekazaniu komendy
+do socketu. Sygnał z connect pozostaje przypięty także przy `start()` bez
+argumentu; można też przekazać `options.signal` konstruktorowi. Publiczne
+`runNightflowTask` odrzuca już anulowane wejście przed utworzeniem klienta.
+Przed dispatch flaga started pozostaje false; po dispatch nie wraca do false,
+także przy utracie odpowiedzi. Start nie jest ponawiany. Close czeka na własne
+oczekujące podłączenie i zwalnia własnego workera najwyżej raz. Brak potwierdzenia
+release daje `BROWSER_RELEASE_UNCONFIRMED`, bez deklaracji utraty uprawnienia.
+Po potwierdzonym ackResult cleanup należy do kończącego się ownera; adapter
+nie wykonuje drugiego release przez już zamykany kanał.
+Samo zwolnienie workera nie jest ACK Stop ani potwierdzeniem końca operacji;
+wynik przerwanego segmentu zachowuje `authority: UNKNOWN`. Kontrakt R14 pozostaje.
+Wyniki nowego wykonania: [raport R15](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+
 Backend działa w zwykłym Node 24 na Windowsie. `scripts/browser-executor.mjs`
 importuje wyłącznie wykonawcę UI, klienta IPC i kontroler partii. Nie ładuje
 Store, SQLite, nodemailera, OAuth ani koordynatora. Import w rzeczywistym

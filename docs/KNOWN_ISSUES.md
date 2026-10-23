@@ -1,5 +1,18 @@
 # Znane problemy i granice dowodów — 18 października 2026
 
+Aktualizacja R15, wykonanie rozpoczęte 22.10.2026: wczesne anulowanie publicznego
+adaptera i samego dispatch Start ma natywne regresje Windows IPC. Utrata
+odpowiedzi po możliwym Start nadal nie pozwala na retry lub authority=false.
+Pierwszy pełny check ujawnił wyścig dodatkowego release po ACK raportu; cleanup
+potwierdzonego wyniku pozostawiono ownerowi. Niepotwierdzony release przy
+przerwaniu pozostaje błędem. [Bieżący raport](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md)
+rozdziela wyniki nowych prób od zachowanych historycznych wyników poniżej.
+Zakończone 23.10: nowy krótki host i rzeczywiste osiem godzin PASS wykonania,
+jedna fikcyjna akcja, pełny cleanup. Pozostaje granica odpowiedzi MCP 300 s:
+timeout nie zatrzymuje aktywnego adaptera; pojedynczy długi RPC nie jest
+potwierdzonym kanałem wyniku. Używać istniejących krótkich segmentów/Stop.
+Nie wdrożono WORKSTATION ani nie zatwierdzono pilota lub prawdziwych materiałów.
+
 Bieżący etap: [R1–R13 i nightflow](reviews/WINDOWS_NIGHTFLOW_IMPLEMENTATION.md).
 Status rzeczywistego hosta: **WIP / NIEWERYFIKOWANE_UTRZYMANIE_HOSTA**.
 Aktualizacja 21.10.2026: R14 i kontrakt niepotwierdzonego Stop opisano w

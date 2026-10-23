@@ -1,5 +1,11 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+Wykonanie 22–23.10.2026: [R15 i rzeczywiste osiem godzin](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+Nowy krótki host i 28 800 212,549 ms fazy badawczej: PASS, jedna fikcyjna akcja,
+raport i cleanup. Timeout odpowiedzi MCP 300 s nie zakończył wykonania w VM;
+nie utożsamiać timeoutu RPC ze Stop. Istniejący adapter obsługuje krótkie segmenty
+z zachowaniem instancji. Bez wdrożenia i bez zgody na produkcyjną kampanię.
+
 Aktualizacja integracji 21.10.2026: [Node owner i lekki adapter](HOST_ADAPTER.md).
 Backend i koordynator pozostają w zwykłym Node24; `runNightflowTask` w narzędziu
 łączy się z wcześniej uruchomionym zatrzymanym ownerem. Krótka pełna fixture

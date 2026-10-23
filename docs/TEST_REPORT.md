@@ -1,5 +1,20 @@
 # Wyniki i zakres weryfikacji — 18 października 2026
 
+## R15 / Windows / rzeczywiste 8 h — 22–23.10.2026
+
+[Pełny raport wersji, poleceń i granic](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
+Check 8332363: PASS 786/786 backend, 12/12 Stop, 26/26 UI, typecheck/build,
+exit 0; Windows10.0.26300 x64, Node24.19.0/npm11.17.0/SQLite3.53.4,
+748135,3822 ms, niezmienne źródła przed/po. Pierwszy check zachowuje FAIL UI
+24/26 (wyścig cleanup po ACK); po poprawce celowane 18/18 native i 4/4 UI.
+Nowy krótki cua_repl: COMPLETED, jedna fikcyjna akcja. Rzeczywisty 8 h:
+28 800 212,549 ms fazy RESEARCHING, potem jedna fikcyjna akcja i cleanup;
+956 segmentów, 88902 odnowienia, max gap2251 ms, ten sam owner/job/generacja.
+Odpowiedź długiego RPC miała timeout300 s; wykonanie w VM kontynuowało bez
+nowego Start i zostało odebrane przez zapis wyniku oraz końcowy odczyt narzędzia.
+Końcowy check drzewa dostawy i CI finalnego SHA są osobnymi metadanymi ZIP-a.
+Bez danych produkcyjnych, Gmaila, OAuth, SELF_TEST, migracji WORKSTATION i pilota.
+
 ## Node owner / lekki host / materiały — 21.10.2026
 
 Końcowy check dokładnych bajtów: **PASS, exit 0**, 773/773 backend, 12/12
