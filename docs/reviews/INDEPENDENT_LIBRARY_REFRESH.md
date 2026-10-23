@@ -69,3 +69,10 @@ przy tych samych bajtach źródła i profilu: wymagane jest jedno rzeczywiste
 wywołanie ekstrakcji, a kolejna zgodna kontrola korzysta już z cache. Stare
 analizy i próby pozostają zachowane. Poprzedni rozpoczęty pełny check
 przerwano przed dodaniem tej kontroli; wynik tego przebiegu nie jest PASS.
+
+
+## Końcowe sprawdzenie kodu — 24.10.2026
+
+Dla b0ac8ca5f20b65d4416d8c1cb7f7bbdefac2b3cf celowane regresje: 69/69 PASS. Pełny check na rzeczywistym Windows x64 / Node v24.19.0: 873/873 backend, 12/12 Stop, 26/26 UI, typecheck/build i osobny doctor PASS. Testy pracowały na odrębnych syntetycznych danych i fikcyjnych dostawcach, bez natywnego Gmaila. Manifesty przed/po potwierdzają identyczne bajty 240 plików wykonywanego kodu i testów. GitHub Offline Windows dla tego samego SHA zakończył się success. Wcześniejsze wyniki powyżej pozostają historią poszczególnych etapów, nie zastępują końcowego sprawdzenia.
+
+Backup i kontrole konkretnej instalacji są odrębnym prywatnym dowodem. Przyszłe odnowienie materiałów wymaga bieżących źródeł i własnego zakończenia; sprawdzenie kodu nie udziela prawa wysyłki ani zgody na pilot.

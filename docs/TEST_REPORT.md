@@ -543,3 +543,14 @@ GitHub CI dla przygotowywanego commitu nie został sprawdzony. Push kodu
 nie jest deploymentem lub zgodą na Start.
 
 Korekta narracji z 18.10.2026: 9 COMPLETED / 5 PARTIAL / 1 PAUSED pochodzi z dwóch raportów JSON zakończonej sesji i guarda, porównanych w diagnostyce z 18.10. Wcześniejsze 10/4/1 było błędem opisu; nie zmieniano danych runów.
+
+
+## 24.10.2026 — niezależne odnowienie: rzeczywisty Windows
+
+Windows x64, Node v24.19.0. Kod wykonawczy b0ac8ca5f20b65d4416d8c1cb7f7bbdefac2b3cf. Końcowy pełny npm run check: 873/873 backend, 12/12 Stop, 26/26 UI oraz typecheck/build PASS; osobny doctor PASS. Celowane regresje 69/69 PASS. Izolowane HOME/dane, DEVELOPMENT/DEMO i fikcyjni dostawcy; brak natywnego Gmaila. Nie podnoszono progów Stop ani limitów parsera.
+
+Przed poprawkami zachowano porażki: skorygowany fixture A → B → C 0/2, pierwszy zestaw 47/48, dostępność 0/3, odrębne zapytanie przy dokładnym zakresie OFFER 0/1 oraz dawny cache ekstrakcji 0/1. Błędy przygotowania fixture są odrębne od regresji produktu. Wcześniejszy ukończony pełny check kodu 1ea9de3: 868/868 + 12/12 + 26/26 PASS. Trzy inne rozpoczęte pełne przebiegi przerwano przed kolejnymi wykazanymi korektami (ochrona właściciela review, osobne zapytanie, kontrola cache); nie są PASS ani ukończonym FAIL. Logi pozostają zachowane.
+
+GitHub CI Offline Windows dla dokładnego b0ac8ca5f20b65d4416d8c1cb7f7bbdefac2b3cf: completed/success, [run 40036595927](https://github.com/JakubLewosz/JobHunter/actions/runs/40036595927), zakończony 23.10.2026 23:15:43 UTC. To potwierdzenie tego SHA, nie późniejszego commitu dokumentacji.
+
+Regresje obejmują niezmieniony zapisany tryb i zakres AUTO, chronione materiały/źródła, kontynuację po lokalnym odrzuceniu, obcy PAUSED, właściciela i wszystkie tabele po utracie własności, Stop/deadline oraz zmiany profilu/polityki/wersji podczas await. Nie wykonano rzeczywistej wysyłki ani testu pocztowego na koncie użytkownika. Prywatne dane nie są częścią dowodów publikowanych w Git.

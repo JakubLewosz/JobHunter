@@ -311,3 +311,15 @@ Poniższe historyczne próby nie są testem nowych zmian.
 Zmiany przygotowane do lokalnego commitu i pakietu źródeł dla AI.
 Rewizję ustala Git/manifest pakietu. Push nie jest deploymentem lub Start;
 GitHub CI wymaga osobnego rzeczywistego sprawdzenia konkretnego SHA.
+
+
+## 24.10.2026 — niezależne odnowienie istniejącej biblioteki
+
+- [x] Oddzielna możliwość researchu przy zapisanym AUTO_POLICY: bez zmiany polityki, zakresów i bez inicjalizacji Gmaila.
+- [x] Rozliczenie wyłącznie własnego zakończonego cyklu po lokalnym błędzie danych; regresja A → odrzucone B → C oraz brak ingerencji w obcy PAUSED.
+- [x] Ochrona właściciela, Stop, bezwzględnego deadline, profilu/polityki/wersji i wykluczonych materiałów wraz ze współdzielonymi źródłami.
+- [x] Ekstrakcja dostępności z zatwierdzonego profilu i kontrola wersji analizy przed użyciem cache; odrębne zapytanie badawcze nie dziedziczy warunków odrzuconej oferty.
+- [x] Dokładny kod b0ac8ca5f20b65d4416d8c1cb7f7bbdefac2b3cf: Windows/Node24, celowane 69/69 oraz pełne 873 backend + 12 Stop + 26 UI, typecheck/build/doctor PASS.
+- [ ] Osobne przyszłe zadanie: wspólna, badawcza ścieżka korekty mapowania claims dla istniejącego materiału odrzuconego przez kod, z nową wersją i regresjami, bez uruchamiania usługi Gmaila. Sam review nie naprawia odrzucenia kodowego.
+
+Szczegóły kontraktu: docs/reviews/INDEPENDENT_LIBRARY_REFRESH.md. Prywatne wyniki i kolejki pozostają poza repo. Te zmiany nie uruchamiają pilota ani prawa nadawania.
