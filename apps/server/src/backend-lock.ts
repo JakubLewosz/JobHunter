@@ -83,3 +83,44 @@ export function acquireProfileLock(dir: string) {
     },
   };
 }
+
+// Same lock respected by main.ts. Maintenance never claims a live/unknown owner.
+export function acquireBackendMaintenanceLock(base: string) {
+  const path = join(realpathSync(base), 'backend.lock'),
+    instance = randomUUID();
+  if (existsSync(path)) {
+    let owner: { pid: number };
+    try {
+      owner = JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8'));
+    } catch {
+      throw new DomainError('PROFILE_LOCKED', 'Niepotwierdzony właściciel backendu.');
+    }
+    if (!Number.isInteger(owner.pid) || owner.pid <= 0)
+      throw new DomainError('PROFILE_LOCKED', 'Niepotwierdzony właściciel backendu.');
+    try {
+      process.kill(owner.pid, 0);
+    } catch (error: any) {
+      if (error.code !== 'ESRCH')
+        throw new DomainError('PROFILE_LOCKED', 'Niepotwierdzony właściciel backendu.');
+      const stale = path + '.stale-' + instance;
+      renameSync(path, stale);
+      rmSync(stale, { recursive: true });
+    }
+  }
+  try {
+    mkdirSync(path);
+  } catch {
+    throw new DomainError('PROFILE_LOCKED', 'Zakończ backend przed konfiguracją konta.');
+  }
+  writeFileSync(join(path, 'owner.json'), JSON.stringify({ pid: process.pid, instance }), {
+    mode: 0o600,
+  });
+  return {
+    release() {
+      const owner = JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8'));
+      if (owner.pid !== process.pid || owner.instance !== instance)
+        throw new DomainError('PROFILE_LOCK_LOST', 'Utracono blokadę konfiguracji.');
+      rmSync(path, { recursive: true });
+    },
+  };
+}

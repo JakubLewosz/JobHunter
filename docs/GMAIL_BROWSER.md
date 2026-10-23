@@ -1,5 +1,11 @@
 # Gmail w przeglądarce Codexa
 
+Aktualizacja 23.10: [jedno aktywne konto i browser-only na WORKSTATION](SINGLE_ACCOUNT.md).
+Pomocnicze API wymaga tożsamości i readonly, bez wymogu gmail.send; natywne
+nadawanie API jest zablokowane także ze starym szerokim grantem. Poniższe
+datowane opisy wcześniejszego wariantu zachowują historię. Niezgodne konto,
+From lub niepotwierdzony Reply-To blokują przyszłą akcję, bez zmiany nadawcy.
+
 Bieżąca granica wykonania: [HOST_ADAPTER](HOST_ADAPTER.md). Import lekkiego
 wejścia i pełny krótki przebieg w rzeczywistym hoście są potwierdzone wyłącznie
 na własnej stronie i kompletnych fake providerach. Backend działa osobno w

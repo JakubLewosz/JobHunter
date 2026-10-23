@@ -1,5 +1,11 @@
 # Gmail — konfiguracja i bieżące granice
 
+Aktualne przygotowanie WORKSTATION: [SINGLE_ACCOUNT](SINGLE_ACCOUNT.md).
+Helper używa jednego prywatnie wskazanego konta oraz openid/email/readonly;
+API nie nadaje. Dawne instrukcje send-only i dawne adresy poniżej są historią,
+nie aktywnym wyborem. Verify nie czyta korespondencji; reconnect wymaga ręcznej
+zgody Google i nie uruchamia sesji. Diagnostyka tej sesji nie obejmuje SELF_TEST.
+
 Stan 17 października: istniejące połączenie domowego Windowsa jest skonfigurowane;
 wybrano GMAIL_BROWSER, ale sender pozostaje paused i RESEARCH_ONLY nie używa
 Gmaila. Dwa osobno zatwierdzone SELF_TEST UI zakończyły się SENT_CONFIRMED;
@@ -11,8 +17,9 @@ Nadawcę ustala prywatna konfiguracja i świeży podgląd, nie stare opisy kont 
 
 - DEVELOPMENT jest osobny, syntetyczny i nie inicjalizuje natywnego Gmaila.
 - WORKSTATION wymaga istniejącej historii, lokalnego oznaczenia i Windowsa.
-- GMAIL_API tworzy dokładny MIME i jeden POST. GMAIL_BROWSER wykorzystuje
-  aktywną sesję przeglądarki Codexa; nadal potrzebuje celowanego API do receipt.
+- WORKSTATION używa wyłącznie GMAIL_BROWSER i aktywnej sesji przeglądarki
+  Codexa; nadal potrzebuje pomocniczego API do historii i receipt. Legacy
+  GMAIL_API pozostaje w kodzie/regresjach, zablokowane w tej instalacji.
 - Zmiana transportu wymaga zatrzymania i braku oczekujących/niepewnych prób;
   unieważnia stare podglądy/politykę, nie uruchamia wysyłki.
 - Brak wykonawcy/UI nie wywołuje fallbacku API ani ponowienia send.
@@ -26,7 +33,7 @@ Istniejący helper obsługuje klienta OAuth Desktop app, PKCE/state i logowanie
 w standardowej przeglądarce. Klient JSON i sekrety pozostają poza repo,
 tokeny w lokalnym systemowym magazynie. Nie wpisywać ich do czatu lub raportu.
 
-Zakresy tożsamości i gmail.send/gmail.readonly należy pokazać przed zgodą.
+Zakresy openid/email i gmail.readonly należy pokazać przed zgodą; bez gmail.send.
 Google readonly pozwala odczytywać całą skrzynkę; ograniczenie do adresów/domen
 firm i własnych znanych prób jest kontrolą aplikacji. Poczta nie trafia do modelu.
 Nie rozszerzać OAuth w celu obejścia błędu, nie zmieniać konta automatycznie.

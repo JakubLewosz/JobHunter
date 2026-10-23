@@ -1,5 +1,27 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Jedno konto / Computer Use / pomocnicze API
+
+Nowy etap od bazy 4cd344e: Windows x64, Node24.19.0/npm11.17.0.
+Typecheck i celowane regresje: **99/99 PASS**; po dodaniu pełnego readonly
+przebiegu i zachowania niepustej historii: **29/29 PASS**. Serie częściowo
+pokrywają się. Pierwszy FAIL komunikatu i cztery błędy cleanup nowych fixture
+zachowano; poprawiono prefiks błędu i kolejność zamknięcia SQLite przed usuwaniem
+katalogu. Nie osłabiono bramek lub progów Stop.
+
+Pełny `npm run check` ma osobny, izolowany HOME/USERPROFILE/APPDATA/LOCALAPPDATA,
+TEMP i katalog danych oraz komplet fikcyjnych providerów. Dokładny wynik,
+liczniki i exit code są w `evidence/check-summary.json` i pełnym syntetycznym
+logu dostawy. `evidence/ci-final.json` wiąże CI z finalnym SHA; nie zastępujemy
+go wynikiem wcześniejszego commitu. Manifest testowanych źródeł i weryfikacja
+ponownego wypakowania ZIP wiążą rzeczywiste bajty kodu z dowodami.
+
+Zmieniono kontrolę konta/OAuth i końcową obserwację UI, bez lifecycle ownera
+Node24/adaptera R15; testu ośmiogodzinnego nie powtarzamy. Rzeczywisty Gmail,
+konto karty, scope i przygotowanie WORKSTATION mają oddzielny prywatny wynik,
+bez korespondencji lub rzeczywistej wysyłki. Nowe testy syntetyczne nie są
+zgodą na SELF_TEST/pilota. [Raport techniczny](reviews/JOBHUNTER_SINGLE_ACCOUNT_TECHNICAL.md).
+
 ## Pierwsze rzeczywiste odnowienie — 23.10.2026
 
 Kod wdrożony i załadowany: **5adc8c31bee86bd60f86dd01a0a8bbe74121104b** (baza 1ec973a). Nowe wejście odnowienia i minimalny kontekst starej wiadomości: **7/7 celowanych PASS**. Końcowy pełny Windows npm run check: **794/794 backend, 12/12 Stop, 26/26 UI, typecheck/build PASS, exit 0**; 09:50:31.913–10:07:01.919 UTC, 990006.52 ms. Testy miały osobne syntetyczne HOME/data i komplet fikcyjnych providerów. Fingerprint 02267446f301a7c7e19ef5b9763932655e14996bae9d2aa8a6e69e42b89f91e3 bez zmian; 233 pliki kodu/testów bajtowo zgodne z Git. Pierwszy nieukończony check przerwano przed wynikiem po ujawnieniu potrzeby przekazania poprzedniego tekstu do minimalnej korekty; nie jest PASS.

@@ -1,5 +1,9 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+23.10: aktualna [konfiguracja jednego konta i diagnostyka bez poczty](SINGLE_ACCOUNT.md)
+nie uruchamia sekwencji nightflow. Logowanie helpera OAuth oraz zalogowanie
+karty Gmaila w Codexie są oddzielne; oba muszą potwierdzić tę samą tożsamość.
+
 Wykonanie 22–23.10.2026: [R15 i rzeczywiste osiem godzin](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
 Nowy krótki host i 28 800 212,549 ms fazy badawczej: PASS, jedna fikcyjna akcja,
 raport i cleanup. Timeout odpowiedzi MCP 300 s nie zakończył wykonania w VM;

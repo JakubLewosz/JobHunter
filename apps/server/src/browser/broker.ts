@@ -80,6 +80,11 @@ export class BrowserDeliveryBroker {
       timeoutMs?: number;
       allowFixture?: boolean;
       fixtureOrigin?: string;
+      assertIdentity?: (
+        account: string | undefined,
+        sender: string,
+        replyTo: string | null | undefined,
+      ) => void;
     } = {},
   ) {
     if (options.fixtureOrigin) localFixtureOrigin(options.fixtureOrigin);
@@ -249,6 +254,7 @@ export class BrowserDeliveryBroker {
     const o = composeObservationSchema.parse(raw),
       expected = p.payload;
     this.assertURL(o.url);
+    this.options.assertIdentity?.(o.account, o.sender, o.replyTo);
     if (
       o.sender.toLowerCase() !== expected.sender.toLowerCase() ||
       o.to.length !== 1 ||

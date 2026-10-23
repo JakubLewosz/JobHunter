@@ -4,10 +4,16 @@ import { mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSyn
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { z } from 'zod';
 import { DomainError } from '../util.js';
+import {
+  assertAccountPolicy,
+  assertPolicyUnchanged,
+  type AccountPolicySource,
+} from './account-policy.js';
 
 export const gmailSendScope = 'https://www.googleapis.com/auth/gmail.send';
 export const gmailReadScope = 'https://www.googleapis.com/auth/gmail.readonly';
 export const requestedScopes = ['openid', 'email', gmailSendScope];
+export const browserReadScopes = ['openid', 'email', gmailReadScope];
 const allowedScopes = new Set([
   ...requestedScopes,
   'https://www.googleapis.com/auth/userinfo.email',
@@ -127,20 +133,79 @@ export async function googleJSON(url: string, init: RequestInit, request: typeof
     );
   }
 }
-export function grantedScopes(scope: string, includeRead = false) {
+export function grantedScopes(scope: string, includeRead = false, browserOnly = false) {
   const scopes = scope.split(/\s+/).filter(Boolean);
   if (
-    !scopes.includes(gmailSendScope) ||
+    (!browserOnly && !scopes.includes(gmailSendScope)) ||
+    (browserOnly &&
+      (!scopes.includes('openid') ||
+        !scopes.some(
+          (s) => s === 'email' || s === 'https://www.googleapis.com/auth/userinfo.email',
+        ) ||
+        !scopes.includes(gmailReadScope))) ||
     (includeRead && !scopes.includes(gmailReadScope)) ||
     scopes.some((s) => !allowedScopes.has(s) && !(includeRead && s === gmailReadScope))
   )
     throw new DomainError(
       'OAUTH_SCOPES',
-      includeRead
-        ? 'Zgoda Google musi obejmować tożsamość, wysyłkę i odczyt Gmail.'
-        : 'Zgoda Google musi obejmować tylko tożsamość konta i wysyłkę Gmail.',
+      browserOnly
+        ? 'Pomocnicze API wymaga tożsamości i odczytu Gmaila, bez prawa nadawania w aplikacji.'
+        : includeRead
+          ? 'Zgoda Google musi obejmować tożsamość, wysyłkę i odczyt Gmail.'
+          : 'Zgoda Google musi obejmować tylko tożsamość konta i wysyłkę Gmail.',
     );
   return scopes;
+}
+export type OAuthAccountGuard = {
+  policy: AccountPolicySource;
+  metadata: () => AccountInfo | null;
+  signal?: AbortSignal;
+};
+function storedAccountGuard(guard: OAuthAccountGuard, account: AccountInfo) {
+  guard.signal?.throwIfAborted();
+  const policy = guard.policy();
+  assertAccountPolicy(policy, account);
+  const metadata = guard.metadata();
+  if (
+    !metadata ||
+    metadata.subject !== account.subject ||
+    metadata.email.toLowerCase() !== account.email.toLowerCase()
+  )
+    throw new DomainError(
+      'GMAIL_ACCOUNT_CHANGED',
+      'Metadane połączenia nie potwierdzają aktywnego konta.',
+    );
+  return policy;
+}
+async function verifyProvider(bearer: string, account: AccountInfo, request: typeof fetch) {
+  const identity = z
+    .object({ sub: z.string().min(1), email: z.email(), email_verified: z.literal(true) })
+    .parse(
+      await googleJSON(
+        'https://openidconnect.googleapis.com/v1/userinfo',
+        { headers: { Authorization: `Bearer ${bearer}` } },
+        request,
+      ),
+    );
+  if (
+    identity.sub !== account.subject ||
+    identity.email.toLowerCase() !== account.email.toLowerCase()
+  )
+    throw new DomainError('GMAIL_ACCOUNT_CHANGED', 'Google nie potwierdził zapisanej tożsamości.');
+  const profile = z
+    .object({ emailAddress: z.email() })
+    .parse(
+      await googleJSON(
+        'https://gmail.googleapis.com/gmail/v1/users/me/profile?fields=emailAddress',
+        { headers: { Authorization: `Bearer ${bearer}` } },
+        request,
+      ),
+    );
+  if (profile.emailAddress.toLowerCase() !== account.email.toLowerCase())
+    throw new DomainError(
+      'GMAIL_ACCOUNT_CHANGED',
+      'Profil Gmaila nie odpowiada tożsamości Google.',
+    );
 }
 export async function connectGoogle(
   client: DesktopClient,
@@ -150,7 +215,10 @@ export async function connectGoogle(
   request: typeof fetch = fetch,
   timeoutMs = 300000,
   includeRead = false,
+  guard?: OAuthAccountGuard,
 ): Promise<AccountInfo> {
+  guard?.signal?.throwIfAborted();
+  const policy = guard?.policy();
   const verifier = randomBytes(32).toString('base64url');
   const challenge = createHash('sha256').update(verifier).digest('base64url');
   const state = randomBytes(32).toString('hex');
@@ -223,7 +291,7 @@ export async function connectGoogle(
             request,
           ),
         );
-      const scopes = grantedScopes(token.scope, includeRead);
+      const scopes = grantedScopes(token.scope, includeRead || !!guard, !!guard);
       const identity = z
         .object({ sub: z.string().min(1), email: z.email(), email_verified: z.literal(true) })
         .parse(
@@ -239,7 +307,19 @@ export async function connectGoogle(
         connectedAt: new Date().toISOString(),
         scopes,
       };
+      if (guard && policy) {
+        guard.signal?.throwIfAborted();
+        assertPolicyUnchanged(guard.policy, policy);
+        assertAccountPolicy(policy, account, true);
+        await verifyProvider(token.access_token, account, request);
+        guard.signal?.throwIfAborted();
+        assertPolicyUnchanged(guard.policy, policy);
+      }
       if (expired) throw new DomainError('OAUTH_TIMEOUT', 'Minął czas logowania Google.');
+      const previous = await vault.get();
+      if (expired) throw new DomainError('OAUTH_TIMEOUT', 'Minął czas logowania Google.');
+      guard?.signal?.throwIfAborted();
+      if (guard && policy) assertPolicyUnchanged(guard.policy, policy);
       await vault.set(
         JSON.stringify({
           client,
@@ -249,9 +329,19 @@ export async function connectGoogle(
           account,
         }),
       );
-      if (expired) {
-        await vault.remove();
+      if (expired || guard?.signal?.aborted) {
+        if (previous) await vault.set(previous);
+        else await vault.remove();
         throw new DomainError('OAUTH_TIMEOUT', 'Minął czas logowania Google.');
+      }
+      if (guard && policy) {
+        try {
+          assertPolicyUnchanged(guard.policy, policy);
+        } catch (error) {
+          if (previous) await vault.set(previous);
+          else await vault.remove();
+          throw error;
+        }
       }
       saveInfo(dir, account);
       res
@@ -276,13 +366,22 @@ export async function connectGoogle(
     expired = true;
     fail(new DomainError('OAUTH_TIMEOUT', 'Minął czas logowania Google.'));
   }, timeoutMs);
+  const abort = () => {
+    expired = true;
+    fail(new DomainError('OAUTH_CANCELLED', 'Anulowano logowanie Google.'));
+  };
+  guard?.signal?.addEventListener('abort', abort, { once: true });
   try {
     const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     auth.search = new URLSearchParams({
       client_id: client.client_id,
       redirect_uri: redirect,
       response_type: 'code',
-      scope: [...requestedScopes, ...(includeRead ? [gmailReadScope] : [])].join(' '),
+      scope: (guard
+        ? browserReadScopes
+        : [...requestedScopes, ...(includeRead ? [gmailReadScope] : [])]
+      ).join(' '),
+      ...(policy ? { login_hint: policy.email } : {}),
       state,
       code_challenge: challenge,
       code_challenge_method: 'S256',
@@ -293,17 +392,29 @@ export async function connectGoogle(
     return await result;
   } finally {
     clearTimeout(timer);
+    guard?.signal?.removeEventListener('abort', abort);
     if (expired) server.closeAllConnections();
     await new Promise<void>((yes) => server.close(() => yes()));
   }
 }
-export async function accessToken(vault: SecretStore, request: typeof fetch = fetch) {
+export async function accessToken(
+  vault: SecretStore,
+  request: typeof fetch = fetch,
+  guard?: OAuthAccountGuard,
+) {
+  // Check private metadata BEFORE reading/refreshing any stored credential.
+  if (guard) {
+    const metadata = guard.metadata();
+    if (!metadata) throw new DomainError('GMAIL_NOT_CONNECTED', 'Brak metadanych aktywnego konta.');
+    storedAccountGuard(guard, metadata);
+  }
   let session: z.infer<typeof sessionSchema>;
   try {
     session = sessionSchema.parse(JSON.parse((await vault.get()) ?? 'null'));
   } catch {
     throw new DomainError('GMAIL_NOT_CONNECTED', 'Najpierw podłącz konto Gmail.');
   }
+  const policy = guard ? storedAccountGuard(guard, session.account) : undefined;
   if (session.expiresAt > Date.now() + 60000) return session.accessToken;
   const token = z
     .object({
@@ -330,22 +441,41 @@ export async function accessToken(vault: SecretStore, request: typeof fetch = fe
     session.account.scopes = grantedScopes(
       token.scope,
       session.account.scopes.includes(gmailReadScope),
+      !!guard,
     );
   session.accessToken = token.access_token;
   session.expiresAt = Date.now() + token.expires_in * 1000;
+  if (guard && policy) {
+    await verifyProvider(session.accessToken, session.account, request);
+    guard.signal?.throwIfAborted();
+    assertPolicyUnchanged(guard.policy, policy);
+    storedAccountGuard(guard, session.account);
+  }
   await vault.set(JSON.stringify(session));
   return session.accessToken;
 }
 // Only called by explicit delivery/read operations; never returned from an HTTP route.
-export async function gmailCredentials(vault: SecretStore, request: typeof fetch = fetch) {
-  const bearer = await accessToken(vault, request);
+export async function gmailCredentials(
+  vault: SecretStore,
+  request: typeof fetch = fetch,
+  guard?: OAuthAccountGuard,
+) {
+  const policy = guard?.policy();
+  const bearer = await accessToken(vault, request, guard);
   let session: z.infer<typeof sessionSchema>;
   try {
     session = sessionSchema.parse(JSON.parse((await vault.get()) ?? 'null'));
   } catch {
     throw new DomainError('GMAIL_NOT_CONNECTED', 'Najpierw podłącz konto Gmail.');
   }
-  grantedScopes(session.account.scopes.join(' '), true);
+  grantedScopes(session.account.scopes.join(' '), true, !!guard);
+  if (guard && policy) {
+    storedAccountGuard(guard, session.account);
+    await verifyProvider(bearer, session.account, request);
+    guard.signal?.throwIfAborted();
+    assertPolicyUnchanged(guard.policy, policy);
+    return { account: session.account, bearer };
+  }
   const identity = z
     .object({ sub: z.string(), email: z.email(), email_verified: z.literal(true) })
     .parse(
@@ -365,12 +495,25 @@ export async function gmailCredentials(vault: SecretStore, request: typeof fetch
     );
   return { account: session.account, bearer };
 }
-export async function storedDesktopClient(vault: SecretStore): Promise<DesktopClient> {
+export async function storedDesktopClient(
+  vault: SecretStore,
+  guard?: OAuthAccountGuard,
+): Promise<DesktopClient> {
   try {
-    return sessionSchema.parse(JSON.parse((await vault.get()) ?? 'null')).client;
+    if (guard) {
+      const metadata = guard.metadata();
+      if (!metadata) throw new Error('NO_METADATA');
+      storedAccountGuard(guard, metadata);
+    }
+    const session = sessionSchema.parse(JSON.parse((await vault.get()) ?? 'null'));
+    if (guard) storedAccountGuard(guard, session.account);
+    return session.client;
   } catch {
     throw new DomainError('GMAIL_NOT_CONNECTED', 'Najpierw podłącz Gmail plikiem Desktop app.');
   }
+}
+export function saveVerifiedAccountInfo(dir: string, account: AccountInfo) {
+  saveInfo(dir, account);
 }
 export async function disconnectGoogle(
   vault: SecretStore,

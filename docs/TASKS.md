@@ -1,5 +1,24 @@
 # Bieżące zadania — 23 października 2026
 
+## Jedno konto / Computer Use / bez wysyłki — 23.10.2026
+
+- [x] Prywatne przypięcie email/subject/revision w istniejącym workstation.json;
+      brak domyślnego wyboru dawnego konta i brak automatycznej zmiany nadawcy.
+- [x] OAuth identity + readonly dla browser-only; kontrola przed zapisem i refresh,
+      natywny API send zablokowany przed tokenem/HTTP i przed rezerwacją.
+- [x] Osobne konto karty/From/Reply-To, ponowna obserwacja po końcowym await;
+      nieznany Reply-To blokuje. Helper konfiguracji/verify bez workera i poczty.
+- [x] Celowane testy 99/99, następnie dodatkowe integracyjne 29/29 PASS,
+      z zachowaniem pierwszych błędów i poprawy cleanup. Wynik pełnego check osobno.
+- [ ] Przed pilotem: potwierdzone logowanie provider + Gmail profile oraz osobno
+      karta Codexa, efektywny From/Reply-To/podpis. Nie używać Start do diagnostyki.
+- [ ] Potwierdzić wiarygodną obserwację efektywnego Reply-To w prawdziwym UI;
+      obecny brak pola pozostaje blokadą, bez odblokowania flagą raportu.
+- [ ] Osobno autoryzować celowaną historię i pilota z konkretnymi materiałami,
+      odbiorcami/domenami i tempem/limitem. Dzisiejszy etap niczego nie wysyła.
+
+[Mechanizm i obsługa](SINGLE_ACCOUNT.md), [raport techniczny](reviews/JOBHUNTER_SINGLE_ACCOUNT_TECHNICAL.md).
+
 ## Pierwsze rzeczywiste odnowienie bez poczty — 23.10.2026
 
 - [x] Ustalić istniejący WORKSTATION i brak żywego starego właściciela; spójny backup z WAL, odtworzenie i migracja 20 → 27 z zachowaniem dawnych rekordów.

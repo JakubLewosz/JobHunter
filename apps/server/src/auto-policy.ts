@@ -756,6 +756,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       throw new DomainError('SESSION_ACTIVE', 'Zatrzymaj sesję przed zmianą polityki.');
     const input = autoPolicySchema.parse(raw),
       account = this.deliveryState().account;
+    this.assertActiveAccount(input.senderEmail);
     const p = this.minimalProfile(),
       { cv } = this.cvBytes(input.cvId);
     if (!account || account.email !== input.senderEmail)
@@ -817,6 +818,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     if (requireSession) this.nightflowSendGuard?.();
     const p = this.policyConfig(),
       account = this.deliveryState().account;
+    this.assertActiveAccount(p?.senderEmail);
     if (!p) throw new DomainError('POLICY_REQUIRED', 'Najpierw zatwierdź politykę w Ustawieniach.');
     if (
       hash(JSON.stringify(p.priorApplications ?? null)) !==
@@ -1483,7 +1485,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       if (!queued) {
         await this.refreshDraftSources(operation.draftId, this.preparationController.signal);
         this.selected(operation);
-        const account = await this.gateway.account();
+        const account = await this.connectedAccount();
         const d = this.selected(operation);
         const publicProblems = this.issues(d, 'FIRST_CONTACT', account, false);
         if (publicProblems.length)

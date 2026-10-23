@@ -31,6 +31,11 @@ export const composeObservationSchema = z
     url: z.string().max(2000),
     composeId: z.string().min(1).max(300),
     sender: z.email(),
+    account: z.email().optional(),
+    replyTo: z
+      .union([z.literal(''), z.email()])
+      .nullable()
+      .optional(),
     to: z.array(z.email()).max(10),
     cc: z.array(z.email()).max(10),
     bcc: z.array(z.email()).max(10),

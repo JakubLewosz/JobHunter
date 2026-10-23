@@ -1,5 +1,9 @@
 # Node owner i lekki adapter Codexa — 21.10.2026
 
+23.10: [jedno konto i pomocnicze API](SINGLE_ACCOUNT.md). Podział Node24/lekki
+adapter oraz R1–R15 pozostają. Samą tożsamość sprawdza helper bez ownera,
+runNightflowTask, Start lub wiadomości. Natywny transport pozostaje browser-only.
+
 Nowe wykonanie 22–23.10: krótka pełna fixture i osiem rzeczywistych godzin
 COMPLETED, jedna fikcyjna akcja i cleanup. Limit odpowiedzi RPC300 s opisano
 oddzielnie w [raporcie R15](reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).

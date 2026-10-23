@@ -21,18 +21,40 @@ import { hash } from '../apps/server/src/util.js';
 import Database from 'better-sqlite3';
 import nodemailer from 'nodemailer';
 import { runBrowserDelivery, GmailBrowserExecutor } from '../apps/server/src/browser/executor.js';
+import { gmailReadScope } from '../apps/server/src/gmail/oauth.js';
+import { configureSingleAccount } from '../apps/server/src/gmail/maintenance.js';
 
-async function setup(t: TestContext) {
+async function setup(t: TestContext, singleAccount = false) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-browser-')),
     store = new Store(dir),
     gateway = new FixtureGmail();
+  if (singleAccount) {
+    gateway.info.scopes = ['openid', 'email', gmailReadScope];
+    store.set('gmailSendTransport', 'GMAIL_BROWSER');
+  }
   const options = {
     gateway,
     accountInfo: () => gateway.info,
     runner: new FixtureRunner(),
     reader: new FixtureReader(),
+    ...(singleAccount
+      ? {
+          accountPolicy: () => ({
+            email: 'owner@example.test',
+            subject: 'fictional-account',
+            transport: 'GMAIL_BROWSER' as const,
+            revision: 'fictional',
+          }),
+        }
+      : {}),
   };
   const service = new GmailJobHunter(store, options);
+  if (singleAccount)
+    store.exec(
+      'UPDATE campaigns SET account_email=? WHERE id=?',
+      gateway.info.email,
+      service.campaignId,
+    );
   t.after(async () => {
     await service.browserDelivery.close();
     await service.stopWorker();
@@ -81,6 +103,8 @@ const observation = (p: BrowserPayload): ComposeObservation => ({
   url: 'https://mail.google.com/mail/u/0/#inbox',
   composeId: 'fictional-compose',
   sender: p.sender,
+  account: p.sender,
+  replyTo: '',
   to: [p.recipient],
   cc: [],
   bcc: [],
@@ -215,6 +239,67 @@ test('Browser: exact payload, CV bytes and own readonly receipt use one shared a
     }),
   );
   await f.service.dispatchOne();
+  assert.equal(f.gateway.posts.length, 0);
+});
+
+test('single account readonly: targeted fixture history and own UI receipt keep one reservation and zero API sends', async (t) => {
+  const f = await setup(t, true);
+  await f.service.checkHistory({ drafts: [{ id: f.d.id, version: f.d.version }], consent: true });
+  assert.equal(f.gateway.historyQueries.length, 1);
+  const { dispatch, payload } = await begin(f);
+  f.service.browserDelivery.authorize('worker-fixture', payload.id, observation(payload));
+  f.service.browserDelivery.check('worker-fixture', payload.id);
+  ownMessage(f, payload);
+  f.service.browserDelivery.complete('worker-fixture', payload.id, {
+    acknowledged: true,
+    url: 'https://mail.google.com/mail/u/0/#sent/own',
+    candidateId: 'abcdef0123456789',
+  });
+  await dispatch;
+  assert.equal(f.service.outboxRows()[0].status, 'SENT_CONFIRMED');
+  assert.equal(f.gateway.posts.length, 0);
+  assert.equal(f.store.one('SELECT count(*) n FROM usage_ledger')!.n, 1);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 1);
+});
+
+test('single account configuration preserves nonempty SELF_TEST/unknown, two historical subjects and suppression', async (t) => {
+  const f = await setup(t),
+    { dispatch, payload } = await begin(f);
+  f.service.browserDelivery.authorize('worker-fixture', payload.id, observation(payload));
+  f.service.control('stop');
+  await dispatch;
+  assert.equal(f.service.outboxRows()[0].status, 'SEND_UNKNOWN');
+  f.service.suppress(f.d.company_id, 'DO_NOT_CONTACT', 'Synthetic refusal', 'user');
+  // Synthetic history has an old independent account, never selected/refreshed.
+  f.store.exec("UPDATE gmail_outbox SET account_subject='historical-other-subject'");
+  f.store.exec(
+    'UPDATE campaigns SET account_email=? WHERE id=?',
+    f.gateway.info.email,
+    f.service.campaignId,
+  );
+  const tables = [
+    'outbox',
+    'send_attempts',
+    'usage_ledger',
+    'gmail_outbox',
+    'gmail_previews',
+    'suppressions',
+    'drafts',
+    'draft_versions',
+  ];
+  const before = Object.fromEntries(
+    tables.map((name) => [name, f.store.all(`SELECT * FROM ${name} ORDER BY rowid`)]),
+  );
+  const base = mkdtempSync(join(tmpdir(), 'jh-policy-history-'));
+  t.after(() => rmSync(base, { recursive: true, force: true }));
+  writeFileSync(
+    join(base, 'workstation.json'),
+    JSON.stringify({ kind: 'WORKSTATION', base, historyConfirmed: true }),
+  );
+  configureSingleAccount(f.store, base, f.gateway.info.email);
+  for (const name of tables)
+    assert.deepEqual(f.store.all(`SELECT * FROM ${name} ORDER BY rowid`), before[name]);
+  assert.equal(f.service.deliveryAuthority().enabled, false);
   assert.equal(f.gateway.posts.length, 0);
 });
 test('Browser: Stop before authorization prevents sending; after authorization it remains uncertain and blocks retry', async (t) => {

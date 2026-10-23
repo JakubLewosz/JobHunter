@@ -1,5 +1,11 @@
 # Bezpieczeństwo JobHunter — 12 października 2026
 
+23.10: [reguła jednego konta](SINGLE_ACCOUNT.md) jest obowiązkowa dla natywnego
+WORKSTATION. Email/subject i transport są w istniejącej prywatnej konfiguracji;
+brak zgodności blokuje przed poświadczeniami, zapisem OAuth i rezerwacją.
+API ma funkcje pomocnicze, bez nadawania/fallbacku. Tożsamość API i karty są
+osobnymi dowodami; nieznany Reply-To nie przechodzi końcowej bramki.
+
 Aktualizacja 21.10: [lekki adapter i owner Node](HOST_ADAPTER.md) korzystają
 z dotychczasowego uwierzytelnionego IPC. Attach nie daje prawa Start. Nowa
 propozycja faktu ma DRAFT i unieważnia binding profilu; provenance nie jest

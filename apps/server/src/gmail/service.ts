@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { z } from 'zod';
 import type { Row } from '../../../../packages/shared/types.js';
 import { Store } from '../db.js';
@@ -15,6 +15,11 @@ import { developmentRuntime, type Runtime } from '../runtime.js';
 import { BrowserDeliveryBroker } from '../browser/broker.js';
 import { transportSchema, type SendTransport } from '../browser/contracts.js';
 import { browserReceiptMatches } from '../browser/verification.js';
+import {
+  readAccountPolicy,
+  assertAccountPolicy,
+  type AccountPolicySource,
+} from './account-policy.js';
 import {
   manualHistoryBlocks,
   gmailHistoryBlocks,
@@ -58,6 +63,60 @@ export class GmailJobHunter extends ResearchJobHunter {
   protected activeSendingOutbox: string | null = null;
   private historyBusy = false;
   private accountInfo: () => AccountInfo | null;
+  private accountPolicySource?: AccountPolicySource;
+  private accountPolicyBinding?: string;
+  private accountInvalid = false;
+  private invalidateAccount() {
+    this.accountInvalid = true;
+    this.revokeDeliveryAuthority();
+    try {
+      this.control('stop');
+    } catch {}
+    try {
+      this.revokeApprovals('Utrata zgodności aktywnego konta');
+    } catch {}
+  }
+  protected assertActiveAccount(email?: string) {
+    if (!this.accountPolicySource) return;
+    try {
+      if (this.accountInvalid)
+        throw new DomainError(
+          'GMAIL_ACCOUNT_CHANGED',
+          'Zrestartuj zatrzymaną instalację po naprawie konta.',
+        );
+      const policy = this.accountPolicySource();
+      const binding = JSON.stringify(policy);
+      if (this.accountPolicyBinding && this.accountPolicyBinding !== binding)
+        throw new DomainError(
+          'GMAIL_ACCOUNT_CHANGED',
+          'Konfiguracja konta zmieniła się; prawo sesji odwołano.',
+        );
+      this.accountPolicyBinding ??= binding;
+      const account = this.accountInfo();
+      if (!account)
+        throw new DomainError('GMAIL_NOT_CONNECTED', 'Brak połączenia aktywnego konta.');
+      assertAccountPolicy(policy, account);
+      if (email && normalizeEmail(email) !== normalizeEmail(policy.email))
+        throw new DomainError(
+          'GMAIL_ACCOUNT_CHANGED',
+          'Nadawca nie odpowiada prywatnej polityce konta.',
+        );
+    } catch (error) {
+      this.invalidateAccount();
+      throw error;
+    }
+  }
+  protected async connectedAccount() {
+    this.assertActiveAccount();
+    try {
+      const account = await this.gateway.account();
+      this.sameAccount(account);
+      return account;
+    } catch (error) {
+      if (this.accountPolicySource) this.invalidateAccount();
+      throw error;
+    }
+  }
   readonly runtime: Runtime;
   readonly fictionalProviders: boolean;
   private sendGeneration = 0;
@@ -99,6 +158,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       accountInfo?: () => AccountInfo | null;
       runtime?: Runtime;
       fixtureBrowserOrigin?: string;
+      accountPolicy?: AccountPolicySource;
     } = {},
   ) {
     if (
@@ -123,6 +183,11 @@ export class GmailJobHunter extends ResearchJobHunter {
       mode: options.mode === 'AUTO_POLICY' ? 'AUTO_POLICY' : 'APPROVAL_REQUIRED',
     });
     this.runtime = options.runtime ?? developmentRuntime;
+    this.accountPolicySource =
+      options.accountPolicy ??
+      (this.runtime.kind === 'WORKSTATION'
+        ? () => readAccountPolicy(dirname(store.dir))
+        : undefined);
     this.fictionalProviders = !!options.gateway && !!options.accountInfo;
     if (!!options.gateway !== !!options.accountInfo)
       throw new DomainError(
@@ -132,7 +197,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     this.gateway =
       options.gateway ??
       (this.runtime.kind === 'WORKSTATION'
-        ? nativeGmail(this.runtime.assertNative)
+        ? nativeGmail(this.runtime.assertNative, dirname(store.dir))
         : disabledGmail());
     this.accountInfo =
       options.accountInfo ??
@@ -144,6 +209,23 @@ export class GmailJobHunter extends ResearchJobHunter {
         : () => null);
     this.browserDelivery = new BrowserDeliveryBroker(store, {
       fixtureOrigin: options.fixtureBrowserOrigin,
+      assertIdentity: this.accountPolicySource
+        ? (account, sender, replyTo) => {
+            this.assertActiveAccount(sender);
+            if (
+              normalizeEmail(account ?? '') !== normalizeEmail(sender) ||
+              replyTo === undefined ||
+              replyTo === null ||
+              (replyTo !== '' && normalizeEmail(replyTo) !== normalizeEmail(sender))
+            ) {
+              this.invalidateAccount();
+              throw new DomainError(
+                'GMAIL_ACCOUNT_CHANGED',
+                'Konto karty, From lub Reply-To nie zostały zgodnie potwierdzone.',
+              );
+            }
+          }
+        : undefined,
     });
     store.set('gmailSenderPaused', true);
     this.revokeApprovals('Po restarcie wysyłka wymaga ponownego przeglądu');
@@ -152,6 +234,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     );
   }
   deliveryState() {
+    this.assertActiveAccount();
     const account = this.accountInfo();
     return {
       account,
@@ -186,6 +269,17 @@ export class GmailJobHunter extends ResearchJobHunter {
     };
   }
   sendTransport(): SendTransport {
+    if (this.accountPolicySource) {
+      this.assertActiveAccount();
+      if (this.store.get<string>('gmailSendTransport', '') !== 'GMAIL_BROWSER') {
+        this.invalidateAccount();
+        throw new DomainError(
+          'API_SEND_DISABLED',
+          'Wybierz zatwierdzony transport przeglądarkowy.',
+        );
+      }
+      return 'GMAIL_BROWSER';
+    }
     return transportSchema.parse(this.store.get('gmailSendTransport', 'GMAIL_API'));
   }
   async setSendTransport(raw: unknown) {
@@ -197,6 +291,14 @@ export class GmailJobHunter extends ResearchJobHunter {
       })
       .strict()
       .parse(raw);
+    if (this.accountPolicySource) {
+      this.assertActiveAccount();
+      if (v.transport !== 'GMAIL_BROWSER')
+        throw new DomainError(
+          'API_SEND_DISABLED',
+          'API nie jest dozwolonym transportem tej instalacji.',
+        );
+    }
     if (
       this.sending ||
       this.researching ||
@@ -313,6 +415,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     return result;
   }
   private sameAccount(account: AccountInfo, subject?: string, email?: string) {
+    this.assertActiveAccount(account.email);
     const configured = this.accountInfo();
     if (
       !configured ||
@@ -320,15 +423,20 @@ export class GmailJobHunter extends ResearchJobHunter {
       account.email.toLowerCase() !== configured.email.toLowerCase() ||
       (subject && account.subject !== subject) ||
       (email && normalizeEmail(account.email) !== normalizeEmail(email))
-    )
+    ) {
+      if (this.accountPolicySource) this.invalidateAccount();
       throw new DomainError(
         'GMAIL_ACCOUNT_CHANGED',
         'Konto zmieniło się; odśwież podgląd wiadomości.',
       );
-    if (!account.scopes.includes(gmailReadScope) || !account.scopes.includes(gmailSendScope))
+    }
+    if (
+      !account.scopes.includes(gmailReadScope) ||
+      (this.sendTransport() === 'GMAIL_API' && !account.scopes.includes(gmailSendScope))
+    )
       throw new DomainError(
         'READ_PERMISSION_REQUIRED',
-        'Połącz odczyt i wysyłkę Gmaila w Połączeniach.',
+        'Połącz odczyt Gmaila w Połączeniach; wymagania nadawania zależą od transportu.',
       );
   }
   setTestRecipient(email: string) {
@@ -447,7 +555,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     if (this.historyBusy) throw new DomainError('BUSY', 'Odczyt historii już trwa.');
     this.historyBusy = true;
     try {
-      const account = await this.gateway.account();
+      const account = await this.connectedAccount();
       this.sameAccount(account);
       for (const item of input.drafts) {
         const d = this.draft(item.id, item.version),
@@ -522,7 +630,7 @@ export class GmailJobHunter extends ResearchJobHunter {
             : undefined,
         );
         after = await this.gateway.marker(account);
-        this.sameAccount(await this.gateway.account(), account.subject, account.email);
+        this.sameAccount(await this.connectedAccount(), account.subject, account.email);
         if (before === after) {
           stable = true;
           break;
@@ -533,7 +641,7 @@ export class GmailJobHunter extends ResearchJobHunter {
           'HISTORY_CHANGED',
           'Poczta zmieniła się podczas odczytu; sprawdź historię ponownie.',
         );
-      this.sameAccount(await this.gateway.account(), account.subject, account.email);
+      this.sameAccount(await this.connectedAccount(), account.subject, account.email);
       this.store.exec(
         "UPDATE gmail_history_checks SET status='COMPLETE',history_id=?,checked_at=?,error=NULL WHERE company_id=? AND account_subject=?",
         after,
@@ -720,7 +828,7 @@ export class GmailJobHunter extends ResearchJobHunter {
         'INVALID_BATCH',
         'Wybierz do trzech wiadomości; test do siebie używa jednej.',
       );
-    const account = await this.gateway.account();
+    const account = await this.connectedAccount();
     this.sameAccount(account);
     if (this.sendTransport() === 'GMAIL_BROWSER' && !this.browserDelivery.status().connected)
       throw new DomainError(
@@ -732,6 +840,16 @@ export class GmailJobHunter extends ResearchJobHunter {
     if (!cv.approved_at)
       throw new DomainError('CV_NOT_APPROVED', 'Przejrzyj i zatwierdź CV w Moje materiały.');
     const c = this.campaign();
+    if (
+      this.accountPolicySource &&
+      normalizeEmail(c.account_email ?? '') !== normalizeEmail(account.email)
+    ) {
+      this.invalidateAccount();
+      throw new DomainError(
+        'GMAIL_ACCOUNT_CHANGED',
+        'Kampania ma innego nadawcę; nie przełączono go automatycznie.',
+      );
+    }
     if (c.account_email !== account.email || c.cv_id !== cv.id)
       this.store.atomic(() => {
         this.revokeApprovals('Zmiana nadawcy lub wybranego CV');
@@ -783,7 +901,7 @@ export class GmailJobHunter extends ResearchJobHunter {
         ...message,
       });
     }
-    this.sameAccount(await this.gateway.account(), account.subject, account.email);
+    this.sameAccount(await this.connectedAccount(), account.subject, account.email);
     this.store.atomic(() => {
       if (
         this.profile().profile_hash !== p.hash ||
@@ -865,7 +983,7 @@ export class GmailJobHunter extends ResearchJobHunter {
         'SEND_CONFIRMATION_REQUIRED',
         'Potwierdź treści, odbiorców, nadawcę i CV.',
       );
-    const account = await this.gateway.account();
+    const account = await this.connectedAccount();
     this.assertDeliveryGeneration(generation);
     const preview = this.preview(input.previewId);
     this.sameAccount(account, preview.account_subject, preview.account_email);
@@ -1185,7 +1303,7 @@ export class GmailJobHunter extends ResearchJobHunter {
     let reserved = false;
     try {
       const o = this.packet(first.id),
-        account = await this.gateway.account();
+        account = await this.connectedAccount();
       if (o.kind === 'FIRST_CONTACT') await this.syncCompany(this.draft(o.draft_id), account);
       this.store.atomic(() => {
         if (this.packet(o.id).status !== 'QUEUED')
@@ -1355,7 +1473,7 @@ export class GmailJobHunter extends ResearchJobHunter {
         'READ_CONSENT_REQUIRED',
         'Potwierdź odczyt tej próby wysyłki ponownie.',
       );
-    const account = await this.gateway.account();
+    const account = await this.connectedAccount();
     this.sameAccount(account, o.account_subject, o.account_email);
     const attempt = this.store.one('SELECT * FROM send_attempts WHERE outbox_id=?', o.id)!;
     // Deleted historical MIME is a diagnostic limitation, never reconstructed from a draft.
@@ -1399,7 +1517,7 @@ export class GmailJobHunter extends ResearchJobHunter {
       },
     });
     // Account/consent can change while reading. Never consume partial or stale evidence.
-    this.sameAccount(await this.gateway.account(), o.account_subject, o.account_email);
+    this.sameAccount(await this.connectedAccount(), o.account_subject, o.account_email);
     const consent = this.packet(o.id).read_consent_expires_at;
     if (!Number.isFinite(Date.parse(consent)) || consent <= this.now())
       throw new DomainError('READ_CONSENT_REQUIRED', 'Zgoda wygasła podczas odczytu tej próby.');
@@ -1535,7 +1653,7 @@ export class GmailJobHunter extends ResearchJobHunter {
         'READ_CONSENT_REQUIRED',
         'Wybierz wysłaną wiadomość i potwierdź odczyt jej wątku.',
       );
-    const account = await this.gateway.account();
+    const account = await this.connectedAccount();
     this.sameAccount(account, o.account_subject, o.account_email);
     const messages = await this.gateway.thread(a.provider_thread_id);
     this.store.atomic(() => {

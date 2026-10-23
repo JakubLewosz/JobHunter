@@ -1,5 +1,9 @@
 # JobHunter
 
+Aktualna reguła WORKSTATION: [jedno aktywne konto, Computer Use i pomocnicze
+API bez nadawania](docs/SINGLE_ACCOUNT.md). Tożsamość jest przypięta poza repo;
+dawne konta pozostają historią. Połączenie nie wykonuje Start.
+
 Wynik 22–23.10.2026: [R15, Windows check i rzeczywiste 8 h hosta](docs/reviews/JOBHUNTER_R15_HOST_8H_RESULT.md).
 Pre-abort nie nadaje Start. Pełna fixture: 8 h wykonania, jedna fikcyjna akcja,
 raport i cleanup. Timeout RPC300 s pozostaje osobną granicą sterowania.

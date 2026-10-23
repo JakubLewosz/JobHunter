@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { DomainError } from '../util.js';
 import { GmailMailProvider } from './client.js';
 import { gmailCredentials, gmailReadScope, nativeSecretStore, type AccountInfo } from './oauth.js';
+import { readAccountPolicy, assertAccountPolicy } from './account-policy.js';
+import { setupInfo } from './oauth.js';
+import { join } from 'node:path';
 import type { FrozenMessage } from '../providers.js';
 import { textFromHTML } from '../research/fetcher.js';
 import { inspectMime, decodeSubject, maxMimeBytes } from './inspection.js';
@@ -169,6 +172,7 @@ export class GmailApi implements GmailGateway {
   constructor(
     private credentials: () => Promise<{ account: AccountInfo; bearer: string }>,
     private request: typeof fetch = fetch,
+    private apiSendAllowed: () => void = () => {},
   ) {}
   async account() {
     return (await this.credentials()).account;
@@ -489,6 +493,7 @@ export class GmailApi implements GmailGateway {
     return { ...parsed, raw };
   }
   async send(input: FrozenMessage, expected: AccountInfo, beforeSend: () => void) {
+    this.apiSendAllowed(); // Before credentials, reservation callback or HTTP.
     const provider = new GmailMailProvider(
       async () => {
         const { account, bearer } = await this.credentials();
@@ -518,10 +523,26 @@ export function disabledGmail(): GmailGateway {
     send: denied,
   };
 }
-export function nativeGmail(assertNative: () => void): GmailGateway {
+export function nativeGmail(assertNative: () => void, base: string): GmailGateway {
   // Lazy credential access: constructing the app never opens Keychain or reads the mailbox.
-  return new GmailApi(async () => {
-    assertNative();
-    return gmailCredentials(await nativeSecretStore());
-  });
+  return new GmailApi(
+    async () => {
+      assertNative();
+      const policy = readAccountPolicy(base);
+      const metadata = setupInfo(join(base, 'gmail-preparation'));
+      if (!metadata) throw new DomainError('GMAIL_NOT_CONNECTED', 'Podłącz jedyne aktywne konto.');
+      assertAccountPolicy(policy, metadata);
+      return gmailCredentials(await nativeSecretStore(), fetch, {
+        policy: () => readAccountPolicy(base),
+        metadata: () => setupInfo(join(base, 'gmail-preparation')),
+      });
+    },
+    fetch,
+    () => {
+      throw new DomainError(
+        'API_SEND_DISABLED',
+        'Instalacja robocza nadaje wyłącznie przez Computer Use.',
+      );
+    },
+  );
 }

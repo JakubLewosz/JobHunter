@@ -121,6 +121,8 @@ export class GmailBrowserExecutor {
         .map((e) => e.getAttribute('aria-label')!)
         .filter((s) => /^(Konto Google:|Google Account:)/u.test(s));
       const defaultAccount = accountLabels.length === 1 ? accountLabels[0] : '';
+      const account =
+        defaultAccount.match(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? '';
       // Gmail only shows a From row when an alternate sender is available.
       // An unexpected From row with no selected value is not safe to infer.
       if (
@@ -137,6 +139,9 @@ export class GmailBrowserExecutor {
         url: location.href,
         composeId: field('composeid'),
         sender,
+        account,
+        // Absence is UNKNOWN; account identity does not prove Reply-To settings.
+        replyTo: d.querySelector<HTMLInputElement>('input[name="replyto"]')?.value ?? null,
         to,
         cc: addresses('cc'),
         bcc: addresses('bcc'),
@@ -148,6 +153,16 @@ export class GmailBrowserExecutor {
   }
   async prepare(payload: BrowserPayload) {
     await this.assertPage();
+    const account = await this.tab.playwright.evaluate(() => {
+      const labels = Array.from(document.querySelectorAll('[aria-label]'))
+        .map((e) => e.getAttribute('aria-label')!)
+        .filter((s) => /^(Konto Google:|Google Account:)/u.test(s));
+      return labels.length === 1
+        ? labels[0].match(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
+        : undefined;
+    });
+    if (account?.toLowerCase() !== payload.sender.toLowerCase())
+      throw Error('GMAIL_ACCOUNT_CHANGED');
     const staleAck = await this.tab.playwright.evaluate(() =>
       Array.from(document.querySelectorAll<HTMLElement>('[role="alert"],[role="status"]')).some(
         (e) =>
@@ -254,6 +269,8 @@ export class GmailBrowserExecutor {
     if (controls.length !== 1) throw Error('GMAIL_SEND_AMBIGUOUS');
     await beforeClick?.();
     this.signal?.throwIfAborted();
+    const final = await this.observe();
+    if (JSON.stringify(final) !== JSON.stringify(expected)) throw Error('GMAIL_COMPOSE_CHANGED');
     await this.tab.playwright.getByRole('button', { name: controls[0], exact: true }).click();
   }
   async receipt(): Promise<BrowserReceipt> {
