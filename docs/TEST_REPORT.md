@@ -3,6 +3,15 @@
 ## Jedno konto / Computer Use / pomocnicze API
 
 Nowy etap od bazy 4cd344e: Windows x64, Node24.19.0/npm11.17.0.
+Pierwszy pełny lokalny check 808e9fa: PASS 806/806 backend, 12/12 Stop,
+26/26 UI, typecheck/build, exit0 (1076874,4052 ms). CI tego SHA zachowuje
+FAIL 805/806 backend / CONTROL_TIMEOUT w teście waiting-owner. Test wysyłał
+status bez bariery po starcie, podczas pracy fixture. Dodano jawną barierę
+WAITING_WINDOW, wyłączono discovery w tym teście kontroli i zamrożono czas
+fixture poza oknem wysyłki; deadline IPC5 s i progi Stop niezmienione.
+Nie uznano na tej podstawie wydajności produkcyjnego ownera za wyjaśnioną.
+Końcowe wykonanie po poprawce ma oddzielny log/SHA/CI w dowodach dostawy.
+
 Typecheck i celowane regresje: **99/99 PASS**; po dodaniu pełnego readonly
 przebiegu i zachowania niepustej historii: **29/29 PASS**. Serie częściowo
 pokrywają się. Pierwszy FAIL komunikatu i cztery błędy cleanup nowych fixture

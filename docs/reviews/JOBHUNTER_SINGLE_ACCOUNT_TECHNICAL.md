@@ -54,6 +54,16 @@ Gmaila, aktualnego From, historii firmy lub dostarczalności.
 
 ## Pozostała granica pilota
 
+Pierwszy pełny lokalny check 808e9fa przeszedł 806/12/26, ale CI zachowało
+CONTROL_TIMEOUT w istniejącym teście waiting-owner. Poprawka dotyczy wyłącznie
+synchronizacji tego testu do rzeczywistego WAITING_WINDOW; nie zmienia
+deadline5 s IPC, progów Stop, lifecycle lub produkcyjnego koordynatora.
+Osobno systemowy handler Windows zastąpił nieskuteczne otwarcie przez Explorer.
+Wygaśnięty callback zachowano jako OAUTH_TIMEOUT, bez pozornego sukcesu.
+Powtórne logowanie użytkownika przeszło pełne sprawdzenie provider/profile
+z readonly. Rzeczywiste dane konta i incydenty zakresu diagnostyki są wyłącznie
+w prywatnym wyniku, bez treści korespondencji w dostawie.
+
 Native gate wymaga osobnej obserwacji konta i dowodu Reply-To. Brak widocznego
 pola Reply-To w obecnym rozpoznawaniu UI daje UNKNOWN i blokadę. Trzeba
 potwierdzić obsługiwany sposób uzyskania efektywnego Reply-To; nie wystarczy

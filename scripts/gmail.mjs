@@ -137,13 +137,18 @@ try {
         dir,
         async (url) => {
           await new Promise((yes, no) => {
-            const child = spawn('explorer.exe', [url], {
+            const child = spawn('rundll32.exe', ['url.dll,FileProtocolHandler', url], {
               shell: false,
               stdio: 'ignore',
-              windowsHide: true,
+              windowsHide: false,
             });
             child.once('error', no);
-            child.once('exit', (code) => (code === 0 ? yes() : no(new Error('BROWSER'))));
+            // The system URL handler opens the user's interactive browser.
+            // Only the verified loopback callback confirms login.
+            child.once('spawn', () => {
+              child.unref();
+              yes();
+            });
           });
         },
         request,

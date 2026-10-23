@@ -126,13 +126,37 @@ test('nightflow plan requires explicit unlimited choice and a real timezone/wind
 test('nightflow: live authenticated control Stop is received by the same waiting owner, offline report stays readonly', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'jh-nightflow-control-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
+  let reached!: () => void;
+  const waiting = new Promise<void>((resolve) => (reached = resolve));
   await withNightflow(
-    { dir, fixture: true, realWaitMs: 20 },
+    {
+      dir,
+      fixture: true,
+      realWaitMs: 20,
+      fixtureAdvanceMs: 0,
+      onProgress: (event) => {
+        if (event === 'PHASE_WAITING_WINDOW') reached();
+      },
+    },
     async (coordinator, _service, plan) => {
+      // Exercise a waiting owner, not synchronous refresh/setup before its first
+      // IPC turn. The real RPC deadline remains unchanged at five seconds.
+      plan = {
+        ...plan,
+        discovery: false,
+        window: { ...plan.window, start: '22:00', end: '23:00' },
+      };
       coordinator.savePlan(plan, true);
       const running = coordinator.start(plan.id);
+      await Promise.race([
+        waiting,
+        running.then(() => {
+          throw Error('OWNER_ENDED_BEFORE_WAITING');
+        }),
+      ]);
       const state = await requestNightflow(dir, 'status');
       assert.equal(state.current.authority, true);
+      assert.equal(state.current.state, 'WAITING_WINDOW');
       await requestNightflow(dir, 'stop');
       const report = await running;
       assert.equal(report.state, 'STOPPED');

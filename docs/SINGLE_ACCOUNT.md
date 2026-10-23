@@ -37,6 +37,15 @@ node scripts/gmail.mjs reconnect
 # Pierwsze połączenie: connect <prywatny plik klienta Desktop app poza repo>
 ```
 
+Na lokalnym Windowsie potwierdzono potrzebę `node --use-system-ca` przy
+połączeniach Google: domyślny zestaw CA Node zwracał
+UNABLE_TO_VERIFY_LEAF_SIGNATURE. Flagę sprawdzono w zainstalowanym Node24;
+korzysta z istniejącego magazynu Windows, zachowując walidację TLS. Nie
+zmieniono globalnych certyfikatów lub ustawień systemu. Używać jej również
+w przyszłym jawnym wywołaniu natywnego ownera. Helper otwiera zwykłą
+interaktywną przeglądarkę przez systemowy URL handler Windows. Dopiero
+zweryfikowany callback, a nie samo uruchomienie procesu, potwierdza logowanie.
+
 Adres przykładowy jest fikcyjny. Configure wymaga zgodności z jawnie wybranym
 nadawcą kampanii; nie zmienia go według odpowiedzi dostawcy. Helper nie otwiera
 usługi, workera, brokera lub sendera. Blokuje żywego/niepewnego właściciela
