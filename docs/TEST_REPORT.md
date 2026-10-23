@@ -1,4 +1,16 @@
-# Wyniki i zakres weryfikacji — 18 października 2026
+# Wyniki i zakres weryfikacji — 23 października 2026
+
+## Pierwsze rzeczywiste odnowienie — 23.10.2026
+
+Kod wdrożony i załadowany: **5adc8c31bee86bd60f86dd01a0a8bbe74121104b** (baza 1ec973a). Nowe wejście odnowienia i minimalny kontekst starej wiadomości: **7/7 celowanych PASS**. Końcowy pełny Windows npm run check: **794/794 backend, 12/12 Stop, 26/26 UI, typecheck/build PASS, exit 0**; 09:50:31.913–10:07:01.919 UTC, 990006.52 ms. Testy miały osobne syntetyczne HOME/data i komplet fikcyjnych providerów. Fingerprint 02267446f301a7c7e19ef5b9763932655e14996bae9d2aa8a6e69e42b89f91e3 bez zmian; 233 pliki kodu/testów bajtowo zgodne z Git. Pierwszy nieukończony check przerwano przed wynikiem po ujawnieniu potrzeby przekazania poprzedniego tekstu do minimalnej korekty; nie jest PASS.
+
+[Windows CI dokładnego SHA — success](https://github.com/JakubLewosz/JobHunter/actions/runs/39935218837). Nie utożsamiano CI, HEAD i faktycznie załadowanego buildu. Build 809f8e42-3547-41b0-a253-e3f036f7ad2e; loadedCodeHash a31200ae8344e824c1679cd9027e5ce132ed83234dc246e3808637893211bbff. Nie powtarzano 8 h po zmianach nieobejmujących adaptera hosta.
+
+Osobny dowód produkcyjny: backup 52 tabel z WAL i integralnością/FK, izolowana próba odtworzenia/migracji 20 → 27, następnie migracja właściwej historii. Po konkretnej zgodzie zastosowano profil v11 / PDF PL publicznymi operacjami, zachowując stare ID, stare CV i DEFERRED. Rzeczywiste publiczne źródła/model: 10:09:30.133→11:08:25.154UTC (58 min 55,021 s ściennie; 50 min 47,121 s aktywnych przebiegów), cleanup czterech przebiegów — 7,567 s. Cap 11:09:30.133 UTC nieodnawiany; kolejne deadline wyłącznie wcześniejsze. Trzy lokalne odrzucenia treści zachowano i zamknięto publicznie przed przejściem do innych nietkniętych ID; ostatni przebieg DEADLINE.
+
+71 pozycji rozpoczętych, 70 wyników, 40 materiałów po code PASS/pozytywnym review, 30 odłożeń, 1 przerwany, 168 nietkniętych. 272 nowe weryfikacje źródeł, 130 wywołań modelu (129 OK / 1 CANCELLED przy deadline); pełnego HTTP/cache nie mierzono. Biblioteka: 515 firm, 414 kontaktów, 240 szkiców, 327 wersji. 285 dawnych wersji i wszystkie stare rekordy zachowane; 62 tabele zgodne z końcowym backupem VACUUM INTO, integrity=ok / FK=0.
+
+**Rzeczywista wysyłka/Gmail/OAuth/SELF_TEST/pilot: 0/NOT_RUN.** Brak nowych outbox/zgód/rezerwacji/prób/akcji browser, brak prawa wysyłki, brak aktywnego cyklu lub własnego właściciela. Nie jest to dowód gotowości całej biblioteki do wysyłki ani kompletnego sprawdzenia historii Gmaila. [Pełny bezpieczny wynik](reviews/JOBHUNTER_FIRST_REAL_REFRESH_RESULT.md); szczegóły odbiorców i PDF wyłącznie lokalnie.
 
 ## R15 / Windows / rzeczywiste 8 h — 22–23.10.2026
 

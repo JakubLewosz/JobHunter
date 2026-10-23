@@ -1,4 +1,19 @@
-# Bieżące zadania — 18 października 2026
+# Bieżące zadania — 23 października 2026
+
+## Pierwsze rzeczywiste odnowienie bez poczty — 23.10.2026
+
+- [x] Ustalić istniejący WORKSTATION i brak żywego starego właściciela; spójny backup z WAL, odtworzenie i migracja 20 → 27 z zachowaniem dawnych rekordów.
+- [x] Po jednej konkretnej zgodzie zastosować propozycję materiałów i dokładny PDF; rzeczywiste ID, profil v11, stare CV/fakty/historia zachowane, FixDesk DEFERRED.
+- [x] Dodać cienkie research:refresh nad refreshLibraryDrafts, bez Gmaila/sendera/nightflow, z zakresem ID, Stop, deadline i chronionymi snapshotami. 7 nowych testów; pełny Windows check 794/12/26 oraz CI kodu 5adc8c3 PASS.
+- [x] Wykonać rzeczywistą fazę pod nieodnawianym limitem 3600 s: 71 rozpoczętych / 70 wyników / 40 odnowionych i poprawionych / 30 odłożeń / 1 przerwany deadline / 168 nietkniętych. Cztery ograniczone przebiegi, bez powtórzenia zakończonych ID i bez przedłużania cap.
+- [x] Potwierdzić zachowanie 285 dawnych wersji, MIME, historii, blokad i liczników; 62 tabele zgodne z końcowym spójnym backupem. Zero nowych pakietów, rezerwacji, prób i uprawnień wysyłki. STOPPED, bez własnych procesów/locków.
+- [x] Przygotować prywatną propozycję 3 kandydatów pilota, bez Gmaila, zgody na partię lub wysyłki.
+- [ ] W następnej osobno zleconej sesji kontynuować stabilną kolejkę 168 nietkniętych; osobno naprawić 30 odłożeń i pozycję przerwaną. Nie wznawiać starego deadline ani nie zaliczać starych PASS. Grupy B: 167 / C: 106 pozostają kolejną kolejką; D: 3 firmy / 1 szkic nadal zablokowane.
+- [ ] Wyjaśnić pojedyncze UNSUPPORTED_TECHNOLOGY / INVALID_CLAIM / INVALID_MODEL_RESULT i wtórne BUSY po ITEMS_NEED_REVIEW. Błędy zachować; zamykać cykl publicznie, bez SQL obejść i retry błędnej wiadomości.
+- [ ] Ujednolicić dawne etykiety godzin w metadanych kwalifikacji z aktualnym profilem; odnowione teksty nie deklarują pory po lekcjach.
+- [ ] Przed pilotem uzyskać jedną odrębną zgodę na konkretne wersje/odbiorców/PDF/konto, celowany odczyt historii oraz tempo/limit/okno; sprawdzić rzeczywistego nadawcę. Dzisiejszy research nie uruchamia pilota i nie zmienia docelowego AUTO_POLICY.
+
+[Bezpieczny raport rzeczywistego wyniku](reviews/JOBHUNTER_FIRST_REAL_REFRESH_RESULT.md). Prywatne materiały, checkpointy i propozycja pilota pozostają poza Git.
 
 ## R15 / host 8 h — wykonanie 22.10.2026
 
