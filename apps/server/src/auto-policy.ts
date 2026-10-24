@@ -1451,23 +1451,52 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         "SELECT o.id FROM outbox o JOIN auto_outbox a ON a.outbox_id=o.id WHERE o.status='QUEUED' AND a.session_id=?",
         this.sessionId,
       );
-      const batchIds = this.activeBatchId
-        ? new Set(
-            this.batchSummary(this.activeBatchId)
-              .items.filter((i) => i.state === 'READY')
-              .map((i) => i.draft_id),
+      const batch = this.activeBatchId ? this.batchSummary(this.activeBatchId) : null;
+      if (batch) {
+        // An existing packet has priority, but cannot be adopted from another scope.
+        queued = this.store.one(
+          "SELECT id FROM outbox WHERE status='QUEUED' ORDER BY created_at,rowid LIMIT 1",
+        );
+        if (
+          queued &&
+          !this.store.one(
+            "SELECT i.id FROM auto_batch_outbox b JOIN auto_batch_items i ON i.id=b.item_id JOIN outbox o ON o.id=b.outbox_id JOIN auto_outbox a ON a.outbox_id=o.id WHERE o.id=? AND i.batch_id=? AND a.session_id=? AND i.state='READY' AND i.draft_id=o.draft_id AND i.draft_version=o.draft_version",
+            queued.id,
+            batch.id,
+            this.sessionId,
           )
-        : null;
+        )
+          throw new DomainError(
+            'BATCH_SCOPE_CHANGED',
+            'Oczekujący pakiet nie należy do bieżącej partii i sesji.',
+          );
+      }
+      const nextItem = batch?.items.find((item) => item.state === 'READY');
       const candidate = queued
         ? null
-        : this.draftRows().find(
-            (d) =>
-              d.status !== 'SENT' &&
-              (!batchIds || batchIds.has(d.id)) &&
-              this.inScope(d) &&
-              !this.awaitingDraftReview(d) &&
-              !this.store.get(`autoSkipped:${d.id}:${d.version}`, false),
-          );
+        : batch
+          ? nextItem && this.draft(nextItem.draft_id)
+          : this.draftRows().find(
+              (d) =>
+                d.status !== 'SENT' &&
+                this.inScope(d) &&
+                !this.awaitingDraftReview(d) &&
+                !this.store.get(`autoSkipped:${d.id}:${d.version}`, false),
+            );
+      if (
+        batch &&
+        candidate &&
+        (this.awaitingDraftReview(candidate) ||
+          this.store.get(`autoSkipped:${candidate.id}:${candidate.version}`, false))
+      ) {
+        // Keep the next ordinal pending; a later READY item must not overtake it.
+        this.store.set('autoSenderReason', 'DRAFT_MATERIAL_UNVERIFIED');
+        this.store.set(
+          'autoNextSendAt',
+          iso(new Date(this.clock().getTime() + p.sendIntervalSeconds * 1000)),
+        );
+        return;
+      }
       if (!queued && !candidate) {
         this.settleBatch();
         this.store.set(
@@ -1489,6 +1518,8 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         contactBinding: this.contactBinding(chosen),
         outboxId: queued?.id,
       };
+      if (batch && !this.inScope(chosen))
+        throw new DomainError('SCOPE_CHANGED', 'Szkic nie należy do zatwierdzonego zakresu.');
       if (this.historyMode() === 'PRIVATE_GIT') await this.historySync.checkpoint();
       this.selected(operation);
       if (!queued) {

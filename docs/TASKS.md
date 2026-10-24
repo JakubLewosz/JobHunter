@@ -323,3 +323,15 @@ GitHub CI wymaga osobnego rzeczywistego sprawdzenia konkretnego SHA.
 - [ ] Osobne przyszłe zadanie: wspólna, badawcza ścieżka korekty mapowania claims dla istniejącego materiału odrzuconego przez kod, z nową wersją i regresjami, bez uruchamiania usługi Gmaila. Sam review nie naprawia odrzucenia kodowego.
 
 Szczegóły kontraktu: docs/reviews/INDEPENDENT_LIBRARY_REFRESH.md. Prywatne wyniki i kolejki pozostają poza repo. Te zmiany nie uruchamiają pilota ani prawa nadawania.
+
+## 24.10.2026 — kolejność zamkniętej partii
+
+- [x] Odtworzyć C/B/A na bazowym kodzie i wybierać tylko aktywną zamkniętą
+      partię według zatwierdzonego ordinal; ciągłe AUTO zachowuje selekcję.
+- [x] Regresje kolejności przygotowania/rezerwacji/prób, review, pominięć,
+      zmian materiału, QUEUED, obcego scope i pojedynczej akcji brokera.
+- [ ] Osobny rzeczywisty pilot: ponowny aktualny preflight i jedna zbiorcza
+      zgoda na dokładne materiały, celowaną historię i warunkowy Start.
+
+Wyniki Windows/CI oraz identyfikacja instalacji są rozliczane w dowodach
+dostawy. Sama poprawka i aktualizacja nie udzielają prawa nadawania.

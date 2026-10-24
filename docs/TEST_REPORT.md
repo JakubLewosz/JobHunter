@@ -1,5 +1,19 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Kolejność zamkniętej partii — 24 października 2026
+
+Windows x64 / Node24.19.0. Nowa regresja publicznej ścieżki wykazała na
+bazowym kodzie faktyczne C/B/A zamiast zatwierdzonego A/B/C. Po poprawce:
+**15/15 nowych regresji PASS**, a celowany zestaw AUTO/partii/review/brokera/
+restartu: **103/103 PASS, FAIL0, SKIP0, cancel0**, exit 0.
+Pełne izolowane `npm run check` na Windows/Node24: **888 backend + 12 Stop
++ 26 UI PASS**, typecheck/build PASS, exit 0; FAIL0/SKIP0/cancel0.
+Fingerprint kodu przed/po zgodny. CI dokładnego końcowego SHA jest
+rozliczane osobno w dowodach dostawy, bez utożsamiania go z lokalnym PASS.
+Początkowe błędy fixture i oczekiwany FAIL bazowego kodu pozostają w dowodach.
+Zakres i granice: [CLOSED_BATCH_ORDER](reviews/CLOSED_BATCH_ORDER.md).
+Wyłącznie dane fikcyjne; te testy nie uruchamiają rzeczywistego pilota.
+
 ## RESEARCH_ONLY → nowa wersja w polityce AUTO → zamknięta partia
 
 Baza d514ea7; Windows x64 / Node24.19.0. Celowane **45/45 PASS, FAIL0, SKIP0**,
