@@ -364,6 +364,7 @@ export async function runBrowserDelivery(
   let payload: BrowserPayload | null = null,
     heartbeat: ReturnType<typeof setInterval> | undefined,
     uncertain = false;
+  const stopHeartbeat = () => clearInterval(heartbeat);
   try {
     options.signal?.throwIfAborted();
     const state = await client.attach();
@@ -374,7 +375,11 @@ export async function runBrowserDelivery(
     payload = await client.next(scope);
     options.signal?.throwIfAborted();
     if (!payload) return { status: 'IDLE' };
-    heartbeat = setInterval(() => void client.attach().catch(() => {}), 10000);
+    heartbeat = setInterval(() => {
+      if (options.signal?.aborted) return stopHeartbeat();
+      void client.attach().catch(() => {});
+    }, 10000);
+    options.signal?.addEventListener('abort', stopHeartbeat, { once: true });
     const driver = new GmailBrowserExecutor(tab, options.signal, options.fixtureOrigin);
     const observation = await driver.prepare(payload);
     options.signal?.throwIfAborted();
@@ -395,7 +400,8 @@ export async function runBrowserDelivery(
       e instanceof Error && /^[A-Z_]{1,80}$/u.test(e.message) ? e.message : 'BROWSER_ACTION_FAILED';
     return { status: 'STOPPED', jobId: payload?.id, code, uncertain };
   } finally {
-    clearInterval(heartbeat);
+    stopHeartbeat();
+    options.signal?.removeEventListener('abort', stopHeartbeat);
   }
 }
 

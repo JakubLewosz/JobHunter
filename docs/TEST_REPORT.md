@@ -1,5 +1,15 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Utrzymanie Computer Use — 24 października 2026
+
+Windows / Node24.19.0: **17/17 nowych regresji PASS**, a rzeczywisty,
+syntetyczny przebieg w `cua_repl`: **660529,7027 ms PASS** (11 min 0,53 s),
+521 kontroli karty, maksymalny odstęp 4769 ms, bez utraty lease.
+Próg 45 s niezmieniony. Stop, release i cleanup potwierdzone; zero AUTO
+sessions/batches/outbox/rezerwacji/prób. Poprzednie odłączone próby nie są PASS.
+Pełny check/CI i późniejszy preflight mają oddzielne manifesty w dostawie.
+[Zakres i ograniczenia](reviews/COMPUTER_USE_LIVENESS.md).
+
 ## Kolejność zamkniętej partii — 24 października 2026
 
 Windows x64 / Node24.19.0. Nowa regresja publicznej ścieżki wykazała na

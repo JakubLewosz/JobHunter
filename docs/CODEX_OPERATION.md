@@ -1,5 +1,11 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+24.10: zamknięta partia używa ciągłego `BrowserBatchTask` w aktywnym Computer
+Use; osobne odczyty postępu nie przerywają pętli. Próg lease 45 s i bramki
+pozostają bez zmian. [Obsługa](HOST_ADAPTER.md),
+[zakres dowodów](reviews/COMPUTER_USE_LIVENESS.md).
+Przygotowanie/preflight nie uruchamia tego taska na rzeczywistej partii.
+
 23.10: aktualna [konfiguracja jednego konta i diagnostyka bez poczty](SINGLE_ACCOUNT.md)
 nie uruchamia sekwencji nightflow. Logowanie helpera OAuth oraz zalogowanie
 karty Gmaila w Codexie są oddzielne; oba muszą potwierdzić tę samą tożsamość.

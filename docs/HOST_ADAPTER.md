@@ -1,5 +1,62 @@
 # Node owner i lekki adapter Codexa — 21.10.2026
 
+## Zamknięta partia i ciągły wykonawca — 24.10.2026
+
+Ręczne wywoływanie `segment()` z przerwami na rozmowę nie utrzymuje lease
+między wywołaniami. Próg brokera nadal wynosi **45 sekund**. Do zamkniętej
+partii służy teraz eksport `BrowserBatchTask` z tego samego lekkiego wejścia.
+Nie zmienia Startu, przygotowania partii ani guarda w backendzie.
+
+Po osobnej zgodzie i pojedynczym `startBatch`, w aktywnym `cua_repl`:
+
+```js
+const client = await adapter.connectBrowserExecutor(profileDir);
+const task = new adapter.BrowserBatchTask(client, tab, {
+  taskId,
+  deadlineMs: consentDeadlineMs,
+  signal: cancellation.signal,
+});
+const progress = setInterval(() => nodeRepl.write(task.status()), 30000);
+try {
+  await task.run(); // całe wykonanie w JEDNYM aktywnym wywołaniu narzędzia
+} finally {
+  clearInterval(progress);
+  await task.close();
+}
+```
+
+Deadline jest kopią nieprzedłużanego terminu zgody. Przed każdym odcinkiem
+wykonawca odczytuje URL rzeczywistej karty; brak odpowiedzi przez 5 s, obcy
+origin, Stop, abort, zmiana backend/session/batch/generation lub wygasły lease
+kończą tę instancję. Ciągłe odcinki wykonują istniejący kontroler i pojedynczą
+akcję UI z jego dotychczasowymi bramkami. Odczyt statusu nie odnawia terminu,
+nie wykonuje Startu i nie przejmuje nowej sesji. Nie wolno odłączyć `run()`
+jako obietnicy w tle i zakończyć wywołania narzędzia: uchwyt karty traci wtedy
+kontekst wykonania. Zachować całe oczekiwanie na wynik, również gdy sam limit
+odpowiedzi RPC narzędzia zwróci timeout; stan właściciela i plik postępu mają
+wówczas pierwszeństwo przed domysłem o zakończeniu procesu.
+Nie dodano workera poza
+Computer Use, autostartu, API send ani przedłużenia lease. Utrata procesu
+Computer Use nadal pozbawia brokera odnowień. Heartbeat rozpoczętej akcji
+przestaje odnawiać lease po anulowaniu, także podczas oczekiwania na UI.
+
+`close()` zwalnia tylko własny lease; nie jest ACK Stop backendu. Właściciel
+operacji nadal musi wykonać Stop, potwierdzić brak prawa i koniec operacji,
+zamknąć backend oraz zwolnić locki. Nie kończyć zadania z działającym taskiem.
+Przy timeoutcie narzędzia odczytać tę samą instancję, bez nowego Startu,
+klienta lub próby nadania. Przy braku ACK zwolnienia zachować UNKNOWN.
+
+Test czasu rzeczywistego ma osobny natywny punkt wejścia:
+`node scripts/browser-batch-liveness-fixture.mjs --out <KATALOG_DOWODÓW>`.
+Tworzy wyłącznie tymczasową bazę i lokalną stronę z fikcyjnym kontekstem
+brokera, bez AUTO batch/session/Start/outbox/rezerwacji. W Computer Use
+otworzyć URL z `fixture-ready.json`, podłączyć klienta do podanego katalogu
+i `BrowserBatchTask` z `fixtureOrigin`, terminem 12 minut i syntetycznym
+taskId. Owner obserwuje co sekundę przez **co najmniej 660000 ms**, potem
+ustawia fikcyjny kontekst STOPPED i sprawdza release oraz cleanup. Zero
+wysyłek w tym teście jest wymaganiem, nie wynikiem potwierdzenia Gmaila.
+Wyniki konkretnego wykonania: [raport](reviews/COMPUTER_USE_LIVENESS.md).
+
 23.10: [jedno konto i pomocnicze API](SINGLE_ACCOUNT.md). Podział Node24/lekki
 adapter oraz R1–R15 pozostają. Samą tożsamość sprawdza helper bez ownera,
 runNightflowTask, Start lub wiadomości. Natywny transport pozostaje browser-only.

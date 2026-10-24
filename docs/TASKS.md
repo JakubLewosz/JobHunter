@@ -1,5 +1,20 @@
 # Bieżące zadania — 23 października 2026
 
+## Utrzymanie Computer Use — 24.10.2026
+
+- [x] Odtworzyć utratę lease między ręcznymi segmentami; zachować próg 45 s.
+- [x] Dodać ciągły, ograniczony deadline'em task w lekkim adapterze; żywa
+      kontrola karty, przypięty zakres, Stop/abort/release bez retry/Start.
+- [x] Regresje nowej ścieżki 17/17 i rzeczywisty syntetyczny test Computer Use
+      660529,7027 ms (>11 minut), Stop/release/cleanup bez prób lub rezerwacji.
+- [ ] Odebrać pełny Windows check/CI; dokładne wyniki zapisać w dostawie.
+- [ ] Po sprawdzonym backupie wybrać zweryfikowany build WORKSTATION,
+      wykonać ponowny preflight i pełny prywatny podgląd tych samych v5.
+- [ ] Ewentualny kolejny pilot wymaga nowej osobnej zgody; obecne zlecenie
+      nie pozwala na Start, Gmail history/messages, partię lub wysyłkę.
+
+[Kontrakt i dowody](reviews/COMPUTER_USE_LIVENESS.md).
+
 ## Naturalny styl — 23.10.2026
 
 - [x] Wąsko doprecyzować prosty ton, jeden powód kontaktu, krótki projekt
@@ -311,7 +326,6 @@ Poniższe historyczne próby nie są testem nowych zmian.
 Zmiany przygotowane do lokalnego commitu i pakietu źródeł dla AI.
 Rewizję ustala Git/manifest pakietu. Push nie jest deploymentem lub Start;
 GitHub CI wymaga osobnego rzeczywistego sprawdzenia konkretnego SHA.
-
 
 ## 24.10.2026 — niezależne odnowienie istniejącej biblioteki
 

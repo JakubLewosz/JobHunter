@@ -6,6 +6,7 @@ export {
   serveBrowserDeliveries,
 } from '../dist/apps/server/src/browser/executor.js';
 export { BrowserBatchController } from '../dist/apps/server/src/browser/batch-controller.js';
+export { BrowserBatchTask } from '../dist/apps/server/src/browser/batch-task.js';
 import { BrowserExecutorClient } from '../dist/apps/server/src/browser/client.js';
 import { runBrowserDelivery } from '../dist/apps/server/src/browser/executor.js';
 import { setTimeout as delay } from 'node:timers/promises';
