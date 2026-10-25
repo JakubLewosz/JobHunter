@@ -56,3 +56,10 @@ założenia fixture: tytuł integracyjny dawał projekt mimo braku dopasowania
 aktywności, a drugi wynik miał score poniżej wymaganego progu. Skorygowano
 wyłącznie fikcyjne dane, nie selektor. Kolejna próba 69/69 PASS. Baseline
 reproducer i końcowy check/CI są zachowane i osobno rozliczane w dostawie.
+
+Pierwszy pełny Windows check 7b2f3a1: 987/988 backend PASS, FAIL1 w dawnym
+kontrakcie testu, który wymagał drugiej kopii content w DRAFT selected.fact.
+Test zachowuje teraz pełny kanoniczny fakt w DRAFT i pełny selected.fact
+w review **oraz zapisanym materiale**, a generacyjna selekcja ma ID/klucz.
+Nie złagodzono kontroli faktów ani zapisu. Końcowy pełny check/CI następcy
+są osobnymi wynikami. Błędy wykonania modelu nie są dowodem jakości.

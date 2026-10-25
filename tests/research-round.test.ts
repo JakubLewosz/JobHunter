@@ -410,7 +410,7 @@ test('a hiring inquiry and a separate literal CV invitation for the same mailbox
   assert.equal(contactUsage(v, [source]), 'QUESTIONS_ONLY');
   assert.equal(contactEligibility(v, [source]).allowed, false);
 });
-test('generator and review receive identical full selected facts and concrete evidence mapping', async (t) => {
+test('DRAFT keeps canonical facts and selection identity while review and material retain full selection', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'jh-project-context-'));
   const runner = new FixtureRunner(),
     reader = new FixtureReader();
@@ -444,7 +444,17 @@ test('generator and review receive identical full selected facts and concrete ev
   const project = draft.profile.facts.find((f: any) => f.key === 'autorelay');
   assert.ok(project);
   assert.deepEqual(review.profile.facts, draft.profile.facts);
-  assert.equal(draft.profile.projectSelection.selected[0].fact.content, project.content);
+  assert.deepEqual(draft.profile.projectSelection.selected[0].fact, {
+    id: project.id,
+    key: project.key,
+  });
+  assert.deepEqual(review.profile.projectSelection.selected[0].fact, project);
+  const material = JSON.parse(
+    d.store.one('SELECT context_json FROM research_draft_materials ORDER BY version LIMIT 1')!
+      .context_json,
+  );
+  assert.deepEqual(material.profile.projectSelection.selected[0].fact, project);
+  assert.deepEqual(material.profile.facts, draft.profile.facts);
   assert.ok(draft.profile.projectSelection.selected[0].proofs[0].evidenceIds.length > 0);
   assert.match(d.service.draftRows()[0].body, /FixtureRelay/);
 });
