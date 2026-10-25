@@ -92,7 +92,7 @@ test('availability without timing never inherits after-school or all-day asserti
     qualification: 'Synthetic',
     evidence: [],
     history: '',
-    template: 'Synthetic',
+    template: '[Syntetyczne preferencje stylu.]',
     recent: [],
   });
   assert.doesNotMatch(prompt, /głównie po lekcjach/iu);

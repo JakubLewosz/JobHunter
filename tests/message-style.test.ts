@@ -254,7 +254,7 @@ test('prompt: około 20 z profilu, AI opcjonalne, różny temat i pytanie oraz p
       evidence: [],
       history: 'NEW',
       qualification: 'NEEDS_REVIEW',
-      template: 'old template',
+      template: '[Fikcyjne preferencje stylu.]',
       recent: [{ opening: 'Poprzednie otwarcie.' }],
     });
     assert.match(prompt, /80–130/);
@@ -292,7 +292,7 @@ test('pierwszy kontakt: Państwo domyślnie, dowód wyjątku zamiast kopiowania 
       qualification: 'NEEDS_REVIEW',
       evidence: [{ id: 'tone', fragment: 'Młody zespół IT. Dołącz do nas!' }],
       history: 'NEW',
-      template: 'Cześć, piszę do Was.',
+      template: 'Preferencje stylu: przykład tonu „Cześć, piszę do Was.”.',
       recent: [{ opening: 'Piszę do Was.' }],
     };
     const original = structuredClone(data);
@@ -449,7 +449,7 @@ for (const [kind, requirements, hasContract] of [
       qualification: 'NEEDS_REVIEW',
       evidence: [],
       history: 'NEW',
-      template: 'old',
+      template: '[Fikcyjne preferencje stylu.]',
       recent: [],
     });
     assert.match(prompt, /80–130/);
@@ -465,7 +465,7 @@ test('konstrukcja wynika z celu i dowodów, bez stałych zdań, list funkcji i l
     qualification: 'NEEDS_REVIEW',
     evidence: [],
     history: 'NEW',
-    template: 'old',
+    template: '[Fikcyjne preferencje stylu.]',
     recent: [],
   });
   assert.match(prompt, /Nie wymagaj pary zdań Na Państwa stronie/);
@@ -573,7 +573,7 @@ test('instrukcje dopuszczają naturalne pytanie i warunkowe CV bez fikcyjnego do
     qualification: 'NEEDS_REVIEW',
     evidence: [],
     history: 'NEW',
-    template: 'old',
+    template: '[Fikcyjne preferencje stylu.]',
     recent: [],
   };
   const prompt = messagePrompt(data),

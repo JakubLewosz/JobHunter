@@ -2220,6 +2220,7 @@ export class ResearchJobHunter extends JobHunter {
     const sources = this.sourcesForDraft({ ...d, opportunity_id: opportunity.id });
     const input = hash(
       JSON.stringify({
+        messageQualityVersion,
         profile: profile.hash,
         scope:
           this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', runId)
@@ -2356,6 +2357,8 @@ export class ResearchJobHunter extends JobHunter {
         evidence,
         analysis,
         origin: 'REVALIDATED_SAME_TEXT',
+        editorialRevisionAttempted:
+          JSON.parse(old.context_json ?? '{}').editorialRevisionAttempted === true,
         previousVersion: d.version,
         reason: 'CURRENT_VERIFIED_CONTEXT',
         inputHash: input,
@@ -2838,7 +2841,7 @@ export class ResearchJobHunter extends JobHunter {
     if (!material)
       return this.store.one('SELECT draft_id FROM research_draft_materials WHERE draft_id=?', d.id)
         ? ['DRAFT_MATERIAL_STALE']
-        : [];
+        : ['DRAFT_MATERIAL_UNVERIFIED'];
     return materialRecordIssues(material, d, this.materialBinding(d));
   }
   // Native drafts and exact ad-hoc edits share one validator and one bounded editorial path.
@@ -2856,6 +2859,8 @@ export class ResearchJobHunter extends JobHunter {
       throw new DomainError('BUSY', 'Poczekaj na zakończenie pracy.');
     let d = this.draftRows().find((d) => d.id === draftId && d.version === version);
     if (!d) throw new DomainError('VERSION_CONFLICT', 'Odśwież szkic.');
+    if (d.status === 'SENT')
+      throw new DomainError('DRAFT_BLOCKED', 'Wysłanej wersji nie otwieramy ponownie do review.');
     this.probing = true;
     this.controller = new AbortController();
     const signal = externalSignal
@@ -2876,6 +2881,24 @@ export class ResearchJobHunter extends JobHunter {
         d.company_id,
       );
       const binding = this.materialBinding(d);
+      const previousMaterial = this.store.one(
+        'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+        draftId,
+        version,
+      );
+      const previousContext = JSON.parse(previousMaterial?.context_json ?? '{}');
+      const legacy =
+        !previousMaterial || previousContext.messageQualityVersion !== messageQualityVersion;
+      const nextReviewVersion =
+        Math.max(
+          version,
+          this.store.one(
+            'SELECT max(version) n FROM research_draft_materials WHERE draft_id=?',
+            draftId,
+          )!.n ?? 0,
+          this.store.one('SELECT max(version) n FROM draft_versions WHERE draft_id=?', draftId)!
+            .n ?? 0,
+        ) + 1;
       const assertCurrent = () => {
         signal.throwIfAborted();
         this.store.assertExclusive();
@@ -2888,7 +2911,82 @@ export class ResearchJobHunter extends JobHunter {
         evidenceIds: JSON.parse(d.evidence_ids),
         claims: JSON.parse(d.claims),
       };
-      if (!mapping.claims.length) {
+      if (
+        legacy &&
+        previousMaterial &&
+        (previousMaterial.context_hash !== binding ||
+          previousMaterial.payload_hash !== d.payload_hash)
+      )
+        throw new DomainError(
+          'DRAFT_MATERIAL_STALE',
+          'Starszy materiał wymaga odnowienia źródeł, nie przeniesienia PASS.',
+        );
+      if (legacy && mapping.claims.length) {
+        const payload = {
+          subject: d.subject,
+          body: d.body,
+          ...mapping,
+          warnings: JSON.parse(d.warnings),
+        };
+        this.checkDraft(payload, d.company_id, profile, evidence, analysis);
+        const nextVersion = nextReviewVersion;
+        const payloadHash = hash(JSON.stringify(payload));
+        this.store.atomic(() => {
+          assertCurrent();
+          if (!previousMaterial)
+            this.store.set(`legacyReviewSnapshot:${draftId}:${version}`, {
+              semanticReview: JSON.parse(d!.semantic_review),
+              payload,
+              version,
+              recordedAt: this.now(),
+            });
+          this.store.exec(
+            "UPDATE drafts SET version=?,payload_hash=?,status='NEEDS_REVIEW',updated_at=? WHERE id=?",
+            nextVersion,
+            payloadHash,
+            this.now(),
+            draftId,
+          );
+          this.store.exec(
+            'INSERT INTO draft_versions VALUES (?,?,?,?,?,?,?)',
+            id(),
+            draftId,
+            nextVersion,
+            d!.subject,
+            d!.body,
+            payloadHash,
+            this.now(),
+          );
+          this.store.exec(
+            'UPDATE research_drafts SET semantic_review=?,reviewed_at=NULL WHERE draft_id=?',
+            JSON.stringify({
+              supported: null,
+              issues: [
+                'Wybrana wersja legacy wymaga bieżącego review; stara ocena pozostaje w historii.',
+              ],
+            }),
+            draftId,
+          );
+          this.store.exec(
+            'UPDATE draft_approvals SET revoked_at=? WHERE draft_id=? AND revoked_at IS NULL',
+            this.now(),
+            draftId,
+          );
+          this.saveDraftMaterial(
+            this.store.one('SELECT * FROM drafts WHERE id=?', draftId)!,
+            payload,
+            {
+              profile,
+              analysis,
+              evidence,
+              origin: 'LEGACY_EDITORIAL_REPREPARATION',
+              previousVersion: version,
+              editorialRevisionAttempted: previousContext.editorialRevisionAttempted === true,
+            },
+          );
+        });
+        d = this.draftRows().find((row) => row.id === draftId)!;
+      } else if (!mapping.claims.length) {
         mapping = await this.call(
           null,
           'VERIFY_DRAFT_MAPPING',
@@ -2915,11 +3013,18 @@ export class ResearchJobHunter extends JobHunter {
         const payloadHash = hash(JSON.stringify(payload));
         this.store.atomic(() => {
           assertCurrent();
+          if (legacy && !previousMaterial)
+            this.store.set(`legacyReviewSnapshot:${draftId}:${version}`, {
+              semanticReview: JSON.parse(d!.semantic_review),
+              version,
+              recordedAt: this.now(),
+            });
           this.store.exec(
-            "UPDATE drafts SET fact_ids=?,evidence_ids=?,payload_hash=?,version=version+1,status='NEEDS_REVIEW',updated_at=? WHERE id=?",
+            "UPDATE drafts SET fact_ids=?,evidence_ids=?,payload_hash=?,version=?,status='NEEDS_REVIEW',updated_at=? WHERE id=?",
             JSON.stringify(mapping.factIds),
             JSON.stringify(mapping.evidenceIds),
             payloadHash,
+            nextReviewVersion,
             this.now(),
             draftId,
           );
@@ -2927,7 +3032,7 @@ export class ResearchJobHunter extends JobHunter {
             'INSERT INTO draft_versions VALUES (?,?,?,?,?,?,?)',
             id(),
             draftId,
-            version + 1,
+            nextReviewVersion,
             d!.subject,
             d!.body,
             payloadHash,
@@ -2947,7 +3052,14 @@ export class ResearchJobHunter extends JobHunter {
           this.saveDraftMaterial(
             this.store.one('SELECT * FROM drafts WHERE id=?', draftId)!,
             payload,
-            { profile, analysis, evidence, origin: 'EXACT_EDIT_MAPPING' },
+            {
+              profile,
+              analysis,
+              evidence,
+              origin: 'EXACT_EDIT_MAPPING',
+              editorialRevisionAttempted:
+                legacy && previousContext.editorialRevisionAttempted === true,
+            },
           );
         });
         d = this.draftRows().find((row) => row.id === draftId)!;

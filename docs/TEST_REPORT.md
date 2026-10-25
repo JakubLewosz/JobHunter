@@ -1,5 +1,29 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Kalibracja i legacy — 25.10.2026
+
+Windows / Node24.19.0: bazowy reproducer **0/3 PASS** (oczekiwane trzy FAIL
+ujawniły luki); pierwsza implementacja **60/64 PASS**, po poprawce **124/124**.
+Backend **980/981 PASS** ujawnił pełny list w dawnym fixture tonu; zastąpiono
+go jawnymi preferencjami, zachowując asercje. Końcowe celowane style/template/
+legacy **73/73 PASS**, następnie **74/74 PASS** ze scenariuszem braku materiału.
+Pełny końcowy Windows check i CI wymagają osobnego
+wyniku dokładnego SHA w dostawie, wcześniejszy FAIL pozostaje w raporcie.
+
+Natywne generate na 12 zamrożonych kontekstach: code PASS 11/12 po obu
+stronach, pierwszy editorial PASS 10/12 vs 9/12, końcowy 10/12 po obu;
+24 vs 25 calls, mediana 28,00 vs 34,53 s. Wszystkie wejścia DRAFT identyczne.
+Ślepa preferencja 3 przed / 4 po / 5 remisów; użytkownik wybrał po w trzech
+parach. To preferencja tekstów, nie wykazana skuteczność zmiany generatora.
+Trzy v5 nadal PASS, ale były wcześniej używane do kalibracji. Ścisła macierz
+etykiet: 1 wykryta istotna wada, 5 zachowanych pozytywów, bez pomyłek;
+2 graniczne i 15 nieoznaczonych substytutów wyłączono z macierzy.
+Raportuje się także słabsze dopuszczenia i rozbieżności ocen.
+
+**Nadal nie potwierdzono poprawy generatora.** Nowe bramki nie stanowią
+deploymentu. Wyłącznie DEVELOPMENT, fikcyjne kontakty i wyłączony provider;
+produkcja, Gmail, polityka, profil/CV i wysyłka bez zmian.
+
 ## Systemowa jakość — 25.10.2026
 
 Rzeczywisty Windows / Node24.19.0: celowane 129/129 PASS przed końcową

@@ -33,6 +33,9 @@ function explain(codes: string[]) {
     INVALID_DRAFT: 'sprawdź deklaracje i źródła wiadomości',
     DRAFT_REVIEW_REQUIRED: 'oznacz aktualną wersję jako przejrzaną',
     SEMANTIC_REVIEW_REQUIRED: 'sprawdź zgodność treści z materiałami',
+    EDITORIAL_REVIEW_REQUIRED:
+      'odnów wybraną wersję i sprawdź ją według aktualnych zasad redakcyjnych',
+    EDITORIAL_QUALITY_REQUIRED: 'popraw wskazane wady tekstu lub pozostaw szkic niedopuszczony',
     ALREADY_SENT: 'ta wiadomość została już wysłana',
     SUPPRESSED: 'firma ma aktywną blokadę kontaktu',
     CONTACT_HISTORY: 'wyjaśnij wcześniejszy kontakt z firmą',

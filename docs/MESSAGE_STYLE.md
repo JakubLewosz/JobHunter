@@ -5,6 +5,10 @@ review. `supported=true` nie zastępuje jakości. Szczegóły, wspólna ścieżk
 edycji i granica jednej korekty: [MESSAGE_QUALITY](reviews/MESSAGE_QUALITY.md).
 Starsze uwagi stylu opisane niżej są heurystyką; dla nowych materiałów
 `EDITORIAL_QUALITY_REQUIRED` blokuje AUTO na poziomie konkretnego szkicu.
+Kalibracja nie potwierdziła jeszcze poprawy samego generatora. Starszy PASS
+bez bieżącej wersji jakości wymaga odnowienia tylko wybranego szkicu; bez
+hurtowej migracji i bez ponownego otwierania wysłanych wiadomości.
+[Wynik, zgodność legacy i szablonów](reviews/MESSAGE_QUALITY_CALIBRATION.md).
 
 Aktualizacja 16 października 2026 na wyraźne życzenie użytkownika: list ma
 wynikać z konkretnej firmy i celu kontaktu. Zastępuje wcześniejszy sztywny
@@ -145,7 +149,7 @@ pierwszym wynikiem. Claims odnoszą się do ostatecznie zwróconej treści.
 Nie dodajemy automatycznego zastępowania fraz po generacji. Każda późniejsza
 korekta zapisanego szkicu wymaga osobnej wersji i kontroli końcowej treści.
 recent zawiera ostatnie tematy,
-otwarcia, pytania i pełny tok akapitów trzech poprzednich szkiców: pomaga
+otwarcia, pytania i sygnały konstrukcji trzech poprzednich szkiców: pomaga
 zauważyć powielanie, nie jest źródłem faktów ani
 nakazem odmienności za wszelką cenę. Dane firm i wyniki modeli nie udzielają
 uprawnień.

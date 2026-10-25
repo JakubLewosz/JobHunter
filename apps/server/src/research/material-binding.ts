@@ -1,7 +1,7 @@
 import { hash } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import type { Source } from './fetcher.js';
-import { editorialIssues } from './message-quality.js';
+import { editorialIssues, messageQualityVersion } from './message-quality.js';
 export function materialBinding(input: {
   draft: Row;
   profile: Row;
@@ -42,16 +42,11 @@ export function materialBinding(input: {
 export function materialRecordIssues(material: Row, draft: Row, currentBinding: string) {
   if (material.context_hash !== currentBinding || material.payload_hash !== draft.payload_hash)
     return ['DRAFT_MATERIAL_STALE'];
-  if (
-    JSON.parse(material.context_json ?? '{}').messageQualityVersion &&
-    material.review_status === 'COMPLETED'
-  ) {
-    const review = JSON.parse(material.review_result ?? '{}');
-    if (review.supported !== true || review.issues?.length) return ['SEMANTIC_REVIEW_REQUIRED'];
-    const issues = editorialIssues(review);
-    if (issues.length) return issues;
-  }
-  return material.code_status === 'PASS' && material.review_status === 'COMPLETED'
-    ? []
-    : ['DRAFT_MATERIAL_UNVERIFIED'];
+  if (material.code_status !== 'PASS' || material.review_status !== 'COMPLETED')
+    return ['DRAFT_MATERIAL_UNVERIFIED'];
+  const review = JSON.parse(material.review_result ?? draft.semantic_review ?? '{}');
+  if (review.supported !== true || review.issues?.length) return ['SEMANTIC_REVIEW_REQUIRED'];
+  if (JSON.parse(material.context_json ?? '{}').messageQualityVersion !== messageQualityVersion)
+    return ['EDITORIAL_REVIEW_REQUIRED'];
+  return editorialIssues(review);
 }

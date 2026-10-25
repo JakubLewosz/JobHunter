@@ -1,5 +1,22 @@
 # Bieżące zadania — 23 października 2026
 
+## Kalibracja i legacy — 25.10.2026
+
+- [x] Zamrozić reprezentatywne dane i porównać natywne generate parami;
+      12/12 identycznych wejść nie pozwala przypisać różnic poprawce kodu.
+- [x] Odebrać trzy ślepe preferencje użytkownika B/B/B; wyłącznie ocena tekstów.
+- [x] Zamknąć przekazywanie pełnego wzoru bez placeholderów i pomijanie
+      bieżącej jakości przez starsze PASS; zachować historyczne oceny.
+- [x] Odtworzyć luki i przejść celowane regresje; bez zmian produkcyjnych.
+- [ ] Odebrać końcowy Windows check, CI dokładnego SHA i bezpieczny ZIP.
+      Wyniki końcowe są w prywatnej dostawie; nie utożsamiać z wdrożeniem.
+- [ ] Jakość generatora nadal niepotwierdzona: następna mała hipoteza to
+      ograniczenie powielonego pełnego opisu projektu w modelowym DTO;
+      potrzebny nowy holdout i wiele prób, bez dostrajania do tych wyników.
+- [ ] WORKSTATION, polityka v17 i prywatne P1 pozostają bez zmian.
+
+[Wynik i instrukcja](reviews/MESSAGE_QUALITY_CALIBRATION.md).
+
 ## Systemowa jakość — 25.10.2026
 
 - [x] Oddzielić redakcję od zgodności faktów i podłączyć bramkę do AUTO.
