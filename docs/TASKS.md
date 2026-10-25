@@ -10,8 +10,8 @@
       Ten checkout/commit pozostaje eksperymentem, bez prawa wdrożenia.
 - [ ] Przy braku wyraźnej przewagi zachować bazę 4c57361 i zakończyć hipotezę;
       bez kolejnego cyklu strojenia. Późniejszy praktyczny krok: świadome
-      zastosowanie sprawdzonych zabezpieczeń i przygotowanie P1; Software Logic
-      wymaga korekty powodu, AtomStore rozstrzygnięcia treści zgłoszenia.
+      zastosowanie sprawdzonych zabezpieczeń i przygotowanie P1. Szczegóły
+      firm, korekty powodu i wymaganej treści zgłoszenia są w prywatnym raporcie.
 
 [Protokół i zakres](reviews/DTO_PROJECT_EXPERIMENT.md).
 
