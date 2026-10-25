@@ -10,6 +10,26 @@ export function messageModelData(data: Row) {
   return { ...data, profile };
 }
 
+// DRAFT alone needs the selection's identity/proofs, not another copy of approved facts.
+export function draftModelData(data: Row) {
+  const dto = messageModelData(data);
+  const selection = dto.profile?.projectSelection;
+  if (!selection) return dto;
+  return {
+    ...dto,
+    profile: {
+      ...dto.profile,
+      projectSelection: {
+        ...selection,
+        selected: selection.selected.map((entry: Row) => ({
+          ...entry,
+          fact: { id: entry.fact.id, key: entry.fact.key },
+        })),
+      },
+    },
+  };
+}
+
 export const editorialRubric = `EDITORIAL_QUALITY jest oddzielna od FACT/CONTACT/SAFETY. Oceń dokładny finalny temat i treść, nie zamiary generatora:
 PURPOSE: cel płatnej, regularnej, w pełni zdalnej współpracy, dostępność i status ucznia, jeżeli potwierdzone w profilu. Godziny bierz z profilu, nie z przykładu.
 COMPANY_REASON: jeden konkretny, poparty dowodem powód kontaktu; bez streszczenia strony i domysłu o zatrudnieniu.
@@ -99,7 +119,7 @@ DOBRY: Szukam regularnej, płatnej współpracy w pełni zdalnej, około 20 godz
 Przy pierwszym kontakcie domyślnie stosuj Państwo. Wy dopuszczaj tylko przy wyraźnej podstawie w odczytanym oficjalnym sposobie komunikacji; pojedyncze Ty w ogłoszeniu nie wystarczają. Nie mieszaj form Państwo i Wy; nie kopiuj tonu recent lub template bez takiej podstawy.
 Orientacyjnie 80–130 słów, nie limit; nie skracaj kosztem edukacji, dostępności, celu. GitHub i prawdziwy kontekst przyszłego zatwierdzonego CV wystarczą jako zakończenie. Bez prezentacji portfolio, tonu sprzedaży i dodatkowej prośby o rozmowę. Czy pytanie jest krótkie, zamiast zawierać całą edukację i dostępność? Przeczytaj całość przed zwróceniem pierwszego wyniku. Sprawdź zgodność claims z tym tekstem: literalne finalne fragmenty, właściwe factIds/evidenceIds, wszystkie istotne twierdzenia, tylko w zakresie zatwierdzonych faktów. Dane: ` +
     JSON.stringify(
-      messageModelData({
+      draftModelData({
         ...data,
         template: undefined,
         templateGuidance,

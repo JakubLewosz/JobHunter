@@ -1,5 +1,20 @@
 # Bieżące zadania — 23 października 2026
 
+## Jedna hipoteza DTO — 25.10.2026
+
+- [x] Utrwalić nowy holdout, kolejność 48 prób, rubrykę i kryterium adopcji
+      przed odpowiedziami; usunąć wyłącznie drugi opis projektu z DRAFT DTO.
+- [x] Potwierdzić literalny diff i zachowanie pełnych faktów/źródeł w review.
+- [ ] Przed jakąkolwiek propozycją wdrożenia odczytać prywatny wynik
+      JOBHUNTER_DTO_MESSAGE_QUALITY_RESULT.md, dokładne check/CI i manifest ZIP.
+      Ten checkout/commit pozostaje eksperymentem, bez prawa wdrożenia.
+- [ ] Przy braku wyraźnej przewagi zachować bazę 4c57361 i zakończyć hipotezę;
+      bez kolejnego cyklu strojenia. Późniejszy praktyczny krok: świadome
+      zastosowanie sprawdzonych zabezpieczeń i przygotowanie P1; Software Logic
+      wymaga korekty powodu, AtomStore rozstrzygnięcia treści zgłoszenia.
+
+[Protokół i zakres](reviews/DTO_PROJECT_EXPERIMENT.md).
+
 ## Kalibracja i legacy — 25.10.2026
 
 - [x] Zamrozić reprezentatywne dane i porównać natywne generate parami;
