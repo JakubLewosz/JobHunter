@@ -1,5 +1,16 @@
 # Bieżące zadania — 23 października 2026
 
+## Systemowa jakość — 25.10.2026
+
+- [x] Oddzielić redakcję od zgodności faktów i podłączyć bramkę do AUTO.
+- [x] Wspólny review nowych generacji i dokładnych edycji; jedna trwała korekta.
+- [x] Sparowany benchmark CLI i 20 fikcyjnych kontekstów; bez zmiany produkcji.
+- [ ] Przed ewentualnym wdrożeniem odczytać finalny prywatny raport Windows/CI
+      oraz manifest dostawy; bieżący kod nie udziela zgody na wdrożenie lub Start.
+- [ ] Pięć P1 pozostaje NOT_APPLIED; późniejszy zapis/nowy zakres w osobnym zadaniu.
+
+[Mechanizm i instrukcja operatora](reviews/MESSAGE_QUALITY.md).
+
 ## Utrzymanie Computer Use — 24.10.2026
 
 - [x] Odtworzyć utratę lease między ręcznymi segmentami; zachować próg 45 s.

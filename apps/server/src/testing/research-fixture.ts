@@ -143,7 +143,8 @@ export class FixtureRunner implements StructuredRunner {
           },
         ],
       };
-    } else if (prompt.includes('Sprawdź KAŻDE')) value = { supported: true, issues: [] };
+    } else if (prompt.includes('Sprawdź KAŻDE'))
+      value = { supported: true, issues: [], quality: { verdict: 'PASS', defects: [] } };
     else {
       const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
       const fid = data.profile.facts.find((f: any) => f.key === 'identity').id,

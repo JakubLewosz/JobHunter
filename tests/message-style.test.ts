@@ -271,15 +271,17 @@ test('prompt: około 20 z profilu, AI opcjonalne, różny temat i pytanie oraz p
   }
 });
 
-test('kontekst poprzednich wiadomości udostępnia także dalszy tok, bez zmiany szkicu', () => {
+test('kontekst poprzednich wiadomości przekazuje sygnały wad bez kopiowania listu', () => {
   const previous = draft(
     'Dzień dobry,\r\n\r\nKontekst oferty.\r\n\r\nDopasowanie projektu.\r\n\r\nDostępność i edukacja.\r\n\r\nCzy taki wymiar pracy jest odpowiedni?',
   );
   const original = structuredClone(previous);
   const recent = recentMessageContext(previous);
-  assert.equal(recent.opening, 'Kontekst oferty.');
-  assert.ok(recent.paragraphs.includes('Dostępność i edukacja.'));
-  assert.match(recent.question, /Czy taki wymiar pracy/);
+  assert.ok(Array.isArray(recent.styleSignals));
+  assert.doesNotMatch(
+    JSON.stringify(recent),
+    /Kontekst oferty|Dopasowanie projektu|Dostępność i edukacja/,
+  );
   assert.deepEqual(previous, original);
 });
 test('pierwszy kontakt: Państwo domyślnie, dowód wyjątku zamiast kopiowania tonu recent', () => {
@@ -470,10 +472,10 @@ test('konstrukcja wynika z celu i dowodów, bez stałych zdań, list funkcji i l
   assert.match(prompt, /ani domyślnie słowa demo/);
   assert.match(prompt, /Nie sugeruj wdrożenia produkcyjnego/);
   assert.match(prompt, /Nazwa szkoły, miejscowość i ostatnia klasa wymagają zatwierdzonych faktów/);
-  assert.match(prompt, /przy ACTIVE_JOB kandydatura i rzeczywisty tytuł stanowiska/);
+  assert.match(prompt, /ACTIVE_JOB to kandydatura na rzeczywistą rolę z tytułem/);
   assert.match(prompt, /tylko w zakresie zatwierdzonych faktów/);
   assert.match(prompt, /Nie stosuj rotacji wariantów, losowego parafrazowania/);
-  assert.match(prompt, /nie ma minimalnej liczby funkcji\/technologii/);
+  assert.match(prompt, /nie katalog funkcji/);
   assert.match(prompt, /nie skracaj kosztem edukacji, dostępności, celu/);
 });
 
@@ -576,9 +578,9 @@ test('instrukcje dopuszczają naturalne pytanie i warunkowe CV bez fikcyjnego do
   };
   const prompt = messagePrompt(data),
     review = semanticReviewPrompt({ ...data, draft: draft() });
-  assert.match(prompt, /Jedno naturalne pytanie o początkującego programistę jest dopuszczalne/);
-  assert.match(prompt, /preferencje redakcyjne, nie zakazy fraz/);
-  assert.match(prompt, /nie wymaga fikcyjnego cytatu/);
+  assert.match(prompt, /JEDEN CEL, JEDNA PROŚBA/);
+  assert.match(prompt, /prawdziwy kontekst przyszłego zatwierdzonego CV/);
+  assert.match(review, /nie żądaj fikcyjnego cytatu/);
   assert.match(review, /brak opisu projektu przy konkretnym powodzie kontaktu/);
   assert.match(review, /kontrole faktycznego załącznika i uprawnień/);
   assert.match(review, /nie zgoda na wysyłkę/);

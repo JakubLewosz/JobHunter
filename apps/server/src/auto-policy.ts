@@ -76,6 +76,7 @@ export function autoErrorDecision(
       'APPROVAL_CHANGED',
       'INVALID_DRAFT',
       'SEMANTIC_REVIEW_REQUIRED',
+      'EDITORIAL_QUALITY_REQUIRED',
       'CONTACT_POLICY',
       'QUALIFICATION_REQUIRED',
       'CONTACT_REVIEW',

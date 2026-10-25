@@ -730,7 +730,7 @@ test('research: brak dowodu dopasowania projektu pozwala na szkic bez projektu i
   assert.match(prompt, /80–130/);
   assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
   assert.doesNotMatch(prompt, /"key":"autorelay"/);
-  assert.match(prompt, /brak dopasowania pomija projekt/);
+  assert.match(prompt, /Możesz pominąć projekt/);
   const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
   assert.ok(
     data.profile.facts.every(

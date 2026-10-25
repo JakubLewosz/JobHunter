@@ -222,7 +222,8 @@ for (const stage of ['Przypisz mapę deklaracji', 'Sprawdź KAŻDE'])
       if (fault === 'stop') f.service.control('stop');
       if (fault === 'version')
         f.service.editDraft(edited.id, {
-          version: edited.version,
+          // Mapping now creates its own unverified version before the shared review call.
+          version: f.service.draftRows().find((d) => d.id === edited.id)!.version,
           subject: edited.subject,
           body: edited.body + '\nNowa edycja.',
         });

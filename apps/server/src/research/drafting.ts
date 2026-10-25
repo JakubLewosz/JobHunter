@@ -59,13 +59,17 @@ function projectScores(context: string): Record<string, number> {
       )
         ? 8
         : 0) + (/integrac|integration|webhook|\bapi\b/.test(context) ? 5 : 0),
-    codefabric: /lokaln.*model|local.*model|\bllm\b|model.{0,40}język|language model/.test(context)
-      ? 14
-      : /agent.{0,40}(?:ai|llm)|narzędzi.{0,60}\bai\b|\bai\b.{0,60}(?:tool|narzędzi|model|agent)|private\s+ai\s+environment/.test(
-            context,
-          )
-        ? 10
-        : 0,
+    codefabric:
+      /(?:korzyst|używa|uses?|using).{0,50}(?:codex|narzędzi.{0,15}ai)/.test(context) &&
+      !/(?:buduj|tworz|rozwij|develop|build).{0,65}(?:agent|model|narzędzi)/.test(context)
+        ? 0
+        : /lokaln.*model|local.*model|\bllm\b|model.{0,40}język|language model/.test(context)
+          ? 14
+          : /agent.{0,40}(?:ai|llm)|narzędzi.{0,60}\bai\b|\bai\b.{0,60}(?:tool|narzędzi|model|agent)|private\s+ai\s+environment/.test(
+                context,
+              )
+            ? 10
+            : 0,
     elektroscan:
       (/(?:analiz|przetwarz|extract|process|recogn|ocr).{0,70}(?:\bpdf\b|dokument|document)|(?:dokument|document|\bpdf\b).{0,70}(?:analiz|process|extract|recogn)/.test(
         context,

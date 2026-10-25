@@ -60,7 +60,7 @@ test('review execution error retains exact unverified draft; retry reviews the s
   const d = f.service.draftRows()[0];
   assert.ok(d);
   const material = f.store.one('SELECT * FROM research_draft_materials')!;
-  assert.equal(material.code_status, 'PASS');
+  assert.equal(material.code_status, 'PENDING');
   assert.equal(material.review_status, 'ERROR');
   assert.equal(JSON.parse(d.semantic_review).supported, null);
   const generations = f.runner.prompts.filter((p) =>

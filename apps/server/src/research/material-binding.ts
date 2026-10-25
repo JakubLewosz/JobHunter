@@ -1,6 +1,7 @@
 import { hash } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import type { Source } from './fetcher.js';
+import { editorialIssues } from './message-quality.js';
 export function materialBinding(input: {
   draft: Row;
   profile: Row;
@@ -41,6 +42,13 @@ export function materialBinding(input: {
 export function materialRecordIssues(material: Row, draft: Row, currentBinding: string) {
   if (material.context_hash !== currentBinding || material.payload_hash !== draft.payload_hash)
     return ['DRAFT_MATERIAL_STALE'];
+  if (
+    JSON.parse(material.context_json ?? '{}').messageQualityVersion &&
+    material.review_status === 'COMPLETED'
+  ) {
+    const issues = editorialIssues(JSON.parse(material.review_result ?? '{}'));
+    if (issues.length) return issues;
+  }
   return material.code_status === 'PASS' && material.review_status === 'COMPLETED'
     ? []
     : ['DRAFT_MATERIAL_UNVERIFIED'];

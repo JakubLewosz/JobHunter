@@ -106,7 +106,36 @@ export const realDraftSchema = z
   })
   .strict();
 export const reviewSchema = z
-  .object({ supported: z.boolean().nullable(), issues: z.array(z.string().max(1200)).max(20) })
+  .object({
+    supported: z.boolean().nullable(),
+    issues: z.array(z.string().max(1200)).max(20),
+    // Optional only to read old factual results. New material fails closed without this verdict.
+    quality: z
+      .object({
+        verdict: z.enum(['PASS', 'REVISE', 'HOLD']),
+        defects: z
+          .array(
+            z
+              .object({
+                code: z.enum([
+                  'PURPOSE',
+                  'COMPANY_REASON',
+                  'PROJECT_FIT',
+                  'LANGUAGE',
+                  'REPETITION',
+                  'REQUEST',
+                  'PACKAGING',
+                ]),
+                fragment: z.string().max(1000),
+                reason: z.string().min(1).max(600),
+              })
+              .strict(),
+          )
+          .max(6),
+      })
+      .strict()
+      .optional(),
+  })
   .strict();
 export const compact = (s: string) => s.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 export function verifyQuote(

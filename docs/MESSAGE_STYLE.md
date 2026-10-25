@@ -1,5 +1,11 @@
 # Styl zgłoszeń JobHunter
 
+25.10.2026: nowe materiały przechodzą oddzielny werdykt `quality` w istniejącym
+review. `supported=true` nie zastępuje jakości. Szczegóły, wspólna ścieżka
+edycji i granica jednej korekty: [MESSAGE_QUALITY](reviews/MESSAGE_QUALITY.md).
+Starsze uwagi stylu opisane niżej są heurystyką; dla nowych materiałów
+`EDITORIAL_QUALITY_REQUIRED` blokuje AUTO na poziomie konkretnego szkicu.
+
 Aktualizacja 16 października 2026 na wyraźne życzenie użytkownika: list ma
 wynikać z konkretnej firmy i celu kontaktu. Zastępuje wcześniejszy sztywny
 schemat „pytanie → edukacja/dostępność → firma/projekt → pytanie”. Nie

@@ -1,5 +1,19 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Systemowa jakość — 25.10.2026
+
+Rzeczywisty Windows / Node24.19.0: celowane 129/129 PASS przed końcową
+kalibracją rubryki; końcowy celowany zestaw **177/177 PASS**, typecheck PASS,
+48 nowych regresji. Pierwsza macierz miała 26/36 PASS (błędne założenie o
+zerowej liczbie istniejących blokad), następna próba 111/125 PASS (niespójne
+fikcyjne proof/typ kontaktu i dawne asercje prompta). Test wyścigu wymagał
+edycji bieżącej wersji po mapowaniu, zamiast starego numeru; zawieszoną
+próbę przerwano, bez ukrywania błędu. Później 175/176 PASS wymagało aktualizacji
+jednej asercji dawnego brzmienia instrukcji. Pierwszy pełny check przerwano na
+kalibrację fałszywego alarmu review, bez deklaracji PASS. Dokładne logi,
+pełny końcowy check, CI SHA i ograniczenia benchmarku są w prywatnej dostawie.
+Fikcyjni odbiorcy, osobne dane; bez Gmaila i wdrożenia WORKSTATION.
+
 ## Utrzymanie Computer Use — 24 października 2026
 
 Windows / Node24.19.0: **17/17 nowych regresji PASS**, a rzeczywisty,
@@ -17,12 +31,13 @@ bazowym kodzie faktyczne C/B/A zamiast zatwierdzonego A/B/C. Po poprawce:
 **15/15 nowych regresji PASS**, a celowany zestaw AUTO/partii/review/brokera/
 restartu: **103/103 PASS, FAIL0, SKIP0, cancel0**, exit 0.
 Pełne izolowane `npm run check` na Windows/Node24: **888 backend + 12 Stop
-+ 26 UI PASS**, typecheck/build PASS, exit 0; FAIL0/SKIP0/cancel0.
-Fingerprint kodu przed/po zgodny. CI dokładnego końcowego SHA jest
-rozliczane osobno w dowodach dostawy, bez utożsamiania go z lokalnym PASS.
-Początkowe błędy fixture i oczekiwany FAIL bazowego kodu pozostają w dowodach.
-Zakres i granice: [CLOSED_BATCH_ORDER](reviews/CLOSED_BATCH_ORDER.md).
-Wyłącznie dane fikcyjne; te testy nie uruchamiają rzeczywistego pilota.
+
+- 26 UI PASS**, typecheck/build PASS, exit 0; FAIL0/SKIP0/cancel0.
+  Fingerprint kodu przed/po zgodny. CI dokładnego końcowego SHA jest
+  rozliczane osobno w dowodach dostawy, bez utożsamiania go z lokalnym PASS.
+  Początkowe błędy fixture i oczekiwany FAIL bazowego kodu pozostają w dowodach.
+  Zakres i granice: [CLOSED_BATCH_ORDER](reviews/CLOSED_BATCH_ORDER.md).
+  Wyłącznie dane fikcyjne; te testy nie uruchamiają rzeczywistego pilota.
 
 ## RESEARCH_ONLY → nowa wersja w polityce AUTO → zamknięta partia
 
