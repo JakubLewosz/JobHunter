@@ -20,6 +20,11 @@ async function fixture(t: any) {
     reader = new FixtureReader();
   runner.prospect = reader.prospect = true;
   let time = Date.now();
+  const read = reader.read.bind(reader);
+  reader.read = async (url, signal) => ({
+    ...(await read(url, signal)),
+    fetched_at: new Date(time).toISOString(),
+  });
   const service = new ResearchJobHunter(store, { runner, reader, clock: () => new Date(time) });
   t.after(async () => {
     await service.stopWorker();
@@ -141,7 +146,7 @@ test('event insertion error rolls back domain and alias; empty string needs expl
   const f = await fixture(t);
   const c = f.service.findOrCreateCompany('Fixture Other', null).company;
   const source = f.service.saveSource({
-    ...(await new FixtureReader().read('https://other.example.test/')),
+    ...(await f.service.reader.read('https://other.example.test/')),
     final_url: 'https://other.example.test/',
     text: 'Fixture Other. Official identity.',
     fragment: 'Fixture Other.',
@@ -215,6 +220,41 @@ test('snapshot uses one WAL read view while a second synthetic connection commit
   assert.equal(
     readProtectedSnapshot(f.store.db).companies.find((c) => c.id === f.c.id)!.canonical_name,
     'Changed by second connection',
+  );
+});
+
+test('future verification remains rejected with a shared synthetic clock', async (t) => {
+  const f = await fixture(t);
+  const c = f.service.findOrCreateCompany('Fixture Future', null).company;
+  const source = f.service.saveSource({
+    ...(await f.service.reader.read('https://future.example.test/')),
+    final_url: 'https://future.example.test/',
+    fetched_at: new Date(Date.parse(f.service.now()) + 6000).toISOString(),
+    text: 'Fixture Future. Official identity.',
+    fragment: 'Fixture Future.',
+    content_hash: 'synthetic-future-clock',
+  });
+  assert.throws(
+    () =>
+      enrichCompanyDomain(f.store, {
+        companyId: c.id,
+        expectedVersion: c.version,
+        domain: 'future.example.test',
+        operationId: 'future-clock-guard',
+        companyName: c.canonical_name,
+        sourceId: source.id,
+        quote: 'Fixture Future.',
+        now: f.service.now(),
+      }),
+    (e: any) => e.code === 'DOMAIN_EVIDENCE_REQUIRED',
+  );
+  assert.equal(
+    f.store.one('SELECT primary_domain FROM companies WHERE id=?', c.id)!.primary_domain,
+    null,
+  );
+  assert.equal(
+    f.store.one('SELECT count(*) n FROM company_domain_enrichments WHERE company_id=?', c.id)!.n,
+    0,
   );
 });
 

@@ -75,3 +75,9 @@ próba i CI są rozliczane osobno, z zachowaniem nieudanego wyniku.
 
 Celowane regresje po korekcie DTO/stanów: **190/190 PASS**, w tym 49 nowych
 testów jakości i wyścigów, bez FAIL/SKIP/cancel.
+
+Pełny lokalny Windows check 4142626: 967 backend + 12 Stop + 26 UI PASS,
+typecheck/build PASS. CI wykryło niespójny zegar istniejącego fixture rollbacku
+domeny (966/967 PASS). Korekta jest wyłącznie w testach: jeden sztuczny zegar
+oraz negatywna próba źródła +6000 ms, bez zmiany produkcyjnej tolerancji 5000 ms.
+Nowy celowany zestaw 79/79 PASS; finalny check/CI mają osobny manifest SHA.

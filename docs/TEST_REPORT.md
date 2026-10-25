@@ -23,6 +23,15 @@ wzoru (`profile.approvedMessage`) z modelowego DTO bez zmiany profilu.
 Następna celowana próba 188/190 ujawniła dawne oczekiwanie kopii wzoru i
 czekanie na nieaktualne RUNNING. Końcowy pełny check/CI wymagają nowego SHA.
 
+4142626: pełny lokalny Windows check **967 backend + 12 Stop + 26 UI PASS**,
+typecheck/build PASS, exit0. CI tego SHA: **966/967 backend PASS, FAIL1**.
+Log wskazał istniejący test rollbacku domeny z dwoma różnymi zegarami:
+zamrożona usługa i rzeczywisty czas fixture źródła. Pod obciążeniem różnica
+przekroczyła 5 s i poprawnie zadziałało DOMAIN_EVIDENCE_REQUIRED. Ujednolicono
+wyłącznie zegar fikcyjnego readera oraz dodano regresję future +6000 ms;
+produkcyjnego limitu 5000 ms nie zmieniono. Celowane domain/quality/concurrency:
+**79/79 PASS**. Końcowy pełny check i CI następcy są w prywatnej dostawie.
+
 ## Utrzymanie Computer Use — 24 października 2026
 
 Windows / Node24.19.0: **17/17 nowych regresji PASS**, a rzeczywisty,
