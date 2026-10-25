@@ -88,6 +88,9 @@
           ack.append(own);
         }
         document.body.append(ack);
+        // Explicit multi-action diagnostic only; normal stale-ACK fixtures
+        // retain the banner and continue testing the driver's refusal.
+        if (new URL(location.href).searchParams.has('multi')) setTimeout(() => ack.remove(), 2000);
       };
     };
   </script>

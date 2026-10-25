@@ -349,3 +349,12 @@ Szczegóły kontraktu: docs/reviews/INDEPENDENT_LIBRARY_REFRESH.md. Prywatne wyn
 
 Wyniki Windows/CI oraz identyfikacja instalacji są rozliczane w dowodach
 dostawy. Sama poprawka i aktualizacja nie udzielają prawa nadawania.
+
+## 25.10.2026 — gotowość wykonawcy przed pierwszym Start
+
+- [x] Odtworzono wczesne przypięcie MANUAL i sprawdzono probe → pojedynczy Start → ta sama instancja BATCH. Korekta procedury, bez zmian sendera, limitów i selekcji ciągłego AUTO.
+- [x] 13 nowych regresji syntetycznych: zimny start, błędny scope/backend/worker/lease, Stop i spóźniony callback, utracony ACK Start bez retry, RPC timeout przy działającym hoście, awaria pierwszej akcji i SEND_UNKNOWN.
+- [x] Rzeczywisty Computer Use na lokalnej stronie: 3 fikcyjne akcje w zatwierdzonym ordinal, jeden syntetyczny Start/sesja, brak API fallback, COMPLETED, potwierdzony release i cleanup.
+- [ ] Pełny bieżący Windows check i CI dokładnego SHA są wymagane przed dostawą; wynik wykonania i identyfikacja buildu w prywatnym raporcie dostawy. Nie zastępować ich dawnym PASS.
+
+[Procedura i izolowana komenda diagnostyczna](HOST_ADAPTER.md). Ta zmiana nie udziela prawa do prawdziwego Start, Gmaila, nowego scope ani wysyłki.

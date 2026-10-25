@@ -568,7 +568,6 @@ nie jest deploymentem lub zgodą na Start.
 
 Korekta narracji z 18.10.2026: 9 COMPLETED / 5 PARTIAL / 1 PAUSED pochodzi z dwóch raportów JSON zakończonej sesji i guarda, porównanych w diagnostyce z 18.10. Wcześniejsze 10/4/1 było błędem opisu; nie zmieniano danych runów.
 
-
 ## 24.10.2026 — niezależne odnowienie: rzeczywisty Windows
 
 Windows x64, Node v24.19.0. Kod wykonawczy b0ac8ca5f20b65d4416d8c1cb7f7bbdefac2b3cf. Końcowy pełny npm run check: 873/873 backend, 12/12 Stop, 26/26 UI oraz typecheck/build PASS; osobny doctor PASS. Celowane regresje 69/69 PASS. Izolowane HOME/dane, DEVELOPMENT/DEMO i fikcyjni dostawcy; brak natywnego Gmaila. Nie podnoszono progów Stop ani limitów parsera.
@@ -578,3 +577,24 @@ Przed poprawkami zachowano porażki: skorygowany fixture A → B → C 0/2, pier
 GitHub CI Offline Windows dla dokładnego b0ac8ca5f20b65d4416d8c1cb7f7bbdefac2b3cf: completed/success, [run 40036595927](https://github.com/JakubLewosz/JobHunter/actions/runs/40036595927), zakończony 23.10.2026 23:15:43 UTC. To potwierdzenie tego SHA, nie późniejszego commitu dokumentacji.
 
 Regresje obejmują niezmieniony zapisany tryb i zakres AUTO, chronione materiały/źródła, kontynuację po lokalnym odrzuceniu, obcy PAUSED, właściciela i wszystkie tabele po utracie własności, Stop/deadline oraz zmiany profilu/polityki/wersji podczas await. Nie wykonano rzeczywistej wysyłki ani testu pocztowego na koncie użytkownika. Prywatne dane nie są częścią dowodów publikowanych w Git.
+
+## 25.10.2026 — inicjalizacja zamkniętej partii
+
+Korekta operacyjna HOST_ADAPTER: probe na nowym kliencie przed jednym Start,
+ciągły run na tej samej instancji dopiero po RUNNING/BATCH. Produkcyjny sender,
+broker i selekcja AUTO bez zmian. Nowe regresje: 13/13 PASS, Windows x64,
+Node24.19.0. Rzeczywisty Computer Use na własnej stronie: jeden syntetyczny
+Start, trzy fikcyjne próby/rezerwacje/UI akcje w ordinal, COMPLETED,
+releaseConfirmed=true, cleanup i authority=false. Brak Gmaila i produkcyjnych
+Start/rezerwacji/kliknięć/wysyłek. Pierwsza próba strony pozostawiała stary ACK;
+bezpieczne odrzucenie drugiej akcji zachowano. Wyłącznie jawny wariant multi
+strony testowej wygasza własny banner; normalny stale-ACK fixture i zabezpieczenie
+produkcji pozostają. Wcześniejsze błędy konstrukcji nowej fixture (konfiguracja
+bez połączenia, brak ponownego listen po cyklu research, zbyt wczesne odczytanie
+CONNECTING) są osobnymi zachowanymi wynikami, nie porażką produkcyjnej wysyłki.
+Pełny check bieżącego SHA oraz CI rozlicza osobny raport wykonania; ten zapis
+nie przypisuje wcześniejszych CI nowemu kodowi. Prywatnych firm/materiałów i
+identyfikatorów produkcji nie publikujemy.
+
+Celowany zintegrowany zestaw startup/task/controller/closed-batch/order/adapter:
+79/79 PASS, 0 fail/skip/cancel, Windows Node24.19.0 (53 508 ms).

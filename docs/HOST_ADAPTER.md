@@ -1,5 +1,70 @@
 # Node owner i lekki adapter Codexa — 21.10.2026
 
+## Zamknięta partia: gotowość PRZED pierwszym Start — 25.10.2026
+
+Poprawka jest operacyjna. `startBatch` przyznaje prawo biznesowe, a nie
+podłącza hosta. Start przed gotowością wykonawcy może więc otworzyć sesję,
+która bez UI zakończy się kontrolowanym Stop. Oczekiwanie na host dopiero
+po Start jest błędną kolejnością operatora. Nie zmieniamy selekcji AUTO,
+lease 45 s, zatwierdzeń ani istniejących publicznych metod.
+
+Właściciel Node najpierw przygotowuje zatwierdzony zakres, lecz pozostaje
+STOPPED, bez workera sendera i prawa. Zapamiętuje backendId oraz scope MANUAL
+z `service.browserDelivery.status()`. Dopiero aktywny Computer Use sprawdza
+właściwą kartę i podłącza **nowy** `BrowserExecutorClient` metodą `probe()`.
+Nie używać tu `connectBrowserExecutor` ani `attach()`: one zapamiętują MANUAL,
+który po Start będzie niezgodny z BATCH. Nie uruchamiać też `task.run()` przed
+Start: wymaga już RUNNING/BATCH. Sekret deskryptora pozostaje w kliencie.
+
+W jednym aktywnym wywołaniu hosta:
+
+1. Sprawdzić `tab.url()` z ograniczonym oczekiwaniem, sygnał anulowania i origin.
+   Dla produkcji oddzielnie potwierdzić konto według SINGLE_ACCOUNT, dopiero
+   w zadaniu dopuszczającym Gmail. Diagnostyka poniżej używa wyłącznie loopback.
+2. Wykonać `client.probe(signal)`, porównać backendId i cały dotychczasowy
+   MANUAL scope/generację z właścicielem. Odpowiedź connected=true jest dowodem
+   bieżącego IPC tego klienta, nie samego otwartego Codexa. Nie zmienia zakresu
+   klienta. Inny worker jest odrzucany przez broker.
+3. Tuż przed dispatch właściciel sprawdza ten sam backend/scope, świeży wynik
+   rzeczywistej karty/probe, połączenie, brak Stop i ważną zgodę. Brak lub
+   niepewność któregokolwiek warunku oznacza **zero Startów**. Nie odnawiać
+   utraconego lease nowym klientem. Stop/abort unieważnia oczekującą gotowość;
+   opóźniony callback nie otwiera sesji.
+4. Właściciel oznacza Start jako dispatched **przed** pojedynczym wywołaniem
+   `service.startBatch(batchId)`. Dopiero znany ACK RUNNING/BATCH pozwala tej
+   samej instancji klienta uruchomić `await new BrowserBatchTask(...).run()`.
+   Porównać uzyskany BATCH z ACK (backend/session/batch/generation). Utrata
+   odpowiedzi po możliwym dispatch to UNKNOWN: obserwować i rozstrzygnąć istniejącą
+   instancję, bez drugiego Start, workera, taska lub resetowania terminu.
+5. Nadal czekać na cały `run()` w tym samym aktywnym wywołaniu Computer Use.
+   Sam timeout odpowiedzi RPC nie zatrzymuje hosta. Sprawdzić istniejącą
+   instancję/postęp oraz właściciela. Po Stop/completion/anulowaniu nie wykonywać
+   dalszych akcji. Osobno potwierdzić odwołanie prawa, koniec operacji i cleanup;
+   release lease nie zastępuje Stop ACK.
+
+Odtwarzalna komenda diagnostyczna (z katalogu repo, Node24, po buildzie):
+
+```text
+node node_modules/tsx/dist/cli.mjs scripts/browser-startup-fixture.ts --out <NOWY_KATALOG_DOWODÓW>
+```
+
+Przyjmuje tylko nowy katalog wyników; tworzy własny tymczasowy DEVELOPMENT,
+fikcyjny profil/PDF/odbiorców, providerów i lokalną stronę. Nie przyjmuje
+WORKSTATION, produkcyjnego planu ani konta. Właściciel zapisuje fixture-ready.json.
+W Computer Use otworzyć wyłącznie podany URL i w jednym aktywnym wywołaniu:
+odczyt URL → nowy BrowserExecutorClient(dir) → probe → porównanie backend/scope →
+zapis host-ready.json `{observedAt: Date.now(), origin, state}`. Dalej czekać
+na start-ack.json, porównać z kolejnym probe (nie attach), a następnie **tym samym
+client/tab** wykonać `await BrowserBatchTask.run()` z fixtureOrigin i stałym
+deadline. Po zakończeniu `close()` i zapis statusu. Nie zwracać z wywołania po
+samym zapisie host-ready. Native fixture sprawdza świeżość (<5 s), wykonuje jeden
+syntetyczny publiczny Start, trzy fikcyjne akcje w ordinal i potwierdza Stop/cleanup.
+Bez host-ready wyjdzie bez Start po ograniczonym oczekiwaniu. Flaga STOP_FIXTURE
+anuluje oczekiwanie. Ta komenda nie służy do uruchamiania prawdziwej partii.
+
+Regresje: `tests/browser-startup-sequence.test.ts`; szersza macierz zakresu,
+lease i kolejności pozostaje w istniejących testach browser/closed-batch.
+
 ## Zamknięta partia i ciągły wykonawca — 24.10.2026
 
 Ręczne wywoływanie `segment()` z przerwami na rozmowę nie utrzymuje lease
@@ -7,10 +72,10 @@ między wywołaniami. Próg brokera nadal wynosi **45 sekund**. Do zamkniętej
 partii służy teraz eksport `BrowserBatchTask` z tego samego lekkiego wejścia.
 Nie zmienia Startu, przygotowania partii ani guarda w backendzie.
 
-Po osobnej zgodzie i pojedynczym `startBatch`, w aktywnym `cua_repl`:
+Po gotowości opisanej powyżej, osobnej zgodzie i pojedynczym `startBatch`,
+w tym samym aktywnym wywołaniu `cua_repl` (client utworzony przed Start przez probe):
 
 ```js
-const client = await adapter.connectBrowserExecutor(profileDir);
 const task = new adapter.BrowserBatchTask(client, tab, {
   taskId,
   deadlineMs: consentDeadlineMs,

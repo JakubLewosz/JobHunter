@@ -1,5 +1,13 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+25.10: dla istniejącej zamkniętej partii obowiązuje [gotowość przed pierwszym
+Start](HOST_ADAPTER.md). Nowy klient wykonuje probe bez przypięcia MANUAL,
+właściciel po świeżym potwierdzeniu tej samej instancji wykonuje jeden Start,
+a ten sam aktywny host czeka na BrowserBatchTask.run. Nie wykonywać wczesnego
+attach/connectBrowserExecutor ani run przed RUNNING/BATCH. Brak gotowości daje
+zero Start; utracony ACK po dispatch daje UNKNOWN bez ponowienia. To korekta
+kolejności operatora, bez nowego koordynatora i bez zmiany polityki.
+
 24.10: zamknięta partia używa ciągłego `BrowserBatchTask` w aktywnym Computer
 Use; osobne odczyty postępu nie przerywają pętli. Próg lease 45 s i bramki
 pozostają bez zmian. [Obsługa](HOST_ADAPTER.md),
