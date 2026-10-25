@@ -6,12 +6,16 @@ import { AutoPolicyJobHunter } from '../../apps/server/src/auto-policy.js';
 import { BrowserExecutorClient } from '../../apps/server/src/browser/client.js';
 import type { BrowserTab } from '../../apps/server/src/browser/executor.js';
 
-export async function startupFixture(t: Pick<TestContext, 'after'>, origin: string) {
+export async function startupFixture(
+  t: Pick<TestContext, 'after'>,
+  origin: string,
+  multiple = false,
+) {
   const cleanup: (() => unknown)[] = [];
   const f = await setup(
     { after: (fn: () => unknown) => cleanup.push(fn) } as any,
     false,
-    true,
+    multiple,
     false,
     true,
   );
@@ -44,8 +48,12 @@ export async function startupFixture(t: Pick<TestContext, 'after'>, origin: stri
   await service.tick();
   service.control('stop');
   service.finishPartial();
-  const ordered = service.draftRows().toReversed().slice(0, 3);
-  assert.equal(ordered.length, 3);
+  // Pre-Start refusals need one item. Multi-action/order cases retain three.
+  const ordered = service
+    .draftRows()
+    .toReversed()
+    .slice(0, multiple ? 3 : 1);
+  assert.equal(ordered.length, multiple ? 3 : 1);
   const batch = service.prepareBatch({
     drafts: ordered.map((d) => ({ id: d.id, version: d.version })),
   });

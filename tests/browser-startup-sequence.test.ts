@@ -28,7 +28,7 @@ test('reproduction: early attach pins MANUAL and cannot be used for the later BA
 
 for (const failure of ['none', 'prepare', 'unknown'])
   test(`probe MANUAL → one Start → same continuous worker; first-action outcome=${failure}`, async (t) => {
-    const f = await startupFixture(t, origin);
+    const f = await startupFixture(t, origin, true);
     assert.equal((await f.prepare(tab)).scope.kind, 'MANUAL');
     await f.start();
     const actions: string[] = [];

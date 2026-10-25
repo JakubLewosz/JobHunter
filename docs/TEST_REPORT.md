@@ -598,3 +598,13 @@ identyfikatorów produkcji nie publikujemy.
 
 Celowany zintegrowany zestaw startup/task/controller/closed-batch/order/adapter:
 79/79 PASS, 0 fail/skip/cancel, Windows Node24.19.0 (53 508 ms).
+
+CI pierwszego SHA tego etapu (487b6c7) zakończyło się 917/918: istniejący test
+cli-tools pozytywnej pełnej fixture przekroczył niezmieniony deadline30 s
+(32,054 s z grace; ostatnia faza SENDING). Wszystkie13 nowych testów przeszły.
+Zachowano log i diagnostykę. Nie zmieniono CLI, deadline/grace ani progów Stop.
+Ograniczono wyłącznie nową fixture odmów przed Start do jednego elementu;
+przypadki kolejności i awarii pierwszej z kilku akcji nadal mają trzy. Nowy
+zintegrowany zestaw z cli-tools:89/89 PASS, 0 fail/skip/cancel, Windows Node24,
+59 506 ms. Pełny check i CI nowego SHA są rozliczane osobno; poprzedniego
+nieudanego runu nie przedstawiamy jako sukcesu.

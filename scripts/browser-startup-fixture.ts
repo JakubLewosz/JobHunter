@@ -28,7 +28,11 @@ const result: any = {
   passed: false,
 };
 try {
-  f = await startupFixture({ after: (fn: () => unknown) => cleanups.push(fn) } as any, page.origin);
+  f = await startupFixture(
+    { after: (fn: () => unknown) => cleanups.push(fn) } as any,
+    page.origin,
+    true,
+  );
   const expected = f.service.browserDelivery.status();
   assert.equal(expected.connected, false);
   assert.equal(f.service.deliveryAuthority().enabled, false);
