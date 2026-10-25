@@ -1,5 +1,28 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Jeden eksperyment DTO — 25.10.2026
+
+Rzeczywisty Windows / Node24.19.0: końcowy lokalny `npm run check` na 1940b99
+przeszedł **988 backend + 12 Stop + 26 UI**, typecheck/build, exit0, bez
+FAIL/SKIP/cancel. Kod wykonawczy, testy i konfiguracja są identyczne z b0c97cb;
+różnica dotyczyła tylko dokumentacji. CI dokładnego b0c97cb również PASS:
+[run 40209199833](https://github.com/JakubLewosz/JobHunter/actions/runs/40209199833).
+Następny commit domyka wyłącznie dokumentację; jego dokładne CI i manifest
+paczki rozlicza prywatna dostawa, bez przypisywania mu starszego runu.
+
+Baseline reproducer zachowuje 2/6 PASS i cztery oczekiwane FAIL. Pierwszy
+targeted 67/69 wymagał korekty fikcyjnych założeń selekcji; następny 69/69,
+nowe DTO 6/6 i końcowy integration/legacy 41/41 PASS. Pierwszy pełny check
+7b2f3a1 zachowuje 987/988 i FAIL starej asercji wymagającej drugiej kopii
+opisu. Nowa asercja sprawdza pełny fakt kanoniczny w DRAFT oraz pełne dane
+review i zapisanego materiału. Selekcji i kontroli faktów nie złagodzono.
+
+Testy techniczne nie stanowią dowodu poprawy jakości pierwszych tekstów.
+Eksperymentalny DTO nie jest proponowany do WORKSTATION; bazą ochrony jakości
+pozostaje 4c57361. Pełne prywatne porównanie, koszty, błędy dostawcy i decyzja
+są w JOBHUNTER_DTO_MESSAGE_QUALITY_RESULT.md poza repo. Bez Gmaila, Startu,
+zmiany produkcji lub kolejnego automatycznego cyklu strojenia.
+
 ## Kalibracja i legacy — 25.10.2026
 
 Windows / Node24.19.0: bazowy reproducer **0/3 PASS** (oczekiwane trzy FAIL

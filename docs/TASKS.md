@@ -5,13 +5,19 @@
 - [x] Utrwalić nowy holdout, kolejność 48 prób, rubrykę i kryterium adopcji
       przed odpowiedziami; usunąć wyłącznie drugi opis projektu z DRAFT DTO.
 - [x] Potwierdzić literalny diff i zachowanie pełnych faktów/źródeł w review.
-- [ ] Przed jakąkolwiek propozycją wdrożenia odczytać prywatny wynik
-      JOBHUNTER_DTO_MESSAGE_QUALITY_RESULT.md, dokładne check/CI i manifest ZIP.
-      Ten checkout/commit pozostaje eksperymentem, bez prawa wdrożenia.
-- [ ] Przy braku wyraźnej przewagi zachować bazę 4c57361 i zakończyć hipotezę;
-      bez kolejnego cyklu strojenia. Późniejszy praktyczny krok: świadome
-      zastosowanie sprawdzonych zabezpieczeń i przygotowanie P1. Szczegóły
-      firm, korekty powodu i wymaganej treści zgłoszenia są w prywatnym raporcie.
+- [x] Zachować bazę ochrony jakości 4c57361. Eksperymentalny DTO nie jest
+      wersją proponowaną do WORKSTATION; bez merge lub wdrożenia. Techniczny
+      PASS nie wystarcza do potwierdzenia poprawy generatora.
+- [x] Nie rozpoczynać kolejnego cyklu strojenia tej hipotezy. Prywatna dostawa
+      JOBHUNTER_DTO_MESSAGE_QUALITY_RESULT.md rozlicza teksty, ślepe oceny,
+      awarie i ograniczenia; benchmarki i materiały pozostają poza GitHubem.
+- [ ] Dopiero w osobnym zleceniu: kontrolowane zastosowanie sprawdzonych
+      zabezpieczeń i dalsze przygotowanie P1. Szczegóły firm, korekty powodu
+      i wymaganej treści zgłoszenia są w prywatnym raporcie. Przed wznowieniem
+      odczytać ten raport, check/CI dokładnego SHA i manifest właściwego ZIP.
+
+Ten wpis zastępuje dawną propozycję badania DTO poniżej. Nie daje zgody na
+automatyczne powtórzenie eksperymentu, zmianę WORKSTATION lub nadawanie.
 
 [Protokół i zakres](reviews/DTO_PROJECT_EXPERIMENT.md).
 

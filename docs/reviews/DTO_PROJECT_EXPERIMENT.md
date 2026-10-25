@@ -32,9 +32,15 @@ zmienionych kontekstów. Oba zapisy pozostają w prywatnej dostawie.
 Stała ślepa rubryka: naturalność, konkretny udokumentowany powód firmy,
 przekonujące dopasowanie lub uzasadnione pominięcie projektu, brak katalogu
 i metakomentarzy, jedno pytanie oraz zachowane warunki kandydata/GitHub/CV.
-Fakty i cel kontaktu są osobną oceną. Dwie osobne ślepe oceny każdej z 24 par,
-z niezależnym mapowaniem A/B; ten sam dostawca CLI, bez twierdzenia o innej
-architekturze modelu. Drobna różnica słów/długości oznacza remis.
+Fakty i cel kontaktu są osobną oceną. Zaplanowano maksymalnie dwie osobne
+ślepe oceny każdej z 24 par, z niezależnym mapowaniem A/B; ten sam dostawca
+CLI, bez twierdzenia o innej architekturze modelu. Drobna różnica słów/długości
+oznacza remis. Przed pierwszą oceną dopisano regułę ujemnego futility:
+najpierw pierwsza ocena wszystkich par; druga pełna seria jest potrzebna
+tylko gdy pierwsza pozwala jeszcze osiągnąć pierwotny próg zgodnych wygranych
+(12 łącznie i 6 w każdej powtórce). Jeżeli arytmetyczna górna granica jest
+niższa, kończy się decyzją ujemną. Nie obniża się progów ani nie zastępuje
+otrzymanych ocen. Odstępstwo od pierwotnego planu jest jawne w dostawie.
 
 Zamrożony próg adopcji: co najmniej 12/18 zgodnych wyraźnych zwycięstw obu
 ocen, najwyżej 3 zgodne porażki, co najmniej 6/9 kontekstów ze zwycięstwem
@@ -63,3 +69,12 @@ Test zachowuje teraz pełny kanoniczny fakt w DRAFT i pełny selected.fact
 w review **oraz zapisanym materiale**, a generacyjna selekcja ma ID/klucz.
 Nie złagodzono kontroli faktów ani zapisu. Końcowy pełny check/CI następcy
 są osobnymi wynikami. Błędy wykonania modelu nie są dowodem jakości.
+
+Końcowy lokalny Windows check 1940b99: 988 backend, 12 Stop, 26 UI,
+typecheck/build PASS. CI b0c97cb: te same wyniki, bez FAIL/SKIP/cancel.
+Następny commit zmienia tylko dokumentację; CI jego dokładnego SHA pozostaje
+odrębnym wynikiem w prywatnej dostawie. Nie ma podstaw do proponowania
+eksperymentalnego DTO do WORKSTATION; pozostaje osobną gałęzią audytową.
+Baza ochrony jakości 4c57361 jest zachowana. Nie rozpoczynać kolejnego
+automatycznego strojenia na tym holdoucie. Prywatne teksty, rozbieżności
+ocen i koszty rozlicza raport poza repo, a nie techniczny PASS.
