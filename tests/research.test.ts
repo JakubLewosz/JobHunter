@@ -642,7 +642,12 @@ test('research: około 20 godzin nie przekazuje modelowi minimum/maksimum; jeden
   assert.match(service.draftRows()[0].body, /FixDesk/);
   assert.doesNotMatch(service.draftRows()[0].body, /AutoRelay|CodeFabric|ElektroScan/);
   const prompt = runner.prompts.find((p) => p.includes('Przygotuj indywidualny'))!;
-  assert.ok(prompt.includes(JSON.stringify(service.profile().message_template)));
+  assert.ok(!prompt.includes(JSON.stringify(service.profile().message_template)));
+  assert.equal(
+    JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)).profile.approvedMessage,
+    undefined,
+  );
+  assert.equal(p.approvedMessage, service.profile().message_template);
   assert.ok(prompt.includes('JEDEN'));
   assert.ok(!prompt.includes('"key":"autorelay"'));
 });

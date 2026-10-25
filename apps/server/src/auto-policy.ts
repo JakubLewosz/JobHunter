@@ -1273,6 +1273,9 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   }
   private awaitingDraftReview(d: Row) {
     if (this.store.get(`researchPending:${d.company_id}`, null)) return true;
+    // A late provider must not write INVALIDATED. A stale binding is already a draft
+    // rejection, not an in-flight review to wait for indefinitely.
+    if (this.draftMaterialIssues(d).includes('DRAFT_MATERIAL_STALE')) return false;
     const material = this.store.one(
       'SELECT review_status FROM research_draft_materials WHERE draft_id=? AND version=?',
       d.id,

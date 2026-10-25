@@ -15,6 +15,8 @@ wzoru i defaultu; nie zmieniono tego wzoru ani zatwierdzonych materiałów.
 fikcyjne porównania, oddziela konkretne zadanie od nazwy narzędzia AI.
 `recentMessageContext` przekazuje sygnały wad, bez tekstów poprzednich listów.
 Wzór z placeholderami wnosi ich preferencje, bez kopiowania stałych akapitów.
+Dotyczy to również drugiej kopii w `profile.approvedMessage`: modelowy DTO
+usuwa ją bez zmiany zapisanych faktów, profilu i jego hash.
 `projectSelection` nie wybiera CodeFabric tylko na podstawie używania Codexa.
 
 Istniejący SEMANTIC_REVIEW otrzymuje krótki werdykt `quality` z dokładnym
@@ -62,3 +64,14 @@ Końcowy celowany zestaw Windows: 177/177 PASS, bez FAIL/SKIP/cancel,
 Pełny Windows check i CI dokładnego finalnego SHA są rozliczane w prywatnym
 raporcie dostawy. Pierwszy check przerwano przed końcem na kalibrację review;
 nie jest PASS. Nie wykonano wdrożenia ani zmiany produkcyjnej polityki.
+
+Pełna próba f1001aa: 961/966 backend PASS, pięć FAIL, exit1 przed dalszymi
+etapami checku. Poprawiono pierwszeństwo błędów faktograficznych przed jakością.
+Stop anuluje ważne aktywne review synchronicznie; edycja unieważnia swoją starą
+wersję. Zewnętrzna zmiana źródła nie otrzymuje spóźnionego zapisu INVALIDATED:
+bieżące wiązanie blokuje szkic jako STALE i nie czeka na nieaktualne RUNNING.
+Nie zmienia to kolejności ciągłego AUTO ani zamkniętej partii. Końcowa nowa
+próba i CI są rozliczane osobno, z zachowaniem nieudanego wyniku.
+
+Celowane regresje po korekcie DTO/stanów: **190/190 PASS**, w tym 49 nowych
+testów jakości i wyścigów, bez FAIL/SKIP/cancel.

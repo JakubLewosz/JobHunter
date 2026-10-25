@@ -46,7 +46,9 @@ export function materialRecordIssues(material: Row, draft: Row, currentBinding: 
     JSON.parse(material.context_json ?? '{}').messageQualityVersion &&
     material.review_status === 'COMPLETED'
   ) {
-    const issues = editorialIssues(JSON.parse(material.review_result ?? '{}'));
+    const review = JSON.parse(material.review_result ?? '{}');
+    if (review.supported !== true || review.issues?.length) return ['SEMANTIC_REVIEW_REQUIRED'];
+    const issues = editorialIssues(review);
     if (issues.length) return issues;
   }
   return material.code_status === 'PASS' && material.review_status === 'COMPLETED'

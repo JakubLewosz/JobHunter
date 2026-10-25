@@ -263,6 +263,7 @@ for (const change of ['edit', 'source'])
           body: d.body + ' Dziękuję.',
         });
       else f.store.exec("UPDATE research_sources SET text=text||' Changed.'");
+      const materialAtChange = f.store.all('SELECT * FROM research_draft_materials');
       review.release();
       await research;
       const changed = f.service.draftRows()[0];
@@ -272,8 +273,11 @@ for (const change of ['edit', 'source'])
           d.id,
           d.version,
         )?.review_status,
-        'INVALIDATED',
+        change === 'edit' ? 'INVALIDATED' : 'RUNNING',
       );
+      // A direct external source edit has no application invalidation callback. Its stale
+      // binding blocks readiness; the late model is forbidden from writing even INVALIDATED.
+      assert.deepEqual(f.store.all('SELECT * FROM research_draft_materials'), materialAtChange);
       assert.equal(JSON.parse(changed.semantic_review).supported, null);
       assert.deepEqual(f.service.draftMaterialIssues(changed), ['DRAFT_MATERIAL_STALE']);
       f.advance();

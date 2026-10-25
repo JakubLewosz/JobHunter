@@ -7,6 +7,8 @@ import { autoErrorDecision } from '../apps/server/src/auto-policy.js';
 import { DomainError, hash } from '../apps/server/src/util.js';
 import { ResearchJobHunter } from '../apps/server/src/research/service.js';
 import { assertTargetedRevision } from '../apps/server/src/research/message-quality.js';
+import { targetedRevisionPrompt } from '../apps/server/src/research/message-quality.js';
+import { messagePrompt, semanticReviewPrompt } from '../apps/server/src/research/message-policy.js';
 
 const defect = {
   code: 'LANGUAGE',
@@ -164,6 +166,7 @@ test('factual rejection does not launch editorial repair or bypass AUTO safety',
   const d = f.service.draftRows()[0];
   assert.equal(d.version, 1);
   assert.equal(JSON.parse(d.semantic_review).supported, false);
+  assert.deepEqual(f.service.draftMaterialIssues(d), ['SEMANTIC_REVIEW_REQUIRED']);
   assert.equal(f.runner.prompts.filter((p) => p.startsWith('Wykonaj JEDNĄ')).length, 0);
   assert.equal(f.gateway.posts.length, 0);
   assert.equal(autoErrorDecision('EDITORIAL_QUALITY_REQUIRED'), 'draft');
@@ -181,6 +184,27 @@ test('CodeFabric is not selected merely because a team uses AI/Codex', () => {
     projectSelection(task.profile.facts, task.analysis, task.evidence).selected[0].fact.key,
     'codefabric',
   );
+});
+
+test('saved profile template cannot leak through approvedMessage into any message model DTO', () => {
+  const c = qualityCases[0];
+  const data = {
+    ...c,
+    profile: { ...c.profile, approvedMessage: 'FIXED_PRIVATE_TEMPLATE_SHOULD_NOT_PRIME' },
+    template: '[Prefer simple language.]',
+  };
+  const original = structuredClone(data);
+  for (const prompt of [
+    messagePrompt(data),
+    semanticReviewPrompt({ ...data, draft: { subject: 'Fictional', body: 'Fictional body.' } }),
+    targetedRevisionPrompt({ ...data, quality: revise }),
+  ]) {
+    assert.doesNotMatch(prompt, /FIXED_PRIVATE_TEMPLATE_SHOULD_NOT_PRIME/);
+    const dto = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
+    assert.deepEqual(dto.profile.facts, c.profile.facts);
+    assert.equal(dto.profile.hash, c.profile.hash);
+  }
+  assert.deepEqual(data, original);
 });
 
 test('targeted repair preserves unaffected paragraphs and rejects invented defect anchors', () => {
@@ -311,6 +335,11 @@ for (const stage of ['review', 'revision'] as const)
           throw Error('NO_TARGET_STAGE');
         }),
       ]);
+      const codeWhileAwaiting = f.store.one(
+        'SELECT code_status FROM research_draft_materials WHERE draft_id=? AND version=?',
+        d.id,
+        d.version,
+      )!.code_status;
       const owner = f.store.assertExclusive;
       if (fault === 'stop') f.service.control('stop');
       if (fault === 'version')
@@ -335,17 +364,13 @@ for (const stage of ['review', 'revision'] as const)
         };
       if (fault === 'deadline') controller.abort(new DomainError('DEADLINE', 'Fictional deadline'));
       const before = f.store.all('SELECT * FROM research_draft_materials');
-      if (stage === 'review')
-        assert.equal(
-          before.find((m) => m.draft_id === d.id && m.version === d.version)!.code_status,
-          'PENDING',
-        );
       release();
       try {
         await assert.rejects(work);
       } finally {
         f.store.assertExclusive = owner;
       }
+      if (stage === 'review') assert.equal(codeWhileAwaiting, 'PENDING');
       assert.deepEqual(f.store.all('SELECT * FROM research_draft_materials'), before);
       assert.equal(f.store.one('SELECT count(*) n FROM outbox')!.n, 0);
       assert.equal(f.gateway.posts.length, 0);

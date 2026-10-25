@@ -14,6 +14,15 @@ kalibrację fałszywego alarmu review, bez deklaracji PASS. Dokładne logi,
 pełny końcowy check, CI SHA i ograniczenia benchmarku są w prywatnej dostawie.
 Fikcyjni odbiorcy, osobne dane; bez Gmaila i wdrożenia WORKSTATION.
 
+Pełny backend Windows na f1001aa: **961/966 PASS, FAIL5**, exit1 — dalsze
+etapy checku nie wystartowały. Dwa błędy dotyczyły priorytetu SEMANTIC przed
+EDITORIAL; trzy miejsca unieważnienia/anulowania review. Korekta zachowuje
+blokady i zabrania spóźnionych zapisów, dodaje synchroniczne anulowanie oraz
+rozróżnia stale binding od aktywnego RUNNING. Usunięto również drugą kopię
+wzoru (`profile.approvedMessage`) z modelowego DTO bez zmiany profilu.
+Następna celowana próba 188/190 ujawniła dawne oczekiwanie kopii wzoru i
+czekanie na nieaktualne RUNNING. Końcowy pełny check/CI wymagają nowego SHA.
+
 ## Utrzymanie Computer Use — 24 października 2026
 
 Windows / Node24.19.0: **17/17 nowych regresji PASS**, a rzeczywisty,
