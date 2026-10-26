@@ -84,7 +84,7 @@ export async function runResearchSession(options: {
       await service.probe('search');
     }
     if (options.resume) await service.resumeSession();
-    else await service.startDay(options.query, options.hours);
+    else await service.startDay(options.query, options.hours, { deadlineOnly: true });
     const onStop = () => service!.control('stop');
     options.signal?.addEventListener('abort', onStop, { once: true });
     try {

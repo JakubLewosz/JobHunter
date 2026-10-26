@@ -78,6 +78,35 @@ export function compareNightflowCandidates(
     a.d.id.localeCompare(b.d.id)
   );
 }
+// A per-job work queue, never a campaign/send limit. Current policy gates still
+// decide eligibility after every native renewal and again before sending.
+export function selectNightflowRefreshQueue(
+  candidates: { d: Row; channelRank: number; issues: string[] }[],
+  hours: number,
+  lastAttempt: (draftId: string) => string,
+) {
+  const seen = new Set<string>();
+  return candidates
+    .filter(({ d, issues }) => d.status !== 'SENT' && !issues.includes('CONTACT_HISTORY'))
+    .sort(
+      (a, b) =>
+        Number(!b.issues.length) - Number(!a.issues.length) ||
+        (b.d.decision === 'READY_APPLICATION' ? 1 : 0) -
+          (a.d.decision === 'READY_APPLICATION' ? 1 : 0) ||
+        b.channelRank - a.channelRank ||
+        lastAttempt(a.d.id).localeCompare(lastAttempt(b.d.id)) ||
+        a.d.created_at.localeCompare(b.d.created_at) ||
+        a.d.id.localeCompare(b.d.id),
+    )
+    .filter(({ d }) => {
+      if (seen.has(d.company_id) || seen.has(d.email.toLowerCase())) return false;
+      seen.add(d.company_id);
+      seen.add(d.email.toLowerCase());
+      return true;
+    })
+    .slice(0, Math.min(15, hours * 12))
+    .map(({ d }) => d.id);
+}
 export function inSendWindow(plan: NightflowPlan, date: Date) {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: plan.window.timezone,
@@ -365,22 +394,47 @@ export class NightflowCoordinator {
         const checked = new Set<string>(checkpoint.checked ?? []);
         if (!checkpoint.researchComplete) {
           await this.phase('REFRESHING', plan, generation);
-          const drafts = this.service
-            .draftRows()
-            .filter((d) => !refreshed.has(d.id) && d.status !== 'SENT');
-          for (let i = 0; i < drafts.length && this.now() < this.row().deadline; i += 10) {
+          const refreshQueue: string[] =
+            checkpoint.refreshQueue ??
+            selectNightflowRefreshQueue(
+              this.service.nightflowCandidates(),
+              plan.researchHours,
+              (draftId) => this.store.get<Row>(`nightflowRefreshAttempt:${draftId}`, {}).at ?? '',
+            );
+          const refreshDeadline: string =
+            checkpoint.refreshDeadline ??
+            new Date(
+              Date.parse(this.row().deadline) -
+                (plan.discovery ? plan.researchHours * 3600000 * 0.6 : 0),
+            ).toISOString();
+          this.store.exec(
+            'UPDATE nightflow_jobs SET checkpoint=? WHERE id=?',
+            JSON.stringify({
+              ...checkpoint,
+              refreshQueue,
+              refreshDeadline,
+            }),
+            this.jobId,
+          );
+          for (const draftId of refreshQueue) {
+            if (refreshed.has(draftId)) continue;
+            if (this.now() >= refreshDeadline) break;
+            this.assert(plan, generation);
+            this.store.set(`nightflowRefreshAttempt:${draftId}`, {
+              at: this.now(),
+              jobId: this.jobId,
+            });
             const result = await this.service.refreshLibraryDrafts(
-              {
-                draftIds: drafts.slice(i, i + 10).map((d) => d.id),
-              },
+              { draftIds: [draftId] },
               {
                 signal: AbortSignal.any([
                   this.controller.signal,
                   AbortSignal.timeout(
-                    Math.max(1, Date.parse(this.row().deadline) - Date.parse(this.now())),
+                    Math.max(1, Date.parse(refreshDeadline) - Date.parse(this.now())),
                   ),
                 ]),
-                deadline: this.row().deadline,
+                deadline: refreshDeadline,
+                guard: () => this.assert(plan, generation),
               },
             );
             this.assert(plan, generation);
@@ -390,11 +444,32 @@ export class NightflowCoordinator {
             });
             this.store.exec(
               'UPDATE nightflow_jobs SET checkpoint=? WHERE id=?',
-              JSON.stringify({ refreshed: [...refreshed], checked: [...checked] }),
+              JSON.stringify({
+                ...JSON.parse(this.row().checkpoint),
+                refreshed: [...refreshed],
+                checked: [...checked],
+                refreshResults: [
+                  ...(JSON.parse(this.row().checkpoint).refreshResults ?? []),
+                  ...result.results,
+                ],
+                refreshBudgetReason: result.interrupted ?? null,
+              }),
               this.jobId,
             );
             if (result.interrupted) break;
           }
+          if (
+            this.now() >= refreshDeadline &&
+            refreshQueue.some((draftId) => !refreshed.has(draftId))
+          )
+            this.store.exec(
+              'UPDATE nightflow_jobs SET checkpoint=? WHERE id=?',
+              JSON.stringify({
+                ...JSON.parse(this.row().checkpoint),
+                refreshBudgetReason: 'DEADLINE',
+              }),
+              this.jobId,
+            );
           if (plan.discovery && this.now() < this.row().deadline) {
             await this.phase('RESEARCHING', plan, generation);
             await this.service.startLibraryResearch(
@@ -453,6 +528,7 @@ export class NightflowCoordinator {
             this.store.exec(
               'UPDATE nightflow_jobs SET checkpoint=? WHERE id=?',
               JSON.stringify({
+                ...JSON.parse(this.row().checkpoint),
                 refreshed: [...refreshed],
                 checked: [...checked],
                 researchOutcome: {

@@ -1306,18 +1306,23 @@ export class ResearchJobHunter extends JobHunter {
       );
     this.enqueue(`search-${id()}`, query, 3);
   }
-  async startDay(query?: string, hours = 8) {
+  async startDay(query?: string, hours = 8, options: { deadlineOnly?: boolean } = {}) {
     if (this.mode === 'RESEARCH_ONLY' && !this.store.get<Row>('researchDay', {}).active) {
-      await this.researchController().start(() => this.startDayNative(query, hours));
+      await this.researchController().start(() => this.startDayNative(query, hours, options));
       return;
     }
-    return this.startDayNative(query, hours);
+    return this.startDayNative(query, hours, options);
   }
-  private async startDayNative(query?: string, hours = 8) {
+  private async startDayNative(
+    query?: string,
+    hours = 8,
+    options: { deadlineOnly?: boolean } = {},
+  ) {
     if (this.store.get('readerRecoveryRequired', false))
       throw new DomainError('READER_ENVIRONMENT', 'Najpierw wykonaj udany jawny probe czytnika.');
     const profile = this.minimalProfile();
     z.number().int().min(1).max(24).parse(hours);
+    const trial = hours === 1 && !options.deadlineOnly;
     if (this.store.get<Row>('researchDay', {}).active) return;
     if (this.researching || this.probing) throw new DomainError('BUSY', 'Codex już pracuje.');
     if (!this.capability('searchCapability').tested)
@@ -1325,25 +1330,25 @@ export class ResearchJobHunter extends JobHunter {
     const trialQueries = query
       ? [query, ...dayQueries.map((topic) => `${query}. Kolejny kierunek: ${topic}`)]
       : dayQueries;
-    const plan =
-      hours === 1
-        ? null
-        : sessionQueries(
-            dayQueries,
-            query,
-            profile.facts.map((f) => f.key),
-          );
+    const plan = trial
+      ? null
+      : sessionQueries(
+          dayQueries,
+          query,
+          profile.facts.map((f) => f.key),
+        );
     this.store.set('researchDay', {
       sessionId: id(),
       startedAt: this.now(),
       active: true,
       hours,
+      trial,
       expiresAt: iso(new Date(this.clock().getTime() + hours * 3600000)),
       nextAt: this.now(),
-      intervalMinutes: hours === 1 ? 10 : 15,
-      maxDraftsPerCycle: hours === 1 ? 3 : 5,
+      intervalMinutes: trial ? 10 : 15,
+      maxDraftsPerCycle: trial ? 3 : 5,
       ...(plan ? { queryPlanVersion: 1, querySeed: query, queryCursor: plan.cursor } : {}),
-      maxCycles: hours === 1 ? 6 : null,
+      maxCycles: trial ? 6 : null,
       runIds: [],
       cycles: 0,
       nextTopic: 0,
@@ -1357,7 +1362,7 @@ export class ResearchJobHunter extends JobHunter {
       const run = this.store.one("SELECT id FROM runs WHERE status='QUEUED'")!;
       this.store.exec(
         'UPDATE research_run_config SET max_drafts=? WHERE run_id=?',
-        hours === 1
+        trial
           ? Math.min(
               this.store.one('SELECT max_drafts FROM research_run_config WHERE run_id=?', run.id)!
                 .max_drafts,
@@ -1375,7 +1380,7 @@ export class ResearchJobHunter extends JobHunter {
     } else this.scheduleDayCycle();
     this.event(
       'DAY_STARTED',
-      hours === 1
+      trial
         ? 'Rozpoczęto godzinny test: do 10 kandydatów i 3 szkiców łącznie, kolejne kierunki co 10 minut. Zero wysyłek.'
         : `Użytkownik uruchomił szukanie firm na ${hours} godzin, kolejne kierunki co 15 minut, do 5 szkiców na cykl, bez wysyłek.`,
       null,
@@ -1444,7 +1449,7 @@ export class ResearchJobHunter extends JobHunter {
     if (
       work.expiresAt <= this.now() ||
       (typeof work.maxCycles === 'number' && work.cycles >= work.maxCycles) ||
-      (work.hours === 1 && (usage.candidates >= 10 || usage.drafts >= 3))
+      ((work.trial ?? work.hours === 1) && (usage.candidates >= 10 || usage.drafts >= 3))
     ) {
       this.store.set('researchDay', {
         ...work,
@@ -1452,7 +1457,10 @@ export class ResearchJobHunter extends JobHunter {
         finishedAt: this.now(),
         finalReason: work.expiresAt <= this.now() ? 'DEADLINE' : 'SESSION_BUDGET',
       });
-      this.store.set('workerStatus', work.hours === 1 ? 'TRIAL_FINISHED' : 'DAY_FINISHED');
+      this.store.set(
+        'workerStatus',
+        (work.trial ?? work.hours === 1) ? 'TRIAL_FINISHED' : 'DAY_FINISHED',
+      );
       this.store.set('stopped', true);
       this.event('SESSION_FINISHED', 'Sesja zakończona. Wyniki zapisane; zero wysyłek.');
       this.persistResearchReport();
@@ -1502,7 +1510,7 @@ export class ResearchJobHunter extends JobHunter {
     const runId = this.enqueue(
       `day-${id()}`,
       work.queries[topic],
-      work.hours === 1 ? 3 - usage.drafts : (work.maxDraftsPerCycle ?? 3),
+      (work.trial ?? work.hours === 1) ? 3 - usage.drafts : (work.maxDraftsPerCycle ?? 3),
     );
     this.store.set('researchDay', {
       ...work,
@@ -1551,7 +1559,7 @@ export class ResearchJobHunter extends JobHunter {
         dayWork.expiresAt &&
           dayWork.expiresAt <= this.now() &&
           this.sessionLifecycle?.state().primaryReason === 'DEADLINE'
-          ? dayWork.hours === 1
+          ? (dayWork.trial ?? dayWork.hours === 1)
             ? 'TRIAL_FINISHED'
             : 'DAY_FINISHED'
           : 'STOPPED',
@@ -3695,7 +3703,7 @@ export class ResearchJobHunter extends JobHunter {
           );
           const work = this.store.get<Row>('researchDay', {});
           const candidateLimit =
-            work.active && work.hours === 1
+            work.active && (work.trial ?? work.hours === 1)
               ? Math.min(2, Math.max(0, 10 - this.sessionUsage(work).candidates))
               : 10;
           const alreadyQueued = this.store.one(
@@ -4020,7 +4028,7 @@ export class ResearchJobHunter extends JobHunter {
       const deadlineReached = dayWork.active && dayWork.expiresAt <= this.now();
       const code = timeout.aborted
         ? deadlineReached
-          ? dayWork.hours === 1
+          ? (dayWork.trial ?? dayWork.hours === 1)
             ? 'TRIAL_FINISHED'
             : 'DAY_FINISHED'
           : 'TIME_BUDGET'

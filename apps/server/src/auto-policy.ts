@@ -168,7 +168,9 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       await this.researchController().start(async () => {
         if (resume) await ResearchJobHunter.prototype.resumeSession.call(this);
         else {
-          await ResearchJobHunter.prototype.startDay.call(this, query, hours);
+          await ResearchJobHunter.prototype.startDay.call(this, query, hours, {
+            deadlineOnly: true,
+          });
           if (deadline) {
             const work = this.store.get<Row>('researchDay', {});
             if (deadline > work.expiresAt)
@@ -820,7 +822,7 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
   }
   override async refreshLibraryDrafts(
     raw: unknown,
-    options: { signal?: AbortSignal; deadline?: string } = {},
+    options: NonNullable<Parameters<ResearchJobHunter['refreshLibraryDrafts']>[1]> = {},
   ) {
     // Existing-library qualification uses an already approved policy, never grants it.
     this.assertPolicy(false);

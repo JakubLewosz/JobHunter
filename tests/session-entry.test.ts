@@ -5,6 +5,30 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runResearchSession } from '../apps/server/src/research/session-entry.js';
 import { Store } from '../apps/server/src/db.js';
+
+test('one-hour operator entry uses the full immutable deadline without legacy trial caps or Gmail', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'jh-entry-hour-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  let deadline = '';
+  const summary = await runResearchSession({
+    dir: join(root, 'fixture'),
+    hours: 1,
+    fixture: true,
+    steps: 6,
+    advanceMs: 16 * 60000,
+    afterTick: async (service) => {
+      const work = service.store.get<any>('researchDay', {});
+      deadline ||= work.expiresAt;
+      assert.equal(work.expiresAt, deadline);
+      assert.equal(work.trial, false);
+      assert.equal(work.maxCycles, null);
+      assert.equal(service.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+    },
+  });
+  assert.equal(summary.state.primaryReason, 'DEADLINE');
+  assert.equal(summary.counts.attempts, 0);
+  assert.equal(summary.state.finalGuardOk, true);
+});
 test('native repository entry: synthetic cycles, immutable deadline, guard, Stop and explicit restart', async (t) => {
   const root = mkdtempSync(join(tmpdir(), 'jh-entry-')),
     dir = join(root, 'fixture');
