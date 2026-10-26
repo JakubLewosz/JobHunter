@@ -120,6 +120,140 @@ test('independent refresh preserves persisted AUTO mode, narrow pilot policy/sco
   assert.equal(result.preserved, true);
 });
 
+for (const freshCount of [4, 7, 8])
+  test(`independent refresh bounds carried activities when extraction already supplies ${freshCount} verified proofs`, async (t) => {
+    const f = await fixture(t),
+      target = f.selected[0],
+      statements = Array.from(
+        { length: 10 },
+        (_, i) => `Tworzymy aplikacje webowe i integracje API dla obszaru ${i + 1}.`,
+      ),
+      store = new Store(f.dir),
+      previous = JSON.parse(
+        store.one(
+          'SELECT details FROM research_qualifications WHERE opportunity_id=?',
+          target.opportunity_id,
+        )!.details,
+      ),
+      sourceId = previous.companyProof.sourceId;
+    previous.companyActivities = statements.slice(freshCount === 4 ? 4 : 8).map((quote) => ({
+      sourceId,
+      quote,
+      explanation: 'Poprzedni zweryfikowany obszar działalności.',
+    }));
+    store.exec(
+      'UPDATE research_qualifications SET details=? WHERE opportunity_id=?',
+      JSON.stringify(previous),
+      target.opportunity_id,
+    );
+    store.close();
+    const read = f.reader.read.bind(f.reader),
+      run = f.runner.run.bind(f.runner);
+    f.reader.read = async (url, signal) => {
+      const source = await read(url, signal);
+      source.text += '\n' + statements.join('\n');
+      source.fragment = source.text;
+      source.content_hash = hash(source.text + url);
+      return source;
+    };
+    f.runner.run = async (prompt, schema, options) => {
+      const result = await run(prompt, schema, options);
+      if (prompt.includes('Wydobądź firmę')) {
+        const sources = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
+        (result.value as any).companyActivities = statements.slice(0, freshCount).map((quote) => ({
+          sourceId: sources[0].id,
+          quote,
+          explanation: 'Aktualny literalny dowód działalności.',
+        }));
+        result.value = schema.parse(result.value);
+      }
+      return result;
+    };
+    const result = await runLibraryRefresh({ ...f.options, draftIds: [target.id] });
+    assert.equal(result.reason, 'COMPLETED');
+    assert.equal(result.results[0].code, 'CHECKED');
+    const item = f.read((db) =>
+      db.prepare('SELECT analysis FROM research_items WHERE run_id=?').get(result.results[0].runId),
+    ) as any;
+    const current = JSON.parse(item.analysis);
+    assert.equal(current.companyActivities.length, 8);
+    assert.deepEqual(
+      current.companyActivities.slice(0, freshCount).map((p: any) => p.quote),
+      statements.slice(0, freshCount),
+    );
+    assert.deepEqual(f.protectedSnapshot(), f.before);
+    assert.equal(result.preserved, true);
+  });
+
+test('independent refresh re-extracts an invalid cached analysis without rewriting its historical row', async (t) => {
+  const f = await fixture(t),
+    target = f.selected[0],
+    statements = Array.from(
+      { length: 10 },
+      (_, i) => `Tworzymy aplikacje webowe i integracje API dla obszaru ${i + 1}.`,
+    ),
+    read = f.reader.read.bind(f.reader),
+    run = f.runner.run.bind(f.runner);
+  f.reader.read = async (url, signal) => {
+    const source = await read(url, signal);
+    source.text += '\n' + statements.join('\n');
+    source.fragment = source.text;
+    source.content_hash = hash(source.text + url);
+    return source;
+  };
+  f.runner.run = async (prompt, schema, options) => {
+    const result = await run(prompt, schema, options);
+    if (prompt.includes('Wydobądź firmę')) {
+      const sources = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
+      (result.value as any).companyActivities = statements.slice(0, 8).map((quote) => ({
+        sourceId: sources[0].id,
+        quote,
+        explanation: 'Aktualny literalny dowód działalności.',
+      }));
+      result.value = schema.parse(result.value);
+    }
+    return result;
+  };
+  const options = { ...f.options, draftIds: [target.id] };
+  const first = await runLibraryRefresh(options);
+  assert.equal(first.results[0].code, 'CHECKED');
+  const store = new Store(f.dir),
+    cached = store.one('SELECT * FROM research_items WHERE run_id=?', first.results[0].runId)!,
+    invalid = JSON.parse(cached.analysis);
+  invalid.companyActivities.push(
+    ...statements.slice(8).map((quote) => ({
+      sourceId: invalid.companyActivities[0].sourceId,
+      quote,
+      explanation: 'Starszy dołączony dowód działalności.',
+    })),
+  );
+  const historicalInvalid = JSON.stringify(invalid);
+  store.exec('UPDATE research_items SET analysis=? WHERE id=?', historicalInvalid, cached.id);
+  store.exec(
+    'UPDATE research_qualifications SET details=? WHERE opportunity_id=?',
+    historicalInvalid,
+    cached.opportunity_id,
+  );
+  store.close();
+  const callsBefore = f.runner.prompts.length;
+  const second = await runLibraryRefresh(options);
+  assert.equal(second.reason, 'COMPLETED');
+  assert.equal(second.results[0].code, 'CHECKED');
+  assert.equal(
+    f.runner.prompts.slice(callsBefore).filter((p) => p.includes('Wydobądź firmę')).length,
+    1,
+  );
+  assert.equal(
+    f.read(
+      (db) =>
+        (db.prepare('SELECT analysis FROM research_items WHERE id=?').get(cached.id) as any)
+          .analysis,
+    ),
+    historicalInvalid,
+  );
+  assert.deepEqual(f.protectedSnapshot(), f.before);
+});
+
 test('A then local rejected B then C completes C and keeps B error/checkpoint without granting PASS', async (t) => {
   const f = await fixture(t, false),
     original = f.runner.run.bind(f.runner);

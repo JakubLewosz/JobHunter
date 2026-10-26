@@ -1,5 +1,17 @@
 # Bieżące zadania — 23 października 2026
 
+## Niezależne odnowienie / limit cytatów — 26.10.2026
+
+- [x] Odtworzyć przekroczenie schematu przez dołączanie poprzednich cytatów
+      do poprawnej ekstrakcji; ograniczyć do ośmiu bez osłabienia walidacji.
+- [x] Pominąć niespełniający schematu cache w obu istniejących ścieżkach,
+      wykonać świeżą ekstrakcję i zachować historyczny rekord.
+- [x] Pełny Windows check: typecheck/build, 986 backend, 12 Stop i 26 UI PASS.
+      Wynik CI dokładnego SHA jest zapisywany oddzielnie w dostawie.
+- [x] WORKSTATION pozostaje bez wdrożenia poprawki i bez kolejnej operacji.
+
+[Zakres i regresje](reviews/INDEPENDENT_REFRESH_PROOF_LIMIT.md).
+
 ## Kalibracja i legacy — 25.10.2026
 
 - [x] Zamrozić reprezentatywne dane i porównać natywne generate parami;

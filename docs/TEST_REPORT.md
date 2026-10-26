@@ -1,5 +1,21 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+## Niezależne odnowienie / limit cytatów — 26.10.2026
+
+Rzeczywisty Windows / Node24.19.0: cztery nowe regresje **4/4 PASS**
+(4+6, 7+2, 8+2 dowodów i niepoprawna analiza w cache). Przed poprawką
+odtworzono przekroczenie limitu oraz odrzucenie zapisanego cache. Historyczne
+rekordy i chroniony stan syntetycznej kampanii pozostają zachowane.
+
+Pełny końcowy `npm run check`: **986/986 backend, 12/12 Stop, 26/26 UI PASS**,
+typecheck i build PASS. Pierwszy pełny check przerwano przed poszerzeniem
+regresji cache; nie jest liczony jako pozytywny wynik. Dokładny końcowy SHA
+i jego GitHub Windows CI są raportowane oddzielnie w dostawie.
+
+Wyłącznie DEVELOPMENT, fikcyjni odbiorcy i lokalne strony testowe.
+Poprawka nie jest wdrożona na WORKSTATION i nie udziela prawa ponowienia
+operacji, uruchomienia Startu ani wysyłki.
+
 ## Kalibracja i legacy — 25.10.2026
 
 Windows / Node24.19.0: bazowy reproducer **0/3 PASS** (oczekiwane trzy FAIL

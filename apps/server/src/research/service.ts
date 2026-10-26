@@ -1811,7 +1811,14 @@ export class ResearchJobHunter extends JobHunter {
       0,
     );
     if (policy !== analysisPolicyVersion) return false;
-    const analysis = validateAnalysis(JSON.parse(latest.analysis), old);
+    let analysis: Analysis;
+    try {
+      analysis = validateAnalysis(JSON.parse(latest.analysis), old);
+    } catch (error) {
+      // A stored schema violation is not reusable input; extract again from the verified sources.
+      if (error instanceof z.ZodError) return false;
+      throw error;
+    }
     const token = this.store.get<Row>(`analysisOperation:${item.id}`, {});
     if (token.sequence < this.store.get<number>(`analysisCommitted:${company.id}`, 0))
       throw new DomainError('ANALYSIS_SUPERSEDED', 'Nowsza analiza firmy jest już zapisana.');
@@ -1913,6 +1920,8 @@ export class ResearchJobHunter extends JobHunter {
         )
           continue;
         if (
+          // Preserve current extraction order and the analysisSchema limit before carrying old proofs.
+          (v.companyActivities?.length ?? 0) < 8 &&
           !(v.companyActivities ?? []).some(
             (p) => p.sourceId === mapped.sourceId && compact(p.quote!) === compact(mapped.quote),
           )
@@ -3821,13 +3830,17 @@ export class ResearchJobHunter extends JobHunter {
               this.store.get<number>(`extractionPolicy:${item.url}:${config.profile_hash}`, 0) ===
                 analysisPolicyVersion
             ) {
-              validateAnalysis(JSON.parse(previous.analysis), sources);
-              this.store.exec(
-                "UPDATE research_items SET analysis=?,stage='QUALIFY' WHERE id=?",
-                previous.analysis,
-                item.id,
-              );
-              item = { ...item, analysis: previous.analysis, stage: 'QUALIFY' };
+              try {
+                validateAnalysis(JSON.parse(previous.analysis), sources);
+                this.store.exec(
+                  "UPDATE research_items SET analysis=?,stage='QUALIFY' WHERE id=?",
+                  previous.analysis,
+                  item.id,
+                );
+                item = { ...item, analysis: previous.analysis, stage: 'QUALIFY' };
+              } catch (error) {
+                if (!(error instanceof z.ZodError)) throw error;
+              }
             }
           }
           if (item.stage === 'EXTRACT') {
