@@ -74,8 +74,15 @@ export async function runResearchSession(options: {
     const providers =
       options.providers ??
       (options.fixture ? { reader: new FixtureReader(), runner: new FixtureRunner() } : undefined);
+    const mode = store.get<string>('mode', 'RESEARCH_ONLY');
+    if (!['RESEARCH_ONLY', 'APPROVAL_REQUIRED', 'AUTO_POLICY'].includes(mode))
+      throw new DomainError('MODE_MISMATCH', 'Wymagana biblioteka researchu, nie DEMO.');
     service = new ResearchJobHunter(store, {
       ...providers,
+      // Same research-only capability as library refresh. Persisted AUTO is
+      // retained, without constructing GmailJobHunter or granting sender scope.
+      mode: mode as 'RESEARCH_ONLY' | 'APPROVAL_REQUIRED' | 'AUTO_POLICY',
+      independentResearch: true,
       clock: options.fixture ? clock : options.clock,
     });
     if (options.fixture && !service.profile().approved_at) service.approveProfile();
@@ -83,8 +90,12 @@ export async function runResearchSession(options: {
       await service.probe('codex');
       await service.probe('search');
     }
-    if (options.resume) await service.resumeSession();
-    else await service.startDay(options.query, options.hours, { deadlineOnly: true });
+    const begin = () =>
+      options.resume
+        ? service!.resumeSession()
+        : service!.startDay(options.query, options.hours, { deadlineOnly: true });
+    if (mode === 'RESEARCH_ONLY') await begin();
+    else await service.researchController().start(begin, !!options.resume);
     const onStop = () => service!.control('stop');
     options.signal?.addEventListener('abort', onStop, { once: true });
     try {

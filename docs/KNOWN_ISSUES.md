@@ -1,5 +1,13 @@
 # Znane problemy i granice dowodów — 18 października 2026
 
+26.10.2026: bieżący [zakres stabilizacji V1](reviews/V1_STABILIZATION.md).
+Odtworzono i usunięto zagłodzenie discovery, odziedziczone limity trial,
+problem magazynu CA w operacyjnych poleceniach i cichą zmianę trybu przez
+research:session. Pierwszy kandydat wycofano po nowej reprodukcji mimo PASS
+checka. Wyniki finalnego SHA są oddzielnie w prywatnej dostawie.
+Wciąż brak R1/R2/R3 tego wydania; fixture i publiczny smoke z fikcyjnym
+profilem nie zamykają bramki WORKSTATION ani rzeczywistego Gmaila.
+
 Aktualizacja R15, wykonanie rozpoczęte 22.10.2026: wczesne anulowanie publicznego
 adaptera i samego dispatch Start ma natywne regresje Windows IPC. Utrata
 odpowiedzi po możliwym Start nadal nie pozwala na retry lub authority=false.

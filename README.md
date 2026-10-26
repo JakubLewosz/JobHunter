@@ -1,5 +1,12 @@
 # JobHunter
 
+26.10.2026: [stabilizacja V1 i odtwarzalna bramka wydania](docs/reviews/V1_STABILIZATION.md).
+Ograniczona kolejka odnowień, wspólny deadline discovery, pełna godzina researchu
+operatora i zachowanie istniejącego trybu/polityki bez Gmaila. Polecenia npm
+korzystają z systemowego CA Node24 przy zachowanej weryfikacji TLS.
+Dokładne wyniki finalnego SHA/builda są w prywatnej dostawie. Nowe R1/R2/R3
+pozostają osobnymi bramkami; wcześniejsze datowane opisy są historią.
+
 Aktualna reguła WORKSTATION: [jedno aktywne konto, Computer Use i pomocnicze
 API bez nadawania](docs/SINGLE_ACCOUNT.md). Tożsamość jest przypięta poza repo;
 dawne konta pozostają historią. Połączenie nie wykonuje Start.

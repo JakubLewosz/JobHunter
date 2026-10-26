@@ -37,6 +37,18 @@ Jawny dawny test godzinny UI zachowuje swój kontrakt; stare rekordy bez pola
 `trial` zachowują dawną interpretację. Nie migrujemy historii i nie resetujemy
 liczników. To uzasadniona testem zmiana kolejności prac względem proponowanych PR.
 
+Przy przygotowywaniu R1 odtworzono jeszcze dwie porażki: `research:session`
+otwierało istniejącą bibliotekę AUTO_POLICY lub APPROVAL_REQUIRED z domyślnym
+RESEARCH_ONLY, zmieniając zapisany tryb i odwołując dawne zatwierdzenia.
+Entry zachowuje teraz istniejący tryb, jak `research:refresh`, a osobna zdolność
+ResearchJobHunter/DisabledMailProvider pozwala tylko na research. Koordynacja
+kontrolera jest jawna, bez tworzenia GmailJobHunter lub scope sendera. Regresje
+sprawdzają trwałe rekordy kampanii, politykę v17, historyczne zatwierdzenie,
+zero outbox/usage/sesji AUTO oraz Resume z tym samym terminem. 28/28 celowanych
+regresji PASS i dodatkowe 2/2 Resume PASS. Pierwszy kandydat `ff07bbc` wycofano
+przed wdrożeniem mimo zielonego checka; po poprawce wybrano nowy SHA i cała
+bramka musi zostać powtórzona. Dokładny wynik nowego SHA jest w prywatnej dostawie.
+
 ## Źródła i jakość
 
 Publiczny smoke na syntetycznym profilu wykazał TLS_UNTRUSTED na trzech
@@ -115,7 +127,7 @@ Nie kasować locków lub ponawiać Start w celu odzyskania wyniku.
 T3 to natywna macierz awarii:
 
 ```text
-node node_modules/tsx/dist/cli.mjs --test tests/nightflow.test.ts tests/independent-refresh.test.ts tests/browser-startup-sequence.test.ts tests/browser-batch-task.test.ts tests/browser-crash.test.ts tests/nightflow-control-failures.test.ts tests/quality-legacy-gate.test.ts tests/reply-to.test.ts tests/single-account.test.ts tests/library-refresh.test.ts
+node node_modules/tsx/dist/cli.mjs --test tests/nightflow.test.ts tests/independent-refresh.test.ts tests/browser-startup-sequence.test.ts tests/browser-batch-task.test.ts tests/browser-crash.test.ts tests/nightflow-control-failures.test.ts tests/quality-legacy-gate.test.ts tests/reply-to.test.ts tests/single-account.test.ts tests/library-refresh.test.ts tests/session-mode-preservation.test.ts
 ```
 
 Odróżnia lokalne błędy od Stop, guard/owner/host lost, zmiany polityki/materiałów,

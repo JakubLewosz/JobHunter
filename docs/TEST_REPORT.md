@@ -1,5 +1,12 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+26.10.2026, nowa reprodukcja przed R1: oba przypadki AUTO/APPROVAL zmieniały
+zapisany tryb w research:session. Po poprawce 28/28 regresji oraz 2/2 Start/Resume
+PASS na fikcyjnej historii; brak Gmaila, scope AUTO i rezerwacji. ff07bbc został
+wycofany mimo pełnego checka 995/12/26 PASS (739900 ms); dołożony test oznaczał
+też dirty drzewo, więc nie był to końcowy odbiór. Nowy SHA wymaga ponowienia
+całej bramki, z osobnymi wynikami w prywatnej dostawie.
+
 26.10.2026 — stabilizacja V1 w izolowanym DEVELOPMENT: [zakres, reprodukcje i odtwarzanie](reviews/V1_STABILIZATION.md). Celowane 72/72 oraz dodatkowe 6/6 Windows PASS; T1/T2 preflight w rzeczywistym Computer Use PASS, dwie lokalne akcje i zero duplikatów, pełny cleanup. Pierwsze błędy fixture zachowane poza repo. Pełny check/CI i ponowienie na zamrożonym SHA są osobnymi wynikami prywatnej dostawy. Nie wykonano R1/R2/R3 tego wydania.
 
 
