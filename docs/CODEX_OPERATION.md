@@ -1,5 +1,8 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
+26.10.2026: bieżący kontrakt V1 i polecenia są w [V1_STABILIZATION](reviews/V1_STABILIZATION.md). Research operatora przez research:session ma pełny godzinny deadline, bez limitów dawnego testu. Koordynator zapisuje ograniczoną kolejkę i osobny budżet refresh/discovery. Końcowe wyniki konkretnego zamrożonego SHA są w prywatnej dostawie; brak deploymentu lub nowej zgody wysyłki.
+
+
 25.10: dla istniejącej zamkniętej partii obowiązuje [gotowość przed pierwszym
 Start](HOST_ADAPTER.md). Nowy klient wykonuje probe bez przypięcia MANUAL,
 właściciel po świeżym potwierdzeniu tej samej instancji wykonuje jeden Start,

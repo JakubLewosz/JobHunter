@@ -1,5 +1,8 @@
 # Bieżące zadania — 23 października 2026
 
+26.10.2026 — [stabilizacja V1](reviews/V1_STABILIZATION.md): ograniczona priorytetowa kolejka z trwałym checkpointem; wspólny deadline i osobne 40% refresh / pozostały czas discovery; koordynowany godzinny research bez limitów trial; regresje źródeł; odtwarzalny T1/T2 przez rzeczywisty host. Następny krok: odebrać końcową prywatną macierz check/CI/T1/T2/T3 i manifest wybranego SHA. Po ich PASS wymagana jedna dokładna decyzja WORKSTATION/backup/R1, potem osobno polityka i Start R2. Nie wracać do hurtowych zmian stylu ani nie wznawiać poprzedniego pilota. Jeżeli sesja zostanie przerwana: użyć SHA, worktree i checkpointu prywatnej dostawy, sprawdzić właścicieli i stan fixture; nie wznawiać automatycznie żadnej realnej sesji.
+
+
 ## Niezależne odnowienie / limit cytatów — 26.10.2026
 
 - [x] Odtworzyć przekroczenie schematu przez dołączanie poprzednich cytatów

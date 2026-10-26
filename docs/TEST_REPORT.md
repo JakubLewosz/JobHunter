@@ -1,5 +1,8 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+26.10.2026 — stabilizacja V1 w izolowanym DEVELOPMENT: [zakres, reprodukcje i odtwarzanie](reviews/V1_STABILIZATION.md). Celowane 72/72 oraz dodatkowe 6/6 Windows PASS; T1/T2 preflight w rzeczywistym Computer Use PASS, dwie lokalne akcje i zero duplikatów, pełny cleanup. Pierwsze błędy fixture zachowane poza repo. Pełny check/CI i ponowienie na zamrożonym SHA są osobnymi wynikami prywatnej dostawy. Nie wykonano R1/R2/R3 tego wydania.
+
+
 ## Niezależne odnowienie / limit cytatów — 26.10.2026
 
 Rzeczywisty Windows / Node24.19.0: cztery nowe regresje **4/4 PASS**

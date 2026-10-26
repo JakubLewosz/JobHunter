@@ -1,5 +1,8 @@
 # Node owner i lekki adapter Codexa — 21.10.2026
 
+26.10.2026: nowa [fixture odbioru V1](reviews/V1_STABILIZATION.md) wiąże native research, A/HOLD/C, wersje, zamkniętą partię i dwa cykle tej samej historii z rzeczywistym hostem. Zamyka poprzedni broker przed kolejnym cyklem. Lokalny ACK daje SENT_PROVIDER; nie fabrykuje potwierdzenia Gmail API. Preflight nie jest końcowym wynikiem zamrożonego SHA.
+
+
 ## Zamknięta partia: gotowość PRZED pierwszym Start — 25.10.2026
 
 Poprawka jest operacyjna. `startBatch` przyznaje prawo biznesowe, a nie
