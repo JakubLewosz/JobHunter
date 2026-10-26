@@ -174,6 +174,7 @@ export function researchReport(
     generatedAt: at,
     mode: 'RESEARCH_ONLY',
     session,
+    libraryRefresh: session.libraryRefresh ?? null,
     termination,
     stopped: store.get('stopped', true),
     paused: store.get('paused', true),
@@ -184,6 +185,10 @@ export function researchReport(
         .at(-1) ?? null,
     summary: {
       cycles: runs.length,
+      librarySelected: session.libraryRefresh?.queue.length ?? 0,
+      libraryAttempted: session.libraryRefresh?.results.length ?? 0,
+      libraryChecked:
+        session.libraryRefresh?.results.filter((r: Row) => r.code === 'CHECKED').length ?? 0,
       candidateEntries: items.length,
       distinctURLs: new Set(items.map((i) => normalizeResearchURL(i.url))).size,
       companies: companies.length,
@@ -228,12 +233,17 @@ export function researchReportText(report: ReturnType<typeof researchReport>) {
     `Początek: ${session.startedAt ?? 'brak danych'}; koniec: ${session.finishedAt ?? 'brak danych'}; deadline: ${session.expiresAt ?? 'brak danych'}`,
     `Ostatni postęp: ${report.lastProgressAt ?? 'brak danych'}; aktualizacja raportu: ${report.generatedAt}`,
     `Cykle: ${s.cycles}; wpisy kandydatów: ${s.candidateEntries}; różne URL: ${s.distinctURLs}; firmy: ${s.companies}`,
+    `Biblioteka: wybrano ${s.librarySelected}; zakończono ${s.libraryAttempted}; CHECKED ${s.libraryChecked}; etap: ${report.libraryRefresh?.budgetReason ?? 'nie dotyczy'}`,
     `Szkice: ${s.drafts}; nowe w sesji: ${s.newDrafts}; przypadki błędów: ${s.errorCases}; błędy źródeł: ${s.sourceErrors}; błędy modeli: ${s.modelErrors}`,
     `Źródła zapisane: ${s.sourceRecords}; odczyty: ${s.fetches}; cache: ${s.cacheHits}; cache błędów: ${s.failureCacheHits}; HTTP: ${s.httpRequests ?? 'brak pomiaru'}; przekierowania: ${s.redirects ?? 'brak pomiaru'}`,
     'Szkice wymagają aktualnych kontroli i odrębnego uprawnienia do wysyłki. Niepotwierdzone warunki pozostają niepotwierdzone.',
     '',
     'FIRMY I PRZYCZYNY BRAKU SZKICU',
   ];
+  for (const result of report.libraryRefresh?.results ?? [])
+    lines.push(
+      `Odnowienie ${result.draftId}: ${result.code}; wersja ${result.previousVersion ?? '?'} → ${result.version ?? '?'}; czas ${result.elapsedMs ?? '?'} ms`,
+    );
   for (const i of report.items) {
     lines.push(
       `${i.canonical_name ?? i.url} | ${i.type ?? 'nierozpoznana'} | ${i.status} | ${i.disposition?.reason ?? i.error ?? 'brak zapisanej przyczyny'}`,

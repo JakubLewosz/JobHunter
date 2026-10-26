@@ -1,7 +1,12 @@
 # Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
 
-26.10.2026: bieżący kontrakt V1 i polecenia są w [V1_STABILIZATION](reviews/V1_STABILIZATION.md). Research operatora przez research:session ma pełny godzinny deadline, bez limitów dawnego testu. Koordynator zapisuje ograniczoną kolejkę i osobny budżet refresh/discovery. Końcowe wyniki konkretnego zamrożonego SHA są w prywatnej dostawie; brak deploymentu lub nowej zgody wysyłki.
-
+26/27.10.2026: bieżące uzupełnienie [R1_RESEARCH_ENTRY](reviews/R1_RESEARCH_ENTRY.md)
+opisuje niezaliczony krótki R1 a7652a3 i poprawkę operatora: biblioteka przed
+discovery, wspólna kolejka, trwały checkpoint i jeden deadline w istniejącym
+kontrolerze. Starszy opis [V1_STABILIZATION](reviews/V1_STABILIZATION.md)
+pozostaje historią poprzedniej bramki. WORKSTATION jest zatrzymany na a7652a3;
+nowy kod DEVELOPMENT wymaga własnej pełnej bramki i osobnej decyzji wdrożenia.
+Brak uprawnienia Gmaila lub wysyłki.
 
 25.10: dla istniejącej zamkniętej partii obowiązuje [gotowość przed pierwszym
 Start](HOST_ADAPTER.md). Nowy klient wykonuje probe bez przypięcia MANUAL,

@@ -1,5 +1,17 @@
 # Bieżące zadania — 23 października 2026
 
+26/27.10.2026: [R1_RESEARCH_ENTRY](reviews/R1_RESEARCH_ENTRY.md) jest bieżącym
+uzupełnieniem. Zatwierdzony a7652a3 wdrożono po spójnym backupie; krótki R1
+zatrzymano i NIE zaliczono: wejście operatora pomijało odnowienie biblioteki.
+WORKSTATION pozostaje STOPPED na a7652a3, bez Gmaila i wysyłek. Nowa poprawka
+w odrębnym DEVELOPMENT wymaga check/CI i T1/T2/T3 na zamrożonym nowym SHA,
+potem jednej decyzji o jego wdrożeniu i powtórzeniu 1–2 h R1. Nie wznawiać
+poprzedniego checkpointu ani nie wdrażać nowego SHA na podstawie dawnej zgody.
+Przy przerwaniu sesji: odczytać prywatny katalog JobHunter-R1-a7652a3-20261026
+w Downloads, R1_FINAL_PRIVATE.json i CHECKPOINT_PRIVATE; sprawdzić właścicieli,
+następnie dokończyć bramkę nowego kodu w codex/v1-research-entry. Nie ruszać
+starego worktree v1-stabilization wybranego w installed-build.json.
+
 26.10.2026, kolejna regresja przed wydaniem: research:session zachowuje teraz
 istniejące AUTO/APPROVAL, politykę i historyczne zatwierdzenia, bez Gmaila
 i scope sendera. Start oraz Resume mają testy trwałego stanu (28/28 + 2/2 PASS).
@@ -9,7 +21,6 @@ bez rozszerzenia v17 lub realnego Start wysyłki. Wznowienie developmentu:
 czytać CHECKPOINT_PRIVATE/FROZEN_RELEASE_PRIVATE poza repo i nie wznawiać kampanii.
 
 26.10.2026 — [stabilizacja V1](reviews/V1_STABILIZATION.md): ograniczona priorytetowa kolejka z trwałym checkpointem; wspólny deadline i osobne 40% refresh / pozostały czas discovery; koordynowany godzinny research bez limitów trial; regresje źródeł; odtwarzalny T1/T2 przez rzeczywisty host. Następny krok: odebrać końcową prywatną macierz check/CI/T1/T2/T3 i manifest wybranego SHA. Po ich PASS wymagana jedna dokładna decyzja WORKSTATION/backup/R1, potem osobno polityka i Start R2. Nie wracać do hurtowych zmian stylu ani nie wznawiać poprzedniego pilota. Jeżeli sesja zostanie przerwana: użyć SHA, worktree i checkpointu prywatnej dostawy, sprawdzić właścicieli i stan fixture; nie wznawiać automatycznie żadnej realnej sesji.
-
 
 ## Niezależne odnowienie / limit cytatów — 26.10.2026
 

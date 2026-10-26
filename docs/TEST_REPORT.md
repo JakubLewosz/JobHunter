@@ -1,5 +1,14 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+26/27.10.2026: rzeczywisty krótki R1 a7652a3 jest NIEZALICZONY; brak etapu
+biblioteki w wejściu operatora. Backup/62 tabele/izolowane odtworzenie/probe,
+Stop/cleanup/guard i zachowanie poczty oraz chronionych danych: PASS.
+Szczegóły i rozdzielenie dowodów: [R1_RESEARCH_ENTRY](reviews/R1_RESEARCH_ENTRY.md).
+Nowe testy odtwarzają błąd wejścia i fixture.steps przed poprawką, potem
+sprawdzają native renewal, HOLD/ciąg dalszy, wersje, budżet, Resume i Stop.
+Pełny wynik nowego zamrożonego SHA musi pochodzić z nowej prywatnej macierzy;
+nie dziedziczy check/CI/T1–T3 a7652a3. Zero nowych rzeczywistych wysyłek.
+
 26.10.2026, nowa reprodukcja przed R1: oba przypadki AUTO/APPROVAL zmieniały
 zapisany tryb w research:session. Po poprawce 28/28 regresji oraz 2/2 Start/Resume
 PASS na fikcyjnej historii; brak Gmaila, scope AUTO i rezerwacji. ff07bbc został
@@ -8,7 +17,6 @@ też dirty drzewo, więc nie był to końcowy odbiór. Nowy SHA wymaga ponowieni
 całej bramki, z osobnymi wynikami w prywatnej dostawie.
 
 26.10.2026 — stabilizacja V1 w izolowanym DEVELOPMENT: [zakres, reprodukcje i odtwarzanie](reviews/V1_STABILIZATION.md). Celowane 72/72 oraz dodatkowe 6/6 Windows PASS; T1/T2 preflight w rzeczywistym Computer Use PASS, dwie lokalne akcje i zero duplikatów, pełny cleanup. Pierwsze błędy fixture zachowane poza repo. Pełny check/CI i ponowienie na zamrożonym SHA są osobnymi wynikami prywatnej dostawy. Nie wykonano R1/R2/R3 tego wydania.
-
 
 ## Niezależne odnowienie / limit cytatów — 26.10.2026
 

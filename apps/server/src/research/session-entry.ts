@@ -93,7 +93,10 @@ export async function runResearchSession(options: {
     const begin = () =>
       options.resume
         ? service!.resumeSession()
-        : service!.startDay(options.query, options.hours, { deadlineOnly: true });
+        : service!.startDay(options.query, options.hours, {
+            deadlineOnly: true,
+            libraryFirst: true,
+          });
     if (mode === 'RESEARCH_ONLY') await begin();
     else await service.researchController().start(begin, !!options.resume);
     const onStop = () => service!.control('stop');
@@ -110,7 +113,8 @@ export async function runResearchSession(options: {
           break;
         }
         await service.tick();
-        await options.afterTick?.(service, iteration++);
+        await options.afterTick?.(service, iteration);
+        iteration++;
         if (options.fixture && options.steps != null && iteration >= options.steps) {
           service.control('stop');
           break;
@@ -133,6 +137,12 @@ export async function runResearchSession(options: {
         attempts: store.one('SELECT count(*) n FROM send_attempts')!.n,
       },
     };
+  } catch (error) {
+    // A provider/callback failure must not leave a persisted active session.
+    try {
+      service?.control('stop');
+    } catch {}
+    throw error;
   } finally {
     if (service) await service.stopWorker();
     store?.close();

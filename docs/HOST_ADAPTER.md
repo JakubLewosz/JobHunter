@@ -2,7 +2,6 @@
 
 26.10.2026: nowa [fixture odbioru V1](reviews/V1_STABILIZATION.md) wiąże native research, A/HOLD/C, wersje, zamkniętą partię i dwa cykle tej samej historii z rzeczywistym hostem. Zamyka poprzedni broker przed kolejnym cyklem. Lokalny ACK daje SENT_PROVIDER; nie fabrykuje potwierdzenia Gmail API. Preflight nie jest końcowym wynikiem zamrożonego SHA.
 
-
 ## Zamknięta partia: gotowość PRZED pierwszym Start — 25.10.2026
 
 Poprawka jest operacyjna. `startBatch` przyznaje prawo biznesowe, a nie
@@ -225,3 +224,11 @@ rzeczywistej aplikacji Codex. Rzeczywistych 8 h nie wykonano: NOT_RUN.
 Ogólna [oficjalna dokumentacja przeglądarki](https://learn.chatgpt.com/docs/browser?surface=app)
 nie potwierdza dostępności konkretnego modułu Node. Decydują kontrakt narzędzia
 i probe tej sesji. Zapisane nazwy możliwości nie zawierają prywatnych wartości.
+
+# Uzupełnienie 26/27.10.2026
+
+[R1_RESEARCH_ENTRY](reviews/R1_RESEARCH_ENTRY.md): research operatora odnawia
+bibliotekę w istniejącym kontrolerze przed discovery. Ta ścieżka używa
+DisabledMailProvider; nie inicjalizuje hosta pocztowego lub sesji AUTO. T1/T2
+rzeczywistego hosta muszą być ponowione na nowym zamrożonym buildzie. Krótki,
+zatrzymany R1 a7652a3 nie jest dowodem pełnego przepływu ani zgodą wysyłki.

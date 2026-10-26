@@ -60,6 +60,7 @@ import { sourceComplete } from './source-policy.js';
 import { enrichCompanyDomain } from './domain-enrichment.js';
 import { ResearchSessionController } from './session-controller.js';
 import { sessionQueries } from './session-plan.js';
+import { selectLibraryRefreshQueue } from './refresh-queue.js';
 import { fairWorkOrder } from './work-metrics.js';
 import { materialBinding, materialRecordIssues } from './material-binding.js';
 import {
@@ -1044,6 +1045,12 @@ export class ResearchJobHunter extends JobHunter {
         }
         const runId = this.enqueue('refresh-' + id(), null, 1);
         runIds.push(runId);
+        const session = this.store.get<Row>('researchDay', {});
+        if (session.active && session.libraryRefresh && !session.libraryRefresh.completed)
+          this.store.set('researchDay', {
+            ...session,
+            runIds: [...new Set([...(session.runIds ?? []), runId])],
+          });
         this.addItem(
           runId,
           previous[0].original_url,
@@ -1306,7 +1313,11 @@ export class ResearchJobHunter extends JobHunter {
       );
     this.enqueue(`search-${id()}`, query, 3);
   }
-  async startDay(query?: string, hours = 8, options: { deadlineOnly?: boolean } = {}) {
+  async startDay(
+    query?: string,
+    hours = 8,
+    options: { deadlineOnly?: boolean; libraryFirst?: boolean } = {},
+  ) {
     if (this.mode === 'RESEARCH_ONLY' && !this.store.get<Row>('researchDay', {}).active) {
       await this.researchController().start(() => this.startDayNative(query, hours, options));
       return;
@@ -1316,7 +1327,7 @@ export class ResearchJobHunter extends JobHunter {
   private async startDayNative(
     query?: string,
     hours = 8,
-    options: { deadlineOnly?: boolean } = {},
+    options: { deadlineOnly?: boolean; libraryFirst?: boolean } = {},
   ) {
     if (this.store.get('readerRecoveryRequired', false))
       throw new DomainError('READER_ENVIRONMENT', 'Najpierw wykonaj udany jawny probe czytnika.');
@@ -1337,6 +1348,40 @@ export class ResearchJobHunter extends JobHunter {
           query,
           profile.facts.map((f) => f.key),
         );
+    // Explicit fresh operator Start preserves old passive work as deferred data.
+    // It cannot silently resume discovery ahead of the requested library renewal.
+    if (options.libraryFirst)
+      this.deferPendingRuns(
+        this.store
+          .all("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')")
+          .map((r) => r.id),
+        'NEW_RESEARCH_SESSION',
+      );
+    const libraryRefresh = options.libraryFirst
+      ? {
+          schema: 1,
+          queue: selectLibraryRefreshQueue(
+            this.draftRows().map((d) => ({
+              d,
+              channelRank:
+                this.store.one('SELECT kind FROM contacts WHERE id=?', d.contact_id)?.kind ===
+                'RECRUITMENT'
+                  ? 1
+                  : 0,
+              issues: [
+                ...this.draftMaterialIssues(d),
+                ...(this.companyHistoryBlocked(d.company_id) ? ['CONTACT_HISTORY'] : []),
+              ],
+            })),
+            hours,
+            (draftId) => this.store.get<Row>(`operatorRefreshAttempt:${draftId}`, {}).at ?? '',
+          ),
+          deadline: iso(new Date(this.clock().getTime() + hours * 3600000 * 0.4)),
+          nextIndex: 0,
+          results: [],
+          completed: false,
+        }
+      : undefined;
     this.store.set('researchDay', {
       sessionId: id(),
       startedAt: this.now(),
@@ -1353,10 +1398,12 @@ export class ResearchJobHunter extends JobHunter {
       cycles: 0,
       nextTopic: 0,
       queries: plan?.queries ?? trialQueries.slice(0, 8),
+      ...(libraryRefresh ? { libraryRefresh } : {}),
     });
     this.store.set('stopped', false);
     this.store.set('paused', false);
-    if (this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')")) {
+    if (libraryRefresh) this.store.set('workerStatus', 'REFRESHING_LIBRARY');
+    else if (this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','RUNNING','PAUSED')")) {
       await ResearchJobHunter.prototype.start.call(this);
       const work = this.store.get<Row>('researchDay', {});
       const run = this.store.one("SELECT id FROM runs WHERE status='QUEUED'")!;
@@ -1422,7 +1469,12 @@ export class ResearchJobHunter extends JobHunter {
       throw new DomainError('SESSION_EXPIRED', 'Czas tej sesji już minął.');
     if (!this.capability('searchCapability').tested)
       throw new DomainError('SEARCH_NOT_TESTED', 'Najpierw sprawdź wyszukiwanie w Połączeniach.');
-    if (this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','PAUSED')"))
+    const pendingRefresh = work.libraryRefresh && !work.libraryRefresh.completed;
+    if (pendingRefresh) this.deferPendingRuns(work.runIds ?? [], 'REFRESH_INTERRUPTED');
+    if (
+      !pendingRefresh &&
+      this.store.one("SELECT id FROM runs WHERE status IN ('QUEUED','PAUSED')")
+    )
       await ResearchJobHunter.prototype.start.call(this);
     this.store.set('researchDay', {
       ...work,
@@ -1434,7 +1486,7 @@ export class ResearchJobHunter extends JobHunter {
     });
     this.store.set('stopped', false);
     this.store.set('paused', false);
-    this.store.set('workerStatus', 'WAITING_FOR_REVIEW');
+    this.store.set('workerStatus', pendingRefresh ? 'REFRESHING_LIBRARY' : 'WAITING_FOR_REVIEW');
     this.event(
       'SESSION_RESUMED',
       'Wznowiono szerokie szukanie firm. Zachowano pierwotny termin i wspólny budżet sesji; zero wysyłek.',
@@ -3600,9 +3652,78 @@ export class ResearchJobHunter extends JobHunter {
       if (work.active && due && !this.sessionLifecycle.check()) return;
     }
     try {
+      const work = this.store.get<Row>('researchDay', {});
+      if (work.active && work.libraryRefresh && !work.libraryRefresh.completed) {
+        await this.tickSessionLibrary();
+        return;
+      }
       await this.tickResearchNative();
     } finally {
       this.sessionLifecycle?.afterTick();
+    }
+  }
+  private async tickSessionLibrary() {
+    const work = this.store.get<Row>('researchDay', {}),
+      checkpoint = work.libraryRefresh;
+    if (!checkpoint || checkpoint.completed || this.state().paused || this.state().stopped) return;
+    if (this.now() >= checkpoint.deadline || checkpoint.nextIndex >= checkpoint.queue.length) {
+      this.store.set('researchDay', {
+        ...work,
+        nextAt: this.now(),
+        libraryRefresh: {
+          ...checkpoint,
+          completed: true,
+          budgetReason: this.now() >= checkpoint.deadline ? 'DEADLINE' : 'QUEUE_COMPLETED',
+        },
+      });
+      this.store.set('workerStatus', 'WAITING_FOR_REVIEW');
+      return;
+    }
+    const draftId = checkpoint.queue[checkpoint.nextIndex],
+      started = performance.now();
+    const guard = () => {
+      if (!this.store.get<Row>('researchDay', {}).active || this.state().paused)
+        throw new DomainError('SESSION_STOPPED', 'Sesja odnowienia zatrzymana.');
+      if (!this.researchController().check())
+        throw new DomainError('RESEARCH_GUARD_FAILED', 'Kontrola sesji zatrzymała odnowienie.');
+    };
+    guard();
+    this.store.set(`operatorRefreshAttempt:${draftId}`, {
+      at: this.now(),
+      sessionId: work.sessionId,
+    });
+    this.store.set('stopped', true); // Native renewal grants no sender authority.
+    try {
+      const result = await this.refreshLibraryDrafts(
+        { draftIds: [draftId] },
+        {
+          deadline: checkpoint.deadline,
+          signal: AbortSignal.timeout(
+            Math.max(1, Date.parse(checkpoint.deadline) - this.clock().getTime()),
+          ),
+          guard,
+        },
+      );
+      guard();
+      const latest = this.store.get<Row>('researchDay', {});
+      this.store.set('researchDay', {
+        ...latest,
+        ...(result.interrupted ? { nextAt: this.now() } : {}),
+        libraryRefresh: {
+          ...latest.libraryRefresh,
+          nextIndex: checkpoint.nextIndex + 1,
+          results: [
+            ...latest.libraryRefresh.results,
+            ...result.results.map((r) => ({ ...r, elapsedMs: performance.now() - started })),
+          ],
+          ...(result.interrupted ? { completed: true, budgetReason: result.interrupted } : {}),
+        },
+      });
+    } finally {
+      const latest = this.store.get<Row>('researchDay', {});
+      // Stop/guard/deadline owns this flag; never revive a cancelled operation.
+      if (latest.active && !this.state().paused && !this.researchController().state().primaryReason)
+        this.store.set('stopped', false);
     }
   }
   private async tickResearchNative(externalSignal?: AbortSignal) {

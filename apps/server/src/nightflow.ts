@@ -11,6 +11,8 @@ import {
 } from './research/protection.js';
 import type { Row } from '../../../packages/shared/types.js';
 import type { BrowserExecutionScope } from './browser/contracts.js';
+import { selectLibraryRefreshQueue as selectNightflowRefreshQueue } from './research/refresh-queue.js';
+export { selectNightflowRefreshQueue };
 
 const time = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
 export const nightflowPlanSchema = z
@@ -77,35 +79,6 @@ export function compareNightflowCandidates(
     a.d.created_at.localeCompare(b.d.created_at) ||
     a.d.id.localeCompare(b.d.id)
   );
-}
-// A per-job work queue, never a campaign/send limit. Current policy gates still
-// decide eligibility after every native renewal and again before sending.
-export function selectNightflowRefreshQueue(
-  candidates: { d: Row; channelRank: number; issues: string[] }[],
-  hours: number,
-  lastAttempt: (draftId: string) => string,
-) {
-  const seen = new Set<string>();
-  return candidates
-    .filter(({ d, issues }) => d.status !== 'SENT' && !issues.includes('CONTACT_HISTORY'))
-    .sort(
-      (a, b) =>
-        Number(!b.issues.length) - Number(!a.issues.length) ||
-        (b.d.decision === 'READY_APPLICATION' ? 1 : 0) -
-          (a.d.decision === 'READY_APPLICATION' ? 1 : 0) ||
-        b.channelRank - a.channelRank ||
-        lastAttempt(a.d.id).localeCompare(lastAttempt(b.d.id)) ||
-        a.d.created_at.localeCompare(b.d.created_at) ||
-        a.d.id.localeCompare(b.d.id),
-    )
-    .filter(({ d }) => {
-      if (seen.has(d.company_id) || seen.has(d.email.toLowerCase())) return false;
-      seen.add(d.company_id);
-      seen.add(d.email.toLowerCase());
-      return true;
-    })
-    .slice(0, Math.min(15, hours * 12))
-    .map(({ d }) => d.id);
 }
 export function inSendWindow(plan: NightflowPlan, date: Date) {
   const parts = new Intl.DateTimeFormat('en-GB', {
