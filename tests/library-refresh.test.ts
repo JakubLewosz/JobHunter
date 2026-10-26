@@ -9,6 +9,7 @@ import { FixtureReader, FixtureRunner } from './research-fixture.js';
 import { setup } from './auto-fixture.js';
 import { GmailJobHunter } from '../apps/server/src/gmail/service.js';
 import { FixtureGmail } from './gmail-fixture.js';
+import { hash } from '../apps/server/src/util.js';
 async function fixture(t: any) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-library-refresh-')),
     store = new Store(dir),
@@ -26,6 +27,73 @@ async function fixture(t: any) {
   service.control('stop');
   return { store, reader, runner, service, draft: service.draftRows()[0] };
 }
+
+test('raw HTML hash change with identical parsed text creates a fresh binding/review without rewriting the message', async (t) => {
+  const f = await fixture(t),
+    read = f.reader.read.bind(f.reader);
+  const previous = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    f.draft.id,
+    f.draft.version,
+  )!;
+  const oldVersions = f.store.all('SELECT * FROM draft_versions');
+  const before = f.runner.prompts.length;
+  f.reader.read = async (...args) => ({
+    ...(await read(...args)),
+    content_hash: hash('new raw HTML wrapper'),
+  });
+  const result = await f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] });
+  assert.equal(result.results[0].code, 'CHECKED');
+  const current = f.service.draftRows()[0];
+  assert.equal(current.body, f.draft.body);
+  assert.equal(current.subject, f.draft.subject);
+  assert.ok(current.version > f.draft.version);
+  const material = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    current.id,
+    current.version,
+  )!;
+  assert.notEqual(material.context_hash, previous.context_hash);
+  assert.equal(material.code_status, 'PASS');
+  assert.equal(material.review_status, 'COMPLETED');
+  const calls = f.runner.prompts.slice(before);
+  assert.ok(
+    calls.some((p) => p.includes('Sprawdź KAŻDE')),
+    'new review of exact final payload',
+  );
+  assert.ok(!calls.some((p) => p.includes('POPRAW ISTNIEJĄCY SZKIC')), 'no cosmetic generation');
+  for (const v of oldVersions)
+    assert.deepEqual(f.store.one('SELECT * FROM draft_versions WHERE id=?', v.id), v);
+});
+
+for (const change of ['TEXT', 'CONTACT', 'TIMEOUT', 'INCOMPLETE'])
+  test('fresh source ' + change + ' cannot inherit the old positive material', async (t) => {
+    const f = await fixture(t),
+      read = f.reader.read.bind(f.reader);
+    f.reader.read = async (...args) => {
+      const source = await read(...args);
+      if (change === 'TIMEOUT' || change === 'INCOMPLETE')
+        return {
+          ...source,
+          status: change,
+          completeness: change,
+          content_hash: null,
+          text: '',
+          fragment: '',
+        };
+      const text = source.text.replace(
+        change === 'CONTACT' ? 'hr@fixture.example.test' : 'Junior PHP Laravel',
+        change === 'CONTACT' ? 'privacy@fixture.example.test' : 'Senior Rust',
+      );
+      return { ...source, text, fragment: text, content_hash: hash(text) };
+    };
+    const result = await f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] });
+    assert.notEqual(result.results[0]?.code, 'CHECKED', JSON.stringify(result));
+    const current = f.service.draftRows()[0];
+    assert.ok(f.service.draftMaterialIssues(current).length > 0);
+    assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+    assert.equal(f.service.state().stopped, true);
+  });
 test('library refresh really reads and qualifies selected sources, preserves text and old versions, creates no send rights', async (t) => {
   const f = await fixture(t),
     oldVersions = f.store.all('SELECT * FROM draft_versions'),
