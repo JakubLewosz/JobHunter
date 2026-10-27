@@ -125,6 +125,10 @@ export async function runResearchSession(options: {
     } finally {
       options.signal?.removeEventListener('abort', onStop);
     }
+    // Native tick handles provider failures by pausing instead of throwing.
+    // A process entry still exits STOPPED; retain the controller's primary
+    // failure reason and the passive checkpoint, without retry or new Start.
+    if (!service.state().stopped) service.control('stop');
     await service.stopWorker();
     return {
       schema: 1,

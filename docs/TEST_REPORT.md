@@ -1,5 +1,13 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+27.10.2026: realny R1 3541725 trwał 4005 s, z 8 CHECKED odnowienia i 11 nowymi
+szkicami, potem globalny błąd routingu CLI. To nie jest zaliczony pełny R1.
+3/3 nowe reprodukcje pokazują NOT_STOPPED po obsłużonym błędzie providera
+w RESEARCH_ONLY/AUTO_POLICY/APPROVAL_REQUIRED. Poprawka końca wejścia jawnie
+wykonuje Stop przed zwrotem, bez nadpisania CODEX_FAILED i bez retry. Końcowe
+wyniki nowego SHA i dowody rzeczywiste pozostają w prywatnej dostawie. Syntetyczny
+natywny probe CLI po awarii przeszedł; nie zmieniano loginu, konfiguracji ani CLI.
+
 26/27.10.2026: rzeczywisty krótki R1 a7652a3 jest NIEZALICZONY; brak etapu
 biblioteki w wejściu operatora. Backup/62 tabele/izolowane odtworzenie/probe,
 Stop/cleanup/guard i zachowanie poczty oraz chronionych danych: PASS.

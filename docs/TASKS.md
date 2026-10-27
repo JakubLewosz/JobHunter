@@ -1,5 +1,15 @@
 # Bieżące zadania — 23 października 2026
 
+27.10.2026: zatwierdzony R1 3541725 wykonał bibliotekę (15 wyników, 8 CHECKED)
+i ponad godzinę discovery, ale CLI zakończył SEARCH kodem 1: workspace routing
+discovery failed. Dane chronione i poczta zachowane. Brak STOPPED przy normalnym
+powrocie z natywnej pauzy odtworzono w trzech trybach; poprawka dotyczy wyłącznie
+końca wejścia CLI, z zachowaniem pierwotnego kodu i checkpointu. Bez retry modelu,
+nowego Startu lub Gmaila w tej ścieżce. WORKSTATION zatrzymano kontrolowanym Stop.
+Nowy kod w codex/v1-session-stop wymaga pełnego check/CI/T1–T3 i nowego buildu;
+bieżący checkpoint oraz rzeczywiste raporty są poza repo w Downloads/
+JobHunter-R1-3541725-20261027. Nie wznawiać starego, wygasłego deadline.
+
 26/27.10.2026: [R1_RESEARCH_ENTRY](reviews/R1_RESEARCH_ENTRY.md) jest bieżącym
 uzupełnieniem. Zatwierdzony a7652a3 wdrożono po spójnym backupie; krótki R1
 zatrzymano i NIE zaliczono: wejście operatora pomijało odnowienie biblioteki.
