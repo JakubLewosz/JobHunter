@@ -452,7 +452,7 @@ export class NightflowCoordinator {
             checkpoint.refreshQueue ??
             selectNightflowRefreshQueue(
               this.service
-                .nightflowCandidates()
+                .nightflowCandidates(plan.draftIds)
                 .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
                 .filter((c) => this.service.matchesNightflowRecipient(c.d.id, plan.recipientScope)),
               plan.researchHours,
@@ -647,7 +647,7 @@ export class NightflowCoordinator {
             : [],
         );
         const candidates = this.service
-          .nightflowCandidates()
+          .nightflowCandidates(plan.draftIds)
           .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
           .filter((c) => this.service.matchesNightflowRecipient(c.d.id, plan.recipientScope))
           .filter((c) => !c.issues.length && (checked.has(c.d.id) || researched.has(c.d.id)))

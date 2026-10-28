@@ -84,6 +84,23 @@ test('closed nightflow scope: all named drafts held means zero, never substitute
   assert.equal(f.store.one('SELECT count(*) n FROM auto_batches')!.n, 0);
 });
 
+test('closed nightflow scope: unrelated library drafts are not evaluated during preparation', async (t) => {
+  const f = await fixture(t);
+  f.coordinator.savePlan(f.plan, true);
+  const evaluated: string[] = [];
+  const service = f.service as any;
+  const issues = service.issues.bind(service);
+  service.issues = (draft: any, ...args: any[]) => {
+    evaluated.push(draft.id);
+    assert.ok(f.plan.draftIds.includes(draft.id), 'Unrelated library work blocks the browser host');
+    return issues(draft, ...args);
+  };
+  const result = await f.coordinator.start(f.plan.id);
+  assert.equal(result.state, 'COMPLETED', JSON.stringify(result));
+  assert.equal(f.gateway.posts.length, 2);
+  assert.deepEqual(new Set(evaluated), new Set(f.plan.draftIds));
+});
+
 test('closed nightflow scope: empty/duplicate list or discovery cannot widen a named existing-draft plan', async (t) => {
   const f = await fixture(t);
   for (const p of [

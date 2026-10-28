@@ -1,5 +1,14 @@
 # Bieżące zadania — 23 października 2026
 
+28.10.2026, dalszy odbiór V1: d222655 przeszedł pełny check/CI i fikcyjny CUA,
+a rzeczywisty R1 zakończył godzinę z guardem i zachowaną historią. R2 zatrzymał
+się bez nowych prób: ocena całej biblioteki przed odfiltrowaniem zamkniętego
+planu blokowała hosta. Reprodukcję i minimalną poprawkę opisuje
+[V1_COMPLETION](reviews/V1_COMPLETION.md). Następny krok: pełne bramki nowego
+kodu, zamrożenie/wdrożenie, nowy R1 i warunkowe R2/R3. Nie ponawiać starego
+Startu ani nie odnawiać absolutnego deadline. Prywatny checkpoint pozostaje
+w Downloads/JobHunter-V1-COMPLETION-20261028.
+
 28.10.2026, zlecenie domknięcia V1: odtworzono podmianę adresu podczas
 odnowienia tego samego szkicu zamkniętego planu. Poprawka przypina odbiorcę
 oraz opcjonalny absolutny termin zgody; 42/42 regresje Windows PASS.

@@ -1,5 +1,33 @@
 # Domknięcie V1 — 28.10.2026
 
+Uzupełnienie po rzeczywistym odbiorze d222655: pełny Windows check po jednym
+powtórzeniu PASS (1019 backend, 12 Stop, 26 UI); CI dokładnego SHA PASS.
+Pierwszy check miał trzy porażki czasowe, zachowane razem z izolowanymi
+wynikami tych samych testów i granic. Rzeczywisty CUA na fikcyjnej stronie
+przeszedł A poprawne / B odłożone / C poprawne oraz restart bez nowych akcji.
+Kontrolowany R1 tego wydania trwał 3617 s, zakończył się DEADLINE i końcowym
+guardem; 12/12 pozycji biblioteki CHECKED, chronione dane i poczta zachowane.
+
+Pierwszy R2 d222655 zatrzymał się BROWSER_HOST_LOST, zanim powstała jakakolwiek
+nowa próba lub partia. Nie powtórzono niepotwierdzonego Startu. Native Stop,
+backup i cleanup zakończone. Diagnoza przy zatrzymanym profilu wykazała
+73,2 s synchronicznej oceny wszystkich 276 szkiców, mimo zamkniętej trójki;
+sam snapshot chroniony trwał 358 ms. Odtworzenie syntetyczne przed poprawką
+potwierdziło ocenę niepowiązanego szkicu i zatrzymanie przebiegu.
+
+Ocena kandydatów przyjmuje teraz opcjonalną zatwierdzoną listę ID i filtruje
+wiersze przed kosztowną walidacją. Koordynator przekazuje ją przy kolejce
+odnowienia i selekcji. Wszystkie dotychczasowe kontrole wybranych pozycji
+pozostają; nie wydłużono lease lub timeoutów. Brak listy zachowuje dotychczasowy
+kontrakt. Regresja wymaga pełnego natywnego przebiegu i dwóch fikcyjnych nadań,
+a ocenę materiału spoza planu traktuje jako błąd.
+
+Poprawka wymaga własnych pełnych bramek, nowego zamrożonego buildu,
+kontrolowanego wdrożenia i nowego godzinnego R1 przed R2/R3. Wcześniejszy
+zaliczony R1 d222655 pozostaje dowodem tylko tamtej wersji. Pierwotny
+absolutny termin zadania nie jest odnawiany. R2/R3 nadal niezaliczone;
+nie deklarować V1_PRODUCTION_VERIFIED.
+
 Odtworzono lukę zamkniętego planu: po zatwierdzeniu `draftIds` odnowienie
 mogło zmienić kontakt tego samego szkicu. Test na fikcyjnej firmie potwierdził
 nadanie do innego adresu. Pierwszy FAIL zachowano poza repo; nie był to Gmail.

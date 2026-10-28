@@ -239,28 +239,31 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     });
     this.libraryResearch = false;
   }
-  nightflowCandidates() {
+  nightflowCandidates(draftIds?: string[]) {
     const policy = this.assertPolicy(false),
       account = this.deliveryState().account!;
-    return this.draftRows().map((d) => ({
-      d,
-      channelRank:
-        this.store.one('SELECT kind FROM contacts WHERE id=?', d.contact_id)?.kind === 'RECRUITMENT'
-          ? 1
-          : 0,
-      issues: [
-        ...this.issues(d, 'FIRST_CONTACT', account, false, policy),
-        ...(!this.inScope(d) ? ['SCOPE_CHANGED'] : []),
-        ...(this.companyHistoryBlocked(d.company_id) ? ['CONTACT_HISTORY'] : []),
-        ...(!this.store.one(
-          'SELECT draft_id FROM research_draft_materials WHERE draft_id=? AND version=?',
-          d.id,
-          d.version,
-        )
-          ? ['DRAFT_MATERIAL_UNVERIFIED']
-          : []),
-      ],
-    }));
+    return this.draftRows()
+      .filter((d) => !draftIds || draftIds.includes(d.id))
+      .map((d) => ({
+        d,
+        channelRank:
+          this.store.one('SELECT kind FROM contacts WHERE id=?', d.contact_id)?.kind ===
+          'RECRUITMENT'
+            ? 1
+            : 0,
+        issues: [
+          ...this.issues(d, 'FIRST_CONTACT', account, false, policy),
+          ...(!this.inScope(d) ? ['SCOPE_CHANGED'] : []),
+          ...(this.companyHistoryBlocked(d.company_id) ? ['CONTACT_HISTORY'] : []),
+          ...(!this.store.one(
+            'SELECT draft_id FROM research_draft_materials WHERE draft_id=? AND version=?',
+            d.id,
+            d.version,
+          )
+            ? ['DRAFT_MATERIAL_UNVERIFIED']
+            : []),
+        ],
+      }));
   }
   nightflowRecipient(draftId: string) {
     const d = this.draftRows().find((d) => d.id === draftId);

@@ -1,5 +1,15 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+28.10.2026, odbiór d222655: Windows/Node24.19.0 pełny check 1019/12/26 PASS
+po zachowanym pierwszym FAIL trzech testów czasowych; izolowane te same testy
+i granice PASS. CI dokładnego SHA PASS; rzeczywisty fikcyjny host CUA A/B/C
+i restart bez duplikatów PASS. R1 3617 s, DEADLINE, końcowy guard i zachowanie
+poczty PASS. R2 BROWSER_HOST_LOST, zero nowych prób; NIEZALICZONY.
+Odtworzono ocenę niepowiązanego szkicu przed odfiltrowaniem zamkniętego planu.
+Nowa regresja przed poprawką FAIL (EXECUTION_FAILED); po poprawce wymaga
+natywnego zakończenia i dwóch fikcyjnych nadań. Nowy pełny check/CI/CUA i R1
+pozostają osobnymi bramkami, których nie zastępują wyniki d222655.
+
 28.10.2026, domknięcie V1: 42/42 Windows/Node24.19.0 — plan, kolejka,
 zamknięty zakres i absolutne wygaśnięcie. Zachowano pierwszy FAIL podmiany
 adresu podczas odnowienia na poprzednim kodzie. Brak nowych rzeczywistych
