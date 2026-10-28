@@ -1,5 +1,14 @@
 # Wyniki i zakres weryfikacji — 28 października 2026
 
+3617b59: CI windows-latest run40746331941 attempt1 SUCCESS. Pierwszy lokalny
+check: 1041/12/build PASS, wrapper przerwał na stderr ostrzeżenia przed UI.
+Drugi lokalny check: 1040/1041, nowa fixture tool przekroczyła sztuczny czas
+bootstrapu 350 ms; NIEZALICZONY. Kontrolowany delayed-tool 600 ms wykazał
+NO_OUTPUT do poprawnego timeoutu 350 ms. Po rozdzieleniu testu hard deadline
+od testu reakcji na zdarzenie: 19/19 procesu PASS. Żadnych zmian kodu aplikacji,
+limitów 120 s lub istniejących testów wydajności. Pełne bramki nowego testowego
+SHA pozostają wymagane; nie ukrywać dwóch wcześniejszych niepowodzeń.
+
 Kontynuacja CLI: [dokładne pomiary](reviews/V1_CLI_DIAGNOSIS.md), 7 rzeczywistych
 wywołań Windows, 120 s, wszystkie zgodne ze schematem i normalnym close.
 To nie dowód przyczyny dawnych timeoutów. Celowane proces/Stop/materiały/

@@ -1,6 +1,15 @@
 # Bieżące zadania — 28 października 2026
 
 Kontynuacja CLI: [pomiary i celowane poprawki](reviews/V1_CLI_DIAGNOSIS.md).
+3617b59 ma CI Windows SUCCESS. Dwa lokalne pełne przebiegi zachowane:
+pierwszy przerwany przez wrapper na ostrzeżeniu przed UI, drugi 1040/1041,
+bo nowa fixture miała nieuzasadnione założenie o bootstrapie w 350 ms.
+Wykazano to kontrolowanym opóźnionym zdarzeniem z zerowym stdout przed
+timeoutem. Zegar testów deadline jest teraz sterowany po obserwacji etapu,
+a test izolacji nadal wymaga ISOLATION_FAILED, także przy późnym zdarzeniu.
+19/19 procesu PASS; kod aplikacji i jej limity bez zmian. Następny krok:
+commit testów, pełny check/CI właściwego SHA, freeze/CUA/wdrożenie/R1.
+Poniższe wcześniejsze wpisy 7 wywołań zastępuje aktualny ledger 8 prób.
 7 rzeczywistych diagnostycznych wywołań zakończyło się poprawnie przy 120 s;
 dawnej przyczyny timeoutów nie ustalono. Dodano metadane procesu/JSONL.
 Natywnie odtworzono i poprawiono parser adresu historii (Nodemailer 10.1.4)

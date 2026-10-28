@@ -30,7 +30,7 @@ lease, progów Stop/testów, konta, modelu, uprawnień lub konfiguracji CLI.
 
 CLI 0.165.0-alpha.1.2, to samo konto i izolacja JobHuntera, pomoc i wymagane
 flagi sprawdzone. Wywołania sekwencyjne, bez produkcyjnych zapisów i Gmaila.
-W jednej rundzie wykonano 7 z dopuszczonych najwyżej 12 wywołań:
+W jednej rundzie wykonano 8 z dopuszczonych najwyżej 12 wywołań:
 
 | Przypadek | Wejście / schema, bajty | Czas | Wynik |
 |---|---:|---:|---|
@@ -41,10 +41,14 @@ W jednej rundzie wykonano 7 z dopuszczonych najwyżej 12 wywołań:
 | EXTRACT, te same źródła i zatwierdzone fakty | 21841 / 6837 | 23453 ms | zgodny wynik i close |
 | SEMANTIC_REVIEW zachowanego własnego materiału | 18385 / 824 | 5898 ms | zgodny wynik i close, supported=true/PASS |
 | SEARCH po celowanej aktualizacji zależności | 3656 / 513 | 23852 ms | zgodny wynik i close |
+| SEMANTIC_REVIEW z natywnym mapowaniem źródeł i rodzaju kontaktu | 18808 / 824 | 7789 ms | zgodny wynik i close, supported=true/PASS |
 
 Drugie review jest reprezentatywną rekonstrukcją zachowanego pakietu, nie
 bitowym odtworzeniem dawnego promptu: użyto zatwierdzonego profilu i własnego
-szkicu, natywnego buildera/schema, bez zapisu tekstów w diagnostyce. Oryginalna
+szkicu, natywnego buildera/schema, bez zapisu tekstów w diagnostyce. W próbie
+8 uzupełniono mapę research_evidence→sourceId, zweryfikowany inquiryBasis
+i natywne contactType. Próba 6 nie jest dowodem dokładnego natywnego pakietu.
+Oryginalna
 baza była otwarta readonly; nie kopiowano SQLite do DEVELOPMENT.
 
 W tych pomiarach pierwsze bajty pojawiały się po ok. 0,3 s, strumień zawierał
@@ -89,3 +93,27 @@ Po dwóch celowanych aktualizacjach npm audit nadal zgłasza 2 alerty
 (moderate fast-uri, low Fastify). Nie używano audit fix --force i nie
 przypisano żadnego z tych alertów do timeoutów CLI. Dalsze bramki nowego
 kodu muszą uwzględniać oba zmienione pakiety; stary check nie jest ich testem.
+
+## Bramka testowa i korekta nowej fixture
+
+Kod 3617b59: CI na windows-latest, run 40746331941, attempt 1 SUCCESS.
+Pierwszy lokalny check: 1041 backend / 12 Stop / build PASS, ale wrapper
+Windows PowerShell 5 z ErrorActionPreference=Stop przerwał uruchamianie UI
+na ostrzeżeniu NO_COLOR/FORCE_COLOR. Wyniku nie nazwano pełnym PASS.
+Po korekcie wrappera drugi lokalny check: 1040/1041; nowy test narzędzia
+dostał CODEX_TIMEOUT zamiast ISOLATION_FAILED. Obie próby i logi zachowano.
+
+Wykazano błąd założenia nowego testu: fikcyjny proces emitujący zdarzenie po
+600 ms, z narzuconym przez test budżetem 350 ms, prawidłowo kończy się
+CODEX_TIMEOUT/NO_OUTPUT (zero stdout). Nie dowodzi to przepuszczenia narzędzia.
+Oczekiwanie konkretnej reakcji przed pojawieniem się jej bodźca było błędem.
+
+Testy twardego 350 ms deadline kontrolują teraz zegar rodzica i najpierw
+obserwują badany etap. Procesy Windows i zakończenie ich drzewa są rzeczywiste.
+Pozostałe testy zdarzeń używają domyślnego budżetu aplikacji i własnego
+zewnętrznego sygnału testu, bez sztucznego założenia o szybkości bootstrapu.
+Dodano jawnie opóźnione zdarzenie narzędzia: nadal musi być ISOLATION_FAILED,
+oraz sprawdzenie, że osobny proces testowy przeżywa kill własnego drzewa.
+19/19 regresji procesu PASS. Kod aplikacji, limit LLM 120 s, istniejące progi
+wydajności/Stop i oczekiwane błędy izolacji nie zostały zmienione.
+Poprawka dotyczy wyłącznie nowych testów; kolejne bramki dotyczą nowego SHA.

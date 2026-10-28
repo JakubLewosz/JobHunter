@@ -55,12 +55,16 @@ else {
       emit({ type: 'error', message: 'Transport reconnecting 1/5; token=fictional-secret' });
       process.exitCode = 43;
     } else if (mode === 'overflow') process.stdout.write('x'.repeat(20000));
-    else if (mode === 'tool') {
-      started();
-      emit({
-        type: 'item.started',
-        item: { type: 'command_execution', command: 'NEVER_SAVE_COMMAND' },
-      });
+    else if (mode === 'tool' || mode === 'tool-delay') {
+      const tool = () => {
+        started();
+        emit({
+          type: 'item.started',
+          item: { type: 'command_execution', command: 'NEVER_SAVE_COMMAND' },
+        });
+      };
+      if (mode === 'tool-delay') setTimeout(tool, 600);
+      else tool();
       setInterval(() => {}, 10000);
     } else if (mode === 'tree') {
       const child = spawn(process.execPath, ['-e', 'setInterval(()=>{},10000)'], {
