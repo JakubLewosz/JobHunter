@@ -384,6 +384,7 @@ export class NightflowCoordinator {
     this.generation = id();
     const generation = this.generation;
     this.controller = new AbortController();
+    const signal = this.controller.signal;
     this.epoch = this.service.operationEpoch();
     this.jobId = undefined;
     this.options.host?.setLossHandler?.(() => this.stop('BROWSER_HOST_LOST'));
@@ -451,13 +452,13 @@ export class NightflowCoordinator {
           const refreshQueue: string[] =
             checkpoint.refreshQueue ??
             selectNightflowRefreshQueue(
-              this.service
-                .nightflowCandidates(plan.draftIds)
+              (await this.service.evaluateNightflowCandidates(plan.draftIds, signal))
                 .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
                 .filter((c) => this.service.matchesNightflowRecipient(c.d.id, plan.recipientScope)),
               plan.researchHours,
               (draftId) => this.store.get<Row>(`nightflowRefreshAttempt:${draftId}`, {}).at ?? '',
             );
+          this.assert(plan, generation);
           if (plan.draftIds && refreshQueue.some((id) => !plan.draftIds!.includes(id)))
             throw new DomainError(
               'PLAN_SCOPE_CHANGED',
@@ -646,12 +647,12 @@ export class NightflowCoordinator {
                 .map((d) => d.id)
             : [],
         );
-        const candidates = this.service
-          .nightflowCandidates(plan.draftIds)
+        const candidates = (await this.service.evaluateNightflowCandidates(plan.draftIds, signal))
           .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
           .filter((c) => this.service.matchesNightflowRecipient(c.d.id, plan.recipientScope))
           .filter((c) => !c.issues.length && (checked.has(c.d.id) || researched.has(c.d.id)))
           .sort(compareNightflowCandidates);
+        this.assert(plan, generation);
         const seen = new Set<string>();
         const selected = candidates
           .filter(({ d }) => {

@@ -101,6 +101,32 @@ test('closed nightflow scope: unrelated library drafts are not evaluated during 
   assert.deepEqual(new Set(evaluated), new Set(f.plan.draftIds));
 });
 
+test('nightflow library evaluation yields to Stop before evaluating the next candidate', async (t) => {
+  const f = await fixture(t);
+  const { draftIds: _closed, ...plan } = f.plan;
+  f.coordinator.savePlan(plan, true);
+  const service = f.service as any;
+  const issues = service.issues.bind(service);
+  let evaluated = 0;
+  service.issues = (...args: any[]) => {
+    if (
+      f.store.one('SELECT state FROM nightflow_jobs ORDER BY rowid DESC LIMIT 1')?.state ===
+      'REFRESHING'
+    ) {
+      evaluated++;
+      if (evaluated === 1) setImmediate(() => f.coordinator.stop());
+    }
+    return issues(...args);
+  };
+  const reads = f.reader.calls;
+  const result = await f.coordinator.start(plan.id);
+  assert.equal(result.state, 'STOPPED', JSON.stringify(result));
+  assert.equal(evaluated, 1, 'Stop must run between candidates in an ordinary library plan');
+  assert.equal(f.reader.calls, reads);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+  assert.equal(f.gateway.posts.length, 0);
+});
+
 test('closed nightflow scope: empty/duplicate list or discovery cannot widen a named existing-draft plan', async (t) => {
   const f = await fixture(t);
   for (const p of [

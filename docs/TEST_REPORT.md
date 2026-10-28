@@ -1,5 +1,14 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+28.10.2026: c6791f6 Windows/Node24.19.0 pełny `npm run check` PASS:
+1020/1020 backend, 12/12 Stop, 26/26 UI, typecheck/build. 1648417 ms.
+CI run40696003337 dokładnego c6791f6 próba1 SUCCESS. To dowody tej wersji.
+Następna regresja zwykłego planu odtworzyła opóźnienie Stop (5 ocen zamiast 1).
+Po oddaniu sterowania między pozycjami: typecheck i 44/44 celowane PASS.
+Pierwszy roboczy szkic miał brak lokalnego sygnału i zawiódł bez nadania;
+log zachowano, zakończono wyłącznie własne fikcyjne procesy. Nowa wersja musi
+przejść własne pełne bramki i R1; nie przenosić PASS c6791f6.
+
 28.10.2026, a2cae88: pełny Windows check dwa razy FAIL wyłącznie HTML
 2000 adresów (1518/1809 ms przy granicy 1000 ms); pozostałe 1019 backend PASS.
 Izolowany dokładnie ten przypadek: 489 ms PASS. CI próba 1: dwa FAIL CLI

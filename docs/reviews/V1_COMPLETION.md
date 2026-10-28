@@ -1,5 +1,26 @@
 # Domknięcie V1 — 28.10.2026
 
+Następna kontrola zwykłego uruchomienia: c6791f6 przeszedł pełny Windows check
+(1020 backend / 12 Stop / 26 UI, typecheck/build) i CI dokładnego SHA.
+Nie wdrożono go: plan bez zamkniętej listy nadal oceniał całą bibliotekę
+synchronicznie. Regresja odtworzyła opóźnienie Stop: oceniono pięć fikcyjnych
+pozycji, zamiast zatrzymać się po pierwszej. Dotyczy to tego samego mechanizmu
+przygotowania, nie nowej funkcji lub dodatkowego limitu kampanii.
+
+Koordynator ocenia teraz kandydatów kolejno, oddając pętlę zdarzeń między
+pozycjami. Rzeczywisty host może dostarczyć poll lub Stop; backend nie wytwarza
+heartbeatów. Sygnał anulowania jest sprawdzany po każdym oddaniu sterowania,
+a koordynator ponownie sprawdza zatwierdzony plan przed użyciem wyniku.
+Zamknięta lista jest filtrowana przed walidacją, wszystkie kontrole wybranych
+pozycji i bramki dispatch pozostają. Lease i timeouty bez zmian.
+
+Pierwszy niezatwierdzony szkic implementacji pominął lokalne przechwycenie
+sygnału anulowania. Testy zawiodły bez nadania, a oczekującą fikcyjną grupę
+procesów zakończono po potwierdzeniu jej tożsamości. Log błędu zachowano;
+żaden rzeczywisty profil nie był otwierany. Po korekcie: typecheck oraz
+44/44 plan/kolejka/zakres/Stop PASS. Pełne bramki, zamrożenie, CUA i rzeczywisty
+R1 nowego kodu są nadal wymagane; nie dziedziczy on zaliczenia c6791f6.
+
 Kolejne bramki a2cae88: dwa pełne lokalne checki zakończyły się jedną porażką
 tego samego limitu parsera HTML (1518 i 1809 ms przy niezmienionej granicy
 1000 ms). Pozostałe 1019 testów backendu przeszło w obu próbach. Izolowany

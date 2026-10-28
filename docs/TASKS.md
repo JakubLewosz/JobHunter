@@ -1,5 +1,15 @@
 # Bieżące zadania — 23 października 2026
 
+28.10.2026: pełny Windows check c6791f6 (1020/12/26) i dokładne CI PASS.
+Przed wdrożeniem odtworzono jeszcze opóźnienie Stop zwykłego planu bez listy:
+synchroniczna ocena całej biblioteki nie oddawała sterowania. Natywna ocena
+oddaje teraz pętlę między pozycjami i sprawdza anulowanie/plan bez tworzenia
+heartbeatów. Typecheck i 44/44 regresje PASS; pierwszy roboczy błąd zachowany.
+[Szczegóły](reviews/V1_COMPLETION.md). Następny krok: commit, pełny check/CI
+nowego SHA, zamrożenie i świeży CUA, kontrolowane wdrożenie, nowy godzinny R1,
+potem warunkowe R2/R3. WORKSTATION nadal STOPPED d222655, zero nowych prób;
+pierwotny deadline zadania nie jest odnawiany.
+
 28.10.2026, dalsza bramka V1: a2cae88 nie wdrożono. Dwa lokalne pełne checki
 miały pojedynczy FAIL limitu HTML; CI miało dwa błędy czasowe CLI. Wszystkie
 pierwsze wyniki zachowane. Zamiast kolejnego niezmienionego powtórzenia

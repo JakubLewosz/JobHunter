@@ -265,6 +265,21 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
         ],
       }));
   }
+  async evaluateNightflowCandidates(draftIds: string[] | undefined, signal: AbortSignal) {
+    signal.throwIfAborted();
+    const ids = this.draftRows()
+      .filter((d) => !draftIds || draftIds.includes(d.id))
+      .map((d) => d.id as string);
+    const candidates: ReturnType<AutoPolicyJobHunter['nightflowCandidates']> = [];
+    for (const draftId of ids) {
+      // Let the real host poll, or deliver Stop, even for a large library.
+      // This creates no heartbeat and grants no authority of its own.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      signal.throwIfAborted();
+      candidates.push(...this.nightflowCandidates([draftId]));
+    }
+    return candidates;
+  }
   nightflowRecipient(draftId: string) {
     const d = this.draftRows().find((d) => d.id === draftId);
     if (!d) throw new DomainError('NOT_FOUND', 'Brak szkicu zamkniętego planu.');
