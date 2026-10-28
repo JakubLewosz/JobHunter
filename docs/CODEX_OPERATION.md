@@ -1,14 +1,14 @@
 # Uruchamianie przez Codex — stan 28.10.2026
 
-Aktualny wdrożony kod to `1f41b550578751b68811c9628f4b915f2ea51c26`,
-build `9580da4a-7cec-48ab-91ec-dbed71599bb6`. WORKSTATION STOPPED,
+Aktualny wdrożony kod to `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
+build `90e528ed-9018-442d-8e06-e71484443bb6`. WORKSTATION STOPPED,
 bez ownera i prawa wysyłki. Pełny Windows check/CI i fikcyjny CUA PASS;
-rzeczywisty odbiór NIEZALICZONY z powodu powtarzającego się CODEX_TIMEOUT
-R1. R2/R3 na tej wersji NOT_RUN. [Fakty](reviews/V1_FINAL_RESULT.md).
+nowy rzeczywisty godzinny R1 PASS (3611s, 47 wywołań modelu, guard/backup/cleanup).
+R2/R3 na tej wersji jeszcze NOT_RUN; V1 NOT_PRODUCTION_VERIFIED.
+[Aktualne fakty](reviews/V1_CLI_DIAGNOSIS.md), [poprzednia dostawa](reviews/V1_FINAL_RESULT.md).
 Starsze stwierdzenia o niewdrożonym kodzie poniżej opisują wcześniejsze daty.
 
-Jedna instrukcja dla zwykłego zadania w Codexie, po usunięciu obecnej blokady
-i z ważną zgodą na konkretny zakres:
+Jedna instrukcja dla zwykłego zadania w Codexie, z ważną zgodą na konkretny zakres:
 
 > Odczytaj AGENTS.md, bieżący stan z docs/TASKS.md i prywatny checkpoint.
 > Sprawdź istniejącą instalację, załadowany build, zakończenie operacji,

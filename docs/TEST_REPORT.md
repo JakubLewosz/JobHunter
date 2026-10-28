@@ -1,5 +1,29 @@
 # Wyniki i zakres weryfikacji — 28 października 2026
 
+Najnowszy kod aplikacji: `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`.
+Rzeczywisty domowy Windows, Node24.19.0, `npm run check` 19:28:41–19:42:28 UTC:
+1042/1042 backend, 12/12 serial Stop, 26/26 UI, typecheck/build **PASS**.
+CI tego SHA: [40754519704](https://github.com/JakubLewosz/JobHunter/actions/runs/40754519704),
+attempt1 SUCCESS. Zmienione względem 3617b59 wyłącznie nowe testy i dokumentacja;
+wcześniejsze dwa niepełne/nieudane lokalne checki zachowane poniżej.
+Świeży rzeczywisty CUA na fikcyjnej stronie: A/C dwie fikcyjne akcje,
+B STALE_EVIDENCE; ponowny przebieg tej samej historii 0 nowych akcji, cleanup PASS.
+Freeze/wdrożenie/doctor/odtworzenie backupu 62 tabel PASS, ten sam build
+`90e528ed-9018-442d-8e06-e71484443bb6` i loadedCodeHash
+`7f15d7d0a567ef90aed986e3f7c5e2d123ec2721f2c81460bb83d120427ae017`.
+
+R1 nowego wydania 19:54:15–20:54:26 UTC: **PASS**, 3611 s, natywne DEADLINE,
+FINISHED/finalGuardOk, brak kodów guarda, ochrona danych/poczty i cleanup PASS.
+12/12 CHECKED biblioteki, 4 cykle discovery, 9 nowych firm, 4 nowe szkice.
+47/47 wywołań modelu OK: EXTRACT26, SEMANTIC_REVIEW13, SEARCH4, DRAFT4;
+maksimum 37431 ms. To nie oznacza akceptacji wszystkich treści: raport zachował
+18 przypadków błędów pozycji i 21 błędów źródeł, w tym odrzucony UNVERIFIED_QUOTE.
+Spójny końcowy backup SQLite z WAL: wszystkie hashe tabel zgodne, integralność
+ok, 0 błędów FK. Gmail niewłączony, 0 nowych prób/nadań, WORKSTATION STOPPED.
+R2/R3 na tym wydaniu jeszcze NOT_RUN; **NOT_PRODUCTION_VERIFIED**.
+
+Poniższe wyniki są zachowaną historią poprzednich bramek, nie stanem bieżącym.
+
 3617b59: CI windows-latest run40746331941 attempt1 SUCCESS. Pierwszy lokalny
 check: 1041/12/build PASS, wrapper przerwał na stderr ostrzeżenia przed UI.
 Drugi lokalny check: 1040/1041, nowa fixture tool przekroczyła sztuczny czas

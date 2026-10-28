@@ -1,8 +1,9 @@
 # Kontynuacja V1: pomiar CLI — 28.10.2026
 
-Stan bieżący: DEVELOPMENT; WORKSTATION nadal STOPPED na zamrożonym 1f41b55.
-Nie uruchomiono nowego R1 ani Gmaila. Pierwotny deadline zgody i historia bez
-zmian. To kontynuacja istniejącego zlecenia, nie nowa kampania.
+Stan 20:55 UTC: kod ca5bd42 wdrożony na WORKSTATION, nowy godzinny R1 PASS.
+Backend STOPPED, bez ownera i prawa wysyłki. R2/R3 czekają na dozwolone okno
+istniejącej zgody; nie nadano nowej wiadomości i nie włączono Gmaila.
+Pierwotny deadline i historia bez zmian. To ta sama kontynuacja zlecenia.
 
 ## Co wiadomo o wcześniejszych przerwaniach
 
@@ -117,3 +118,39 @@ oraz sprawdzenie, że osobny proces testowy przeżywa kill własnego drzewa.
 19/19 regresji procesu PASS. Kod aplikacji, limit LLM 120 s, istniejące progi
 wydajności/Stop i oczekiwane błędy izolacji nie zostały zmienione.
 Poprawka dotyczy wyłącznie nowych testów; kolejne bramki dotyczą nowego SHA.
+
+## Zakończone bramki ca5bd42 i nowy R1
+
+Rzeczywisty pełny check na domowym Windowsie/Node24.19.0: 19:28:41–19:42:28
+UTC, 826223 ms, exit0; 1042/1042 backend, 12/12 serial Stop, 26/26 UI,
+typecheck/build PASS. [CI40754519704](https://github.com/JakubLewosz/JobHunter/actions/runs/40754519704)
+attempt1 SUCCESS. Kod aplikacji/deps jest identyczny jak 3617b59; nowy SHA
+zawiera udowodnioną korektę fixture i dokumentację. Nie użyto starego checka
+jako testu zmienionego kodu.
+
+Świeży rzeczywisty Computer Use na fikcyjnej stronie: odnowienie, nowe wersje
+i mapy, A poprawne → B STALE_EVIDENCE → C poprawne, dwie fikcyjne akcje.
+Drugi przebieg tej samej historii, fikcyjny następny dzień: NO_READY_ITEMS,
+0 nowych akcji. Cleanup i brak uprawnienia PASS. To osobny dowód syntetyczny.
+
+Zamrożony build `90e528ed-9018-442d-8e06-e71484443bb6`, loadedCodeHash
+`7f15d7d0a567ef90aed986e3f7c5e2d123ec2721f2c81460bb83d120427ae017`:
+Stop i koniec operacji, spójny backup/odtworzenie62 tabel, doctor, wdrożenie
+i zgodność plików PASS. Dwa natywne sprawdzenia PROBE5064ms/SEARCH10660ms OK;
+wraz z macierzą wykorzystano 10/12 wywołań diagnostycznych tej rundy.
+
+Nowy R1 tego samego wydania: 19:54:15–20:54:26 UTC, 3611 s, **R1_PASS**.
+Natywne DEADLINE, FINISHED/finalGuardOk, brak naruszeń guarda; 12/12 biblioteki
+przed 4 cyklami discovery, 9 nowych firm i 4 nowe szkice. 47 rzeczywistych
+wywołań modelu (EXTRACT26, SEMANTIC_REVIEW13, SEARCH4, DRAFT4), wszystkie
+schematowo poprawne i zamknięte normalnie, maksimum37431ms, modelErrors0.
+Raport zachował także negatywne wyniki: 18 błędów pozycji, 21 błędów źródeł,
+odrzucenie UNVERIFIED_QUOTE; nie wymuszano PASS treści. Cały R1 bez Gmaila.
+Chronione dane i wszystkie tabele poczty niezmienione, 11 wcześniejszych prób
+zachowanych, 0 nowych. Końcowy spójny backup z pełną zgodnością tabel,
+integralność/FK i cleanup PASS, prawa odwołane, owner zakończony.
+
+Ten R1 jest mocniejszym dowodem aktualnego działania niż mały probe; nadal
+nie ustala przyczyny trzech starych przerwań i nie dowodzi bezawaryjności.
+120000ms pozostaje bez zmian. Następne R2/R3 wyłącznie w pierwotnej zgodzie
+i jej oknie. Do rzeczywistego odbioru nadawania V1 pozostaje NOT_PRODUCTION_VERIFIED.

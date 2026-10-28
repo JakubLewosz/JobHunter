@@ -1,5 +1,21 @@
 # Bieżące zadania — 28 października 2026
 
+Aktualizacja 20:55 UTC: wdrożony kod `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
+build `90e528ed-9018-442d-8e06-e71484443bb6`. Pełny Windows check
+1042/12/26, typecheck/build, CI40754519704 i rzeczywisty fikcyjny CUA PASS.
+Nowy rzeczywisty godzinny R1 tej wersji **PASS**: 3611 s, 12/12 biblioteki,
+4 cykle discovery, 47/47 poprawnych wywołań modelu, końcowy guard/backup/cleanup
+PASS. Poczta niewłączona, oryginalne 11 prób zachowane, 0 nowych prób.
+WORKSTATION STOPPED, bez ownera i prawa wysyłki. R2/R3 jeszcze NOT_RUN;
+V1 nadal **NOT_PRODUCTION_VERIFIED**. Następny krok: w najbliższym ważnym
+oknie istniejącej zgody świeża tożsamość/From/Reply-To, natywne R2 i osobne R3,
+bez zmiany kodu lub pierwotnego deadline. Po wygaśnięciu bez Gmaila/nadawania.
+Diagnoza dawnych timeoutów pozostaje ograniczona: nie odtworzono ich przyczyny,
+nie podniesiono 120 s. Szczegóły w [diagnozie](reviews/V1_CLI_DIAGNOSIS.md).
+
+Poniżej zachowane historyczne wpisy poprzednich bramek; ich „następny krok”
+nie zastępuje aktualnego stanu powyżej.
+
 Kontynuacja CLI: [pomiary i celowane poprawki](reviews/V1_CLI_DIAGNOSIS.md).
 3617b59 ma CI Windows SUCCESS. Dwa lokalne pełne przebiegi zachowane:
 pierwszy przerwany przez wrapper na ostrzeżeniu przed UI, drugi 1040/1041,
