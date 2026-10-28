@@ -1,5 +1,14 @@
 # Wyniki i zakres weryfikacji — 28 października 2026
 
+Kontynuacja CLI: [dokładne pomiary](reviews/V1_CLI_DIAGNOSIS.md), 7 rzeczywistych
+wywołań Windows, 120 s, wszystkie zgodne ze schematem i normalnym close.
+To nie dowód przyczyny dawnych timeoutów. Celowane proces/Stop/materiały/
+parser historii: 32/32 i typecheck PASS. Zod native review collection przed:
+20001 issues; po 4.6.6: 1 too_big. Nodemailer native history: błędny adres
+przed, właściwy po 10.1.4. Pierwszy test deadline rozpoczął anulowanie podczas
+inspect, a oczekiwał metadanych EXEC; poprawiono synchronizację fixture,
+bez zmiany limitu aplikacji. Pełny check/CI nowego kodu jeszcze niewykonane.
+
 Końcowy kod: `1f41b550578751b68811c9628f4b915f2ea51c26`.
 Windows, Node v24.19.0, rzeczywisty `npm run check` 28.10,
 13:59:18.693–14:26:55.324 UTC, 1 656 631 ms: **PASS**.

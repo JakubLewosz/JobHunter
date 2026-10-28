@@ -5,6 +5,12 @@ import { join, delimiter, isAbsolute } from 'node:path';
 import { tmpdir } from 'node:os';
 import { z } from 'zod';
 import { DomainError, hash, id } from '../util.js';
+import {
+  newProcessTrace,
+  ProcessEventObserver,
+  traceTimeoutPhase,
+  type ProcessTrace,
+} from './codex-process-trace.js';
 
 export type CallDiagnostic = {
   callId: string;
@@ -18,6 +24,8 @@ export type CallDiagnostic = {
   code: string | null;
   category: string;
   message: string;
+  process?: ProcessTrace;
+  inspectMs?: number;
 };
 export function cleanDiagnostic(text: string) {
   return text
@@ -297,6 +305,8 @@ export function parseJSONL(output: string) {
     } catch {
       throw new DomainError('CODEX_JSONL', 'Uszkodzony strumień JSONL.');
     }
+    if (!event || typeof event !== 'object' || Array.isArray(event))
+      throw new DomainError('CODEX_JSONL', 'Nieprawidłowe zdarzenie JSONL.');
     if (event.type === 'error' || event.type === 'turn.failed') throw cliError(errorMessage(event));
     if (event.type === 'item.completed') {
       if (event.item?.type === 'error')
@@ -403,6 +413,7 @@ export class ExecCodexRunner implements StructuredRunner {
       if (Buffer.byteLength(prompt) > 160000)
         throw new DomainError('PROMPT_SIZE', 'Pakiet danych jest zbyt duży.');
       await this.inspect(options.signal);
+      diagnostic.inspectMs = Date.now() - started;
       diagnostic.cliVersion = this.version;
       task = await mkdtemp(join(tmpdir(), 'jobhunter-agent-'));
       const schemaPath = join(task, 'schema.json');
@@ -417,6 +428,31 @@ export class ExecCodexRunner implements StructuredRunner {
       }
       await writeFile(schemaPath, JSON.stringify(document), { mode: 0o600 });
       diagnostic.operation = 'EXEC';
+      let sourceCount: number | null = null;
+      try {
+        const offset = prompt.lastIndexOf('Dane: ');
+        if (offset >= 0) {
+          const packet = JSON.parse(prompt.slice(offset + 6));
+          if (Array.isArray(packet))
+            sourceCount = packet.filter(
+              (x) => x && typeof x.id === 'string' && typeof x.text === 'string',
+            ).length;
+          else if (Array.isArray(packet.evidence))
+            sourceCount = new Set(
+              packet.evidence
+                .map((x: any) => x.sourceId)
+                .filter((x: unknown) => typeof x === 'string'),
+            ).size;
+        }
+      } catch {} // Metadata absence never changes validation or task outcome.
+      const trace = newProcessTrace({
+        timeoutMs: this.options.timeoutMs ?? 120000,
+        inputBytes: Buffer.byteLength(prompt),
+        schemaBytes: Buffer.byteLength(JSON.stringify(document)),
+        sourceCount,
+        search: !!options.search,
+      });
+      diagnostic.process = trace;
       const output = await this.process(
         this.options.binary ?? cliPath(),
         execArguments(schemaPath, !!options.search),
@@ -428,6 +464,7 @@ export class ExecCodexRunner implements StructuredRunner {
           diagnostic.exitCode = code;
           diagnostic.signal = signal;
         },
+        trace,
       );
       const parsed = parseJSONL(output);
       const validated = schema.safeParse(parsed.value);
@@ -478,6 +515,7 @@ export class ExecCodexRunner implements StructuredRunner {
     signal?: AbortSignal,
     cwd?: string,
     onClose?: (code: number | null, signal: NodeJS.Signals | null) => void,
+    trace?: ProcessTrace,
   ): Promise<string> {
     if (/\.(cmd|bat)$/i.test(binary))
       throw new DomainError('CLI_PATH', 'Wskaż natywny codex.exe, nie skrypt shellowy.');
@@ -491,12 +529,27 @@ export class ExecCodexRunner implements StructuredRunner {
         detached: process.platform !== 'win32',
         stdio: ['pipe', 'pipe', 'pipe'],
       });
+      const began = Date.now(),
+        elapsed = () => Date.now() - began;
+      const observer = trace ? new ProcessEventObserver(trace, elapsed) : undefined;
+      child.once('spawn', () => {
+        if (trace) trace.spawnMs = elapsed();
+      });
+      child.once('exit', () => {
+        if (trace) trace.exitMs = elapsed();
+      });
       const stdoutChunks: Buffer[] = [],
         stderrChunks: Buffer[] = [];
       let bytes = 0,
+        killRequested = false,
         failure: DomainError | undefined;
       const kill = () => {
-        if (!child.pid) return;
+        if (!child.pid || killRequested) return;
+        killRequested = true;
+        if (trace && trace.killMs === null) {
+          trace.killMs = elapsed();
+          trace.killReason = failure?.code ?? 'UNKNOWN';
+        }
         if (process.platform === 'win32') {
           // taskkill is called only for the PID owned by this adapter; no image-name/global killing.
           spawn(
@@ -515,6 +568,7 @@ export class ExecCodexRunner implements StructuredRunner {
         kill();
       };
       const timer = setTimeout(() => {
+        if (trace) trace.timeoutPhase = traceTimeoutPhase(trace);
         failure = new DomainError(
           'CODEX_TIMEOUT',
           'Codex przekroczył limit czasu. Etap można wznowić.',
@@ -523,6 +577,15 @@ export class ExecCodexRunner implements StructuredRunner {
       }, timeoutMs);
       signal?.addEventListener('abort', abort, { once: true });
       const collect = (chunk: Buffer, err: boolean) => {
+        if (trace) {
+          if (err) {
+            trace.stderrBytes += chunk.length;
+            trace.firstStderrMs ??= elapsed();
+          } else {
+            trace.stdoutBytes += chunk.length;
+            trace.firstStdoutMs ??= elapsed();
+          }
+        }
         bytes += chunk.length;
         if (bytes > (this.options.maxOutputBytes ?? 2 * 1024 * 1024)) {
           failure = new DomainError('CODEX_OUTPUT_LIMIT', 'Przekroczony limit wyjścia Codexa.');
@@ -530,12 +593,24 @@ export class ExecCodexRunner implements StructuredRunner {
           return;
         }
         if (err) stderrChunks.push(chunk);
-        else stdoutChunks.push(chunk);
+        else {
+          stdoutChunks.push(chunk);
+          observer?.stdout(chunk);
+          if (observer?.forbiddenTool && !failure) {
+            failure = new DomainError(
+              'ISOLATION_FAILED',
+              'CLI udostępniło niedozwolone narzędzie; integracja zatrzymana.',
+            );
+            kill();
+          }
+        }
       };
       child.stdout.on('data', (x: Buffer) => collect(x, false));
       child.stderr.on('data', (x: Buffer) => collect(x, true));
       child.stdin.on('error', () => {});
-      child.stdin.end(input);
+      child.stdin.end(input, () => {
+        if (trace) trace.stdinEndMs = elapsed();
+      });
       child.once('error', (e: NodeJS.ErrnoException) => {
         failure = new CodexCallError(
           e.code === 'ENOENT' ? 'CLI_MISSING' : 'CLI_START',
@@ -544,6 +619,13 @@ export class ExecCodexRunner implements StructuredRunner {
         );
       });
       child.once('close', (code, processSignal) => {
+        if (trace) trace.closeMs = elapsed();
+        observer?.finish();
+        if (observer?.forbiddenTool && !failure)
+          failure = new DomainError(
+            'ISOLATION_FAILED',
+            'CLI udostępniło niedozwolone narzędzie; integracja zatrzymana.',
+          );
         clearTimeout(timer);
         signal?.removeEventListener('abort', abort);
         const stdout = Buffer.concat(stdoutChunks).toString('utf8'),

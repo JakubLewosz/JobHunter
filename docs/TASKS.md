@@ -1,5 +1,17 @@
 # Bieżące zadania — 28 października 2026
 
+Kontynuacja CLI: [pomiary i celowane poprawki](reviews/V1_CLI_DIAGNOSIS.md).
+7 rzeczywistych diagnostycznych wywołań zakończyło się poprawnie przy 120 s;
+dawnej przyczyny timeoutów nie ustalono. Dodano metadane procesu/JSONL.
+Natywnie odtworzono i poprawiono parser adresu historii (Nodemailer 10.1.4)
+oraz nadmierne issues dla kolekcji modelu (Zod 4.6.6). Pozostałe 2 alerty
+zachowane jawnie. 32 celowane testy i typecheck PASS; pełny check nowego kodu
+oraz CI/freeze/doctor/wdrożenie/R1 nadal do wykonania. WORKSTATION STOPPED
+na 1f41b55, zero nowych prób; oryginalny termin zgody bez zmian.
+Następny krok: końcowe regresje, commit i pełne bramki, następnie R1;
+R2/R3 dopiero po zaliczeniu R1 i wyłącznie w ważnym oknie istniejącej zgody.
+Poniższy stan opisuje poprzednią dostawę, nie koniec kontynuacji.
+
 Stan końcowy zlecenia V1: **NOT_PRODUCTION_VERIFIED**. Kod
 `1f41b550578751b68811c9628f4b915f2ea51c26` ma pełny Windows check
 1021/12/26, typecheck/build, CI dokładnego SHA i świeży fikcyjny CUA PASS.
