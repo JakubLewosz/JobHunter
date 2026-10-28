@@ -1,5 +1,15 @@
 # Bieżące zadania — 23 października 2026
 
+28.10.2026, dalsza bramka V1: a2cae88 nie wdrożono. Dwa lokalne pełne checki
+miały pojedynczy FAIL limitu HTML; CI miało dwa błędy czasowe CLI. Wszystkie
+pierwsze wyniki zachowane. Zamiast kolejnego niezmienionego powtórzenia
+usunięto powtarzane skanowanie tego samego kontenera i poprzedniej linii w
+parserze; bez zmian semantyki lub granic testów. [Szczegóły](reviews/V1_COMPLETION.md).
+Następny krok: potwierdzić identyczność wyniku i celowane HTML, pełny check/CI
+nowego SHA, świeży CUA, wdrożenie i nowy R1, potem warunkowe R2/R3. WORKSTATION
+nadal zatrzymana na d222655; zero nowych rzeczywistych prób. Nie odnawiać
+absolutnego terminu zapisanej zgody.
+
 28.10.2026, dalszy odbiór V1: d222655 przeszedł pełny check/CI i fikcyjny CUA,
 a rzeczywisty R1 zakończył godzinę z guardem i zachowaną historią. R2 zatrzymał
 się bez nowych prób: ocena całej biblioteki przed odfiltrowaniem zamkniętego

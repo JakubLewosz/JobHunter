@@ -1,5 +1,27 @@
 # Domknięcie V1 — 28.10.2026
 
+Kolejne bramki a2cae88: dwa pełne lokalne checki zakończyły się jedną porażką
+tego samego limitu parsera HTML (1518 i 1809 ms przy niezmienionej granicy
+1000 ms). Pozostałe 1019 testów backendu przeszło w obu próbach. Izolowany
+ten sam przypadek: 489 ms PASS. Pierwsze CI miało dwa znane błędy czasu CLI
+(timeout 30 s oraz wymuszone zakończenie podczas anulowania); logi i artefakt
+zachowano. Jedno ponowienie CI tego samego SHA uruchomiono, bez nowych
+uprawnień. Wyników nie uznano za zieloną bramkę i a2cae88 nie wdrożono.
+
+Zamiast trzeciego niezmienionego lokalnego powtórzenia zdiagnozowano koszt
+parsera: dzieci wspólnego kontenera były skanowane dla każdego adresu, a
+pozycja poprzedniej niepustej linii wyszukiwana liniowo dla każdej linii.
+Niezmienny DOM pozwala zapisać nagłówki raz dla rodzica; pozycję linii znamy
+już podczas tworzenia listy. Nie zmienia to etykiet, tekstu, kompletności,
+ograniczeń parsera ani wersji kontraktu. Benchmark 2000 adresów przed i po
+pierwszym cache miał identyczny SHA-256 całego wyniku; 27/27 testów HTML PASS,
+przypadek 2000 adresów 143 ms. Granica 1000 ms i wszystkie asercje pozostają.
+Po końcowej poprawce pozycji linii: cały wynik nadal identyczny, zimny pomiar
+145 ms wobec 485 ms przed zmianą; 27/27 HTML PASS, przypadek graniczny 133 ms.
+Oba problematyczne przypadki CLI w izolacji: PASS (4667 i 2085 ms), bez zmiany
+timeoutu lub grace. Pełne bramki nowego kodu wymagają osobnego potwierdzenia.
+Pierwotny deadline i zatrzymana historia są zachowane.
+
 Uzupełnienie po rzeczywistym odbiorze d222655: pełny Windows check po jednym
 powtórzeniu PASS (1019 backend, 12 Stop, 26 UI); CI dokładnego SHA PASS.
 Pierwszy check miał trzy porażki czasowe, zachowane razem z izolowanymi

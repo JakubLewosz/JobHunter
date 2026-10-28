@@ -59,7 +59,10 @@ export function addressContexts(text: string): AddressContext[] {
     return [{ email: distinct[0], text: value.slice(0, 2000), complete: value.length <= 2000 }];
   }
   const lines = text.split(/\n|;|(?<=[.!?])\s+/u);
-  const nonempty = lines.map((line, index) => ({ line, index })).filter((x) => x.line.trim());
+  const nonempty = lines
+    .map((line, index) => ({ line, index }))
+    .filter((x) => x.line.trim())
+    .map((value, position) => ({ ...value, position }));
   const addressed = nonempty.filter((x) => emails(x.line).length);
   const labelPair = (label: string, email: string) =>
     (/kontakt(?: ogólny)?|contact|general/iu.test(label) &&
@@ -77,7 +80,7 @@ export function addressContexts(text: string): AddressContext[] {
     addressed.length > 1 &&
     nonempty.at(-1)?.index === addressed.at(-1)?.index &&
     addressed.every((x) => {
-      const previous = nonempty[nonempty.indexOf(x) - 1];
+      const previous = nonempty[x.position - 1];
       const found = emails(x.line);
       return (
         found.length === 1 &&
@@ -152,7 +155,7 @@ export function parsePublicHTML(html: string) {
   texts.set(dom, rendered);
   const fullText = normalize(rendered),
     text = fullText.slice(0, 100000);
-  const summaries = new WeakMap<object, { value: string; distinct: number }>();
+  const summaries = new WeakMap<object, { value: string; distinct: number; headings?: Node[] }>();
   const contexts: AddressContext[] = [];
   const groupedContexts = new Map<string, Map<string, AddressContext[]>>();
   const unlabeled = new Map<string, boolean>(),
@@ -175,9 +178,11 @@ export function parsePublicHTML(html: string) {
         // purpose. Do not leak an unrelated sibling's label into it.
         if (distinct > 1 && hasPurpose(chosen)) break;
         if (distinct > 1 && 'children' in parent) {
-          const headings = parent.children.filter(
+          // The DOM is immutable here. A large shared container needs one scan,
+          // rather than scanning all its children again for every address.
+          const headings = (summary.headings ??= parent.children.filter(
             (child) => 'name' in child && /^(?:h[1-6]|dt|th)$/.test(child.name),
-          );
+          ));
           if (headings.length === 1) {
             chosen = (texts.get(headings[0]) ?? '') + '\n' + chosen;
             break;

@@ -1,5 +1,17 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+28.10.2026, a2cae88: pełny Windows check dwa razy FAIL wyłącznie HTML
+2000 adresów (1518/1809 ms przy granicy 1000 ms); pozostałe 1019 backend PASS.
+Izolowany dokładnie ten przypadek: 489 ms PASS. CI próba 1: dwa FAIL CLI
+(30 s timeout i anulowanie); pełny log/artefakt zachowane. Jedna powtórka CI
+uruchomiona; nie jest traktowana jako zaliczona bramka. Bez wdrożenia a2cae88.
+Zdiagnozowano powtarzane skany parsera. Po cache nagłówków 27/27 HTML PASS,
+przypadek 2000 adresów 143 ms, identyczny hash całego wyniku benchmarku.
+Po końcowej optymalizacji pozycji linii: wynik nadal identyczny, zimny pomiar
+145 ms wobec 485 ms przed zmianą; 27/27 HTML PASS, przypadek graniczny 133 ms.
+Dwa problematyczne CLI w izolacji PASS (4667/2085 ms) z tymi samymi granicami.
+Pełny check/CI nowego SHA pozostają do weryfikacji; nie przenosić wyników.
+
 28.10.2026, odbiór d222655: Windows/Node24.19.0 pełny check 1019/12/26 PASS
 po zachowanym pierwszym FAIL trzech testów czasowych; izolowane te same testy
 i granice PASS. CI dokładnego SHA PASS; rzeczywisty fikcyjny host CUA A/B/C
