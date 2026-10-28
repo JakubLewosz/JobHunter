@@ -25,12 +25,34 @@ export const nightflowPlanSchema = z
     binding: z.string().length(64),
     researchHours: z.number().int().min(1).max(24),
     afterResearchHours: z.number().min(1).max(48),
+    // Optional absolute user boundary; a later Start cannot renew it.
+    expiresAt: z.iso.datetime().optional(),
     discovery: z.boolean(),
     exhaustion: z.enum(['FINISH', 'WAIT_DEADLINE']),
     selection: z.literal('VERIFIED_FIT_THEN_CHANNEL_THEN_AGE'),
     maxItems: z.number().int().min(1).max(200),
     // Optional closed acceptance scope. Omission preserves the continuous rule-based plan.
     draftIds: z.array(z.string().min(1)).min(1).max(200).optional(),
+    recipientScope: z
+      .array(
+        z
+          .object({
+            draftId: z.string().min(1),
+            companyId: z.string().min(1),
+            email: z.email(),
+            kind: z.enum(['RECRUITMENT', 'GENERAL', 'SALES', 'UNKNOWN']),
+            intent: z.enum([
+              'APPLICATION',
+              'OPEN_APPLICATION',
+              'CONDITIONS_INQUIRY',
+              'COMPANY_INQUIRY',
+            ]),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(200)
+      .optional(),
     limits: z
       .object({
         daily: z.number().int().positive().nullable(),
@@ -64,6 +86,14 @@ export const nightflowPlanSchema = z
         code: 'custom',
         message: 'Closed existing-draft scope cannot discover substitutes',
       });
+    if (
+      p.recipientScope &&
+      (!p.draftIds ||
+        p.recipientScope.length !== p.draftIds.length ||
+        new Set(p.recipientScope.map((r) => r.draftId)).size !== p.draftIds.length ||
+        p.recipientScope.some((r) => !p.draftIds!.includes(r.draftId)))
+    )
+      ctx.addIssue({ code: 'custom', message: 'Recipient scope must match the closed draft list' });
     if ((p.limits.daily === null || p.limits.session === null) && !p.limits.unlimitedExplicit)
       ctx.addIssue({ code: 'custom', message: 'Explicit unlimited choice required' });
     if (p.window.start === p.window.end)
@@ -138,9 +168,21 @@ export class NightflowCoordinator {
   savePlan(raw: unknown, confirmed: boolean) {
     if (this.busy || !this.service.state().stopped)
       throw new DomainError('BUSY', 'Zatrzymaj pracę.');
-    const plan = nightflowPlanSchema.parse(raw);
+    let plan = nightflowPlanSchema.parse(raw);
     if (!confirmed)
       throw new DomainError('PLAN_APPROVAL_REQUIRED', 'Potwierdź reguły przyszłego wyboru.');
+    if (plan.draftIds) {
+      const recipients = plan.draftIds.map((id) => this.service.nightflowRecipient(id));
+      if (
+        plan.recipientScope &&
+        plan.draftIds.some((id) => !this.service.matchesNightflowRecipient(id, plan.recipientScope))
+      )
+        throw new DomainError(
+          'PLAN_SCOPE_CHANGED',
+          'Odbiorcy nie odpowiadają zatwierdzanej liście.',
+        );
+      plan = nightflowPlanSchema.parse({ ...plan, recipientScope: recipients });
+    }
     this.validatePlan(plan);
     const content = JSON.stringify(plan),
       digest = hash(content);
@@ -157,6 +199,13 @@ export class NightflowCoordinator {
     return { id: plan.id, version: plan.version, hash: digest };
   }
   private validatePlan(plan: NightflowPlan) {
+    if (plan.draftIds && !plan.recipientScope)
+      throw new DomainError(
+        'PLAN_SCOPE_REQUIRED',
+        'Starsza lista wymaga nowej zgody wiążącej odbiorców.',
+      );
+    if (plan.expiresAt && plan.expiresAt <= this.now())
+      throw new DomainError('EXECUTION_DEADLINE', 'Absolutny termin zgody minął.');
     const p = this.service.policyConfig();
     if (
       plan.installation !== this.options.installation ||
@@ -285,6 +334,24 @@ export class NightflowCoordinator {
     )
       throw new DomainError('PLAN_CHANGED', 'Zgoda nie dotyczy bieżącego planu.');
     this.validatePlan(plan);
+    if (this.row().batch_id && plan.recipientScope) {
+      const items = this.store.all(
+        'SELECT * FROM auto_batch_items WHERE batch_id=?',
+        this.row().batch_id,
+      );
+      if (
+        items.some((item) => {
+          const recipient = plan.recipientScope!.find((r) => r.draftId === item.draft_id);
+          return (
+            !recipient ||
+            recipient.companyId !== item.company_id ||
+            recipient.email !== item.recipient ||
+            !this.service.matchesNightflowRecipient(item.draft_id, plan.recipientScope)
+          );
+        })
+      )
+        throw new DomainError('PLAN_SCOPE_CHANGED', 'Odbiorca partii wykracza poza zgodę.');
+    }
     if (this.now() >= this.row().end_at)
       throw new DomainError('EXECUTION_DEADLINE', 'Koniec całego zadania.');
   }
@@ -355,7 +422,12 @@ export class NightflowCoordinator {
           plan.version,
           generation,
           deadline,
-          new Date(Date.parse(deadline) + plan.afterResearchHours * 3600000).toISOString(),
+          new Date(
+            Math.min(
+              Date.parse(deadline) + plan.afterResearchHours * 3600000,
+              plan.expiresAt ? Date.parse(plan.expiresAt) : Infinity,
+            ),
+          ).toISOString(),
           JSON.stringify(runningBuildIdentity),
           this.now(),
           this.now(),
@@ -381,7 +453,8 @@ export class NightflowCoordinator {
             selectNightflowRefreshQueue(
               this.service
                 .nightflowCandidates()
-                .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id)),
+                .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
+                .filter((c) => this.service.matchesNightflowRecipient(c.d.id, plan.recipientScope)),
               plan.researchHours,
               (draftId) => this.store.get<Row>(`nightflowRefreshAttempt:${draftId}`, {}).at ?? '',
             );
@@ -413,19 +486,21 @@ export class NightflowCoordinator {
               at: this.now(),
               jobId: this.jobId,
             });
-            const result = await this.service.refreshLibraryDrafts(
-              { draftIds: [draftId] },
-              {
-                signal: AbortSignal.any([
-                  this.controller.signal,
-                  AbortSignal.timeout(
-                    Math.max(1, Date.parse(refreshDeadline) - Date.parse(this.now())),
-                  ),
-                ]),
-                deadline: refreshDeadline,
-                guard: () => this.assert(plan, generation),
-              },
-            );
+            const result = !this.service.matchesNightflowRecipient(draftId, plan.recipientScope)
+              ? { results: [{ draftId, code: 'PLAN_SCOPE_CHANGED' }], interrupted: undefined }
+              : await this.service.refreshLibraryDrafts(
+                  { draftIds: [draftId] },
+                  {
+                    signal: AbortSignal.any([
+                      this.controller.signal,
+                      AbortSignal.timeout(
+                        Math.max(1, Date.parse(refreshDeadline) - Date.parse(this.now())),
+                      ),
+                    ]),
+                    deadline: refreshDeadline,
+                    guard: () => this.assert(plan, generation),
+                  },
+                );
             this.assert(plan, generation);
             result.results.forEach((r) => {
               refreshed.add(r.draftId);
@@ -574,6 +649,7 @@ export class NightflowCoordinator {
         const candidates = this.service
           .nightflowCandidates()
           .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
+          .filter((c) => this.service.matchesNightflowRecipient(c.d.id, plan.recipientScope))
           .filter((c) => !c.issues.length && (checked.has(c.d.id) || researched.has(c.d.id)))
           .sort(compareNightflowCandidates);
         const seen = new Set<string>();

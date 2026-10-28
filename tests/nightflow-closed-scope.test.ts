@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setup } from './auto-fixture.js';
 import { NightflowCoordinator, nightflowPlanSchema } from '../apps/server/src/nightflow.js';
+import { hash } from '../apps/server/src/util.js';
 
 async function fixture(t: any, empty = false, boundary?: (phase: string) => Promise<void>) {
   const f = await setup(t, false, true, false, true);
@@ -166,6 +167,163 @@ test('closed nightflow scope: explicit resume rejects a persisted foreign queue 
   const result = await restarted.start(f.plan.id, stopped.jobId);
   assert.equal(result.reason, 'PLAN_SCOPE_CHANGED', JSON.stringify(result));
   assert.equal(f.reader.calls, before);
+  assert.equal(f.gateway.posts.length, 0);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+});
+
+test('closed nightflow scope: renewal cannot replace an approved recipient on the same draft', async (t) => {
+  const f = await fixture(t);
+  f.coordinator.savePlan(f.plan, true);
+  const originalRecipients = f.allowed.map((d) => d.email);
+  const read = f.reader.read.bind(f.reader);
+  f.reader.read = async (url, signal) => {
+    const source = await read(url, signal);
+    source.text = source.text.replaceAll('hr@fixture4.', 'jobs@fixture4.');
+    source.fragment = source.text;
+    source.content_hash = hash(source.text + url);
+    return source;
+  };
+  const run = f.runner.run.bind(f.runner);
+  f.runner.run = async (prompt, schema, options) => {
+    const result = await run(prompt, schema, options);
+    if (prompt.includes('Wydobądź firmę')) {
+      const value = result.value as any;
+      value.contact.email = value.contact.email.replace('hr@fixture4.', 'jobs@fixture4.');
+      value.contact.proof.quote = value.contact.proof.quote.replace(
+        'hr@fixture4.',
+        'jobs@fixture4.',
+      );
+      result.value = schema.parse(value);
+    }
+    return result;
+  };
+  const result = await f.coordinator.start(f.plan.id);
+  assert.ok(
+    f.gateway.posts.every((p) => originalRecipients.includes(p.recipient)),
+    JSON.stringify({ result, recipients: f.gateway.posts.map((p) => p.recipient) }),
+  );
+  assert.ok(f.gateway.posts.some((p) => p.recipient === 'hr@fixture5.example.test'));
+});
+
+test('closed nightflow scope: native derivation rejects a changed address on an approved draft', async (t) => {
+  const f = await fixture(t);
+  f.coordinator.savePlan(f.plan, true);
+  f.store.exec(
+    "INSERT INTO nightflow_jobs (id,plan_id,plan_version,state,generation,deadline,end_at,code_identity,started_at,updated_at) VALUES (?,?,1,'CLOSING','fixture',?,?,?, ?,?)",
+    'scope-derivation',
+    f.plan.id,
+    f.service.now(),
+    f.service.now(),
+    '{}',
+    f.service.now(),
+    f.service.now(),
+  );
+  const d = f.allowed[0];
+  f.store.exec(
+    'UPDATE contacts SET email=? WHERE id=?',
+    'replacement@fixture4.example.test',
+    d.contact_id,
+  );
+  assert.throws(
+    () => f.service.deriveNightflowBatch('scope-derivation', [{ id: d.id, version: d.version }]),
+    { code: 'PLAN_SCOPE_CHANGED' },
+  );
+  assert.equal(f.store.one('SELECT count(*) n FROM auto_batches')!.n, 0);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+});
+
+test('closed nightflow scope: persisted recipients survive Stop and restart without recapture', async (t) => {
+  let f!: Awaited<ReturnType<typeof fixture>>;
+  f = await fixture(t, false, async (phase) => {
+    if (phase === 'REFRESHING') f.coordinator.stop();
+  });
+  f.coordinator.savePlan(f.plan, true);
+  const original = f.store.one(
+    'SELECT content FROM nightflow_plans WHERE id=?',
+    f.plan.id,
+  )!.content;
+  const stopped = await f.coordinator.start(f.plan.id);
+  f.store.exec(
+    'UPDATE contacts SET email=? WHERE id=?',
+    'replacement@fixture4.example.test',
+    f.allowed[0].contact_id,
+  );
+  const restarted = new NightflowCoordinator(f.store, f.service, {
+    installation: 'fictional-closed-scope',
+    clock: f.options.clock,
+    wait: async (_ms, signal) => {
+      signal.throwIfAborted();
+      f.advance();
+    },
+  });
+  const result = await restarted.start(f.plan.id, stopped.jobId);
+  assert.equal(result.state, 'COMPLETED', JSON.stringify(result));
+  assert.ok(f.gateway.posts.every((p) => p.recipient !== 'replacement@fixture4.example.test'));
+  assert.equal(
+    f.store.one('SELECT content FROM nightflow_plans WHERE id=?', f.plan.id)!.content,
+    original,
+  );
+});
+
+test('closed nightflow scope: changed batch recipient at dispatch is rejected before reservation', async (t) => {
+  let f!: Awaited<ReturnType<typeof fixture>>;
+  f = await fixture(t, false, async (phase) => {
+    if (phase === 'SENDING')
+      f.store.exec('UPDATE auto_batch_items SET recipient=?', 'outsider@fictional.example.test');
+  });
+  f.coordinator.savePlan(f.plan, true);
+  const result = await f.coordinator.start(f.plan.id);
+  assert.equal(result.reason, 'PLAN_SCOPE_CHANGED', JSON.stringify(result));
+  assert.equal(f.gateway.posts.length, 0);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+});
+
+test('closed nightflow scope: legacy named approval without frozen recipients cannot silently upgrade', async (t) => {
+  const f = await fixture(t);
+  f.coordinator.savePlan(f.plan, true);
+  const { recipientScope: _removed, ...legacy } = JSON.parse(
+    f.store.one('SELECT content FROM nightflow_plans')!.content,
+  );
+  const content = JSON.stringify(legacy),
+    digest = hash(content);
+  f.store.exec(
+    'UPDATE nightflow_plans SET content=?,content_hash=?,approved_hash=?',
+    content,
+    digest,
+    digest,
+  );
+  const before = f.reader.calls;
+  await assert.rejects(f.coordinator.start(f.plan.id), { code: 'PLAN_SCOPE_REQUIRED' });
+  assert.equal(f.reader.calls, before);
+  assert.equal(f.gateway.posts.length, 0);
+  assert.equal(f.store.one('SELECT content FROM nightflow_plans')!.content, content);
+});
+
+test('nightflow: absolute approval expiry cannot be renewed by a later Start or restart', async (t) => {
+  const f = await fixture(t),
+    expiresAt = new Date(Date.parse(f.service.now()) + 60000).toISOString();
+  const plan = { ...f.plan, expiresAt };
+  f.coordinator.savePlan(plan, true);
+  f.advance(61000);
+  const restarted = new NightflowCoordinator(f.store, f.service, {
+    installation: 'fictional-closed-scope',
+    clock: f.options.clock,
+  });
+  await assert.rejects(restarted.start(plan.id), { code: 'EXECUTION_DEADLINE' });
+  assert.equal(f.store.one('SELECT count(*) n FROM nightflow_jobs')!.n, 0);
+  assert.equal(f.gateway.posts.length, 0);
+});
+
+test('nightflow: absolute end bounds the saved job and revokes dispatch during an await', async (t) => {
+  let f!: Awaited<ReturnType<typeof fixture>>;
+  f = await fixture(t, false, async (phase) => {
+    if (phase === 'SENDING') f.advance(61000);
+  });
+  const expiresAt = new Date(Date.parse(f.service.now()) + 60000).toISOString();
+  f.coordinator.savePlan({ ...f.plan, expiresAt }, true);
+  const result = await f.coordinator.start(f.plan.id);
+  assert.equal(result.reason, 'EXECUTION_DEADLINE', JSON.stringify(result));
+  assert.equal(f.store.one('SELECT end_at FROM nightflow_jobs')!.end_at, expiresAt);
   assert.equal(f.gateway.posts.length, 0);
   assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
 });

@@ -1,5 +1,12 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+28.10.2026, domknięcie V1: 42/42 Windows/Node24.19.0 — plan, kolejka,
+zamknięty zakres i absolutne wygaśnięcie. Zachowano pierwszy FAIL podmiany
+adresu podczas odnowienia na poprzednim kodzie. Brak nowych rzeczywistych
+nadań; R1 starego wydania zatrzymano i nie zaliczono. Pełne bramki nowego
+kodu oraz późniejszy odbiór zapisuje prywatna dostawa; nie są jeszcze PASS.
+[Dokładny zakres](reviews/V1_COMPLETION.md).
+
 28.10.2026: Windows/Node24.19.0, zamknięty plan R2/R3: celowane **63/63 PASS**,
 w tym pięć nowych regresji listy. Przed implementacją plan odrzucał draftIds
 (trzy EXPECTED_FAIL); pierwsze poszerzenie testu miało błędny punkt wstrzyknięcia

@@ -1,5 +1,15 @@
 # Bieżące zadania — 23 października 2026
 
+28.10.2026, zlecenie domknięcia V1: odtworzono podmianę adresu podczas
+odnowienia tego samego szkicu zamkniętego planu. Poprawka przypina odbiorcę
+oraz opcjonalny absolutny termin zgody; 42/42 regresje Windows PASS.
+[Zakres i stan](reviews/V1_COMPLETION.md). Pierwszy krótki R1 starego kodu
+zatrzymany, NIE zaliczony; brak Gmaila i nowych nadań. Trwałe wyłączenie
+użytkownika zapisano natywnie po backupie/restore. Następny krok: pełny check,
+CI i rzeczywisty CUA dokładnego nowego wydania, kontrolowane wdrożenie i nowy
+godzinny R1, potem warunkowe R2/R3 w granicach prywatnej zgody. Termin zadania
+nie odnawia się. Checkpoint: Downloads/JobHunter-V1-COMPLETION-20261028.
+
 28.10.2026: przygotowanie ograniczonego R2/R3 opisuje
 [R2_R3_ACCEPTANCE](R2_R3_ACCEPTANCE.md). Istniejąca suppression użytkownika
 blokuje selekcję/partię/dispatch i przeżywa restart; NEEDS_REVIEW nie zastępuje

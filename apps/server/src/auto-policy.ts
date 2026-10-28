@@ -262,6 +262,35 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       ],
     }));
   }
+  nightflowRecipient(draftId: string) {
+    const d = this.draftRows().find((d) => d.id === draftId);
+    if (!d) throw new DomainError('NOT_FOUND', 'Brak szkicu zamkniętego planu.');
+    const contact = this.store.one('SELECT kind FROM contacts WHERE id=?', d.contact_id)!;
+    const analysis = JSON.parse(
+      this.store.one(
+        'SELECT details FROM research_qualifications WHERE opportunity_id=?',
+        d.opportunity_id,
+      )!.details,
+    );
+    return {
+      draftId,
+      companyId: d.company_id as string,
+      email: d.email as string,
+      kind: contact.kind as string,
+      intent: contactEligibility(analysis, this.sourcesForDraft(d)).intent,
+    };
+  }
+  matchesNightflowRecipient(draftId: string, scope: Row[] | undefined) {
+    if (!scope) return true;
+    const approved = scope.find((r) => r.draftId === draftId);
+    if (!approved) return false;
+    try {
+      const current = this.nightflowRecipient(draftId);
+      return Object.entries(current).every(([key, value]) => approved[key] === value);
+    } catch {
+      return false;
+    }
+  }
   deriveNightflowBatch(jobId: string, drafts: { id: string; version: number }[]) {
     const job = this.store.one('SELECT * FROM nightflow_jobs WHERE id=?', jobId);
     const plan = job && this.store.one('SELECT * FROM nightflow_plans WHERE id=?', job.plan_id);
@@ -277,7 +306,13 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
       throw new DomainError('PLAN_CHANGED', 'Materiały planu się zmieniły.');
     if (
       drafts.length > content.maxItems ||
-      (content.draftIds && drafts.some((d) => !content.draftIds.includes(d.id)))
+      (content.draftIds &&
+        (!content.recipientScope ||
+          drafts.some(
+            (d) =>
+              !content.draftIds.includes(d.id) ||
+              !this.matchesNightflowRecipient(d.id, content.recipientScope),
+          )))
     )
       throw new DomainError(
         'PLAN_SCOPE_CHANGED',
