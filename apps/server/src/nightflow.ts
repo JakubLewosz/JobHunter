@@ -29,6 +29,8 @@ export const nightflowPlanSchema = z
     exhaustion: z.enum(['FINISH', 'WAIT_DEADLINE']),
     selection: z.literal('VERIFIED_FIT_THEN_CHANNEL_THEN_AGE'),
     maxItems: z.number().int().min(1).max(200),
+    // Optional closed acceptance scope. Omission preserves the continuous rule-based plan.
+    draftIds: z.array(z.string().min(1)).min(1).max(200).optional(),
     limits: z
       .object({
         daily: z.number().int().positive().nullable(),
@@ -55,6 +57,13 @@ export const nightflowPlanSchema = z
   })
   .strict()
   .superRefine((p, ctx) => {
+    if (p.draftIds && new Set(p.draftIds).size !== p.draftIds.length)
+      ctx.addIssue({ code: 'custom', message: 'Closed draft scope must be unique' });
+    if (p.draftIds && p.discovery)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Closed existing-draft scope cannot discover substitutes',
+      });
     if ((p.limits.daily === null || p.limits.session === null) && !p.limits.unlimitedExplicit)
       ctx.addIssue({ code: 'custom', message: 'Explicit unlimited choice required' });
     if (p.window.start === p.window.end)
@@ -370,9 +379,16 @@ export class NightflowCoordinator {
           const refreshQueue: string[] =
             checkpoint.refreshQueue ??
             selectNightflowRefreshQueue(
-              this.service.nightflowCandidates(),
+              this.service
+                .nightflowCandidates()
+                .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id)),
               plan.researchHours,
               (draftId) => this.store.get<Row>(`nightflowRefreshAttempt:${draftId}`, {}).at ?? '',
+            );
+          if (plan.draftIds && refreshQueue.some((id) => !plan.draftIds!.includes(id)))
+            throw new DomainError(
+              'PLAN_SCOPE_CHANGED',
+              'Kolejka nie należy do zamkniętego zakresu.',
             );
           const refreshDeadline: string =
             checkpoint.refreshDeadline ??
@@ -557,6 +573,7 @@ export class NightflowCoordinator {
         );
         const candidates = this.service
           .nightflowCandidates()
+          .filter((c) => !plan.draftIds || plan.draftIds.includes(c.d.id))
           .filter((c) => !c.issues.length && (checked.has(c.d.id) || researched.has(c.d.id)))
           .sort(compareNightflowCandidates);
         const seen = new Set<string>();

@@ -1,5 +1,18 @@
 # Wyniki i zakres weryfikacji — 23 października 2026
 
+28.10.2026: Windows/Node24.19.0, zamknięty plan R2/R3: celowane **63/63 PASS**,
+w tym pięć nowych regresji listy. Przed implementacją plan odrzucał draftIds
+(trzy EXPECTED_FAIL); pierwsze poszerzenie testu miało błędny punkt wstrzyknięcia
+checkpointu, zachowany FAIL poprawiono na rzeczywisty Stop/restart/Resume.
+Nowa lista ogranicza kolejkę/wybór, nie dodaje prawa wysyłki. Osobny test
+istniejącego wyłączenia użytkownika na dokładnym zamrożonym starszym dist:
+pozytywny materiał bez HOLD przechodzi, trwały HOLD blokuje selekcję, partię
+(również zatwierdzoną przed wyłączeniem), rezerwację i akcję; inna firma działa.
+To pamięciowy fikcyjny transport, nie rzeczywisty Gmail lub host CUA.
+Pełny check i CI nowego dokładnego SHA są osobnymi wynikami w prywatnej
+dostawie; starszego R1 nie podpisywać jako odbioru tej poprawki. Zero zmian
+WORKSTATION, odczytu korespondencji, rzeczywistych Startów lub wysyłek.
+
 27.10.2026: realny R1 3541725 trwał 4005 s, z 8 CHECKED odnowienia i 11 nowymi
 szkicami, potem globalny błąd routingu CLI. To nie jest zaliczony pełny R1.
 3/3 nowe reprodukcje pokazują NOT_STOPPED po obsłużonym błędzie providera

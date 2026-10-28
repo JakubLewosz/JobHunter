@@ -275,6 +275,14 @@ export class AutoPolicyJobHunter extends GmailJobHunter {
     const content = JSON.parse(plan.content);
     if (content.binding !== this.nightflowBinding())
       throw new DomainError('PLAN_CHANGED', 'Materiały planu się zmieniły.');
+    if (
+      drafts.length > content.maxItems ||
+      (content.draftIds && drafts.some((d) => !content.draftIds.includes(d.id)))
+    )
+      throw new DomainError(
+        'PLAN_SCOPE_CHANGED',
+        'Partia wykracza poza zatwierdzony zakres planu.',
+      );
     return this.store.atomic(() => {
       const batch = this.prepareBatch({ drafts });
       this.store.exec(

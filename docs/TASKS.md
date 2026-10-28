@@ -1,5 +1,19 @@
 # Bieżące zadania — 23 października 2026
 
+28.10.2026: przygotowanie ograniczonego R2/R3 opisuje
+[R2_R3_ACCEPTANCE](R2_R3_ACCEPTANCE.md). Istniejąca suppression użytkownika
+blokuje selekcję/partię/dispatch i przeżywa restart; NEEDS_REVIEW nie zastępuje
+takiego wyłączenia. Odtworzono osobny brak zamkniętej listy w planie Nightflow:
+maxItems nie ogranicza tożsamości kandydatów. Opcjonalne draftIds ogranicza
+odnowienie i wybór; natywna derywacja ponownie egzekwuje listę/limit. Bez nowego
+koordynatora, zmian generatora, migracji lub domyślnego limitu AUTO.
+Celowane 63/63 Windows PASS; początkowe niezaliczone próby zachowane. Odebrać
+pełny check/CI dokładnego SHA i prywatną dostawę. Nowy kod nie dziedziczy R1
+starszego wydania i nie jest wdrożony. WORKSTATION pozostaje bez zapisu, Gmaila,
+Startu i nadania. Przy przerwaniu: prywatny checkpoint w Downloads/
+JobHunter-R2-R3-PREPARATION-20261028; dokończyć raport/materials/HOLD proof i ZIP.
+Jedna przyszła decyzja musi objąć wymagany nowy odbiór wydania przed R2/R3.
+
 27.10.2026: zatwierdzony R1 3541725 wykonał bibliotekę (15 wyników, 8 CHECKED)
 i ponad godzinę discovery, ale CLI zakończył SEARCH kodem 1: workspace routing
 discovery failed. Dane chronione i poczta zachowane. Brak STOPPED przy normalnym
