@@ -1,4 +1,36 @@
-# Uruchamianie przez Codex — stan i wymaganie z 18.10.2026
+# Uruchamianie przez Codex — stan 28.10.2026
+
+Aktualny wdrożony kod to `1f41b550578751b68811c9628f4b915f2ea51c26`,
+build `9580da4a-7cec-48ab-91ec-dbed71599bb6`. WORKSTATION STOPPED,
+bez ownera i prawa wysyłki. Pełny Windows check/CI i fikcyjny CUA PASS;
+rzeczywisty odbiór NIEZALICZONY z powodu powtarzającego się CODEX_TIMEOUT
+R1. R2/R3 na tej wersji NOT_RUN. [Fakty](reviews/V1_FINAL_RESULT.md).
+Starsze stwierdzenia o niewdrożonym kodzie poniżej opisują wcześniejsze daty.
+
+Jedna instrukcja dla zwykłego zadania w Codexie, po usunięciu obecnej blokady
+i z ważną zgodą na konkretny zakres:
+
+> Odczytaj AGENTS.md, bieżący stan z docs/TASKS.md i prywatny checkpoint.
+> Sprawdź istniejącą instalację, załadowany build, zakończenie operacji,
+> historię i zakres aktualnej zgody; nie buduj w aktywnym senderze.
+> Zachowaj profil/CV/nadawcę, blokady, liczniki i oryginalny deadline.
+> Wykonaj wymagany R1 bez Gmaila. Po jego prawidłowym zakończeniu odnów
+> dopuszczone materiały natywnie, sprawdź konto i celowaną historię,
+> zapisz zatwierdzoną politykę i dokładny zakres planu przez aplikację.
+> Uruchom zatrzymanego właściciela przez runStoppedNightflowOwner w Node24;
+> w aktywnym Computer Use zaimportuj lekki scripts/browser-executor.mjs,
+> użyj CodexNightflowAdapter z tą samą kartą/instancją: świeży probe/connect,
+> jeden Start, następnie segmenty aż do wyniku. Nie uruchamiaj backendu w VM.
+> Wykonuj tylko zgodne pierwsze kontakty, bez indywidualnej ponownej zgody,
+> przez istniejący GMAIL_BROWSER. Po niepewnym ACK nie ponawiaj Startu ani
+> kliknięcia. Zakończ Stop, odwołaj prawo, potwierdź operacje/guard/cleanup
+> i pokaż prawdziwe wyniki. Wygasła zgoda lub brak gotowości oznacza brak Startu.
+
+Zweryfikowano tę ścieżkę natywną na fikcyjnej stronie (odnowienie, partia,
+akcje, restart), a wejście research-only na rzeczywistych danych.
+Pełny rzeczywisty ciąg R1→R2→R3 z Gmailem nie przeszedł odbioru; instrukcja
+nie nadaje nowej zgody i nie uruchamia go automatycznie. Stare prywatne helpery
+tej dostawy nie są uniwersalnym launcherem ani odnawialnym upoważnieniem.
 
 26/27.10.2026: bieżące uzupełnienie [R1_RESEARCH_ENTRY](reviews/R1_RESEARCH_ENTRY.md)
 opisuje niezaliczony krótki R1 a7652a3 i poprawkę operatora: biblioteka przed

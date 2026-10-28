@@ -1,4 +1,31 @@
-# Wyniki i zakres weryfikacji — 23 października 2026
+# Wyniki i zakres weryfikacji — 28 października 2026
+
+Końcowy kod: `1f41b550578751b68811c9628f4b915f2ea51c26`.
+Windows, Node v24.19.0, rzeczywisty `npm run check` 28.10,
+13:59:18.693–14:26:55.324 UTC, 1 656 631 ms: **PASS**.
+1021/1021 backend, 12/12 serial Stop, 26/26 UI, typecheck i build PASS.
+CI tego SHA: [run 40701484865](https://github.com/JakubLewosz/JobHunter/actions/runs/40701484865),
+attempt 1 SUCCESS. To pierwszy pełny check końcowego 1f41b55;
+wcześniejsze porażki a2cae88/d222655 pozostają poniżej i w dostawie.
+
+Nowy rzeczywisty CUA na lokalnej stronie fikcyjnej, ten sam zamrożony build:
+A poprawne → B STALE_EVIDENCE → C poprawne; natywne odnowienie/mapowanie,
+partia, dwie fikcyjne akcje. Restart tej samej historii, fikcyjny następny
+dzień: NO_READY_ITEMS, zero nowych akcji. Cleanup PASS. To nie był Gmail.
+
+Kontrolowane wdrożenie, spójny backup SQLite z WAL i odtworzenie 62 tabel,
+doctor oraz zgodność załadowanych fingerprintów PASS. Końcowy audyt zachowania
+starych rekordów, CV, deduplikacji i blokad PASS; końcowy spójny backup PASS.
+
+Rzeczywisty R1 1f41b55: **NOT_ACCEPTED**. Pierwsza próba 258 s:
+SEMANTIC_REVIEW 120670 ms. Druga próba 259 s: EXTRACT 120426 ms.
+Po udanym małym probe jedno natywne Resume tej samej sesji, bez odnowienia
+jej deadline: biblioteka 12/12 CHECKED, następnie SEARCH 120396 ms i Stop.
+1283 s od oryginalnego początku obejmuje przerwę; nie jest godziną pracy.
+Zakończenie operacji, guard, chronione dane/poczta i cleanup PASS;
+Gmail niewłączony. R2/R3 na końcowym wydaniu **NOT_RUN**.
+Zero nowych prób, nadań i stanów niepewnych. **NOT_PRODUCTION_VERIFIED**.
+[Pełny zakres](reviews/V1_FINAL_RESULT.md). Poniżej historyczne wyniki.
 
 28.10.2026: c6791f6 Windows/Node24.19.0 pełny `npm run check` PASS:
 1020/1020 backend, 12/12 Stop, 26/26 UI, typecheck/build. 1648417 ms.

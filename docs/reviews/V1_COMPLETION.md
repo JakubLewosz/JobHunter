@@ -1,5 +1,12 @@
 # Domknięcie V1 — 28.10.2026
 
+Końcowy stan: [V1_FINAL_RESULT](V1_FINAL_RESULT.md).
+Kod 1f41b55 przeszedł własny pełny Windows check/CI/CUA i kontrolowane
+wdrożenie. Rzeczywisty R1 nie przeszedł z powodu trzech timeoutów CLI;
+R2/R3 NOT_RUN, zero nowych rzeczywistych prób, WORKSTATION STOPPED.
+**NOT_PRODUCTION_VERIFIED**. Dalsza treść zachowuje historię diagnozy;
+dawne przyszłe kroki nie są bieżącym poleceniem uruchomienia.
+
 Następna kontrola zwykłego uruchomienia: c6791f6 przeszedł pełny Windows check
 (1020 backend / 12 Stop / 26 UI, typecheck/build) i CI dokładnego SHA.
 Nie wdrożono go: plan bez zamkniętej listy nadal oceniał całą bibliotekę

@@ -1,4 +1,29 @@
-# Bieżące zadania — 23 października 2026
+# Bieżące zadania — 28 października 2026
+
+Stan końcowy zlecenia V1: **NOT_PRODUCTION_VERIFIED**. Kod
+`1f41b550578751b68811c9628f4b915f2ea51c26` ma pełny Windows check
+1021/12/26, typecheck/build, CI dokładnego SHA i świeży fikcyjny CUA PASS.
+Kontrolowane wdrożenie tego buildu zakończone; WORKSTATION **STOPPED**,
+zero nowych rzeczywistych prób i nadań, bez aktywnego ownera/prawa wysyłki.
+[Końcowe fakty i granice](reviews/V1_FINAL_RESULT.md).
+
+R1 tej wersji NIEZALICZONY: trzy rzeczywiste wywołania CLI przekroczyły
+niezmienione 120 s (SEMANTIC_REVIEW, EXTRACT, SEARCH). Dwie krótkie próby
+kontrolne przeszły; nie ustalono przyczyny. Nie powtarzać bez nowej przesłanki.
+R2/R3 na tym wydaniu NOT_RUN. Zaliczonego R1 d222655 nie przenosić na 1f41b55.
+
+Dokładny następny krok: usunąć/wyjaśnić przyczynę czasu reprezentatywnych
+wywołań istniejącego CLI, zachowując izolację i limit 120 s. Sam mały probe
+nie wystarczy. Po rzeczywistym ustąpieniu problemu wykonać pełny godzinny R1
+tego samego wydania, a dopiero potem warunkowe R2/R3 zgodnie z prywatną zgodą.
+Pierwotnego deadline 2026-10-29T10:06:39.233Z nie odnawiać. Po jego upływie
+rzeczywisty odbiór wymaga nowego polecenia użytkownika; brak autowznowienia.
+Nie zwiększać timeoutów ani uprawnień, nie przełączać na API key.
+
+Osobny otwarty maintenance: zapisany `npm audit` zgłasza 4 alerty
+(1 high, 2 moderate, 1 low). Zależności zamrożonego wydania nie zmieniono.
+Nie ustalono związku tych alertów z czasem CLI. Poniżej zachowana historia
+wcześniejszych etapów; dawne „następne kroki” nie zastępują tego stanu.
 
 28.10.2026: pełny Windows check c6791f6 (1020/12/26) i dokładne CI PASS.
 Przed wdrożeniem odtworzono jeszcze opóźnienie Stop zwykłego planu bez listy:
