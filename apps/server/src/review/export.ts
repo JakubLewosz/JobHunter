@@ -177,7 +177,7 @@ const validationSchema = z
     productionReadiness: z.literal('NOT_ESTABLISHED'),
     inputIntegrity: z.literal('ok'),
     foreignKeyErrors: z.literal(0),
-    schemaVersion: z.number().int().min(20).max(27),
+    schemaVersion: z.number().int().min(20).max(28),
     allRecordsSchemaValidated: z.literal(true),
     recordIdsUnique: z.literal(true),
     presentReferencesResolve: z.literal(true),
@@ -224,7 +224,7 @@ const manifestSchema = z
     productionReadiness: z.literal('NOT_ESTABLISHED'),
     snapshotAt: z.iso.datetime(),
     exportedAt: z.iso.datetime(),
-    schemaVersion: z.number().int().min(20).max(27),
+    schemaVersion: z.number().int().min(20).max(28),
     inputSha256: digest,
     creationMethod: z.literal('UNKNOWN'),
     recordedProvenance: provenanceSchema,
@@ -318,7 +318,7 @@ function exportReviewPackageImpl(input: ExportInput) {
           Number(String(r.name).match(/^\d+/)?.[0] ?? 0),
         ),
       );
-      if (schemaVersion < 20 || schemaVersion > 27) fail('UNSUPPORTED_SCHEMA');
+      if (schemaVersion < 20 || schemaVersion > 28) fail('UNSUPPORTED_SCHEMA');
       for (const [name, table] of Object.entries(tables)) {
         if (!names.has(name)) {
           rows[name] = [];

@@ -120,13 +120,13 @@ for (const [area, key] of [
 ])
   test(`dobór projektu: ${area} → ${key}`, () =>
     assert.equal(relevantProjectFacts(facts, analysis('PROSPECT', [area]))[0].key, key));
-test('projekt: jeden domyślnie, dwa tylko dla dwóch odrębnych wymagań, brak dopasowania pomija opis', () => {
+test('projekt: zero albo jeden najlepszy, również przy dwóch odrębnych wymaganiach', () => {
   assert.equal(relevantProjectFacts(facts, analysis('PROSPECT', ['PHP Laravel API'])).length, 1);
   assert.deepEqual(
     relevantProjectFacts(facts, analysis('PROSPECT', ['PHP Laravel', 'lokalne modele LLM'])).map(
       (f) => f.key,
     ),
-    ['fixdesk', 'codefabric'],
+    ['fixdesk'],
   );
   assert.deepEqual(relevantProjectFacts(facts, analysis('PROSPECT', ['Systemy CAD'])), []);
 });
@@ -469,14 +469,14 @@ test('konstrukcja wynika z celu i dowodów, bez stałych zdań, list funkcji i l
     template: '[Fikcyjne preferencje stylu.]',
     recent: [],
   });
-  assert.match(prompt, /Nie wymagaj pary zdań Na Państwa stronie/);
-  assert.match(prompt, /ani domyślnie słowa demo/);
+  assert.match(prompt, /Wybór zero albo jeden projektu pochodzi z projectSelection/);
+  assert.match(prompt, /Nie opisuj go samodzielnie ani nie dopisuj szczegółów/);
   assert.match(prompt, /Nie sugeruj wdrożenia produkcyjnego/);
   assert.match(prompt, /Nazwa szkoły, miejscowość i ostatnia klasa wymagają zatwierdzonych faktów/);
   assert.match(prompt, /ACTIVE_JOB to kandydatura na rzeczywistą rolę z tytułem/);
   assert.match(prompt, /tylko w zakresie zatwierdzonych faktów/);
   assert.match(prompt, /Nie stosuj rotacji wariantów, losowego parafrazowania/);
-  assert.match(prompt, /nie katalog funkcji/);
+  assert.match(prompt, /zatwierdzone zdanie/);
   assert.match(prompt, /nie skracaj kosztem edukacji, dostępności, celu/);
 });
 

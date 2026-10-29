@@ -211,6 +211,24 @@ test('snapshot auditor shares the actual material binding and literal/publicatio
       runner: new FixtureRunner(),
     });
   service.approveProfile();
+  const fact = service.profile().facts.find((f) => f.fact_key === 'fixdesk')!;
+  service.importProjectDescriptions({
+    expectedProfileVersion: service.profile().version,
+    approvalSource: 'Synthetic catalog approval for snapshot binding regression',
+    approvalSha256: hash('snapshot literal fixture'),
+    confirmed: true,
+    entries: [
+      {
+        key: 'fixdesk',
+        projectId: 'fixdesk',
+        name: 'FixDesk',
+        url: 'https://fixture.example.test/portfolio',
+        text: 'FixDesk — fikcyjne lokalne demo usterek.',
+        factId: fact.id,
+        expectedFactVersion: fact.version,
+      },
+    ],
+  });
   await service.importURL('https://fixture.example.test/careers');
   await service.tick();
   service.control('stop');

@@ -40,3 +40,11 @@ Po zmianie celowane testy sprawdzają sześć projektów i brak projektu,
 odnowienie, edycję, jedną korektę, restart, cofnięcie zgody, utratę ownera,
 Stop i identyczność z fikcyjnym MIME. Wyniki pełnego check/CI i faktyczny
 stan wdrożenia zostaną zapisane po ich rzeczywistym zakończeniu.
+
+Pełny check wykazał także potrzebę obsługi schematu 028 w eksporcie i audytorze
+snapshotów. Dopuszczono tę konkretną wersję bez poszerzania eksportu o prywatne
+tabele. Audytor korzysta z tego samego odczytu katalogu i bindingu co serwis.
+Odtwarzanie starszego schematu w testach usuwa również tabele 028; natywny
+odczyt profilu E2 obsługuje brak katalogu, a jego brak w schemacie 028 jest błędem.
+Starsze oczekiwanie dwóch projektów zastąpiono jawnym wymaganiem zero/jeden;
+oczekiwania dotyczące faktów, historii, prywatności i bezpieczeństwa pozostają.

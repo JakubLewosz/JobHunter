@@ -17,6 +17,7 @@ import { validateAnalysis, verifyQuote } from './contracts.js';
 import { materialBinding, materialRecordIssues } from './material-binding.js';
 import { readProtectedSnapshot, compareProtectedSnapshots } from './protection.js';
 import { parserVersion } from './html.js';
+import { readProjectDescriptions } from './project-descriptions.js';
 
 const count = z.number().int().nonnegative();
 const counters = z
@@ -220,7 +221,7 @@ function supported(db: Database.Database) {
       )
       .every((c) => present.some((p) => p.name === c));
   });
-  return shape && schemaVersion(db) >= 20 && schemaVersion(db) <= 27;
+  return shape && schemaVersion(db) >= 20 && schemaVersion(db) <= 28;
 }
 function schemaVersion(db: Database.Database) {
   try {
@@ -381,6 +382,10 @@ export function analyzeLibrarySnapshot(
   result.counts.incompleteSources = sources.filter((s) => !sourceComplete(s)).length;
   const profile = {
     ...one("SELECT * FROM candidate_profiles WHERE id='candidate'"),
+    projectDescriptions: readProjectDescriptions({
+      one: (sql, ...args) => db.prepare(sql).get(...args) as any,
+      all: (sql, ...args) => db.prepare(sql).all(...args) as any[],
+    }),
     facts: (
       db.prepare('SELECT * FROM candidate_facts ORDER BY created_at,id').all() as any[]
     ).filter((f) => f.approval_status !== 'DEFERRED'),

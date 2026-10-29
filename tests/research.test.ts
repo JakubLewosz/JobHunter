@@ -25,7 +25,8 @@ import {
   analysisSchema,
   type Analysis,
 } from '../apps/server/src/research/contracts.js';
-import { DomainError } from '../apps/server/src/util.js';
+import { DomainError, hash } from '../apps/server/src/util.js';
+import { projectSlot } from '../apps/server/src/research/project-descriptions.js';
 import { z } from 'zod';
 import { FixtureReader, FixtureRunner } from './research-fixture.js';
 function setup(t: TestContext, clock?: () => Date) {
@@ -63,6 +64,24 @@ test('literal contact: a suffix of a published mailbox is not a published addres
 async function prepare(t: TestContext) {
   const f = setup(t);
   f.service.approveProfile();
+  const fact = f.service.profile().facts.find((f) => f.fact_key === 'fixdesk')!;
+  f.service.importProjectDescriptions({
+    expectedProfileVersion: f.service.profile().version,
+    approvalSource: 'Explicit synthetic native fixture approval',
+    approvalSha256: hash('research fixture literal catalog'),
+    confirmed: true,
+    entries: [
+      {
+        key: 'fixdesk',
+        projectId: 'fixdesk',
+        name: 'FixDesk',
+        url: 'https://fixture.example.test/portfolio',
+        text: 'FixDesk — fikcyjne lokalne demo zgłoszeń usterek.',
+        factId: fact.id,
+        expectedFactVersion: fact.version,
+      },
+    ],
+  });
   await f.service.importURL('https://fixture.example.test/careers');
   await f.service.tick();
   return f;
@@ -685,6 +704,13 @@ test('research: deklaracja maksimum lub kilku projektów nie przechodzi kontroli
     evidenceIds: JSON.parse(d.evidence_ids),
     claims: JSON.parse(d.claims),
     warnings: [],
+    projectDescription: JSON.parse(
+      service.store.one(
+        'SELECT payload_json FROM research_draft_materials WHERE draft_id=? AND version=?',
+        d.id,
+        d.version,
+      )!.payload_json,
+    ).projectDescription,
   };
   const evidence = service.store.all('SELECT * FROM evidence WHERE company_id=?', d.company_id);
   assert.throws(
@@ -705,7 +731,7 @@ test('research: deklaracja maksimum lub kilku projektów nie przechodzi kontroli
         service.minimalProfile(),
         evidence,
       ),
-    /więcej niż jeden/,
+    { code: 'TOO_MANY_PROJECTS' },
   );
 });
 test('research: brak dowodu dopasowania projektu pozwala na szkic bez projektu i nie dopisuje nauki', async (t) => {
@@ -735,7 +761,7 @@ test('research: brak dowodu dopasowania projektu pozwala na szkic bez projektu i
   assert.match(prompt, /80–130/);
   assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
   assert.doesNotMatch(prompt, /"key":"autorelay"/);
-  assert.match(prompt, /Możesz pominąć projekt/);
+  assert.match(prompt, /zero albo jeden/);
   const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
   assert.ok(
     data.profile.facts.every(
@@ -823,11 +849,18 @@ test('generator: ponowna generacja dopisuje wersję i kontroluje dokładną koń
     first.id,
     next.version,
   )!;
-  assert.equal(next.body, generated.body);
+  const literal = service
+    .profile()
+    .projectDescriptions.find((d) => d.projectId === generated.project)!.text;
+  assert.equal(next.body, generated.body.replace(projectSlot, literal));
   assert.equal(next.subject, generated.subject);
-  assert.equal(version.body, generated.body);
-  assert.deepEqual(JSON.parse(material.payload_json), generated);
-  assert.deepEqual(reviewed, generated);
+  assert.equal(version.body, next.body);
+  const final = JSON.parse(material.payload_json);
+  assert.deepEqual(final, reviewed);
+  assert.equal(final.body, next.body);
+  assert.equal(final.projectDescription.key, 'fixdesk');
+  assert.equal(final.claims.filter((c: any) => c.text === literal).length, 1);
+  assert.equal('project' in final, false);
   assert.equal(material.code_status, 'PASS');
   assert.equal(material.review_status, 'COMPLETED');
   assert.equal(next.reviewed_at, null);

@@ -21,6 +21,8 @@ import { FixtureGmail } from './gmail-fixture.js';
 import { FixtureReader, FixtureRunner } from './research-fixture.js';
 import { analyzeLibrarySnapshot } from '../apps/server/src/research/library-audit.js';
 const newTables = [
+  'project_descriptions',
+  'profile_material_snapshots',
   'auto_batch_plan_grants',
   'nightflow_jobs',
   'nightflow_plans',
@@ -225,7 +227,13 @@ test('026–027 preserve every schema25 source field and existing protected rows
   await service.browserDelivery.close();
   store.db.pragma('foreign_keys=OFF');
   store.atomic(() => {
-    for (const name of ['auto_batch_plan_grants', 'nightflow_jobs', 'nightflow_plans'])
+    for (const name of [
+      'project_descriptions',
+      'profile_material_snapshots',
+      'auto_batch_plan_grants',
+      'nightflow_jobs',
+      'nightflow_plans',
+    ])
       store.db.exec('DROP TABLE ' + name);
     store.db.exec(readFileSync('migrations/025_source_versions.sql', 'utf8'));
     store.exec("DELETE FROM migrations WHERE name>='026'");

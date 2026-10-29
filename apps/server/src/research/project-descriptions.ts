@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Row } from '../../../../packages/shared/types.js';
 import type { JobHunter } from '../service.js';
+import type { Store } from '../db.js';
 import { DomainError, hash, id } from '../util.js';
 import { projectKeys, projectMentions, projectSelection } from './drafting.js';
 import { realDraftSchema } from './contracts.js';
@@ -14,7 +15,18 @@ export const projectProposalSchema = realDraftSchema
   })
   .strict();
 export function descriptions(service: JobHunter) {
-  return service.store
+  return readProjectDescriptions(service.store);
+}
+export function readProjectDescriptions(store: Pick<Store, 'one' | 'all'>) {
+  if (
+    !store.one("SELECT name FROM sqlite_master WHERE type='table' AND name='project_descriptions'")
+  ) {
+    const version =
+      store.one('SELECT max(CAST(substr(name,1,3) AS INTEGER)) n FROM migrations')?.n ?? 0;
+    if (version < 28) return [];
+    throw new DomainError('PROJECT_CATALOG_SCHEMA_REQUIRED', 'Brak tabeli bieżącego katalogu.');
+  }
+  return store
     .all(
       `SELECT d.* FROM project_descriptions d WHERE NOT EXISTS
     (SELECT 1 FROM project_descriptions n WHERE n.project_id=d.project_id AND n.version>d.version)
@@ -145,6 +157,8 @@ export const projectContractInstructions = `STAŁY OPIS: wybór projectSelection
 export function checkProjectContract(v: Row, p: Row) {
   if (p.fixedProjectContractVersion !== fixedProjectContractVersion) return;
   const mentions = projectMentions(v.subject + '\n' + v.body);
+  if (mentions.length > 1)
+    throw new DomainError('TOO_MANY_PROJECTS', 'Wiadomość może opisywać zero albo jeden projekt.');
   const d =
     selectedDescription(p) ??
     (mentions.length === 1 && !p.projectSelection
