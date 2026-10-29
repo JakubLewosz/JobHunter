@@ -3,6 +3,7 @@ import type { StructuredRunner } from '../research/codex.js';
 import type { SourceReader, Source } from '../research/fetcher.js';
 import { hash, id, iso } from '../util.js';
 import { conditionKeys, type Analysis } from '../research/contracts.js';
+import { projectSlot, revisionProposal } from '../research/project-descriptions.js';
 export class FixtureReader implements SourceReader {
   calls = 0;
   prospect = false;
@@ -122,10 +123,10 @@ export class FixtureRunner implements StructuredRunner {
     } else if (prompt.includes('Przypisz mapę deklaracji')) {
       const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
       const f = data.profile.facts.find((f: any) => f.key === 'identity'),
-        project = data.profile.facts.find((f: any) => f.key === 'fixdesk'),
         e = data.evidence[0];
+      const d = data.profile.projectSelection?.selected[0]?.description;
       value = {
-        factIds: [f.id, project.id],
+        factIds: [f.id, ...(d ? [d.factId] : [])],
         evidenceIds: [e.id],
         claims: [
           {
@@ -134,7 +135,7 @@ export class FixtureRunner implements StructuredRunner {
             factIds: [f.id],
             evidenceIds: [],
           },
-          { text: project.content, kind: 'CANDIDATE', factIds: [project.id], evidenceIds: [] },
+          ...(d ? [{ text: d.text, kind: 'CANDIDATE', factIds: [d.factId], evidenceIds: [] }] : []),
           {
             text: 'na stronie znalazłem ofertę Junior PHP Laravel.',
             kind: 'COMPANY',
@@ -149,10 +150,8 @@ export class FixtureRunner implements StructuredRunner {
       const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
       const fid = data.profile.facts.find((f: any) => f.key === 'identity').id,
         eid = data.evidence[0].id;
-      const project = data.profile.facts.find((f: any) =>
-        ['fixdesk', 'autorelay', 'codefabric', 'elektroscan'].includes(f.key),
-      );
-      const projectText = project ? `${project.content}` : '';
+      const project = data.profile.projectSelection?.selected[0]?.description;
+      const projectText = project ? `\n\n${projectSlot}` : '';
       const companyText =
         data.analysis?.type === 'PROSPECT' || data.qualification === 'PREVIEW_COMPANY_INQUIRY'
           ? 'na stronie opisują Państwo automatyzacje i integracje API.'
@@ -161,7 +160,8 @@ export class FixtureRunner implements StructuredRunner {
       value = {
         subject: 'Kandydatura PHP Laravel',
         body,
-        factIds: [fid, ...(project ? [project.id] : [])],
+        project: project?.projectId ?? null,
+        factIds: [fid],
         evidenceIds: [eid],
         claims: [
           {
@@ -179,13 +179,6 @@ export class FixtureRunner implements StructuredRunner {
         ],
         warnings: [],
       };
-      if (project)
-        (value as any).claims.push({
-          text: projectText,
-          kind: 'CANDIDATE',
-          factIds: [project.id],
-          evidenceIds: [],
-        });
     }
     return {
       value: schema.parse(value),

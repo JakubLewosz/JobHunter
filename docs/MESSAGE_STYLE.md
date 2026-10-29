@@ -1,5 +1,12 @@
 # Styl zgłoszeń JobHunter
 
+29.10.2026 — aktualny kontrakt projektu: zero albo jeden wybór z literalnych
+dowodów; jedno zatwierdzone zdanie wstawia kod. Opisu nie parafrazuje model
+ani korekta. To zastępuje poniższe starsze zalecenia swobodnego opisywania
+projektów lub wyjątkowego użycia dwóch. Naturalny powód kontaktu oraz pełne
+kontrole faktów i jakości pozostają. [Mechanizm](reviews/FIXED_PROJECT_DESCRIPTIONS.md).
+Historyczne wyniki FAIL pozostają bez zmian; nie prowadzimy kolejnej rundy A/B.
+
 29.10.2026 — odrębny kandydat wzorców: pełne fikcyjne odpowiedniki trzech
 zaakceptowanych konstrukcji są zaufaną referencją STYLU w natywnym promptcie,
 nie źródłem facts/evidence. Objaśniają aplikację lub własną pracę, dopuszczają

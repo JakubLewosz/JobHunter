@@ -103,6 +103,19 @@ export const realDraftSchema = z
     evidenceIds: z.array(z.string()).min(1).max(10),
     claims: z.array(claim).min(1).max(30),
     warnings: z.array(z.string().max(1000)).max(20),
+    projectDescription: z
+      .object({
+        projectId: z.string(),
+        key: z.string(),
+        version: z.number().int().positive(),
+        textHash: z.string(),
+        factId: z.string(),
+        factVersion: z.number().int().positive(),
+        factHash: z.string(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
   })
   .strict();
 export const reviewSchema = z

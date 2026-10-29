@@ -1,5 +1,11 @@
 # Bieżące zadania — 29 października 2026
 
+Bieżące zlecenie: [stałe opisy sześciu projektów](reviews/FIXED_PROJECT_DESCRIPTIONS.md).
+Implementacja i celowane regresje ukończone; następny krok: pełny Windows
+check i CI dokładnego SHA, siedem izolowanych przykładów, backup/restore,
+kontrolowane wdrożenie i natywny import. Bez Gmaila i prawa wysyłki.
+Poniższy odbiór V1 jest historią, nie nowym upoważnieniem.
+
 Bieżące zlecenie wykonawcze: [kontrolowane przyjęcie V1](reviews/V1_CONTROLLED_ACCEPTANCE.md).
 Użytkownik przyjął `69a5b23` + reuse `c905b7e` z ograniczeniami. Historyczne
 7/16 i kalibracja C11 pozostają FAIL. Bez następnego strojenia. Integracja,

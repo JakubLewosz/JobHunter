@@ -1372,6 +1372,20 @@ function DraftsView({ data, act, busy }: { data: Data; act: Act; busy: boolean }
               onChange={(e) => setSubject(e.target.value)}
             />
           </label>
+          {d.projectSelection && (
+            <details>
+              <summary>
+                Projekt: {d.projectSelection.selected[0]?.description?.key ?? 'bez projektu'}
+              </summary>
+              <p>
+                {d.projectSelection.reason}
+                {d.projectSelection.tieBreak ? ` (${d.projectSelection.tieBreak})` : ''}
+              </p>
+              {d.projectSelection.selected[0]?.proofs.map((proof: Row, index: number) => (
+                <blockquote key={index}>{proof.quote}</blockquote>
+              ))}
+            </details>
+          )}
           <label>
             Treść
             <textarea

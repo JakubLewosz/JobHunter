@@ -31,13 +31,18 @@ export const projectKeys = [
   'codefabric',
   'elektroscan',
   'sekiforma',
+  'samurais-last-stand',
 ] as const;
 export const approximateAvailability = (hours: number, afterSchool = true) =>
   `Płatna praca w pełni zdalna, około ${hours} godzin tygodniowo${afterSchool ? ', przede wszystkim po lekcjach' : ''}.`;
 export function projectMentions(text: string) {
   const normalized = text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   return projectKeys.filter((key) =>
-    key === 'sekiforma' ? /sek\s*i\s*forma/.test(normalized) : normalized.includes(key),
+    key === 'sekiforma'
+      ? /sek\s*i\s*forma/.test(normalized)
+      : key === 'samurais-last-stand'
+        ? /samurai(?:['’ʼ]?s)?[\s-]*last[\s-]*stand/.test(normalized)
+        : normalized.includes(key),
   );
 }
 function projectScores(context: string): Record<string, number> {
@@ -52,7 +57,18 @@ function projectScores(context: string): Record<string, number> {
     fixdesk:
       (/laravel/.test(context) ? 10 : 0) +
       (/\bphp\b/.test(context) ? 6 : 0) +
-      (/usterk|ticket|helpdesk/.test(context) ? 8 : 0),
+      (/usterk|ticket|helpdesk/.test(context) ? 8 : 0) +
+      (/(?:tworz|bud|rozwij|develop|build).{0,70}(?:aplikacj.{0,25}(?:biznes|wewnętrzn)|internal (?:app|tool)|business app)/.test(
+        context,
+      )
+        ? 7
+        : 0),
+    'samurais-last-stand':
+      /(?:tworz|bud|rozwij|develop|build|projekt).{0,70}(?:\bgry\b|\bgier\b|\bgrę\b|\bgames?\b)|(?:\bgry\b|\bgier\b|\bgames?\b).{0,70}(?:2d|godot|develop)|godot/.test(
+        context,
+      )
+        ? 12
+        : 0,
     autorelay:
       (/automatyzac|automation|(?:łącz|connect|exchange|wymian).{0,65}(?:system|dane|data)|(?:dane|data).{0,65}(?:przepływ|flows|automatycz)/.test(
         context,
@@ -83,12 +99,18 @@ function projectScores(context: string): Record<string, number> {
         : 0),
   };
 }
-export function projectSelection(facts: Row[], analysis: Row, evidence: Row[] = []) {
+export function projectSelection(
+  facts: Row[],
+  analysis: Row,
+  evidence: Row[] = [],
+  descriptions?: Row[],
+) {
   const proofs = [
     analysis.inquiryBasis,
     ...(analysis.type === 'PROSPECT' ? [analysis.typeProof] : []),
     ...(analysis.companyActivities ?? []),
     ...(analysis.requirements ?? []),
+    analysis.titleProof,
   ].filter(Boolean);
   // Callers validate these proof objects against saved READ sources first. Match the quote, not a hypothesis.
   const meaningful = proofs.filter(
@@ -115,49 +137,50 @@ export function projectSelection(facts: Row[], analysis: Row, evidence: Row[] = 
       )
       .map((e) => e.id),
   }));
-  // A vacancy title is useful only with its own verified literal proof.
-  if (analysis.titleProof?.sourceId && analysis.titleProof?.quote)
-    contexts.push({
-      sourceId: analysis.titleProof.sourceId,
-      quote: analysis.titleProof.quote,
-      scores: projectScores(analysis.titleProof.quote),
-      evidenceIds: evidence
-        .filter((e) => e.sourceId === analysis.titleProof.sourceId)
-        .map((e) => e.id),
-    });
-  const projects = facts.filter((f) => projectKeys.includes(f.key));
+  const projects = facts.filter(
+    (f) =>
+      projectKeys.includes(f.key) &&
+      (!descriptions ||
+        descriptions.some(
+          (d) =>
+            d.key === f.key &&
+            d.factId === f.id &&
+            d.status === 'APPROVED' &&
+            d.factVersion === f.version &&
+            d.factHash === f.contentHash &&
+            f.approvalStatus === 'APPROVED',
+        )),
+  );
   const ranked = projects
     .map((f) => ({
       fact: f,
+      description: descriptions?.find((d) => d.key === f.key),
       score: Math.max(0, ...contexts.map((c) => c.scores[f.key] ?? 0)),
       proofs: contexts.filter((c) => (c.scores[f.key] ?? 0) > 0).map(({ scores, ...p }) => p),
     }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score || a.fact.key.localeCompare(b.fact.key, 'en'));
   const selected = ranked[0]?.score ? [ranked[0]] : [];
-  if (
-    ranked[1]?.score >= 7 &&
-    contexts.some(
-      (c) =>
-        c.scores[ranked[1].fact.key] >= 7 &&
-        c.scores[ranked[1].fact.key] > (c.scores[ranked[0].fact.key] ?? 0),
-    ) &&
-    contexts.some(
-      (c) =>
-        c.scores[ranked[0].fact.key] >= 7 &&
-        c.scores[ranked[0].fact.key] > (c.scores[ranked[1].fact.key] ?? 0),
-    )
-  )
-    selected.push(ranked[1]);
+  const specific = meaningful.some((p) =>
+    /(?:opisz|describe|wyjaśnij|explain|przedstaw).{0,90}(?:szczegół|doświadczen|experience|wkład|contribution)|(?:szczegół|detailed).{0,70}(?:opis|description).{0,50}(?:projekt|project|experience)/iu.test(
+      p.quote,
+    ),
+  );
   return {
     considered: projects.map((f) => ({ factId: f.id, project: f.key })),
-    selected,
-    reason: !projects.length
-      ? 'NO_APPROVED_PROJECTS'
-      : !contexts.length
-        ? 'NO_COMPANY_EVIDENCE'
-        : !selected.length
-          ? 'NO_PROJECT_MATCH'
-          : 'VERIFIED_TASK_MATCH',
+    selected: specific ? [] : selected,
+    tieBreak:
+      selected.length && ranked[1]?.score === ranked[0].score
+        ? 'SCORE_DESC_THEN_LOGICAL_KEY_ASC'
+        : null,
+    reason: specific
+      ? 'PROJECT_SPECIFIC_RESPONSE_REQUIRED'
+      : !projects.length
+        ? 'NO_APPROVED_PROJECTS'
+        : !contexts.length
+          ? 'NO_COMPANY_EVIDENCE'
+          : !selected.length
+            ? 'NO_PROJECT_MATCH'
+            : 'VERIFIED_TASK_MATCH',
   };
 }
 export function relevantProjectFacts(facts: Row[], analysis: Row): Row[] {

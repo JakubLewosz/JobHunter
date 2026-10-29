@@ -2,6 +2,7 @@ import { hash } from '../util.js';
 import type { Row } from '../../../../packages/shared/types.js';
 import type { Source } from './fetcher.js';
 import { editorialIssues, messageQualityVersion } from './message-quality.js';
+import { fixedProjectContractVersion } from './project-descriptions.js';
 export function materialBinding(input: {
   draft: Row;
   profile: Row;
@@ -23,6 +24,8 @@ export function materialBinding(input: {
       profileHash: profile.profile_hash,
       approved: profile.approved_at,
       factsHash: hash(JSON.stringify(profile.facts)),
+      fixedProjectContractVersion,
+      descriptions: profile.projectDescriptions,
       contact,
       qualification,
       sources: input.sources.map((s) => ({
@@ -48,5 +51,10 @@ export function materialRecordIssues(material: Row, draft: Row, currentBinding: 
   if (review.supported !== true || review.issues?.length) return ['SEMANTIC_REVIEW_REQUIRED'];
   if (JSON.parse(material.context_json ?? '{}').messageQualityVersion !== messageQualityVersion)
     return ['EDITORIAL_REVIEW_REQUIRED'];
+  if (
+    JSON.parse(material.context_json ?? '{}').fixedProjectContractVersion !==
+    fixedProjectContractVersion
+  )
+    return ['PROJECT_DESCRIPTION_REVIEW_REQUIRED'];
   return editorialIssues(review);
 }

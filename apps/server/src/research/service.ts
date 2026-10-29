@@ -64,6 +64,16 @@ import { selectLibraryRefreshQueue } from './refresh-queue.js';
 import { fairWorkOrder } from './work-metrics.js';
 import { materialBinding, materialRecordIssues } from './material-binding.js';
 import {
+  fixedProjectContractVersion,
+  projectProfile,
+  projectProposalSchema,
+  composeProject,
+  checkProjectContract,
+  bindExactProject,
+  revisionProposal,
+  projectContractInstructions,
+} from './project-descriptions.js';
+import {
   messageQualityVersion,
   editorialIssues,
   targetedRevisionPrompt,
@@ -331,6 +341,8 @@ export class ResearchJobHunter extends JobHunter {
     projects: Row[];
     cvs: Row[];
     message_template: string;
+    projectDescriptions: Row[];
+    fixedProjectContractVersion: number;
   } {
     return {
       ...super.profile(),
@@ -368,8 +380,27 @@ export class ResearchJobHunter extends JobHunter {
       hoursMax: p.availability_mode === 'RANGE' ? p.hours_max : null,
       hash: p.profile_hash,
       approvedMessage: p.message_template,
-      facts: p.facts.map((f) => ({ id: f.id, key: f.fact_key, content: f.content })),
+      fixedProjectContractVersion,
+      projectDescriptions: p.projectDescriptions,
+      facts: p.facts.map((f) => ({
+        id: f.id,
+        key: f.fact_key,
+        content: f.content,
+        contentHash: hash(f.content),
+        version: f.version,
+        approvalStatus: f.approval_status,
+      })),
     };
+  }
+  override importProjectDescriptions(input: unknown) {
+    if (this.researching || this.probing || this.refreshingLibrary)
+      throw new DomainError('BUSY', 'Poczekaj na zakończenie operacji.');
+    return super.importProjectDescriptions(input);
+  }
+  override revokeProjectDescription(input: unknown) {
+    if (this.researching || this.probing || this.refreshingLibrary)
+      throw new DomainError('BUSY', 'Poczekaj na zakończenie operacji.');
+    return super.revokeProjectDescription(input);
   }
   async probe(kind: 'codex' | 'search') {
     if (this.probing || this.researching)
@@ -2289,6 +2320,7 @@ export class ResearchJobHunter extends JobHunter {
     const input = hash(
       JSON.stringify({
         messageQualityVersion,
+        fixedProjectContractVersion,
         profile: profile.hash,
         scope:
           this.store.one('SELECT scope_hash FROM auto_run_scope WHERE run_id=?', runId)
@@ -2345,15 +2377,7 @@ export class ResearchJobHunter extends JobHunter {
         evidenceIds: c.evidenceIds.map((id: string) => mapping.get(id)),
       })),
     };
-    const selection = projectSelection(profile.facts, analysis, evidence);
-    const currentProfile = {
-      ...profile,
-      projectSelection: selection,
-      facts: profile.facts.filter(
-        (f) =>
-          !projectKeys.includes(f.key as any) || selection.selected.some((p) => p.fact.id === f.id),
-      ),
-    };
+    const currentProfile = projectProfile(profile, analysis, evidence);
     try {
       this.checkDraft(next, d.company_id, currentProfile, evidence, analysis);
     } catch (e) {
@@ -2638,7 +2662,11 @@ export class ResearchJobHunter extends JobHunter {
         await this.reviewStoredDraft(existing.id, existing.version, item.run_id, signal);
       if (
         !this.draftMaterialIssues(existing).length ||
-        (material && ['PENDING', 'ERROR', 'RUNNING'].includes(material.review_status))
+        (material &&
+          material.context_hash === this.materialBinding(existing) &&
+          JSON.parse(material.context_json ?? '{}').fixedProjectContractVersion ===
+            fixedProjectContractVersion &&
+          ['PENDING', 'ERROR', 'RUNNING'].includes(material.review_status))
       ) {
         this.draftDisposition(item, 'REUSED');
         return;
@@ -2661,16 +2689,7 @@ export class ResearchJobHunter extends JobHunter {
       o.company_id,
       item.source_ids,
     );
-    const selection = projectSelection(p.facts, analysis, evidence);
-    const draftProfile = {
-      ...p,
-      projectSelection: selection,
-      facts: p.facts.filter(
-        (f) =>
-          !projectKeys.includes(f.key as (typeof projectKeys)[number]) ||
-          selection.selected.some((project) => project.fact.id === f.id),
-      ),
-    };
+    const draftProfile = projectProfile(p, analysis, evidence);
     if (
       existing &&
       existing.profile_hash === p.hash &&
@@ -2735,8 +2754,15 @@ export class ResearchJobHunter extends JobHunter {
       if (generationContext() !== inputBinding)
         throw new DomainError('VERSION_CONFLICT', 'Materiały zmieniły się podczas generowania.');
     };
-    const v = await this.call(item.run_id, 'DRAFT', prompt, realDraftSchema, signal);
+    const proposal = await this.call(
+      item.run_id,
+      'DRAFT',
+      projectContractInstructions + prompt,
+      projectProposalSchema,
+      signal,
+    );
     assertGenerationCurrent();
+    const v = composeProject(proposal, draftProfile);
     if (
       existing &&
       this.store.one('SELECT version FROM drafts WHERE id=?', existing.id)?.version !==
@@ -2888,7 +2914,7 @@ export class ResearchJobHunter extends JobHunter {
       codeStatus === 'INVALIDATED' ? hash(JSON.stringify(payload)) : d.payload_hash,
       this.materialBinding(d),
       JSON.stringify(payload),
-      JSON.stringify({ ...context, messageQualityVersion }),
+      JSON.stringify({ ...context, messageQualityVersion, fixedProjectContractVersion }),
       codeStatus,
       reviewStatus,
       this.now(),
@@ -2935,7 +2961,7 @@ export class ResearchJobHunter extends JobHunter {
       ? AbortSignal.any([externalSignal, this.controller.signal])
       : this.controller.signal;
     try {
-      const profile = this.minimalProfile();
+      let profile: ReturnType<ResearchJobHunter['minimalProfile']> = this.minimalProfile();
       if (d.profile_hash !== profile.hash)
         throw new DomainError('PROFILE_CHANGED', 'Profil starszego szkicu zmienił się.');
       const analysis = JSON.parse(
@@ -2948,6 +2974,7 @@ export class ResearchJobHunter extends JobHunter {
         'SELECT e.id,e.fragment,e.canonical_url,r.source_id AS sourceId FROM evidence e LEFT JOIN research_evidence r ON r.evidence_id=e.id WHERE e.company_id=?',
         d.company_id,
       );
+      profile = projectProfile(profile, analysis, evidence) as typeof profile;
       const binding = this.materialBinding(d);
       const previousMaterial = this.store.one(
         'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
@@ -2956,7 +2983,9 @@ export class ResearchJobHunter extends JobHunter {
       );
       const previousContext = JSON.parse(previousMaterial?.context_json ?? '{}');
       const legacy =
-        !previousMaterial || previousContext.messageQualityVersion !== messageQualityVersion;
+        !previousMaterial ||
+        previousContext.messageQualityVersion !== messageQualityVersion ||
+        previousContext.fixedProjectContractVersion !== fixedProjectContractVersion;
       const nextReviewVersion =
         Math.max(
           version,
@@ -2990,12 +3019,15 @@ export class ResearchJobHunter extends JobHunter {
           'Starszy materiał wymaga odnowienia źródeł, nie przeniesienia PASS.',
         );
       if (legacy && mapping.claims.length) {
-        const payload = {
-          subject: d.subject,
-          body: d.body,
-          ...mapping,
-          warnings: JSON.parse(d.warnings),
-        };
+        const payload = bindExactProject(
+          {
+            subject: d.subject,
+            body: d.body,
+            ...mapping,
+            warnings: JSON.parse(d.warnings),
+          },
+          profile,
+        ) as z.infer<typeof realDraftSchema>;
         this.checkDraft(payload, d.company_id, profile, evidence, analysis);
         const nextVersion = nextReviewVersion;
         const payloadHash = hash(JSON.stringify(payload));
@@ -3004,7 +3036,12 @@ export class ResearchJobHunter extends JobHunter {
           if (!previousMaterial)
             this.store.set(`legacyReviewSnapshot:${draftId}:${version}`, {
               semanticReview: JSON.parse(d!.semantic_review),
-              payload,
+              payload: {
+                subject: d!.subject,
+                body: d!.body,
+                ...mapping,
+                warnings: JSON.parse(d!.warnings),
+              },
               version,
               recordedAt: this.now(),
             });
@@ -3071,12 +3108,15 @@ export class ResearchJobHunter extends JobHunter {
           signal,
         );
         assertCurrent();
-        const payload = {
-          subject: d.subject,
-          body: d.body,
-          ...mapping,
-          warnings: JSON.parse(d.warnings),
-        };
+        const payload = bindExactProject(
+          {
+            subject: d.subject,
+            body: d.body,
+            ...mapping,
+            warnings: JSON.parse(d.warnings),
+          },
+          profile,
+        ) as z.infer<typeof realDraftSchema>;
         this.checkDraft(payload, d.company_id, profile, evidence, analysis);
         const payloadHash = hash(JSON.stringify(payload));
         this.store.atomic(() => {
@@ -3364,20 +3404,21 @@ export class ResearchJobHunter extends JobHunter {
       });
       let corrected: z.infer<typeof realDraftSchema>;
       try {
-        corrected = await this.call(
+        const proposal = await this.call(
           runId,
           'EDITORIAL_REVISION',
           targetedRevisionPrompt({
-            draft: payload,
+            draft: revisionProposal(payload, context.profile),
             quality: review.quality,
             profile: context.profile,
             analysis,
             evidence,
-          }),
-          realDraftSchema,
+          }).replace('Dane: ', projectContractInstructions + 'Dane: '),
+          projectProposalSchema,
           signal,
         );
         assertCurrent();
+        corrected = composeProject(proposal, context.profile);
         assertTargetedRevision(payload, corrected, review.quality);
         if (
           corrected.factIds.some((fid) => !payload.factIds.includes(fid)) ||
@@ -3481,6 +3522,7 @@ export class ResearchJobHunter extends JobHunter {
     analysis?: Analysis,
   ) {
     realDraftSchema.parse(v);
+    checkProjectContract(v, p);
     if (
       v.factIds.some((fid) => !p.facts.some((f) => f.id === fid)) ||
       v.evidenceIds.some((eid) => !evidence.some((e) => e.id === eid))
@@ -3511,10 +3553,7 @@ export class ResearchJobHunter extends JobHunter {
     checkAvailability(v, p);
     const styleWarnings = checkMessageRules(v, p, analysis);
     const mentionedProjects = projectMentions(v.body);
-    if (
-      mentionedProjects.length >
-      (analysis ? relevantProjectFacts(p.facts, analysis).length || 1 : 1)
-    )
+    if (mentionedProjects.length > 1)
       throw new DomainError('TOO_MANY_PROJECTS', 'Szkic wymienia więcej niż jeden projekt.');
     if (mentionedProjects.some((key) => !p.facts.some((f) => f.key === key)))
       throw new DomainError(
@@ -3617,10 +3656,18 @@ export class ResearchJobHunter extends JobHunter {
       researchDetails: details.get(c.opportunity_id) ?? null,
     }));
   }
-  override draftRows() {
-    return this.store.all(
-      'SELECT d.*,c.canonical_name,c.history_status,c.suppression_reason,t.email,o.decision,r.profile_hash,r.claims,r.warnings,r.semantic_review,r.reviewed_at FROM drafts d JOIN companies c ON c.id=d.company_id JOIN contacts t ON t.id=d.contact_id JOIN opportunities o ON o.id=d.opportunity_id JOIN research_drafts r ON r.draft_id=d.id ORDER BY d.created_at DESC',
-    );
+  override draftRows(): Row[] {
+    return this.store
+      .all(
+        'SELECT d.*,c.canonical_name,c.history_status,c.suppression_reason,t.email,o.decision,r.profile_hash,r.claims,r.warnings,r.semantic_review,r.reviewed_at,m.context_json AS material_context FROM drafts d JOIN companies c ON c.id=d.company_id JOIN contacts t ON t.id=d.contact_id JOIN opportunities o ON o.id=d.opportunity_id JOIN research_drafts r ON r.draft_id=d.id LEFT JOIN research_draft_materials m ON m.draft_id=d.id AND m.version=d.version ORDER BY d.created_at DESC',
+      )
+      .map((d) => {
+        const { material_context, ...row } = d;
+        return {
+          ...row,
+          projectSelection: JSON.parse(material_context ?? '{}').profile?.projectSelection ?? null,
+        };
+      });
   }
   reviewDraft(draftId: string, version: number) {
     const d = this.store.one('SELECT * FROM drafts WHERE id=?', draftId);

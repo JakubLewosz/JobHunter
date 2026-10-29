@@ -410,7 +410,7 @@ test('a hiring inquiry and a separate literal CV invitation for the same mailbox
   assert.equal(contactUsage(v, [source]), 'QUESTIONS_ONLY');
   assert.equal(contactEligibility(v, [source]).allowed, false);
 });
-test('generator and review receive identical full selected facts and concrete evidence mapping', async (t) => {
+test('generator and review receive identical selected literal material and concrete evidence mapping', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'jh-project-context-'));
   const runner = new FixtureRunner(),
     reader = new FixtureReader();
@@ -430,6 +430,25 @@ test('generator and review receive identical full selected facts and concrete ev
     d.store.close();
     rmSync(dir, { recursive: true, force: true });
   });
+  const fact = d.service.profile().facts.find((f) => f.fact_key === 'autorelay')!;
+  const literal = 'AutoRelay — fikcyjny opis FixtureRelay do testu kontraktu.';
+  d.service.importProjectDescriptions({
+    expectedProfileVersion: d.service.profile().version,
+    approvalSource: 'Explicit synthetic project approval for native test',
+    approvalSha256: hash('synthetic native literal'),
+    confirmed: true,
+    entries: [
+      {
+        key: 'autorelay',
+        projectId: 'autorelay',
+        name: 'FixtureRelay',
+        url: 'https://fixture.example.test/portfolio',
+        text: literal,
+        factId: fact.id,
+        expectedFactVersion: fact.version,
+      },
+    ],
+  });
   await d.service.importURL('https://fixture.example.test/');
   await d.service.tick();
   const get = (marker: string) =>
@@ -443,6 +462,8 @@ test('generator and review receive identical full selected facts and concrete ev
     review = get('Sprawdź KAŻDE');
   const project = draft.profile.facts.find((f: any) => f.key === 'autorelay');
   assert.ok(project);
+  assert.equal(project.content, literal);
+  assert.equal(project.contentHash, hash(fact.content));
   assert.deepEqual(review.profile.facts, draft.profile.facts);
   assert.equal(draft.profile.projectSelection.selected[0].fact.content, project.content);
   assert.ok(draft.profile.projectSelection.selected[0].proofs[0].evidenceIds.length > 0);

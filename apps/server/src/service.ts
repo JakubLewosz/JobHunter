@@ -8,6 +8,12 @@ import { companySelection } from './company-query.js';
 import { companyHistoryBlocks } from './prior-applications.js';
 import { projectKeys } from './research/drafting.js';
 import {
+  descriptions,
+  importProjectDescriptions,
+  revokeProjectDescription,
+  fixedProjectContractVersion,
+} from './research/project-descriptions.js';
+import {
   companyDomain,
   csvCell,
   day,
@@ -159,7 +165,14 @@ export class JobHunter {
   campaign() {
     return this.store.one('SELECT * FROM campaigns WHERE id=?', this.campaignId)!;
   }
-  profile(): Row & { facts: Row[]; deferred_facts: Row[]; projects: Row[]; cvs: Row[] } {
+  profile(): Row & {
+    facts: Row[];
+    deferred_facts: Row[];
+    projects: Row[];
+    cvs: Row[];
+    projectDescriptions: Row[];
+    fixedProjectContractVersion: number;
+  } {
     const p = this.store.one('SELECT * FROM candidate_profiles WHERE id=?', 'candidate')!;
     const allFacts = this.store.all('SELECT * FROM candidate_facts ORDER BY created_at,id');
     if (
@@ -172,6 +185,8 @@ export class JobHunter {
     const activeKeys = new Set(facts.map((f) => f.fact_key));
     return {
       ...p,
+      projectDescriptions: descriptions(this),
+      fixedProjectContractVersion,
       facts,
       deferred_facts: allFacts.filter((f) => f.approval_status === 'DEFERRED'),
       projects: this.store
@@ -190,6 +205,12 @@ export class JobHunter {
       heartbeat: this.store.get<string | null>('heartbeat', null),
       scenario: this.store.get('scenario', 'NORMAL'),
     };
+  }
+  importProjectDescriptions(input: unknown) {
+    return importProjectDescriptions(this, input);
+  }
+  revokeProjectDescription(input: unknown) {
+    return revokeProjectDescription(this, input);
   }
   event(action: string, message: string, entityId: string | null = null, actor = 'system') {
     this.store.exec(

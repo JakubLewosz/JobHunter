@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Row } from '../../../../packages/shared/types.js';
 import { Store } from '../db.js';
 import { ResearchJobHunter } from '../research/service.js';
+import { projectProfile } from '../research/project-descriptions.js';
 import { checkMessageRules, checkAvailability } from '../research/message-policy.js';
 import { companyDomain, day, DomainError, hash, id, iso, normalizeEmail } from '../util.js';
 import { prepareMime } from './mime.js';
@@ -723,6 +724,11 @@ export class GmailJobHunter extends ResearchJobHunter {
         )!.details,
       );
       const evidence = this.store.all('SELECT * FROM evidence WHERE company_id=?', d.company_id);
+      const material = this.store.one(
+        'SELECT payload_json FROM research_draft_materials WHERE draft_id=? AND version=?',
+        d.id,
+        d.version,
+      );
       this.checkDraft(
         {
           subject: d.subject,
@@ -731,9 +737,10 @@ export class GmailJobHunter extends ResearchJobHunter {
           evidenceIds: JSON.parse(d.evidence_ids),
           claims: JSON.parse(d.claims),
           warnings: JSON.parse(d.warnings),
+          projectDescription: JSON.parse(material?.payload_json ?? '{}').projectDescription,
         },
         d.company_id,
-        this.minimalProfile(),
+        projectProfile(this.minimalProfile(), analysis, evidence),
         evidence,
         analysis,
       );

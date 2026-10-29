@@ -1,5 +1,11 @@
 # Uruchamianie przez Codex — stan 29.10.2026
 
+Bieżąca wąska zmiana: [wersjonowane stałe opisy projektów](reviews/FIXED_PROJECT_DESCRIPTIONS.md).
+Import katalogu na zatrzymanej instalacji i testy DEVELOPMENT nie udzielają
+prawa do Gmaila, partii, rezerwacji, Startu ani nadawania. Przy wdrożeniu
+wymagany spójny backup SQLite z WAL i izolowany test odtworzenia. Stare
+snapshoty i ID pozostają. Nie odświeżamy hurtowo zapisanej biblioteki.
+
 ## Kontrolowane przyjęcie V1 — 29.10.2026
 
 Odbiór `DONE_V1_CONTROLLED_BATCHES`: aplikacja `bc40fac`, build
