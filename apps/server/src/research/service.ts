@@ -1901,9 +1901,8 @@ export class ResearchJobHunter extends JobHunter {
     const reusable =
       policy === analysisPolicyVersion &&
       !!d &&
-      checked?.context_hash === this.materialBinding(d) &&
-      checked.code_status === 'PASS' &&
-      checked.review_status === 'COMPLETED' &&
+      !!checked &&
+      !materialRecordIssues(checked, d, this.materialBinding(d)).length &&
       JSON.parse(d.semantic_review).supported === true &&
       (this.mode !== 'AUTO_POLICY' || this.independentResearch || oldScope === newScope);
     this.store.atomic(() => {

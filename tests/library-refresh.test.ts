@@ -10,6 +10,7 @@ import { setup } from './auto-fixture.js';
 import { GmailJobHunter } from '../apps/server/src/gmail/service.js';
 import { FixtureGmail } from './gmail-fixture.js';
 import { hash } from '../apps/server/src/util.js';
+import { messageQualityVersion } from '../apps/server/src/research/message-quality.js';
 async function fixture(t: any) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-library-refresh-')),
     store = new Store(dir),
@@ -64,6 +65,173 @@ test('raw HTML hash change with identical parsed text creates a fresh binding/re
   assert.ok(!calls.some((p) => p.includes('POPRAW ISTNIEJĄCY SZKIC')), 'no cosmetic generation');
   for (const v of oldVersions)
     assert.deepEqual(f.store.one('SELECT * FROM draft_versions WHERE id=?', v.id), v);
+});
+
+test('unchanged sources cannot reuse an older quality assessment; exact text gets a new review', async (t) => {
+  const f = await fixture(t);
+  const original = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    f.draft.id,
+    f.draft.version,
+  )!;
+  const context = JSON.parse(original.context_json);
+  context.messageQualityVersion = messageQualityVersion - 1;
+  f.store.exec(
+    'UPDATE research_draft_materials SET context_json=? WHERE draft_id=? AND version=?',
+    JSON.stringify(context),
+    f.draft.id,
+    f.draft.version,
+  );
+  const archived = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    f.draft.id,
+    f.draft.version,
+  )!;
+  const before = f.runner.prompts.length;
+  const result = await f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] });
+  assert.equal(result.results[0].code, 'CHECKED');
+  const current = f.service.draftRows()[0];
+  assert.equal(current.subject, f.draft.subject);
+  assert.equal(current.body, f.draft.body);
+  assert.ok(current.version > f.draft.version);
+  assert.ok(!f.runner.prompts.slice(before).some((p) => p.includes('Przygotuj indywidualny')));
+  assert.equal(f.runner.prompts.slice(before).filter((p) => p.includes('Sprawdź KAŻDE')).length, 1);
+  const reviewed = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    current.id,
+    current.version,
+  )!;
+  assert.equal(JSON.parse(reviewed.context_json).messageQualityVersion, messageQualityVersion);
+  assert.equal(reviewed.payload_hash, current.payload_hash);
+  assert.deepEqual(f.service.draftMaterialIssues(current), []);
+  assert.deepEqual(
+    f.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      f.draft.id,
+      f.draft.version,
+    ),
+    archived,
+  );
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+  assert.equal(f.service.state().stopped, true);
+});
+
+test('current good material reuses its exact text and assessment without generating another variant', async (t) => {
+  const f = await fixture(t),
+    before = f.runner.prompts.length;
+  const materials = f.store.all('SELECT * FROM research_draft_materials');
+  const result = await f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] });
+  assert.equal(result.results[0].code, 'CHECKED');
+  assert.equal(f.service.draftRows()[0].payload_hash, f.draft.payload_hash);
+  assert.ok(
+    !f.runner.prompts.slice(before).some((p) => /Przygotuj indywidualny|Sprawdź KAŻDE/.test(p)),
+  );
+  assert.deepEqual(f.store.all('SELECT * FROM research_draft_materials'), materials);
+});
+
+test('a stale positive assessment cannot be copied when the new exact review returns HOLD', async (t) => {
+  const f = await fixture(t);
+  const original = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    f.draft.id,
+    f.draft.version,
+  )!;
+  const context = JSON.parse(original.context_json);
+  delete context.messageQualityVersion;
+  f.store.exec(
+    'UPDATE research_draft_materials SET context_json=? WHERE draft_id=? AND version=?',
+    JSON.stringify(context),
+    f.draft.id,
+    f.draft.version,
+  );
+  const run = f.runner.run.bind(f.runner);
+  f.runner.run = async (prompt, schema, options) => {
+    const result = await run(prompt, schema, options);
+    if (prompt.includes('Sprawdź KAŻDE'))
+      (result.value as any).quality = { verdict: 'HOLD', defects: [] };
+    return result;
+  };
+  const result = await f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] });
+  assert.notEqual(result.results[0].code, 'CHECKED');
+  const current = f.service.draftRows()[0];
+  assert.equal(current.body, f.draft.body);
+  assert.equal(JSON.parse(current.semantic_review).quality.verdict, 'HOLD');
+  assert.ok(f.service.draftMaterialIssues(current).length);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+});
+
+for (const blocked of ['suppressed', 'protected'] as const)
+  test(`reuse cannot reopen ${blocked} material or change its scope/history`, async (t) => {
+    const f = await fixture(t);
+    if (blocked === 'suppressed')
+      f.service.suppress(
+        f.draft.company_id,
+        'USER_HOLD_APPLICATION_REQUIREMENT',
+        'fixture',
+        'user',
+      );
+    const before = f.reader.calls;
+    const tables = [
+      'drafts',
+      'draft_versions',
+      'research_draft_materials',
+      'auto_draft_scope',
+      'outbox',
+      'send_attempts',
+      'suppressions',
+    ];
+    const rows = Object.fromEntries(
+      tables.map((name) => [name, f.store.all('SELECT * FROM ' + name)]),
+    );
+    const result = await f.service.refreshLibraryDrafts(
+      { draftIds: [f.draft.id] },
+      blocked === 'protected' ? { protectedDraftIds: [f.draft.id] } : {},
+    );
+    assert.equal(
+      result.results[0].code,
+      blocked === 'protected' ? 'PROTECTED_DRAFT' : 'CONTACT_HISTORY',
+    );
+    assert.equal(f.reader.calls, before);
+    for (const name of tables) assert.deepEqual(f.store.all('SELECT * FROM ' + name), rows[name]);
+  });
+
+test('loss of the owner during renewal of an older assessment fences the late review', async (t) => {
+  const f = await fixture(t);
+  const original = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    f.draft.id,
+    f.draft.version,
+  )!;
+  const context = JSON.parse(original.context_json);
+  delete context.messageQualityVersion;
+  f.store.exec(
+    'UPDATE research_draft_materials SET context_json=? WHERE draft_id=? AND version=?',
+    JSON.stringify(context),
+    f.draft.id,
+    f.draft.version,
+  );
+  const owner = f.store.assertExclusive;
+  let heldMaterials: unknown;
+  f.runner.beforeCall = async (prompt) => {
+    if (prompt.includes('Sprawdź KAŻDE')) {
+      heldMaterials = f.store.all('SELECT * FROM research_draft_materials');
+      f.store.assertExclusive = () => {
+        throw Object.assign(Error('Synthetic owner loss'), { code: 'PROFILE_LOCK_LOST' });
+      };
+    }
+  };
+  try {
+    await assert.rejects(() => f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] }));
+  } finally {
+    f.store.assertExclusive = owner;
+  }
+  assert.ok(f.service.draftMaterialIssues(f.service.draftRows()[0]).length);
+  assert.deepEqual(f.store.all('SELECT * FROM research_draft_materials'), heldMaterials);
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+  // Losing an owner cannot authorize a final SQLite Stop write either.
+  // The restored synthetic owner performs the explicit cleanup.
+  f.service.control('stop');
+  assert.equal(f.service.state().stopped, true);
 });
 
 for (const change of ['TEXT', 'CONTACT', 'TIMEOUT', 'INCOMPLETE'])
