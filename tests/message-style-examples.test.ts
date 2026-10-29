@@ -57,7 +57,7 @@ test('native generation, exact review and single correction receive the full sty
         {} as any,
         { ...payload, body: payload.body + ' https://github.com/przykladowy-kandydat' } as any,
         'fictional-company',
-        data.profile as any,
+        { ...data.profile, availabilityMode: 'APPROX', hoursMin: null, hoursMax: null } as any,
         data.evidence,
         data.analysis,
       ),
@@ -69,7 +69,7 @@ test('native generation, exact review and single correction receive the full sty
         {} as any,
         { ...payload, factIds: ['style-example-identity'] } as any,
         'fictional-company',
-        data.profile as any,
+        { ...data.profile, availabilityMode: 'APPROX', hoursMin: null, hoursMax: null } as any,
         data.evidence,
         data.analysis,
       ),
@@ -81,14 +81,16 @@ test('a necessary demo qualification is not a keyword defect; unsupported studen
   const c = qualityCases[0];
   const body = 'To projekt demonstracyjny, nie system obsługujący rzeczywistych klientów.';
   assert.ok(
-    !checkMessageRules({ subject: 'Współpraca', body, claims: [] }, c.profile, c.analysis).some(
-      (x) => x.startsWith('META'),
-    ),
+    !checkMessageRules(
+      { subject: 'Współpraca', body, claims: [], factIds: [] },
+      c.profile,
+      c.analysis,
+    ).some((x) => x.startsWith('META')),
   );
   assert.throws(
     () =>
       checkMessageRules(
-        { subject: 'Współpraca', body: 'Jestem studentem uczelni.', claims: [] },
+        { subject: 'Współpraca', body: 'Jestem studentem uczelni.', claims: [], factIds: [] },
         c.profile,
         c.analysis,
       ),
