@@ -1,5 +1,14 @@
 # Bieżące zadania — 29 października 2026
 
+Bieżące zlecenie wykonawcze: [kontrolowane przyjęcie V1](reviews/V1_CONTROLLED_ACCEPTANCE.md).
+Użytkownik przyjął `69a5b23` + reuse `c905b7e` z ograniczeniami. Historyczne
+7/16 i kalibracja C11 pozostają FAIL. Bez następnego strojenia. Integracja,
+testy, wdrożenie, natywne odnowienie i ograniczony rzeczywisty odbiór są w toku;
+nie są jeszcze DONE. Prywatny checkpoint zachowuje nową, nieodnawianą zgodę
+oraz oddzielny moment aktywacji okna Gmaila. Poczta jeszcze nieaktywna.
+
+Poniższe wpisy opisują poprzednie dostawy, nie zakres nowego upoważnienia.
+
 Odrębne zlecenie wzorców: [wynik i granice](reviews/STYLE_EXEMPLARS_CALIBRATION.md).
 Reuse wyodrębnione w c905b7e na bazie 0cca725 z wersją jakości 1, regresje
 41/41 i osobne CI PASS. Nowy kandydat pełnych wzorców v3 ma celowane 186/186,

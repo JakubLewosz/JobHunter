@@ -282,3 +282,47 @@ ustawień AUTO_POLICY dla sekwencji nocnej. Nie przenosimy ich automatycznie
 na tempo, limity lub ukryty koniec przyszłego ciągłego AUTO. Osiem dawnych
 draft_approvals odnosi się do konkretnych zapisanych wersji, nie nieznanej
 przyszłej partii.
+## Kontrolowane przyjęcie V1 — 29.10.2026
+
+Użytkownik przyjął wariant treści `69a5b23` wraz z niezależnym reuse `c905b7e`
+do ograniczonego wdrożenia: `STYLE_RELEASE_DECISION=ACCEPTED_WITH_LIMITATIONS`.
+Zakończone porównanie: 7 wygranych, 9 remisów, 0 przegranych; próg 8/16 nadal
+FAIL, kalibracja nadal FAIL z przeoczeniem C11. Decyzja wydania nie zmienia
+tych wyników. [Zakres bieżącego odbioru](reviews/V1_CONTROLLED_ACCEPTANCE.md).
+
+Zwykłą pracę rozpoczyna polecenie w aktywnej rozmowie Codexa. Codex sprawdza
+instalację/build, Stop, właściciela, materiały i zakres aktualnej zgody.
+Research bez nadawania korzysta z istniejącego `research:session`; ograniczone
+odnowienie wskazanych niewysłanych ID korzysta z `research:refresh`:
+
+```powershell
+npm --silent run research:session -- --data-dir <ISTNIEJACA_HISTORIA> --start --hours 1
+npm --silent run research:refresh -- --data-dir <ISTNIEJACA_HISTORIA> --ids-file <PRYWATNA_LISTA_JSON> --minutes 30 --workstation
+```
+
+Nie zmieniać zapisanej kampanii AUTO_POLICY na RESEARCH_ONLY dla samego
+odnowienia. Samodzielne odnowienie działa przez niezależny ResearchJobHunter,
+bez inicjalizowania poczty. Resume nie oznacza nowej zgody ani nowego deadline.
+
+Zatwierdzona partia wymaga nowego właściwego uprawnienia użytkownika,
+tożsamości konta, celowanej historii, aktualnych materiałów i zapisanego planu.
+Istniejący zatrzymany owner i aktywny wykonawca są osobnymi częściami:
+
+```powershell
+npm --silent run nightflow -- browser-owner --workstation --data-dir <ISTNIEJACA_HISTORIA> --plan <ZATWIERDZONY_PLAN_ID>
+npm --silent run nightflow -- status --data-dir <ISTNIEJACA_HISTORIA>
+npm --silent run nightflow -- stop --data-dir <ISTNIEJACA_HISTORIA>
+```
+
+W tej samej aktywnej sesji Computer Use Codex używa istniejącego
+`scripts/browser-executor.mjs:runNightflowTask`: probe/gotowość, pojedynczy
+Start, ciągłe segmenty tej samej instancji, wynik i cleanup. Nie uruchamiać
+samego sendera w terminalu bez hosta i nie robić przerw między segmentami.
+Status bez ACK nie potwierdza właściciela, Stop bez ACK nie potwierdza końca
+operacji. Przy niepewnej próbie: Stop, ustalenie istniejącego wyniku, bez
+drugiego kliknięcia, Startu, API send lub resetowania historii. Kod aktualizuje
+się dopiero po potwierdzonym zatrzymaniu i spójnym backupie. Restart pozostawia
+brak prawa nadawania. Po zakończeniu owner/host muszą być zwolnione.
+
+Poniższe datowane sekcje zachowują historię; nie udzielają nowych uprawnień.
+
