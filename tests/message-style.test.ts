@@ -147,9 +147,9 @@ test('cel redakcyjny zmienia się z warunkami w tym samym rodzaju kontaktu', () 
   assert.equal(messageWritingGoal(active), 'PROJECT_FIT');
   assert.equal(messageContactType(active), 'ACTIVE_JOB');
   const open = analysis('OPEN');
-  assert.equal(messageWritingGoal(open), 'PROJECT_FIT');
+  assert.equal(messageWritingGoal(open), 'JOIN_TEAM_POSSIBILITY');
   for (const key of ['remote', 'paid', 'hours'] as const) open.conditions[key].value = 'yes';
-  assert.equal(messageWritingGoal(open), 'PROFILE_FIT');
+  assert.equal(messageWritingGoal(open), 'JOIN_TEAM_POSSIBILITY');
   assert.equal(messageContactType(open), 'OPEN_APPLICATION');
   assert.equal(messageWritingGoal(analysis('PROSPECT')), 'COOPERATION_POSSIBILITY');
 });
@@ -347,16 +347,17 @@ test('ograniczenie statusu pozostaje faktem, neutralny prototyp nie wymaga zastr
 });
 
 test('finalny styl: formalność, meta-komentarz, sprzedaż i prezentacja wymagają przeglądu bez odrzucenia', () => {
-  for (const [text, code] of [
+  for (const [text, code, flagged = true] of [
     ['Pragnę wyrazić zainteresowanie regularną współpracą.', 'FORMAL'],
     ['To konkretny punkt wspólny między projektami.', 'META'],
-    ['Projekt pozostaje lokalnym demo.', 'META'],
+    ['Projekt pozostaje lokalnym demo.', 'META', false],
     ['Czy potrzebują Państwo pomocy przy automatyzacjach?', 'SALES_CTA'],
     ['Mogę zademonstrować rozwiązanie.', 'PROJECT_PRESENTATION'],
-  ]) {
+  ] as const) {
     const warnings = checkMessageRules(draft(text), profile, analysis());
-    assert.ok(
+    assert.equal(
       warnings.some((w) => w.startsWith(code)),
+      flagged,
       text,
     );
   }

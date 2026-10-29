@@ -17,7 +17,7 @@ export const defaultMessageTemplate = `Dzień dobry,
 
 [Napisz naturalną wiadomość do konkretnej firmy. Wybierz otwarcie i kolejność informacji z kontekstu: aktywnej oferty, otwartych kandydatur lub rzeczowej podstawy zapytania bez rekrutacji.]
 
-[Połącz zadanie lub obszar firmy z jednym pasującym zatwierdzonym projektem. Opisz istotny związek, bez katalogu funkcji i technologii. Zachowaj edukację, cel płatnej regularnej pracy, zdalność i dostępność z zatwierdzonego profilu; umieść je tam, gdzie pasują do toku listu.]
+[Połącz zadanie lub obszar firmy z chęcią pracy przy nim albo pasującym zatwierdzonym przykładem. Projekt jest opcjonalny; objaśnij aplikację lub własną pracę bez kopiowania całej notatki funkcji. Zachowaj edukację, cel płatnej regularnej pracy, zdalność i dostępność z zatwierdzonego profilu; umieść je tam, gdzie pasują do toku listu.]
 
 [Wyraź prośbę o współpracę lub pytanie o nierozstrzygnięty warunek tylko raz, w odpowiednim miejscu. Nie powtarzaj jej na początku i końcu. Powyższe wskazówki nie określają liczby ani kolejności akapitów i nie są treścią do wysłania.]
 

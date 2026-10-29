@@ -1,5 +1,17 @@
 # Styl zgłoszeń JobHunter
 
+29.10.2026 — odrębny kandydat wzorców: pełne fikcyjne odpowiedniki trzech
+zaakceptowanych konstrukcji są zaufaną referencją STYLU w natywnym promptcie,
+nie źródłem facts/evidence. Objaśniają aplikację lub własną pracę, dopuszczają
+powiązane cechy i list bez projektu. Katalog notatki faktograficznej, ciężkie
+pytanie i relacja z researchu wymagają oceny całego listu; bez blacklisty.
+Potrzebny status demonstracji/fikcyjnej pracowni pozostaje. Recenzent musi
+odróżnić te sytuacje od dobrych pełnych wzorców przed testem generatora.
+[Kalibracja i rozdzielenie techniki](reviews/STYLE_EXEMPLARS_CALIBRATION.md).
+Poprzedni kandydat v2 pozostaje FAIL i nie jest wdrażany. Trwałość jakości
+jest wymaganiem, nie deklaracją zaliczenia przez sam PASS. Profil/wzór/CV
+użytkownika nie są zmieniane; materiał stylistyczny w kodzie jest osobny.
+
 25.10.2026: nowe materiały przechodzą oddzielny werdykt `quality` w istniejącym
 review. `supported=true` nie zastępuje jakości. Szczegóły, wspólna ścieżka
 edycji i granica jednej korekty: [MESSAGE_QUALITY](reviews/MESSAGE_QUALITY.md).
