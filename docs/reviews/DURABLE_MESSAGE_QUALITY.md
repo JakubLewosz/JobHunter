@@ -45,7 +45,11 @@ człowiek. Odbiorcy w teście są fikcyjni. Źródła/fakty i pełne teksty
 pozostają poza Git. Porównanie używa natywnych builderów, DTO i walidatora;
 nie kopiuje produkcyjnej bazy i nie bada nowego researchu lub prawa kontaktu.
 
-Wynik próbki, pełnego Windows check i CI oraz decyzja wdrożeniowa są jeszcze
-oczekujące. Ta dokumentacja nie deklaruje przewagi na podstawie samego PASS.
+Pierwszy pełny Windows check: backend 1042/1044 PASS, dwa FAIL asercji
+dosłownego dawnego brzmienia prompta w `research.test.ts`. Uaktualniono tylko
+te asercje; kontrole doboru projektu, braku obcych faktów i orientacyjnych
+godzin pozostają. Po zamrożeniu próbki nie zmieniono kodu lub promptów
+aplikacji. Wynik próbki, powtórzonego check i CI oraz decyzja wdrożeniowa są
+jeszcze oczekujące. Ta dokumentacja nie deklaruje przewagi na podstawie PASS.
 Nie wolno użyć wyniku tego zadania jako R3 lub produkcyjnego odbioru V1.
 W całym zadaniu Gmail/OAuth/Start/rezerwacje/próby/kliknięcia/wysyłki = 0.

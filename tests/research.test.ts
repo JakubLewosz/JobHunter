@@ -648,7 +648,7 @@ test('research: około 20 godzin nie przekazuje modelowi minimum/maksimum; jeden
     undefined,
   );
   assert.equal(p.approvedMessage, service.profile().message_template);
-  assert.ok(prompt.includes('JEDEN'));
+  assert.match(prompt, /Najwyżej jeden trafny projekt/);
   assert.ok(!prompt.includes('"key":"autorelay"'));
 });
 test('research: edytowany wzór i orientacyjna dostępność są zapisywane i wymagają ponownego zatwierdzenia', async (t) => {
@@ -733,9 +733,9 @@ test('research: brak dowodu dopasowania projektu pozwala na szkic bez projektu i
   assert.doesNotMatch(draft.body, /FixDesk|AutoRelay|CodeFabric|ElektroScan/);
   const prompt = runner.prompts.find((p) => p.includes('Przygotuj indywidualny'))!;
   assert.match(prompt, /80–130/);
-  assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
+  assert.match(prompt, /Samo wspólne używanie AI\/Codexa nie uzasadnia dopasowania/);
   assert.doesNotMatch(prompt, /"key":"autorelay"/);
-  assert.match(prompt, /Możesz pominąć projekt/);
+  assert.match(prompt, /Projekt jest opcjonalny/);
   const data = JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6));
   assert.ok(
     data.profile.facts.every(
