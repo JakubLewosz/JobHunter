@@ -38,8 +38,7 @@ modyfikacji biblioteki, wysłanych wersji, historii, CV lub liczników.
 Regresja początkowa potwierdziła dopuszczanie swobodnej parafrazy.
 Po zmianie celowane testy sprawdzają sześć projektów i brak projektu,
 odnowienie, edycję, jedną korektę, restart, cofnięcie zgody, utratę ownera,
-Stop i identyczność z fikcyjnym MIME. Wyniki pełnego check/CI i faktyczny
-stan wdrożenia zostaną zapisane po ich rzeczywistym zakończeniu.
+Stop i identyczność z fikcyjnym MIME. Rzeczywiste wyniki pełnego check/CI i stan wdrożenia zapisano poniżej.
 
 Pełny check wykazał także potrzebę obsługi schematu 028 w eksporcie i audytorze
 snapshotów. Dopuszczono tę konkretną wersję bez poszerzania eksportu o prywatne
@@ -48,3 +47,26 @@ Odtwarzanie starszego schematu w testach usuwa również tabele 028; natywny
 odczyt profilu E2 obsługuje brak katalogu, a jego brak w schemacie 028 jest błędem.
 Starsze oczekiwanie dwóch projektów zastąpiono jawnym wymaganiem zero/jeden;
 oczekiwania dotyczące faktów, historii, prywatności i bezpieczeństwa pozostają.
+
+## Wynik końcowy
+
+Stałe opisy projektów: **DONE_FIXED_PROJECT_DESCRIPTIONS_STOPPED**. Aplikacja
+`ed6ad42aced1d8872b87cc052a0a68d59bd4b58e`, build `75d380e3-bf99-488b-bf9a-8ad4009c409b`;
+pełny Windows check PASS: 1070 backend, 12 Stop, 26 UI, typecheck/build.
+[CI dokładnego kodu PASS](https://github.com/JakubLewosz/JobHunter/actions/runs/40960775158). Sześć opisów v1
+w katalogu, profil v12, FixDesk v3 i jeden nowy fakt gry v1;
+natywny import idempotentny, backup/restore PASS, doktor i kontrola ochrony PASS.
+Siedem kompletnych przykładów DEVELOPMENT: jedna generacja na kontekst, bez
+parafraz; finalne oceny i kontrola końcowym buildem zachowane. Bez Gmaila,
+Startu i wysyłki na WORKSTATION. Historyczne 7/16 i C11 pozostają FAIL.
+
+Backup online uwzględniający WAL i odtworzenie z migracją 028 sprawdzono
+w izolacji. Wybrano dokładny przetestowany build; backend pozostaje zatrzymany.
+Profil v11 → v12; projekty 4 → 6, opisy 0 → 6 i dwa
+snapshoty materiałów. Zachowano 15 pozostałych faktów oraz wszystkie
+56 pozostałe tabele. Nadal 16 prób i 16 wpisów usage,
+280 szkiców oraz 585 zapisanych wersji. CV, wysłane treści,
+historia, blokady, aliasy, polityka i limity są niezmienione.
+Pełne sześć prywatnych opisów, siedem kompletnych wiadomości i hashe ochrony
+są w oddzielnej prywatnej paczce; kod nie zawiera nowego domyślnego profilu.
+STOPPED, bez prawa wysyłki i bez nowej kampanii.

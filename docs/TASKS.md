@@ -1,10 +1,17 @@
 # Bieżące zadania — 29 października 2026
 
-Bieżące zlecenie: [stałe opisy sześciu projektów](reviews/FIXED_PROJECT_DESCRIPTIONS.md).
-Implementacja i celowane regresje ukończone; następny krok: pełny Windows
-check i CI dokładnego SHA, siedem izolowanych przykładów, backup/restore,
-kontrolowane wdrożenie i natywny import. Bez Gmaila i prawa wysyłki.
-Poniższy odbiór V1 jest historią, nie nowym upoważnieniem.
+Stałe opisy projektów: **DONE_FIXED_PROJECT_DESCRIPTIONS_STOPPED**. Aplikacja
+`ed6ad42aced1d8872b87cc052a0a68d59bd4b58e`, build `75d380e3-bf99-488b-bf9a-8ad4009c409b`;
+pełny Windows check PASS: 1070 backend, 12 Stop, 26 UI, typecheck/build.
+[CI dokładnego kodu PASS](https://github.com/JakubLewosz/JobHunter/actions/runs/40960775158). Sześć opisów v1
+w katalogu, profil v12, FixDesk v3 i jeden nowy fakt gry v1;
+natywny import idempotentny, backup/restore PASS, doktor i kontrola ochrony PASS.
+Siedem kompletnych przykładów DEVELOPMENT: jedna generacja na kontekst, bez
+parafraz; finalne oceny i kontrola końcowym buildem zachowane. Bez Gmaila,
+Startu i wysyłki na WORKSTATION. Historyczne 7/16 i C11 pozostają FAIL.
+
+[Mechanizm i zakres](reviews/FIXED_PROJECT_DESCRIPTIONS.md).
+Poniższe odbiory są historią, nie nowym upoważnieniem.
 
 Bieżące zlecenie wykonawcze: [kontrolowane przyjęcie V1](reviews/V1_CONTROLLED_ACCEPTANCE.md).
 Użytkownik przyjął `69a5b23` + reuse `c905b7e` z ograniczeniami. Historyczne

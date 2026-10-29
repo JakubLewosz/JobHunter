@@ -1,6 +1,22 @@
-# Wyniki i zakres weryfikacji — 29 października 2026
+#Stałe opisy projektów: **DONE_FIXED_PROJECT_DESCRIPTIONS_STOPPED**. Aplikacja
+`ed6ad42aced1d8872b87cc052a0a68d59bd4b58e`, build `75d380e3-bf99-488b-bf9a-8ad4009c409b`;
+pełny Windows check PASS: 1070 backend, 12 Stop, 26 UI, typecheck/build.
+[CI dokładnego kodu PASS](https://github.com/JakubLewosz/JobHunter/actions/runs/40960775158). Sześć opisów v1
+w katalogu, profil v12, FixDesk v3 i jeden nowy fakt gry v1;
+natywny import idempotentny, backup/restore PASS, doktor i kontrola ochrony PASS.
+Siedem kompletnych przykładów DEVELOPMENT: jedna generacja na kontekst, bez
+parafraz; finalne oceny i kontrola końcowym buildem zachowane. Bez Gmaila,
+Startu i wysyłki na WORKSTATION. Historyczne 7/16 i C11 pozostają FAIL.
 
-Aktualny odbiór: `DONE_V1_CONTROLLED_BATCHES` w zakresie aktywnego Codexa
+Regresja przed poprawką: swobodna parafraza przechodziła (FAIL).
+Celowane 136/136 oraz 134/134 zgodności są podzbiorami pełnego check.
+Pełne sprawdzenie 6c95190 miało 1054 PASS / 16 FAIL (schema 028 i starsze
+fixture); wynik zachowano, przyczynę poprawiono. Dwa wcześniejsze przebiegi
+przerwano po zmianach kodu i nie zaliczono jako PASS.
+
+Wyniki i zakres weryfikacji — 29 października 2026
+
+Wcześniejszy odbiór: `DONE_V1_CONTROLLED_BATCHES` w zakresie aktywnego Codexa
 i zamkniętych partii; [pełne bezpieczne podsumowanie](reviews/V1_CONTROLLED_ACCEPTANCE.md).
 Aplikacja `bc40fac233f31daf82d4987a45c7a65c8ebaafce`, build
 `1fdfb176-cb6f-4ff0-91a3-5391ce13091a`. Rzeczywisty Windows/Node24.19.0:
