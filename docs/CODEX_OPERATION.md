@@ -1,5 +1,75 @@
 # Uruchamianie przez Codex — stan 29.10.2026
 
+## Kontrolowane przyjęcie V1 — 29.10.2026
+
+Odbiór `DONE_V1_CONTROLLED_BATCHES`: aplikacja `bc40fac`, build
+`1fdfb176-cb6f-4ff0-91a3-5391ce13091a`, WORKSTATION STOPPED, uprawnienie
+odwołane. Zakres obejmuje aktywnego Codexa i zamknięte partie. Pierwszy Start
+przerwano przed próbą, dopuszczone pojedyncze Resume ukończono; drugi plan
+ukończono ciągle. Ograniczenia hosta i pierwsze FAIL zachowano w raporcie.
+
+Użytkownik przyjął wariant treści `69a5b23` wraz z niezależnym reuse `c905b7e`
+do ograniczonego wdrożenia: `STYLE_RELEASE_DECISION=ACCEPTED_WITH_LIMITATIONS`.
+Zakończone porównanie: 7 wygranych, 9 remisów, 0 przegranych; próg 8/16 nadal
+FAIL, kalibracja nadal FAIL z przeoczeniem C11. Decyzja wydania nie zmienia
+tych wyników. [Zakres bieżącego odbioru](reviews/V1_CONTROLLED_ACCEPTANCE.md).
+
+Zwykłą pracę rozpoczyna polecenie w aktywnej rozmowie Codexa. Codex sprawdza
+instalację/build, Stop, właściciela, materiały i zakres aktualnej zgody.
+Research bez nadawania korzysta z istniejącego `research:session`; ograniczone
+odnowienie wskazanych niewysłanych ID korzysta z `research:refresh`:
+
+```powershell
+npm --silent run research:session -- --data-dir <ISTNIEJACA_HISTORIA> --start --hours 1
+npm --silent run research:refresh -- --data-dir <ISTNIEJACA_HISTORIA> --ids-file <PRYWATNA_LISTA_JSON> --minutes 30 --workstation
+```
+
+Nie zmieniać zapisanej kampanii AUTO_POLICY na RESEARCH_ONLY dla samego
+odnowienia. Samodzielne odnowienie działa przez niezależny ResearchJobHunter,
+bez inicjalizowania poczty. Resume nie oznacza nowej zgody ani nowego deadline.
+Stare przypisanie do scope domyślnie chroni szkic. Wyłącznie przy wyraźnym
+nowym zleceniu odnowienia tych konkretnych ID można dodać
+`--renew-scoped-ids-file <PRYWATNY_PODZBIOR_WYBRANYCH_ID_JSON>`.
+Nie zmienia to starego scope, polityki, zatwierdzeń lub prawa wysyłki.
+Jawne protectedDraftIds i blokady historii nadal obowiązują. Wysłanych/HOLD
+nie wybierać do odnowienia; nie kasować scope w SQLite.
+
+Zatwierdzona partia wymaga nowego właściwego uprawnienia użytkownika,
+tożsamości konta, celowanej historii, aktualnych materiałów i zapisanego planu.
+Istniejący zatrzymany owner i aktywny wykonawca są osobnymi częściami:
+
+```powershell
+npm --silent run nightflow -- plan --workstation --data-dir <ISTNIEJACA_HISTORIA> --file <PRYWATNY_PLAN_JSON> --confirm-selection-rules
+npm --silent run nightflow -- preflight --workstation --data-dir <ISTNIEJACA_HISTORIA> --plan <ZATWIERDZONY_PLAN_ID>
+npm --silent run nightflow -- browser-owner --workstation --data-dir <ISTNIEJACA_HISTORIA> --plan <ZATWIERDZONY_PLAN_ID>
+npm --silent run nightflow -- status --data-dir <ISTNIEJACA_HISTORIA>
+npm --silent run nightflow -- stop --data-dir <ISTNIEJACA_HISTORIA>
+npm --silent run nightflow -- report --data-dir <ISTNIEJACA_HISTORIA>
+```
+
+W tej samej aktywnej sesji Computer Use Codex używa istniejącego
+`scripts/browser-executor.mjs:CodexNightflowAdapter`: jedna instancja,
+`connect()` z rzeczywistym probe, jeden `start()`, następnie natychmiast
+kolejne `segment(30000)` lub `segment(60000)` aż do wyniku i `close()`.
+Każde wywołanie jest oczekiwane. W tym hoście długie pojedyncze RPC
+`runNightflowTask` przerwało się po300s mimo dłuższego parametru narzędzia;
+nie należy go stosować do kilkunastominutowego oczekiwania w jednym RPC.
+Krótka obsługa tej samej instancji ukończyła rzeczywiste plany. Nie tworzyć
+odłączonej obietnicy, sztucznego heartbeat ani zastępczego klienta. Pomiędzy
+segmentami nie analizować logów, nie prowadzić researchu/testów i nie budować.
+Diagnostykę wykonać po potwierdzonym Stop. Nie uruchamiać samego sendera
+w terminalu bez hosta. Timeout RPC wymaga ustalenia stanu istniejącej
+instancji, nigdy automatycznego drugiego Startu lub kliknięcia.
+Status bez ACK nie potwierdza właściciela, Stop bez ACK nie potwierdza końca
+operacji. Przy niepewnej próbie: Stop, ustalenie istniejącego wyniku, bez
+drugiego kliknięcia, Startu, API send lub resetowania historii. Kod aktualizuje
+się dopiero po potwierdzonym zatrzymaniu i spójnym backupie. Restart pozostawia
+brak prawa nadawania. Po zakończeniu owner/host muszą być zwolnione.
+
+Poniższe datowane sekcje zachowują historię; nie udzielają nowych uprawnień.
+
+## Historia poprzednich dostaw — nie jest bieżącym uprawnieniem
+
 Zlecenie pełnych wzorców jest wyłącznie DEVELOPMENT: reuse c905b7e
 wyodrębnione i sprawdzone, nowy recenzent nie przeszedł kalibracji. Nowa duża
 próbka NOT_RUN; dwie demonstracje są prywatne NOT_APPLIED. Poprzedni v2
@@ -282,47 +352,3 @@ ustawień AUTO_POLICY dla sekwencji nocnej. Nie przenosimy ich automatycznie
 na tempo, limity lub ukryty koniec przyszłego ciągłego AUTO. Osiem dawnych
 draft_approvals odnosi się do konkretnych zapisanych wersji, nie nieznanej
 przyszłej partii.
-## Kontrolowane przyjęcie V1 — 29.10.2026
-
-Użytkownik przyjął wariant treści `69a5b23` wraz z niezależnym reuse `c905b7e`
-do ograniczonego wdrożenia: `STYLE_RELEASE_DECISION=ACCEPTED_WITH_LIMITATIONS`.
-Zakończone porównanie: 7 wygranych, 9 remisów, 0 przegranych; próg 8/16 nadal
-FAIL, kalibracja nadal FAIL z przeoczeniem C11. Decyzja wydania nie zmienia
-tych wyników. [Zakres bieżącego odbioru](reviews/V1_CONTROLLED_ACCEPTANCE.md).
-
-Zwykłą pracę rozpoczyna polecenie w aktywnej rozmowie Codexa. Codex sprawdza
-instalację/build, Stop, właściciela, materiały i zakres aktualnej zgody.
-Research bez nadawania korzysta z istniejącego `research:session`; ograniczone
-odnowienie wskazanych niewysłanych ID korzysta z `research:refresh`:
-
-```powershell
-npm --silent run research:session -- --data-dir <ISTNIEJACA_HISTORIA> --start --hours 1
-npm --silent run research:refresh -- --data-dir <ISTNIEJACA_HISTORIA> --ids-file <PRYWATNA_LISTA_JSON> --minutes 30 --workstation
-```
-
-Nie zmieniać zapisanej kampanii AUTO_POLICY na RESEARCH_ONLY dla samego
-odnowienia. Samodzielne odnowienie działa przez niezależny ResearchJobHunter,
-bez inicjalizowania poczty. Resume nie oznacza nowej zgody ani nowego deadline.
-
-Zatwierdzona partia wymaga nowego właściwego uprawnienia użytkownika,
-tożsamości konta, celowanej historii, aktualnych materiałów i zapisanego planu.
-Istniejący zatrzymany owner i aktywny wykonawca są osobnymi częściami:
-
-```powershell
-npm --silent run nightflow -- browser-owner --workstation --data-dir <ISTNIEJACA_HISTORIA> --plan <ZATWIERDZONY_PLAN_ID>
-npm --silent run nightflow -- status --data-dir <ISTNIEJACA_HISTORIA>
-npm --silent run nightflow -- stop --data-dir <ISTNIEJACA_HISTORIA>
-```
-
-W tej samej aktywnej sesji Computer Use Codex używa istniejącego
-`scripts/browser-executor.mjs:runNightflowTask`: probe/gotowość, pojedynczy
-Start, ciągłe segmenty tej samej instancji, wynik i cleanup. Nie uruchamiać
-samego sendera w terminalu bez hosta i nie robić przerw między segmentami.
-Status bez ACK nie potwierdza właściciela, Stop bez ACK nie potwierdza końca
-operacji. Przy niepewnej próbie: Stop, ustalenie istniejącego wyniku, bez
-drugiego kliknięcia, Startu, API send lub resetowania historii. Kod aktualizuje
-się dopiero po potwierdzonym zatrzymaniu i spójnym backupie. Restart pozostawia
-brak prawa nadawania. Po zakończeniu owner/host muszą być zwolnione.
-
-Poniższe datowane sekcje zachowują historię; nie udzielają nowych uprawnień.
-

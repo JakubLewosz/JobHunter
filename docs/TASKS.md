@@ -3,9 +3,17 @@
 Bieżące zlecenie wykonawcze: [kontrolowane przyjęcie V1](reviews/V1_CONTROLLED_ACCEPTANCE.md).
 Użytkownik przyjął `69a5b23` + reuse `c905b7e` z ograniczeniami. Historyczne
 7/16 i kalibracja C11 pozostają FAIL. Bez następnego strojenia. Integracja,
-testy, wdrożenie, natywne odnowienie i ograniczony rzeczywisty odbiór są w toku;
-nie są jeszcze DONE. Prywatny checkpoint zachowuje nową, nieodnawianą zgodę
-oraz oddzielny moment aktywacji okna Gmaila. Poczta jeszcze nieaktywna.
+testy, wdrożenie, natywne odnowienie i ograniczony rzeczywisty odbiór ukończono:
+`DONE_V1_CONTROLLED_BATCHES`. Aplikacja `bc40fac`, build
+`1fdfb176-cb6f-4ff0-91a3-5391ce13091a`: dwa osobne zamknięte plany,
+dwa potwierdzone pierwsze kontakty, zero niepewnych prób. Pierwszy Start
+przerwał timeout RPC/utrata hosta przed próbą; jedno jawne natywne Resume
+ukończyło go. Drugi plan ukończono bez przerwania. Nie opisujemy pierwszego
+Startu jako nieprzerwanego sukcesu. Dodatkowy test idle pozostał FAIL po
+przerwie operatora; ciągłe krótkie wywołania adaptera ukończyły rzeczywisty odbiór.
+Stan końcowy STOPPED, brak ownera i odwołane uprawnienie. Następna zwykła
+praca używa [instrukcji operatora](CODEX_OPERATION.md) i nowego właściwego
+upoważnienia; nie jest kolejną rundą strojenia ani automatycznym wznowieniem.
 
 Poniższe wpisy opisują poprzednie dostawy, nie zakres nowego upoważnienia.
 

@@ -1,5 +1,31 @@
 # Wyniki i zakres weryfikacji — 29 października 2026
 
+Aktualny odbiór: `DONE_V1_CONTROLLED_BATCHES` w zakresie aktywnego Codexa
+i zamkniętych partii; [pełne bezpieczne podsumowanie](reviews/V1_CONTROLLED_ACCEPTANCE.md).
+Aplikacja `bc40fac233f31daf82d4987a45c7a65c8ebaafce`, build
+`1fdfb176-cb6f-4ff0-91a3-5391ce13091a`. Rzeczywisty Windows/Node24.19.0:
+pełny `npm run check` PASS — 1051 backend, 12 Stop, 26 UI, typecheck i build;
+[CI dokładnego SHA PASS](https://github.com/JakubLewosz/JobHunter/actions/runs/40922050436).
+Dziewięć testów odnowienia stanowi podzbiór pełnego check, nie dodatkowe przypadki.
+Nowy test najpierw wykazał PROTECTED_DRAFT zamiast CHECKED; po poprawce PASS.
+Poprzedni lokalny check przerwano po zmianie kodu, nie zaliczono go jako PASS.
+
+Fikcyjny rzeczywisty Computer Use: A/C ukończone, B odłożone, restart bez
+nowych prób, release/cleanup PASS. Odbiór WORKSTATION: cztery zamrożone ID,
+18 weryfikacji źródeł, dwie nowe wersje/review v3, dwa STALE_EVIDENCE,
+bez Gmaila w fazie research. Dwa późniejsze osobne plany tego samego buildu:
+dwa SENT_CONFIRMED, odstęp 755.876 s, brak niepewnych prób. Pierwszy Start
+STOPPED/BROWSER_HOST_LOST po granicy RPC300s (0 prób); jedno natywne Resume
+ukończone. Drugi Start ciągły, ukończony. Dodatkowy test idle FAIL po przerwie
+operatora pozostaje FAIL; nie jest dowodem ciągłego sukcesu pierwszego Startu.
+Restart kwalifikacji obu obsłużonych pozycji: CONTACT_HISTORY, zero nowych
+odczytów źródeł/modelu/prób. Stare wiersze historii, liczniki, CV/profil i blokady
+zachowane, backup z WAL/restore/integrity/FK PASS. Koniec STOPPED bez uprawnienia.
+
+Historyczne progi stylu i kalibracji nadal FAIL; decyzja wydania jest osobna.
+CI `8ca0f3e` run40887353139 pozostaje failure, publiczny exit1 bez dostępnego
+pełnego logu; nie przypisujemy mu przyczyny nowej poprawki. Poniżej historia.
+
 Wzorce/recenzent: techniczne reuse c905b7e 41/41 i osobne CI PASS,
 niezależne od stylu, bez wdrożenia. Kandydat 69a5b23: celowany Windows
 186/186 PASS, native kalibracja FAIL (5/5 dodatnich, 6/7 wad stylu, jedna
