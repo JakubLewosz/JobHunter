@@ -4,7 +4,10 @@
 są stałym kryterium odbioru generacji, odnowienia, edycji i jednej korekty.
 Kod wersjonuje wspólny standard jako `messageQualityVersion=2`. Ta zasada
 zastępuje sprzeczne zalecenia maksymalnego skrótu i jednej czynności projektu;
-nie oznacza jeszcze potwierdzenia przewagi generatora ani wdrożenia.
+nie oznacza potwierdzenia przewagi generatora ani wdrożenia. Kandydat v2
+nie przeszedł odłożonej próby (1 preferencja, 15 remisów), pozostaje w gałęzi
+DEVELOPMENT; [pełny wynik](reviews/DURABLE_MESSAGE_QUALITY.md). Preferencje
+użytkownika pozostają kryterium, którego sam PASS nadal nie potwierdza.
 
 25.10.2026: nowe materiały przechodzą oddzielny werdykt `quality` w istniejącym
 review. `supported=true` nie zastępuje jakości. Szczegóły, wspólna ścieżka

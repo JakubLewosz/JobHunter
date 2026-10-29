@@ -1,13 +1,17 @@
 # Bieżące zadania — 29 października 2026
 
-Nowe odrębne zlecenie: [trwała jakość treści](reviews/DURABLE_MESSAGE_QUALITY.md).
-Kandydat w DEVELOPMENT, standard jakości v2 i naprawa odnowienia starego
-review. Celowane regresje 152/152 PASS; pełny Windows check i jedna odłożona
-próbka przed decyzją wdrożeniową. Osiem kontekstów zamrożono przed edycją.
-Nowa zgoda techniczna dopuszcza jedno wdrożenie dopiero po bramce jakości,
-testach i CI, następnie wyłącznie dwa określone nadal niewysłane szkice.
-Nie dopuszcza Gmaila/OAuth/Start/R3 ani żadnej wysyłki. Produkcja pozostaje
-STOPPED; stary wynik V1 i termin zgody niżej pozostają historią obowiązującą.
+Odrębne zlecenie [trwałej jakości treści](reviews/DURABLE_MESSAGE_QUALITY.md):
+**STYLE_VALIDATED=FAIL; DEPLOYED=false; DRAFTS_UPDATED=NOT_APPLIED**.
+Kandydat v2 i naprawa odnowienia starego review pozostają w DEVELOPMENT.
+Odłożona próbka 32 tekstów: seria 1 — 8 remisów, seria 2 — 1 preferencja
+nowego/7 remisów; brak wymaganej wyraźnej powtarzalnej korzyści. Bez kolejnego
+strojenia na tej ósemce. Celowane regresje 152/152 PASS; pierwszy pełny check
+1042/1044, dwie stare literalne asercje prompta poprawione bez zmiany aplikacji;
+Końcowy pełny check 1044/12/26/typecheck/build i CI40872689852 f85f0e8 PASS.
+Wynik tej ograniczonej rundy zamknięty; pełne teksty i paczki prywatne poza Git.
+Warunkowa zgoda wdrożeniowa nie została uruchomiona z powodu wyniku jakości.
+Produkcja i oba szkice pozostają bez
+zmian, STOPPED, bez Gmaila/OAuth/Start/R3/wysyłki. V1 poniżej nadal obowiązuje.
 
 Końcowy wynik kontynuacji: **NOT_PRODUCTION_VERIFIED**.
 Kod `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`, ten sam zamrożony build:

@@ -1,10 +1,12 @@
 # Uruchamianie przez Codex — stan 29.10.2026
 
-Odrębne zlecenie jakości v2 jest realizowane w DEVELOPMENT. Obowiązuje
-[stały standard](MESSAGE_STYLE.md) i [warunkowy odbiór](reviews/DURABLE_MESSAGE_QUALITY.md).
-Nie jest to wznowienie kampanii ani prawo Gmaila/OAuth/Start/R3/wysyłki.
-Wdrożenie i ograniczony zapis dwóch niewysłanych szkiców wymagają najpierw
-pozytywnej bramki jakości, pełnego Windows check i CI dokładnego kodu.
+Odrębne zlecenie jakości v2: **STYLE_VALIDATED=FAIL**, DEPLOYED=false,
+DRAFTS_UPDATED=NOT_APPLIED. Kandydat pozostaje w DEVELOPMENT; pełny Windows
+check PASS nie zastępuje nieudanej próby tekstów (1 preferencja/15 remisów).
+Obowiązuje [stały standard](MESSAGE_STYLE.md) i [wynik odbioru](reviews/DURABLE_MESSAGE_QUALITY.md).
+Nie uruchomiono warunkowego wdrożenia lub zapisu dwóch szkiców. Nie jest to
+wznowienie kampanii ani prawo Gmaila/OAuth/Start/R3/wysyłki. 62 tabele historii
+i instalacja bez zmian; poniższy produkcyjny kod ca5bd42 pozostaje wybrany.
 
 Aktualny wdrożony kod to `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
 build `90e528ed-9018-442d-8e06-e71484443bb6`. WORKSTATION STOPPED,

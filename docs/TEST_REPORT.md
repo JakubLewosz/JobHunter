@@ -1,10 +1,16 @@
 # Wyniki i zakres weryfikacji — 29 października 2026
 
-Nowy kandydat jakości v2: celowany Windows 152/152 PASS; wcześniej zachowany
-FAIL nowej regresji odnowienia wykazał pominięcie wersji jakości przez reuse.
-Pełne porównanie i Windows check/CI są oczekujące, nie zaliczone przez ten
-wynik syntetyczny. [Zakres i metoda](reviews/DURABLE_MESSAGE_QUALITY.md).
-Nie uruchamiano Gmaila/OAuth/R3/nadawania w nowym zleceniu.
+Kandydat jakości v2: **STYLE_VALIDATED=FAIL**, DEPLOYED=false,
+DRAFTS_UPDATED=NOT_APPLIED. Zamrożone 32 teksty, dwie serie: 0 wygranych
+nowego/8 remisów oraz 1 wygrana/7 remisów. Sam natywny PASS 32/32 nie
+potwierdził przewagi. Celowany Windows 152/152; pełny końcowy Windows check
+**1044/12/26/typecheck/build PASS** na f85f0e8. Pierwsze 1042/1044 i FAIL
+regresji starego review zachowano; tylko stare asercje promptów poprawiono
+po zamrożeniu aplikacji. [CI40872689852 dokładnego f85f0e8 PASS](https://github.com/JakubLewosz/JobHunter/actions/runs/40872689852).
+Łącznie 95/120 rzeczywistych wywołań,
+0 błędów wykonania. 62 tabele i oba niewysłane v2 bez zmian, STOPPED.
+[Zakres, metoda i ograniczenia](reviews/DURABLE_MESSAGE_QUALITY.md).
+Gmail/OAuth/Start/R3/próby/wysyłki = 0 w nowym zleceniu.
 
 Końcowy odbiór tego samego ca5bd42/build90e528ed:
 R1 **PASS**3611s, R2 **COMPLETED**3/3, R3 **STOPPED/EXECUTION_DEADLINE**0/2.
