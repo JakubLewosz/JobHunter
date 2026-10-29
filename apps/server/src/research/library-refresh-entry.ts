@@ -22,6 +22,8 @@ export async function runLibraryRefresh(options: {
   draftIds: string[];
   minutes: number;
   protectedDraftIds?: string[];
+  /** Explicit renewal of named, stopped policy drafts; never grants a send scope. */
+  renewScopedDraftIds?: string[];
   deadline?: string;
   signal?: AbortSignal;
   fixture?: { reader: SourceReader; runner: StructuredRunner };
@@ -34,6 +36,10 @@ export async function runLibraryRefresh(options: {
     !options.draftIds.length ||
     options.draftIds.some((id) => typeof id !== 'string' || !id) ||
     new Set(options.draftIds).size !== options.draftIds.length ||
+    (options.renewScopedDraftIds !== undefined &&
+      (!Array.isArray(options.renewScopedDraftIds) ||
+        new Set(options.renewScopedDraftIds).size !== options.renewScopedDraftIds.length ||
+        options.renewScopedDraftIds.some((id) => !options.draftIds.includes(id)))) ||
     (options.deadline !== undefined &&
       (!Number.isFinite(Date.parse(options.deadline)) ||
         Date.parse(options.deadline) <= Date.now()))
@@ -62,6 +68,7 @@ export async function runLibraryRefresh(options: {
     kind: 'LIBRARY_REFRESH_ONLY',
     build: runningBuildIdentity,
     selected: options.draftIds,
+    renewScopedDraftIds: options.renewScopedDraftIds ?? [],
     results: [],
     startedAt: null,
     deadline: null,
@@ -193,7 +200,10 @@ export async function runLibraryRefresh(options: {
     protectedIds = [
       ...new Set([
         ...(options.protectedDraftIds ?? []),
-        ...store.all('SELECT draft_id FROM auto_draft_scope').map((r) => r.draft_id as string),
+        ...store
+          .all('SELECT draft_id FROM auto_draft_scope')
+          .map((r) => r.draft_id as string)
+          .filter((id) => !options.renewScopedDraftIds?.includes(id)),
       ]),
     ];
     protectedLibraryBefore = protectedLibrary();

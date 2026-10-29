@@ -83,6 +83,43 @@ test('refresh entry checks real fixture sources, preserves versions and creates 
   assert.ok(f.reader.calls > calls);
   f.preserved();
 });
+test('explicit scoped renewal preserves the old scope and needs an exact opt-in', async (t) => {
+  const f = await fixture(t),
+    store = new Store(f.dir);
+  store.exec(
+    'INSERT INTO auto_draft_scope(draft_id,scope_hash) VALUES (?,?)',
+    f.draft.id,
+    'old-stopped-scope',
+  );
+  store.close();
+  const calls = f.reader.calls;
+  const protectedResult = await runLibraryRefresh(f.options);
+  assert.equal(protectedResult.results[0].code, 'PROTECTED_DRAFT');
+  assert.equal(f.reader.calls, calls);
+  await assert.rejects(runLibraryRefresh({ ...f.options, renewScopedDraftIds: ['foreign'] }), {
+    code: 'REFRESH_OPTIONS',
+  });
+  const explicitProtection = await runLibraryRefresh({
+    ...f.options,
+    renewScopedDraftIds: [f.draft.id],
+    protectedDraftIds: [f.draft.id],
+  });
+  assert.equal(explicitProtection.results[0].code, 'PROTECTED_DRAFT');
+  assert.equal(f.reader.calls, calls);
+  const result = await runLibraryRefresh({ ...f.options, renewScopedDraftIds: [f.draft.id] });
+  assert.equal(result.reason, 'COMPLETED');
+  assert.equal(result.results[0].code, 'CHECKED');
+  assert.ok(f.reader.calls > calls);
+  const db = new Database(join(f.dir, 'jobhunter.sqlite'), { readonly: true });
+  try {
+    assert.deepEqual(db.prepare('SELECT * FROM auto_draft_scope').all(), [
+      { draft_id: f.draft.id, scope_hash: 'old-stopped-scope' },
+    ]);
+  } finally {
+    db.close();
+  }
+  f.preserved();
+});
 test('refresh entry rejects cancellation before opening history', async (t) => {
   const f = await fixture(t),
     signal = AbortSignal.abort();
