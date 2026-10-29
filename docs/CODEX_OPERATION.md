@@ -1,11 +1,13 @@
-# Uruchamianie przez Codex — stan 28.10.2026
+# Uruchamianie przez Codex — stan 29.10.2026
 
 Aktualny wdrożony kod to `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
 build `90e528ed-9018-442d-8e06-e71484443bb6`. WORKSTATION STOPPED,
 bez ownera i prawa wysyłki. Pełny Windows check/CI i fikcyjny CUA PASS;
 nowy rzeczywisty godzinny R1 PASS (3611s, 47 wywołań modelu, guard/backup/cleanup).
-R2/R3 na tej wersji jeszcze NOT_RUN; V1 NOT_PRODUCTION_VERIFIED.
-[Aktualne fakty](reviews/V1_CLI_DIAGNOSIS.md), [poprzednia dostawa](reviews/V1_FINAL_RESULT.md).
+R2 COMPLETED:3 potwierdzone wiadomości; R3 STOPPED/EXECUTION_DEADLINE:0 prób,
+2 odnowione i sprawdzone pozycje w partii. V1 NOT_PRODUCTION_VERIFIED.
+Pierwotna zgoda wygasła29.10 o11:06:39 Warsaw; Gmail zamknięty, brak autowznowienia.
+[Aktualne fakty](reviews/V1_CLI_FINAL_RESULT.md), [diagnoza](reviews/V1_CLI_DIAGNOSIS.md).
 Starsze stwierdzenia o niewdrożonym kodzie poniżej opisują wcześniejsze daty.
 
 Jedna instrukcja dla zwykłego zadania w Codexie, z ważną zgodą na konkretny zakres:
@@ -19,16 +21,24 @@ Jedna instrukcja dla zwykłego zadania w Codexie, z ważną zgodą na konkretny 
 > zapisz zatwierdzoną politykę i dokładny zakres planu przez aplikację.
 > Uruchom zatrzymanego właściciela przez runStoppedNightflowOwner w Node24;
 > w aktywnym Computer Use zaimportuj lekki scripts/browser-executor.mjs,
-> użyj CodexNightflowAdapter z tą samą kartą/instancją: świeży probe/connect,
-> jeden Start, następnie segmenty aż do wyniku. Nie uruchamiaj backendu w VM.
+> użyj istniejącego runNightflowTask, który wykonuje świeży probe/connect,
+> jeden Start i kolejne segmenty w tej samej aktywnej instancji aż do wyniku.
+> Przy krótkich wywołaniach CodexNightflowAdapter wykonuj segmenty ciągle,
+> bez długich odczytów logów lub analizy pomiędzy nimi. Nie uruchamiaj backendu w VM.
 > Wykonuj tylko zgodne pierwsze kontakty, bez indywidualnej ponownej zgody,
 > przez istniejący GMAIL_BROWSER. Po niepewnym ACK nie ponawiaj Startu ani
 > kliknięcia. Zakończ Stop, odwołaj prawo, potwierdź operacje/guard/cleanup
 > i pokaż prawdziwe wyniki. Wygasła zgoda lub brak gotowości oznacza brak Startu.
 
 Zweryfikowano tę ścieżkę natywną na fikcyjnej stronie (odnowienie, partia,
-akcje, restart), a wejście research-only na rzeczywistych danych.
-Pełny rzeczywisty ciąg R1→R2→R3 z Gmailem nie przeszedł odbioru; instrukcja
+akcje, restart), rzeczywistym R1 i odnowienie→partia→3 potwierdzone nadania R2.
+Dwie przerwy operatora pomiędzy segmentami utraciły host; Stop i stan prób
+sprawdzono przed jawnymi Resume. Ciągła obsługa kolejnych segmentów ukończyła
+R2 bez kolejnej utraty hosta i zatrzymała R3 na pierwotnym deadline.
+Lease45s nie służy do czekania poza aktywnym wykonawcą; diagnostykę i długie
+odczyty wykonuj po Stop. Timeout RPC nie jest dowodem zakończenia właściciela.
+Pełny rzeczywisty ciąg R1→R2→R3 z Gmailem nie przeszedł odbioru, bo R3 wygasł;
+instrukcja
 nie nadaje nowej zgody i nie uruchamia go automatycznie. Stare prywatne helpery
 tej dostawy nie są uniwersalnym launcherem ani odnawialnym upoważnieniem.
 

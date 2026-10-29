@@ -1,9 +1,10 @@
 # Kontynuacja V1: pomiar CLI — 28.10.2026
 
-Stan 20:55 UTC: kod ca5bd42 wdrożony na WORKSTATION, nowy godzinny R1 PASS.
-Backend STOPPED, bez ownera i prawa wysyłki. R2/R3 czekają na dozwolone okno
-istniejącej zgody; nie nadano nowej wiadomości i nie włączono Gmaila.
-Pierwotny deadline i historia bez zmian. To ta sama kontynuacja zlecenia.
+Stan końcowy29.10: ca5bd42 na WORKSTATION, nowy R1 PASS, R2 COMPLETED3/3,
+R3 STOPPED/EXECUTION_DEADLINE bez prób. Backend STOPPED, bez ownera i prawa
+wysyłki, Gmail zamknięty; zgoda wygasła o pierwotnym terminie. Historia,
+blokady i limity zachowane. [Końcowy wynik](V1_CLI_FINAL_RESULT.md).
+Pomiary i opis wcześniejszych bramek poniżej pozostają ich historią.
 
 ## Co wiadomo o wcześniejszych przerwaniach
 

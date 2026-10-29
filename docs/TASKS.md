@@ -1,4 +1,23 @@
-# Bieżące zadania — 28 października 2026
+# Bieżące zadania — 29 października 2026
+
+Końcowy wynik kontynuacji: **NOT_PRODUCTION_VERIFIED**.
+Kod `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`, ten sam zamrożony build:
+pełny Windows check1042/12/26/CI/CUA PASS, nowy R1 PASS3611s,
+R2 COMPLETED (3 próby, 3 potwierdzone), R3 STOPPED/EXECUTION_DEADLINE
+(2 odnowione/sprawdzone w partii, 0 prób). Łącznie3/5, 0 niepewnych,
+0 duplikatów lub działań poza zakresem. Dwa wcześniejsze zatrzymania hosta
+wynikały z przerw operatora pomiędzy segmentami; zachowane, bez zwiększania lease.
+[Dokładny wynik i ograniczenia](reviews/V1_CLI_FINAL_RESULT.md).
+
+WORKSTATION STOPPED, brak ownera i aktywnych operacji/prawa wysyłki;
+Gmail zamknięty. Pierwotna zgoda wygasła29.10 11:06:39 Warsaw; nie odnawiać
+jej ani pozostałych limitów. Bez kolejnego Startu lub Gmaila dla starej partii.
+Następna dozwolona granica dla dwóch niewysłanych kontaktów to nowa świadoma
+decyzja użytkownika, nie kolejna poprawka programistyczna lub nowa kampania
+uruchomiona automatycznie. Pozostają2 alerty npm z oceną osiągalności i
+nierozstrzygnięta historyczna przyczyna trzech starych timeoutów.
+
+Poniższe wcześniejsze wpisy zachowują historię etapów; stan powyżej jest bieżący.
 
 Aktualizacja 20:55 UTC: wdrożony kod `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
 build `90e528ed-9018-442d-8e06-e71484443bb6`. Pełny Windows check

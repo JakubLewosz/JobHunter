@@ -1,4 +1,25 @@
-# Wyniki i zakres weryfikacji — 28 października 2026
+# Wyniki i zakres weryfikacji — 29 października 2026
+
+Końcowy odbiór tego samego ca5bd42/build90e528ed:
+R1 **PASS**3611s, R2 **COMPLETED**3/3, R3 **STOPPED/EXECUTION_DEADLINE**0/2.
+Pełny Windows check1042/12/26/typecheck/build i CI40754519704 PASS.
+Łącznie3 nowe pierwsze kontakty SENT_CONFIRMED, brak SELF_TEST/niepewnych/
+duplikatów/poszerzenia zakresu. R2 pierwsza instancja i pierwsze Resume
+zatrzymały się BROWSER_HOST_LOST po przerwach operatora; wyniki zachowano.
+Kolejne Resume tej samej zamkniętej partii ominęło już potwierdzone nadanie.
+Ciągły host ostatniego R2 oraz R3 zachował lease; nie zmieniono kodu lub lease.
+R3 odnowił i sprawdził2 teksty, lecz natywny pierwszy termin11:14:01 był po
+nieodnowionym końcu zgody11:06:39 Warsaw. Celowana historia R3 NOT_RUN.
+
+Końcowy lokalny audyt: oryginalne11 prób/outbox/usage i530 dawnych wersji
+szkiców zachowane; CV/nadawca/frozen preview zgodne dla każdej nowej próby;
+deduplikacja blokuje stare3 i nowe3 firmy; HOLD zachowany. Odstępy
+ACK→następny grant1028778/618872ms≥600s. Pełny spójny backup/integrity/FK,
+Stop i cleanup PASS. Gmail zamknięty, 0 aktywnych operacji i prawa nadania.
+**NOT_PRODUCTION_VERIFIED**, bo R3 nie ukończył rzeczywistego nadawania.
+[Pełny wynik kontynuacji](reviews/V1_CLI_FINAL_RESULT.md).
+
+Poniżej zachowane wcześniejsze wyniki z28.10 i bramek rozwojowych.
 
 Najnowszy kod aplikacji: `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`.
 Rzeczywisty domowy Windows, Node24.19.0, `npm run check` 19:28:41–19:42:28 UTC:
