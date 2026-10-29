@@ -111,6 +111,8 @@ async function native(t: any, quote: string = cases[1][2], install = true) {
       c.text = quote;
       v.subject = 'Zapytanie o współpracę';
     }
+    if (options?.stage === 'VERIFY_DRAFT_MAPPING')
+      (r.value as any).claims.find((c: any) => c.kind === 'COMPANY').text = quote;
     return r;
   };
   const service = new ResearchJobHunter(store, { reader, runner });
@@ -459,6 +461,94 @@ test('underlying fact changes invalidate ready literal material across restart w
   const restarted = new ResearchJobHunter(f.store, { runner: f.runner, reader: f.reader });
   assert.deepEqual(restarted.draftMaterialIssues(d), ['DRAFT_MATERIAL_STALE']);
   assert.deepEqual(f.store.all('SELECT * FROM draft_versions'), versions);
+});
+
+test('an exact native manual edit keeps catalog bytes and receives its own full review', async (t) => {
+  const f = await native(t),
+    d = await f.generate();
+  f.service.editDraft(d.id, { version: d.version, subject: d.subject + ' — edycja', body: d.body });
+  const edited = f.service.draftRows()[0];
+  await f.service.verifyDraft(edited.id, edited.version);
+  const current = f.service.draftRows()[0];
+  assert.equal(current.body, d.body);
+  assert.equal(current.subject, edited.subject);
+  assert.deepEqual(f.service.draftMaterialIssues(current), []);
+  assert.equal(f.runner.prompts.filter((p) => p.includes('Przygotuj indywidualny')).length, 1);
+});
+
+test('legacy PASS and unchanged sources cannot reuse a free paraphrase; original material remains archived', async (t) => {
+  const f = await native(t),
+    d = await f.generate(),
+    m = f.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    )!;
+  const v = JSON.parse(m.payload_json),
+    context = JSON.parse(m.context_json),
+    literal = context.profile.projectSelection.selected[0].description.text,
+    paraphrase = 'AutoRelay automatyzuje zadania.';
+  v.body = v.body.replace(literal, paraphrase);
+  v.claims.find((c: any) => c.text === literal).text = paraphrase;
+  delete v.projectDescription;
+  delete context.fixedProjectContractVersion;
+  // Reconstruct a legacy fixture, never modify a real sent/historical version.
+  f.store.exec(
+    'UPDATE drafts SET body=?,payload_hash=? WHERE id=?',
+    v.body,
+    hash(JSON.stringify(v)),
+    d.id,
+  );
+  f.store.exec(
+    'UPDATE draft_versions SET body=?,payload_hash=? WHERE draft_id=? AND version=?',
+    v.body,
+    hash(JSON.stringify(v)),
+    d.id,
+    d.version,
+  );
+  f.store.exec(
+    'UPDATE research_drafts SET claims=? WHERE draft_id=?',
+    JSON.stringify(v.claims),
+    d.id,
+  );
+  const row = f.store.one('SELECT * FROM drafts WHERE id=?', d.id)!;
+  f.store.exec(
+    'UPDATE research_draft_materials SET payload_json=?,payload_hash=?,context_json=?,context_hash=? WHERE draft_id=? AND version=?',
+    JSON.stringify(v),
+    row.payload_hash,
+    JSON.stringify(context),
+    (f.service as any).materialBinding(row),
+    d.id,
+    d.version,
+  );
+  const archived = f.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    ),
+    oldVersion = f.store.one(
+      'SELECT * FROM draft_versions WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    );
+  assert.deepEqual(f.service.draftMaterialIssues(row), ['PROJECT_DESCRIPTION_REVIEW_REQUIRED']);
+  await f.service.refreshLibraryDrafts({ draftIds: [d.id] });
+  const renewed = f.service.draftRows()[0];
+  assert.ok(renewed.version > d.version);
+  assert.ok(renewed.body.includes(literal));
+  assert.deepEqual(f.service.draftMaterialIssues(renewed), []);
+  assert.deepEqual(
+    f.store.one(
+      'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+      d.id,
+      d.version,
+    ),
+    archived,
+  );
+  assert.deepEqual(
+    f.store.one('SELECT * FROM draft_versions WHERE draft_id=? AND version=?', d.id, d.version),
+    oldVersion,
+  );
 });
 
 test('fixed project contract rejects a formerly valid free paraphrase before material admission', (t) => {
