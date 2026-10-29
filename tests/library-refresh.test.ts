@@ -10,6 +10,10 @@ import { setup } from './auto-fixture.js';
 import { GmailJobHunter } from '../apps/server/src/gmail/service.js';
 import { FixtureGmail } from './gmail-fixture.js';
 import { hash } from '../apps/server/src/util.js';
+import {
+  messageQualityVersion,
+  messageConstructionStandard,
+} from '../apps/server/src/research/message-quality.js';
 async function fixture(t: any) {
   const dir = mkdtempSync(join(tmpdir(), 'jh-library-refresh-')),
     store = new Store(dir),
@@ -64,6 +68,54 @@ test('raw HTML hash change with identical parsed text creates a fresh binding/re
   assert.ok(!calls.some((p) => p.includes('POPRAW ISTNIEJĄCY SZKIC')), 'no cosmetic generation');
   for (const v of oldVersions)
     assert.deepEqual(f.store.one('SELECT * FROM draft_versions WHERE id=?', v.id), v);
+});
+
+test('the selected older quality version is reviewed with the new common standard without cosmetic generation', async (t) => {
+  const f = await fixture(t);
+  const original = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    f.draft.id,
+    f.draft.version,
+  )!;
+  const context = JSON.parse(original.context_json);
+  context.messageQualityVersion = messageQualityVersion - 1;
+  f.store.exec(
+    'UPDATE research_draft_materials SET context_json=? WHERE draft_id=? AND version=?',
+    JSON.stringify(context),
+    f.draft.id,
+    f.draft.version,
+  );
+  assert.deepEqual(f.service.draftMaterialIssues(f.draft), ['EDITORIAL_REVIEW_REQUIRED']);
+  const before = f.runner.prompts.length;
+  const result = await f.service.refreshLibraryDrafts({ draftIds: [f.draft.id] });
+  assert.equal(result.results[0].code, 'CHECKED');
+  const current = f.service.draftRows()[0];
+  assert.equal(current.subject, f.draft.subject);
+  assert.equal(current.body, f.draft.body);
+  const calls = f.runner.prompts.slice(before);
+  assert.equal(calls.filter((p) => p.includes('Przygotuj indywidualny polski szkic')).length, 0);
+  assert.ok(
+    calls.some((p) => p.includes('Sprawdź KAŻDE') && p.includes(messageConstructionStandard)),
+  );
+  const material = f.store.one(
+    'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
+    current.id,
+    current.version,
+  )!;
+  assert.equal(JSON.parse(material.context_json).messageQualityVersion, messageQualityVersion);
+  assert.deepEqual(f.service.draftMaterialIssues(current), []);
+  assert.equal(
+    JSON.parse(
+      f.store.one(
+        'SELECT context_json FROM research_draft_materials WHERE draft_id=? AND version=?',
+        f.draft.id,
+        f.draft.version,
+      )!.context_json,
+    ).messageQualityVersion,
+    messageQualityVersion - 1,
+  );
+  assert.equal(f.store.one('SELECT count(*) n FROM send_attempts')!.n, 0);
+  assert.equal(f.service.state().stopped, true);
 });
 
 for (const change of ['TEXT', 'CONTACT', 'TIMEOUT', 'INCOMPLETE'])

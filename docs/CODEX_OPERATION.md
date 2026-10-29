@@ -1,5 +1,11 @@
 # Uruchamianie przez Codex — stan 29.10.2026
 
+Odrębne zlecenie jakości v2 jest realizowane w DEVELOPMENT. Obowiązuje
+[stały standard](MESSAGE_STYLE.md) i [warunkowy odbiór](reviews/DURABLE_MESSAGE_QUALITY.md).
+Nie jest to wznowienie kampanii ani prawo Gmaila/OAuth/Start/R3/wysyłki.
+Wdrożenie i ograniczony zapis dwóch niewysłanych szkiców wymagają najpierw
+pozytywnej bramki jakości, pełnego Windows check i CI dokładnego kodu.
+
 Aktualny wdrożony kod to `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
 build `90e528ed-9018-442d-8e06-e71484443bb6`. WORKSTATION STOPPED,
 bez ownera i prawa wysyłki. Pełny Windows check/CI i fikcyjny CUA PASS;

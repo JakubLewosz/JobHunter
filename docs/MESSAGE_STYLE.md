@@ -1,5 +1,11 @@
 # Styl zgłoszeń JobHunter
 
+29.10.2026: naturalny tok i sensowny związek działalności firmy z kandydaturą
+są stałym kryterium odbioru generacji, odnowienia, edycji i jednej korekty.
+Kod wersjonuje wspólny standard jako `messageQualityVersion=2`. Ta zasada
+zastępuje sprzeczne zalecenia maksymalnego skrótu i jednej czynności projektu;
+nie oznacza jeszcze potwierdzenia przewagi generatora ani wdrożenia.
+
 25.10.2026: nowe materiały przechodzą oddzielny werdykt `quality` w istniejącym
 review. `supported=true` nie zastępuje jakości. Szczegóły, wspólna ścieżka
 edycji i granica jednej korekty: [MESSAGE_QUALITY](reviews/MESSAGE_QUALITY.md).
@@ -43,9 +49,15 @@ zdania, liczby akapitów ani pytania na końcu. Powitanie i podpis mogą być
 wspólne; podobny kontekst może uzasadniać podobny tok listu. Różnorodność
 nie jest celem samym w sobie i nie polega na podmianie synonimów.
 
+Praktyczna logika to: czego szukam → dlaczego ta firma → adekwatny przykład,
+jeśli pomaga → jedna prośba → CV/GitHub. To logika, nie szablon kolejności.
+
 Kod wyznacza cel redakcyjny z rodzaju kontaktu i zweryfikowanych warunków:
-wykonalność nieustalonych godzin w ofercie, dopasowanie projektu, dopasowanie
-profilu do otwartej kandydatury albo samą możliwość współpracy bez naboru.
+wykonalność nieustalonego warunku rzeczywistej oferty, dopasowanie do niej,
+możliwość dołączenia do zespołu przy zaproszeniu do CV albo możliwość
+współpracy bez naboru. Zaproszenie do CV nie wymusza projektu ani dwukrotnego
+określania procedury jako otwartej kandydatury. GENERAL nie sugeruje wakatu,
+zaproszenia lub zgodności warunków. Nie raportujemy w mailu braku rekrutacji.
 To priorytet decyzji odbiorcy, bez gotowych zdań i rotacji wariantów. W tym
 samym rodzaju kontaktu potwierdzenie godzin może zmienić priorytet. Przy
 nieznanym wymiarze w ofercie lub samym zapytaniu bez naboru prośba jest
@@ -80,12 +92,21 @@ obserwowania firmy. Bez ogólników o liderze branży, tłumaczenia oczywistośc
 dopasowania i komentarzy o procesie tworzenia maila.
 Nie oceniamy za pracodawcę przydatności doświadczenia lub korzyści dla firmy.
 Pokazujemy konkretne wykonane zadanie i chęć pracy przy podobnych zadaniach.
+Sam opis oferty firmy nie wystarcza. Udokumentowany produkt/zadanie łączy
+się z chęcią pracy przy nim lub trafnym przykładem; nie potrzeba projektu,
+gdy byłby naciągany. Wspólne słowo AI albo używanie Codexa nie dowodzi
+dopasowania. Nie dodajemy oceny „to konkretny punkt wspólny”.
 
 Zwykle jeden projekt, wyjątkowo dwa przy odrębnych potwierdzonych obszarach
 z wyjaśnieniem w warnings; przy braku związku opis jest pomijany. Nie ma
 minimalnej liczby funkcji ani technologii. Wystarczy istotny szczegół;
 stack jest potrzebny tylko wtedy, gdy rzeczywiście objaśnia dopasowanie.
-Technologia firmy nie staje się kompetencją kandydata.
+Technologia firmy nie staje się kompetencją kandydata. Opis objaśnia, czym
+jest aplikacja albo co kandydat przy niej zrobił. Kontekst i dwie powiązane
+cechy mogą wystąpić w jednym zdaniu, np. fikcyjna „aplikacja do automatyzacji
+z webhookami i historią zadań”. Nie wymagamy jednego czasownika. „W projekcie
+ponawiam akcje” nie objaśnia wykonawcy ani aplikacji; mechanizm programu
+opisujemy jako mechanizm, wyłącznie gdy zatwierdzony fakt go potwierdza.
 
 Kod dobiera projekty z literalnych dowodów i zatwierdzonych faktów:
 
@@ -148,6 +169,20 @@ rzeczowy związek projektu, naturalność polskich zdań i kompletność przed
 pierwszym wynikiem. Claims odnoszą się do ostatecznie zwróconej treści.
 Nie dodajemy automatycznego zastępowania fraz po generacji. Każda późniejsza
 korekta zapisanego szkicu wymaga osobnej wersji i kontroli końcowej treści.
+Recenzent osobno sprawdza cel/jedną prośbę, związek firma–kandydat,
+zrozumiały adekwatny projekt lub jego sensowne pominięcie, naturalność zdań
+oraz kompletność w granicach prawdy. Kontrola faktów pozostaje osobna.
+REVISE wskazuje literalny fragment i konkretną istotną wadę; brak związku
+może opisać na podstawie całego akapitu. Nie wystarczy „brzmi AI” lub
+preferencja synonimu. Dobry krótki tekst bez projektu dostaje PASS.
+„Na Państwa stronie”, „nazywam się” i „otwarta kandydatura” nie są blacklistą.
+Potrzebnego ograniczenia prawdziwości nie usuwamy dla płynności; zbędny
+dopisek oceniamy w kontekście, bez automatycznego zakazu słowa demo.
+Jedna celowana korekta wymaga ponownej kontroli całego finalnego payloadu,
+własnych claims i hashy. Nie generujemy aż do PASS. Stary PASS nie spełnia
+nowej wersji kryteriów; normalne przygotowanie wybranego niewysłanego
+materiału odnawia ocenę, także przy niezmienionych źródłach. Poprawna treść
+może pozostać bez zmian. Bez migracji hurtowej lub otwierania wysłanych.
 recent zawiera ostatnie tematy,
 otwarcia, pytania i sygnały konstrukcji trzech poprzednich szkiców: pomaga
 zauważyć powielanie, nie jest źródłem faktów ani

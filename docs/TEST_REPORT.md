@@ -1,5 +1,11 @@
 # Wyniki i zakres weryfikacji — 29 października 2026
 
+Nowy kandydat jakości v2: celowany Windows 152/152 PASS; wcześniej zachowany
+FAIL nowej regresji odnowienia wykazał pominięcie wersji jakości przez reuse.
+Pełne porównanie i Windows check/CI są oczekujące, nie zaliczone przez ten
+wynik syntetyczny. [Zakres i metoda](reviews/DURABLE_MESSAGE_QUALITY.md).
+Nie uruchamiano Gmaila/OAuth/R3/nadawania w nowym zleceniu.
+
 Końcowy odbiór tego samego ca5bd42/build90e528ed:
 R1 **PASS**3611s, R2 **COMPLETED**3/3, R3 **STOPPED/EXECUTION_DEADLINE**0/2.
 Pełny Windows check1042/12/26/typecheck/build i CI40754519704 PASS.

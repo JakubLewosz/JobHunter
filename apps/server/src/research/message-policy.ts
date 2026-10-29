@@ -32,11 +32,7 @@ export function messageWritingGoal(analysis: Analysis) {
     return analysis.conditions.hours.value !== 'yes' || analysis.conditions.partTime.value !== 'yes'
       ? 'SCHEDULE_FEASIBILITY'
       : 'PROJECT_FIT';
-  return ['remote', 'paid', 'hours'].every(
-    (key) => analysis.conditions[key as keyof Analysis['conditions']].value === 'yes',
-  )
-    ? 'PROFILE_FIT'
-    : 'PROJECT_FIT';
+  return 'JOIN_TEAM_POSSIBILITY';
 }
 export function messagePrompt(data: {
   profile: Row;
@@ -302,10 +298,8 @@ export function messageStyleIssues(draft: Row, analysis?: Analysis): string[] {
       /to konkretny punkt wspólny|bezpośrednio związane z tematyką|do tego drugiego obszaru nawiązuje|w ramach regularnej współpracy z państwa zespołem/iu,
       'META: usuń tłumaczenie oczywistości dopasowania.',
     ],
-    [
-      /projekt pozostaje.{0,20}demo|to projekt demonstracyjny.{0,35}(?:nie|ale)|nie publiczny system produkcyjny/iu,
-      'META: opisz prawdziwy status projektu krótko, bez umniejszającego komentarza.',
-    ],
+    // Whether a disclaimer is redundant depends on the claim it qualifies.
+    // The shared editorial review handles this; truthful limitations are not regex defects.
     [
       /czy potrzebują państwo pomocy|chętnie porozmawiam o pomocy przy podobnych zadaniach/iu,
       'SALES_CTA: zastąp sprzedaż usług pytaniem o regularną współpracę.',

@@ -139,7 +139,7 @@ test('typ kontaktu nie tworzy oferty z niepotwierdzonej rekrutacji', () => {
   assert.equal(messageContactType(unconfirmed), 'GENERAL_RECRUITMENT_CONTACT');
 });
 
-test('cel redakcyjny zmienia się z warunkami w tym samym rodzaju kontaktu', () => {
+test('cel redakcyjny rozróżnia warunki oferty od zaproszenia do zespołu', () => {
   const active = analysis('ACTIVE');
   assert.equal(messageWritingGoal(active), 'SCHEDULE_FEASIBILITY');
   active.conditions.hours.value = 'yes';
@@ -147,11 +147,22 @@ test('cel redakcyjny zmienia się z warunkami w tym samym rodzaju kontaktu', () 
   assert.equal(messageWritingGoal(active), 'PROJECT_FIT');
   assert.equal(messageContactType(active), 'ACTIVE_JOB');
   const open = analysis('OPEN');
-  assert.equal(messageWritingGoal(open), 'PROJECT_FIT');
+  assert.equal(messageWritingGoal(open), 'JOIN_TEAM_POSSIBILITY');
   for (const key of ['remote', 'paid', 'hours'] as const) open.conditions[key].value = 'yes';
-  assert.equal(messageWritingGoal(open), 'PROFILE_FIT');
+  assert.equal(messageWritingGoal(open), 'JOIN_TEAM_POSSIBILITY');
   assert.equal(messageContactType(open), 'OPEN_APPLICATION');
   assert.equal(messageWritingGoal(analysis('PROSPECT')), 'COOPERATION_POSSIBILITY');
+});
+
+test('a truthful limitation is not automatically treated as a cosmetic disclaimer', () => {
+  const body =
+    'Przygotowałem stronę fikcyjnej pracowni. To projekt demonstracyjny, ale formularz nie wysyła danych.';
+  assert.deepEqual(messageStyleIssues(draft(body)), []);
+  // The relaxation concerns a context-free style warning, never the factual gate.
+  assert.throws(
+    () => checkMessageRules(draft('Jestem studentem i wdrożyłem system produkcyjnie.'), profile),
+    (e: any) => e.code === 'UNSUPPORTED_EDUCATION',
+  );
 });
 
 test('adres ogólny i konflikt nie uzyskują otwarcia udającego ofertę lub kandydaturę', () => {
@@ -260,12 +271,12 @@ test('prompt: około 20 z profilu, AI opcjonalne, różny temat i pytanie oraz p
     assert.match(prompt, /80–130/);
     assert.match(prompt, /około 20 godzin/);
     assert.doesNotMatch(prompt, /15–20/);
-    assert.match(prompt, /AI\/Codex są opcjonalnym narzędziem pracy/);
+    assert.match(prompt, /Samo wspólne używanie AI\/Codexa nie uzasadnia dopasowania/);
     assert.match(prompt, /Poprzednie otwarcie/);
-    assert.match(prompt, /Czy pytanie jest krótkie, zamiast zawierać całą edukację i dostępność/);
-    assert.match(prompt, /Podobny kontekst może uzasadniać podobną konstrukcję/);
-    assert.match(prompt, /przed zwróceniem pierwszego wyniku/);
-    assert.match(prompt, /zgodność claims z tym tekstem/);
+    assert.match(prompt, /pytanie o współpracę lub aplikowanie występuje tylko raz/);
+    assert.match(prompt, /układ w podobnym kontekście są poprawne/);
+    assert.match(prompt, /przed zwróceniem pierwszej wersji/);
+    assert.match(prompt, /Sprawdź claims: dosłowne finalne fragmenty/);
     assert.doesNotMatch(prompt, /Wyraź tę jedną prośbę już we wprowadzeniu/);
     assert.ok(prompt.includes(messageContactType(analysis(type))));
   }
@@ -302,7 +313,7 @@ test('pierwszy kontakt: Państwo domyślnie, dowód wyjątku zamiast kopiowania 
     assert.match(prompt, /pojedyncze Ty w ogłoszeniu nie wystarczają/);
     assert.match(prompt, /Nie mieszaj form Państwo i Wy/);
     assert.match(prompt, /nie kopiuj tonu recent lub template bez takiej podstawy/);
-    assert.match(prompt, /Nie oceniaj za pracodawcę przydatności doświadczenia/);
+    assert.match(prompt, /bez deklaracji idealnego dopasowania lub korzyści dla firmy/);
     assert.deepEqual(
       JSON.parse(prompt.slice(prompt.lastIndexOf('Dane: ') + 6)).recent,
       data.recent,
@@ -347,16 +358,17 @@ test('ograniczenie statusu pozostaje faktem, neutralny prototyp nie wymaga zastr
 });
 
 test('finalny styl: formalność, meta-komentarz, sprzedaż i prezentacja wymagają przeglądu bez odrzucenia', () => {
-  for (const [text, code] of [
+  for (const [text, code, flagged = true] of [
     ['Pragnę wyrazić zainteresowanie regularną współpracą.', 'FORMAL'],
     ['To konkretny punkt wspólny między projektami.', 'META'],
-    ['Projekt pozostaje lokalnym demo.', 'META'],
+    ['Projekt pozostaje lokalnym demo.', 'META', false],
     ['Czy potrzebują Państwo pomocy przy automatyzacjach?', 'SALES_CTA'],
     ['Mogę zademonstrować rozwiązanie.', 'PROJECT_PRESENTATION'],
-  ]) {
+  ] as const) {
     const warnings = checkMessageRules(draft(text), profile, analysis());
-    assert.ok(
+    assert.equal(
       warnings.some((w) => w.startsWith(code)),
+      flagged,
       text,
     );
   }
@@ -453,8 +465,8 @@ for (const [kind, requirements, hasContract] of [
       recent: [],
     });
     assert.match(prompt, /80–130/);
-    assert.match(prompt, /Nie ma stałej kolejności akapitów ani obowiązkowego pierwszego zdania/);
-    assert.match(prompt, /JEDEN CEL, JEDNA PROŚBA/);
+    assert.match(prompt, /Nie ma obowiązkowej kolejności akapitów lub fraz/);
+    assert.match(prompt, /pytanie o współpracę lub aplikowanie występuje tylko raz/);
     assert.doesNotMatch(prompt, /Cztery krótkie części|Schemat zapytania:/);
     assert.match(prompt, /Umowę zlecenie wspomnij tylko przy ACTIVE_JOB/);
   });
@@ -468,15 +480,15 @@ test('konstrukcja wynika z celu i dowodów, bez stałych zdań, list funkcji i l
     template: '[Fikcyjne preferencje stylu.]',
     recent: [],
   });
-  assert.match(prompt, /Nie wymagaj pary zdań Na Państwa stronie/);
-  assert.match(prompt, /ani domyślnie słowa demo/);
-  assert.match(prompt, /Nie sugeruj wdrożenia produkcyjnego/);
-  assert.match(prompt, /Nazwa szkoły, miejscowość i ostatnia klasa wymagają zatwierdzonych faktów/);
-  assert.match(prompt, /ACTIVE_JOB to kandydatura na rzeczywistą rolę z tytułem/);
-  assert.match(prompt, /tylko w zakresie zatwierdzonych faktów/);
-  assert.match(prompt, /Nie stosuj rotacji wariantów, losowego parafrazowania/);
-  assert.match(prompt, /nie katalog funkcji/);
-  assert.match(prompt, /nie skracaj kosztem edukacji, dostępności, celu/);
+  assert.match(prompt, /Nie ma obowiązkowej kolejności akapitów lub fraz/);
+  assert.match(prompt, /Projekt jest opcjonalny/);
+  assert.match(prompt, /nie dodawaj doświadczenia, technologii, wdrożenia ani warunków/);
+  assert.match(prompt, /Status ucznia, szkoła i miejscowość także wymagają faktów/);
+  assert.match(prompt, /Oferta dotyczy konkretnej potwierdzonej roli/);
+  assert.match(prompt, /tylko zatwierdzone fakty/);
+  assert.match(prompt, /różnorodność nie jest celem/);
+  assert.match(prompt, /bez urzędowego tonu, sprzedaży, list funkcji/i);
+  assert.match(prompt, /nie limit/);
 });
 
 test('proste zapytanie: edukacja i dostępność razem, n8n jest faktem firmy, nie kompetencją kandydata', () => {
@@ -578,8 +590,8 @@ test('instrukcje dopuszczają naturalne pytanie i warunkowe CV bez fikcyjnego do
   };
   const prompt = messagePrompt(data),
     review = semanticReviewPrompt({ ...data, draft: draft() });
-  assert.match(prompt, /JEDEN CEL, JEDNA PROŚBA/);
-  assert.match(prompt, /prawdziwy kontekst przyszłego zatwierdzonego CV/);
+  assert.match(prompt, /pytanie o współpracę lub aplikowanie występuje tylko raz/);
+  assert.match(prompt, /CV oznacza warunek przyszłego pakietu z zatwierdzonym plikiem/);
   assert.match(review, /nie żądaj fikcyjnego cytatu/);
   assert.match(review, /brak opisu projektu przy konkretnym powodzie kontaktu/);
   assert.match(review, /kontrole faktycznego załącznika i uprawnień/);
