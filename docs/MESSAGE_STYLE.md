@@ -8,7 +8,10 @@ pytanie i relacja z researchu wymagają oceny całego listu; bez blacklisty.
 Potrzebny status demonstracji/fikcyjnej pracowni pozostaje. Recenzent musi
 odróżnić te sytuacje od dobrych pełnych wzorców przed testem generatora.
 [Kalibracja i rozdzielenie techniki](reviews/STYLE_EXEMPLARS_CALIBRATION.md).
-Poprzedni kandydat v2 pozostaje FAIL i nie jest wdrażany. Trwałość jakości
+Poprzedni kandydat v2 pozostaje FAIL i nie jest wdrażany. Nowy recenzent
+v3 także nie przeszedł całej kalibracji (5/5 dobrych, 6/7 wad, jedna blokada
+prawdy); nowej próbki generatora nie uruchomiono. Pełne wzorce są w promptach,
+ale ich obecność nie oznacza potwierdzenia trwałej jakości. Trwałość jakości
 jest wymaganiem, nie deklaracją zaliczenia przez sam PASS. Profil/wzór/CV
 użytkownika nie są zmieniane; materiał stylistyczny w kodzie jest osobny.
 

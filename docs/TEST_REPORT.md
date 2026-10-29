@@ -1,5 +1,17 @@
 # Wyniki i zakres weryfikacji — 29 października 2026
 
+Wzorce/recenzent: techniczne reuse c905b7e 41/41 i osobne CI PASS,
+niezależne od stylu, bez wdrożenia. Kandydat 69a5b23: celowany Windows
+186/186 PASS, native kalibracja FAIL (5/5 dodatnich, 6/7 wad stylu, jedna
+blokada faktograficzna kodem przed modelem). Pierwsze błędne wejście i FAIL
+fixtures zachowano. Nowa duża próbka NOT_RUN_CALIBRATION_FAILED; tylko
+dwie prywatne demonstracje NOT_APPLIED. 28 wywołań, bez błędów wykonania;
+pełny Windows check **1050/12/26/typecheck/build PASS** oraz
+[CI40883089594 dokładnego 69a5b23 PASS](https://github.com/JakubLewosz/JobHunter/actions/runs/40883089594).
+Poprzedni v2 FAIL nie został zmieniony. Końcowy read-only odczyt: 62 tabele,
+instalacja, oba szkice v2 i poprzednie paczki bez zmian, STOPPED.
+[Szczegóły](reviews/STYLE_EXEMPLARS_CALIBRATION.md). Gmail/Start/próby/wysyłki=0.
+
 Końcowy odbiór tego samego ca5bd42/build90e528ed:
 R1 **PASS**3611s, R2 **COMPLETED**3/3, R3 **STOPPED/EXECUTION_DEADLINE**0/2.
 Pełny Windows check1042/12/26/typecheck/build i CI40754519704 PASS.

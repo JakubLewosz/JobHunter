@@ -1,5 +1,12 @@
 # Uruchamianie przez Codex — stan 29.10.2026
 
+Zlecenie pełnych wzorców jest wyłącznie DEVELOPMENT: reuse c905b7e
+wyodrębnione i sprawdzone, nowy recenzent nie przeszedł kalibracji. Nowa duża
+próbka NOT_RUN; dwie demonstracje są prywatne NOT_APPLIED. Poprzedni v2
+pozostaje FAIL. [Wyniki](reviews/STYLE_EXEMPLARS_CALIBRATION.md).
+Nie ma prawa wdrożenia, zmian WORKSTATION/szkiców lub Gmaila/Start/R3/wysyłki.
+Wybrany produkcyjny kod i stare granice zgody poniżej pozostają bez zmian.
+
 Aktualny wdrożony kod to `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`,
 build `90e528ed-9018-442d-8e06-e71484443bb6`. WORKSTATION STOPPED,
 bez ownera i prawa wysyłki. Pełny Windows check/CI i fikcyjny CUA PASS;

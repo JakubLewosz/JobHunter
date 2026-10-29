@@ -1,5 +1,17 @@
 # Bieżące zadania — 29 października 2026
 
+Odrębne zlecenie wzorców: [wynik i granice](reviews/STYLE_EXEMPLARS_CALIBRATION.md).
+Reuse wyodrębnione w c905b7e na bazie 0cca725 z wersją jakości 1, regresje
+41/41 i osobne CI PASS. Nowy kandydat pełnych wzorców v3 ma celowane 186/186,
+lecz kalibracja FAIL: 5/5 dobrych, 6/7 wad stylu, jedna blokada prawdy.
+Pierwsza próba nieważna z powodu błędu kopii, zachowana. Nie zmieniono
+oczekiwań i nie zrobiono trzeciej próby. Nowy holdout NOT_RUN, tylko dwie
+prywatne demonstracje NOT_APPLIED. 28/120 wywołań; pełny Windows check
+1050/12/26/typecheck/build i CI40883089594 dokładnego 69a5b23 PASS.
+Ograniczona runda zakończona; technika i styl mają oddzielne wyniki.
+Poprzedni f85f0e8 nadal FAIL (1 preferencja/15 remisów), nie został wdrożony.
+WORKSTATION, profil/CV i biblioteka bez zmian; bez prawa Gmaila lub wysyłki.
+
 Końcowy wynik kontynuacji: **NOT_PRODUCTION_VERIFIED**.
 Kod `ca5bd42df8b6addb8048e4906cfdbbc215c10cb8`, ten sam zamrożony build:
 pełny Windows check1042/12/26/CI/CUA PASS, nowy R1 PASS3611s,
