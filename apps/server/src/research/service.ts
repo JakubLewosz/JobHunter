@@ -57,6 +57,11 @@ import {
 } from './contracts.js';
 import { parserVersion } from './html.js';
 import { sourceComplete } from './source-policy.js';
+import {
+  applicationRequirementData,
+  assertApplicationContent,
+  requiredApplicationClauses,
+} from './application-requirements.js';
 import { enrichCompanyDomain } from './domain-enrichment.js';
 import { ResearchSessionController } from './session-controller.js';
 import { sessionQueries } from './session-plan.js';
@@ -2307,6 +2312,13 @@ export class ResearchJobHunter extends JobHunter {
       d.version,
     );
     if (!old) return false; // Legacy material needs an explicit full review, never a forged binding.
+    const sources = this.sourcesForDraft({ ...d, opportunity_id: opportunity.id });
+    try {
+      assertApplicationContent({ body: d.body }, sources);
+    } catch (e) {
+      if (e instanceof DomainError) return false; // Missing content needs a changed message.
+      throw e;
+    }
     const review = JSON.parse(old.review_result ?? d.semantic_review ?? '{"supported":null}');
     if (review.supported !== true || review.issues.length) {
       this.event(
@@ -2316,7 +2328,6 @@ export class ResearchJobHunter extends JobHunter {
       );
       return true;
     }
-    const sources = this.sourcesForDraft({ ...d, opportunity_id: opportunity.id });
     const input = hash(
       JSON.stringify({
         messageQualityVersion,
@@ -2726,7 +2737,7 @@ export class ResearchJobHunter extends JobHunter {
         : '') +
       messagePrompt({
         profile: draftProfile,
-        analysis,
+        analysis: applicationRequirementData(analysis, this.sourcesFor(item)),
         qualification:
           o.decision === 'REJECTED' && separateInquiry ? 'PREVIEW_COMPANY_INQUIRY' : o.decision,
         evidence,
@@ -2927,6 +2938,12 @@ export class ResearchJobHunter extends JobHunter {
     if (this.store.get(`researchPending:${d.company_id}`, null))
       return ['DRAFT_MATERIAL_UNVERIFIED'];
     if (!this.usableResearchSources(this.sourcesForDraft(d))) return ['DRAFT_MATERIAL_STALE'];
+    try {
+      assertApplicationContent({ body: d.body }, this.sourcesForDraft(d));
+    } catch (e) {
+      if (e instanceof DomainError) return [e.code];
+      throw e;
+    }
     const material = this.store.one(
       'SELECT * FROM research_draft_materials WHERE draft_id=? AND version=?',
       d.id,
@@ -3254,6 +3271,9 @@ export class ResearchJobHunter extends JobHunter {
       basis && verifyQuote(basis, sources)
         ? [{ sourceId: basis.sourceId, quote: basis.quote }]
         : [];
+    readProofs.push(
+      ...requiredApplicationClauses(sources).map(({ sourceId, quote }) => ({ sourceId, quote })),
+    );
     if (context.profile.hash !== this.profile().profile_hash || !this.profile().approved_at) {
       this.store.exec(
         "UPDATE research_draft_materials SET code_status='INVALIDATED',review_status='INVALIDATED' WHERE draft_id=? AND version=?",
@@ -3266,6 +3286,7 @@ export class ResearchJobHunter extends JobHunter {
     let styleWarnings: string[];
     try {
       assertCurrent();
+      assertApplicationContent(payload, sources);
       styleWarnings = this.checkDraft(
         payload,
         d.company_id,
@@ -3411,14 +3432,16 @@ export class ResearchJobHunter extends JobHunter {
             draft: revisionProposal(payload, context.profile),
             quality: review.quality,
             profile: context.profile,
-            analysis,
+            analysis: applicationRequirementData(analysis, sources),
             evidence,
+            readProofs,
           }).replace('Dane: ', projectContractInstructions + 'Dane: '),
           projectProposalSchema,
           signal,
         );
         assertCurrent();
         corrected = composeProject(proposal, context.profile);
+        assertApplicationContent(corrected, sources);
         assertTargetedRevision(payload, corrected, review.quality);
         if (
           corrected.factIds.some((fid) => !payload.factIds.includes(fid)) ||
